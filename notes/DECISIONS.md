@@ -18,3 +18,11 @@
   recovery across server shutdown is a public-release blocker, not claimed solved.
 - Empty upstream has no main/PR base; keep the first implementation on a feature
   branch and agree on initial main before opening the review PR.
+
+## 2026-10-13 — Local Studio sync
+
+- Rocket uses port 34873; CityGang already uses 34872. Pin `servePort` in the
+  project so both can run without disconnecting the other project.
+- Use the existing Build a Rocket experience in Studio. In Team Create, hand
+  off the Rojo session by disconnecting the current owner before connecting
+  another developer. Do not clear another developer's active session lock.

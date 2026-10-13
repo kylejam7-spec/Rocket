@@ -15,7 +15,12 @@ The server owns inventory, contributions, boarding eligibility, stats and reward
    **2 clients**. The server creates the test map when the game starts.
 
 For live editing, install the matching Rojo Studio plugin, run `rojo serve`,
-and connect the plugin to this project. Source files and generated geometry
+and connect the plugin to **127.0.0.1:34873**. The project pins this port so
+Rocket can run alongside CityGang on 34872. Confirm the plugin shows **Rocket**
+and **Disconnect** after connecting. For Team Create, the developer currently
+syncing must disconnect Rojo before another developer connects.
+
+Source files and generated geometry
 are owned by Git. No hand-edited place or binary assets are required.
 Rebuild the place after source changes when using the file workflow.
 

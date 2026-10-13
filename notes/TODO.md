@@ -2,6 +2,8 @@
 
 - [x] Codex: create Rojo source, generated map and full minimal loop.
 - [x] Codex: focused delivery/profile checks and Luau compilation.
+- [x] Codex: connect Build a Rocket Studio to local Rojo 7.7.1 on port 34873;
+  verify all five game scripts match the local source.
 - [ ] Developer 1: run README two-client Studio scenario. Accept: both contribute,
   only the boarded player gets reward, second cycle completes, UI fits phone.
 - [ ] Developer 2: clone branch and reproduce setup independently.
