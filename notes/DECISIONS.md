@@ -1,0 +1,20 @@
+# Decisions
+
+## 2026-10-13 — First playable defaults
+
+- Fixed build: 6 Metal + 4 Fuel per server. Small enough to test repeatedly.
+- One material type per cargo stack; capacity 1 + floor(effective strength / 5),
+  capped at 5. Delivery credits actual accepted pieces; excess stays carried.
+- Boarding lasts 20 seconds. Players must remain on the pad until lock;
+  the server recomputes eligibility at departure. Pickup/delivery stop at boarding.
+- Meadow grants +1 strength bonus, +1 speed bonus and one completion, only after
+  the profile transaction succeeds (or explicitly temporary memory-mode grant).
+- WalkSpeed = min(32, 16 + effective speed * 0.3). Training/bonus caps are 50.
+- Advanced gym needs one confirmed launch and grants two strength levels.
+- Generated anchored primitives are source-owned; no binary art edits.
+- Persistence defaults off; test store `RocketProfiles_v1_test`, schema 1,
+  serialized UpdateAsync, 120-second session lease, 64 recent reward IDs.
+- Pending rewards survive disconnect within the live server. Durable entitlement
+  recovery across server shutdown is a public-release blocker, not claimed solved.
+- Empty upstream has no main/PR base; keep the first implementation on a feature
+  branch and agree on initial main before opening the review PR.

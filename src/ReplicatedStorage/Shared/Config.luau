@@ -1,0 +1,23 @@
+return table.freeze({
+    Materials = table.freeze({ Metal = 6, Fuel = 4 }),
+    BoardingSeconds = 20,
+    LaunchSeconds = 4,
+    RewardSeconds = 6,
+    InteractionDistance = 10,
+    ActionCooldown = 0.5,
+    TrainingSeconds = 2,
+    TrainingCooldown = 3,
+    MaxLevel = 50,
+    BaseSpeed = 16,
+    SpeedPerLevel = 0.3,
+    MaxSpeed = 32,
+    MaxCapacity = 5,
+    AdvancedGymCompletions = 1,
+    Planet = table.freeze({ Id = "Meadow", StrengthBonus = 1, SpeedBonus = 1 }),
+    -- Persistence stays off for reproducible, non-production Studio tests.
+    PersistenceEnabled = false,
+    DataStoreName = "RocketProfiles_v1_test",
+    AutosaveSeconds = 30,
+    LeaseSeconds = 120,
+    RecentRewardLimit = 64,
+})
