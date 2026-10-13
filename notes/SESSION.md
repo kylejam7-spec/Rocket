@@ -1,7 +1,7 @@
 # Latest session — 2026-10-13
 
-- Branch: `feat/first-playable`; upstream was empty with no main or PR base.
-  Initial implementation is isolated for review; no PR opened.
+- Branch: `feat/first-playable`, pushed to GitHub; implementation commit `56d8cbc`.
+  Upstream was empty with no main or PR base. No PR opened and no main created.
 - Built: Rojo mapping/tool pin, source-generated test world, shared fixed build,
   cargo/capped atomic delivery, training, timed boarding/passenger lock,
   Meadow/reward/reset, completion gym gate, HUD and server leaderboard.
