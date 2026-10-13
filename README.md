@@ -1,6 +1,6 @@
 # Rocket
 
-A cooperative Roblox prototype: train strength/speed, gather Metal and Fuel,
+A cooperative Roblox prototype: train strength/speed, gather Metal,
 build one shared rocket, board together, visit Meadow, and unlock an advanced gym.
 The server owns inventory, contributions, boarding eligibility, stats and rewards.
 
@@ -30,9 +30,12 @@ Rebuild the place after source changes when using the file workflow.
   per five levels (maximum five); speed adds 0.3 studs/sec per effective level
   (maximum 32). Training levels and planet bonuses each cap at 50.
 - Each player picks up material at its source and delivers at the blue pad.
-  The shared requirement is **6 Metal + 4 Fuel**, regardless of player count.
-  A cargo stack holds one material type. Excess material remains carried
-  until used or the cycle resets. Each credited piece belongs to one player.
+  The shared requirement is **6 Metal**, regardless of player count.
+  Metal is the only material. Pickups reserve the remaining requirement across
+  every player's cargo: delivered plus carried Metal can never exceed six.
+  If all needed pieces are being carried, deliver them first. Leaving the server
+  releases that player's carried pieces for pickup again. Each credited piece
+  belongs to one player; completing the build leaves no excess cargo.
 - When full, pickup and delivery stop. Stand on the green pad during the
   **20-second** countdown. The HUD confirms boarding; remain until departure.
 - Leave one player outside the pad. Only the passenger visits Meadow and

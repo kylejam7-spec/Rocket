@@ -68,9 +68,7 @@ local spawn = part("Spawn", Vector3.new(0, 1, 36), Vector3.new(8, 1, 8), Color3.
 spawn.Neutral = true
 label(spawn, "ROCKET • Train, gather, launch together")
 local metal = part("Metal", Vector3.new(-24, 2, 12), Vector3.new(6, 4, 6), Color3.fromRGB(139, 166, 185))
-local fuel = part("Fuel", Vector3.new(24, 2, 12), Vector3.new(6, 4, 6), Color3.fromRGB(245, 182, 71))
 label(metal, "METAL • Pick up a piece")
-label(fuel, "FUEL • Pick up a canister")
 local delivery = part("Delivery", Vector3.new(0, 1, 4), Vector3.new(10, 2, 6), Color3.fromRGB(86, 174, 215))
 label(delivery, "DELIVER • Shared rocket")
 local boarding = part("BoardingZone", Vector3.new(0, 0.2, -12), Vector3.new(16, 0.4, 16), Color3.fromRGB(89, 210, 165))
@@ -188,7 +186,7 @@ end
 local function beginBoarding()
     deadline = workspace:GetServerTimeNow() + Config.BoardingSeconds
     for _, item in prompts do
-        if item.Parent == metal or item.Parent == fuel or item.Parent == delivery then item.Enabled = false end
+        if item.Parent == metal or item.Parent == delivery then item.Enabled = false end
     end
     broadcast()
     local cycle = rocket.cycle
@@ -229,15 +227,13 @@ local function beginBoarding()
     end)
 end
 
-for material, source in { Metal = metal, Fuel = fuel } do
-    prompt(source, "Pick up " .. material).Triggered:Connect(function(player)
-        if not allowed(player, "pickup") then return end
-        if not near(player, source) then feedback(player, "Move closer and wait for your profile to load.", "pickup proximity/profile"); return end
-        if rocket:pickup(player.UserId, material, capacity(profiles.records[player.UserId].profile)) then
-            send(player)
-        else feedback(player, "Cargo full, a different material is carried, or this material is already complete.") end
-    end)
-end
+prompt(metal, "Pick up Metal").Triggered:Connect(function(player)
+    if not allowed(player, "pickup") then return end
+    if not near(player, metal) then feedback(player, "Move closer and wait for your profile to load.", "pickup proximity/profile"); return end
+    if rocket:pickup(player.UserId, "Metal", capacity(profiles.records[player.UserId].profile)) then
+        send(player)
+    else feedback(player, "Your cargo is full, or all needed Metal is already delivered or being carried.") end
+end)
 prompt(delivery, "Deliver carried materials").Triggered:Connect(function(player)
     if not allowed(player, "deliver") then return end
     if not near(player, delivery) then feedback(player, "Move closer to the delivery pad.", "delivery proximity/profile"); return end

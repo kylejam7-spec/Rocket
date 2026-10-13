@@ -10,9 +10,13 @@ end
 
 function Rocket:pickup(userId, material, capacity)
     if self.phase ~= "Building" or type(material) ~= "string" or not self.config.Materials[material] then return false end
-    if self.totals[material] >= self.config.Materials[material] then return false end
     local cargo = self.cargo[userId]
     if cargo and (cargo.material ~= material or cargo.count >= capacity) then return false end
+    local committed = self.totals[material]
+    for _, carried in self.cargo do
+        if carried.material == material then committed += carried.count end
+    end
+    if committed >= self.config.Materials[material] then return false end
     self.cargo[userId] = { material = material, count = (cargo and cargo.count or 0) + 1 }
     return true
 end

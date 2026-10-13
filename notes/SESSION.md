@@ -1,18 +1,20 @@
-# Latest session — 2026-10-13: Studio sync
+# Latest session — 2026-10-13: material pickup fix
 
 - Branch: `feat/first-playable`; no main/PR base yet, no PR opened.
   First playable implementation: `56d8cbc`; setup details in README.
-- Connected the Build a Rocket Team Create experience to the pinned Rojo 7.7.1
-  server at `127.0.0.1:34873`. CityGang's existing 34872 server stays untouched.
-- Previous developer disconnected their Rojo session before connection.
-  Plugin confirms project Rocket and Disconnect; session lock belongs to the
-  current Studio user. Studio is left in Edit mode ready to play.
-- Verification: all five source scripts in Studio have matching normalized byte
-  counts and rolling hashes against the local files. No gameplay source changed.
-  Earlier Luau compilation, delivery/profile checks and place build passed.
-- Updated project port, README and project notes for repeatable reconnect.
-- Not verified: two-client gameplay/UI, actual published DataStore calls,
-  rejoin and shutdown recovery. Default persistence remains off.
+- Fixed excess pickup: delivered plus all carried pieces reserve the fixed
+  requirement. Capacity cannot grant more than the remaining unreserved need;
+  disconnect releases carried reservations. Delivery finishes without leftovers.
+- User requested one material: keep 6 Metal; remove Fuel pickup, requirement,
+  HUD text and onboarding. No profile schema changes.
+- Synced through Rojo 7.7.1 at `127.0.0.1:34873` to Build a Rocket.
+- Verification: all Luau files compile; delivery and profile checks pass.
+  New assertions cover 3/4 with capacity 3, competing final pickups, disconnect
+  release and empty cargo at completion. Same regression passes in Studio.
+  Play smoke check confirms one Metal source, no Fuel, HUD Metal 0/6, no console
+  output errors. Studio is left in Edit mode ready to play.
+- Updated README, defaults and notes. Two-client live interactions, real saves,
+  rejoin and shutdown recovery remain unverified. Persistence remains off.
 - Public-release blocker: pending rewards in memory can be lost on server death;
   implement and fault-test durable pending entitlements before release.
 - Next task: run README's two-player Studio scenario in the connected experience.

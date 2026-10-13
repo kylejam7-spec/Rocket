@@ -2,9 +2,10 @@
 
 ## 2026-10-13 — First playable defaults
 
-- Fixed build: 6 Metal + 4 Fuel per server. Small enough to test repeatedly.
+- Fixed build: 6 Metal per server. Fuel removed by the gameplay decision below.
 - One material type per cargo stack; capacity 1 + floor(effective strength / 5),
-  capped at 5. Delivery credits actual accepted pieces; excess stays carried.
+  capped at 5. Pickups cannot exceed remaining unreserved need; deliveries
+  credit actual accepted pieces.
 - Boarding lasts 20 seconds. Players must remain on the pad until lock;
   the server recomputes eligibility at departure. Pickup/delivery stop at boarding.
 - Meadow grants +1 strength bonus, +1 speed bonus and one completion, only after
@@ -26,3 +27,13 @@
 - Use the existing Build a Rocket experience in Studio. In Team Create, hand
   off the Rojo session by disconnecting the current owner before connecting
   another developer. Do not clear another developer's active session lock.
+
+## 2026-10-13 — One material and no excess cargo
+
+- User requested one material type for simplicity: keep Metal and remove Fuel
+  from the map, requirement and HUD. Keep the existing six-Metal requirement.
+- Pickups count both delivered material and every player's carried material
+  against the fixed requirement. This prevents extra pieces from stranding cargo,
+  including when two players try to take the last needed piece.
+- Disconnecting releases carried reservations. Inventory is still per-cycle
+  server memory; no persistence schema changes.

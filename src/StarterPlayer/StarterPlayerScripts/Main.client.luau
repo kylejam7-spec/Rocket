@@ -44,7 +44,7 @@ local function render()
     local remaining = math.max(0, math.ceil(state.deadline - workspace:GetServerTimeNow()))
     local headline = "ROCKET  •  " .. state.phase
     if state.deadline > 0 then headline ..= "  •  " .. remaining .. "s" end
-    local instructions = "Train at the gym. Gather Metal or Fuel, then deliver at the blue pad."
+    local instructions = "Train at the gym. Gather Metal, then deliver at the blue pad."
     if state.phase == "Boarding" then
         instructions = state.boarded and "ABOARD — stay on the green pad until departure." or "BOARD NOW — stand on the green pad before the timer ends."
     elseif state.phase == "Launching" then
@@ -53,7 +53,7 @@ local function render()
         instructions = state.passenger and "Meadow reward: +1 strength, +1 speed. Check save status below." or "Passengers are visiting Meadow. Next build shortly."
     elseif state.phase == "Resetting" then instructions = "Returning home. A fresh shared build starts next." end
     local cargo = state.cargo and (state.cargo.count .. " " .. state.cargo.material) or "empty"
-    local lines = { headline, "", "Metal: " .. state.totals.Metal .. "/" .. state.required.Metal .. "     Fuel: " .. state.totals.Fuel .. "/" .. state.required.Fuel,
+    local lines = { headline, "", "Metal: " .. state.totals.Metal .. "/" .. state.required.Metal,
         "Carrying: " .. cargo .. "   •   Your deliveries this cycle: " .. state.contribution }
     if state.profile then
         local p = state.profile

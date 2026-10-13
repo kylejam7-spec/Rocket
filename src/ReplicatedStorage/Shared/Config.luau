@@ -1,5 +1,5 @@
 return table.freeze({
-    Materials = table.freeze({ Metal = 6, Fuel = 4 }),
+    Materials = table.freeze({ Metal = 6 }),
     BoardingSeconds = 20,
     LaunchSeconds = 4,
     RewardSeconds = 6,

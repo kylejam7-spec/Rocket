@@ -4,6 +4,8 @@
 - [x] Codex: focused delivery/profile checks and Luau compilation.
 - [x] Codex: connect Build a Rocket Studio to local Rojo 7.7.1 on port 34873;
   verify all five game scripts match the local source.
+- [x] Codex: prevent excess pickups using shared carried reservations; simplify
+  to Metal only. Regression assertions and Studio world/HUD smoke check pass.
 - [ ] Developer 1: run README two-client Studio scenario. Accept: both contribute,
   only the boarded player gets reward, second cycle completes, UI fits phone.
 - [ ] Developer 2: clone branch and reproduce setup independently.
