@@ -83,15 +83,13 @@ frontier.Shape = Enum.PartType.Cylinder
 frontier.Material = Enum.Material.Neon
 frontier.Transparency = 0.55
 frontier.CanCollide, frontier.CanQuery, frontier.CanTouch, frontier.CastShadow = false, false, false, false
-local placePoint = Instance.new("Attachment")
-placePoint.Name = "PlacePoint"
-placePoint.Parent = frontier
+local PLACE_POINTS = 7
 local frontierSign = Instance.new("BillboardGui")
 frontierSign.Size = UDim2.fromOffset(170, 26)
 frontierSign.StudsOffsetWorldSpace = Vector3.new(0, 4, 0)
 frontierSign.AlwaysOnTop = true
 frontierSign.MaxDistance = 400
-frontierSign.Adornee = placePoint
+frontierSign.Adornee = frontier
 frontierSign.Parent = frontier
 local frontierText = Instance.new("TextLabel")
 frontierText.Size = UDim2.fromScale(1, 1)
@@ -330,18 +328,21 @@ local function relocate(player, position)
     root.AssemblyLinearVelocity = Vector3.zero
     motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(), blockedUntil = os.clock() + 0.5 }
 end
-local depotPrompts, placePrompt = {}, nil
+local depotPrompts, placePrompts = {}, {}
 -- Moves the ring and its prompt to the current fill point; hidden outside delivery phases.
 local function updateFrontier()
     local material = Rocket.PhaseMaterial[rocket.phase]
-    local cframe, diameter, point = rocketBuild:frontier()
+    local cframe, diameter, points = rocketBuild:frontier(PLACE_POINTS)
     local active = material ~= nil and cframe ~= nil
-    placePrompt.Enabled, frontierSign.Enabled = active, active
+    frontierSign.Enabled = active
     frontier.Transparency = active and 0.55 or 1
+    for index, item in placePrompts do
+        item.Enabled = active
+        if active then item.Parent.WorldPosition = points[index] end
+    end
     if not active then return end
     frontier.CFrame, frontier.Size = cframe, Vector3.new(0.4, diameter, diameter)
     frontier.Color = MATERIAL_COLORS[material]
-    placePoint.WorldPosition = point
 end
 -- Only the material the current phase needs can be picked up or placed.
 local function refreshPrompts()
@@ -349,7 +350,7 @@ local function refreshPrompts()
     for kind, items in depotPrompts do
         for _, item in items do item.Enabled = material == kind end
     end
-    placePrompt.ActionText = "Place " .. (material or "materials")
+    for _, item in placePrompts do item.ActionText = "Place " .. (material or "materials") end
     updateFrontier()
 end
 local function announce(message)
@@ -533,7 +534,7 @@ local function delivered(advanced)
 end
 -- Pouring scales with carry capacity so any full ball empties in ~PourSeconds;
 -- a base 10-unit ball still moves one unit per tick.
-placePrompt = holdPrompt(frontier, "Place Metal", function(player)
+local function place(player)
     local material = Rocket.PhaseMaterial[rocket.phase]
     local pour = math.ceil(capacity(profiles.records[player.UserId].profile) * Config.MaterialHoldSeconds / Config.PourSeconds)
     local amount, advanced = rocket:deliver(player.UserId, math.max(1, pour))
@@ -550,10 +551,18 @@ placePrompt = holdPrompt(frontier, "Place Metal", function(player)
     if emptied then feedback(player, material .. " placed! Your deliveries this cycle: " .. (rocket.contributions[player.UserId] or 0)) end
     delivered(advanced)
     return not (emptied or advanced)
-end)
-placePrompt.ObjectText = "Rocket"
-placePrompt.MaxActivationDistance = Config.FrontierReach
-placePrompt.Parent = placePoint
+end
+-- Several prompt points span the fill line; the nearest one shows, so players can
+-- place anywhere along the rocket's lowest level instead of aiming at one spot.
+for _ = 1, PLACE_POINTS do
+    local point = Instance.new("Attachment")
+    point.Name = "PlacePoint"
+    point.Parent = frontier
+    local item = holdPrompt(frontier, "Place Metal", place, point)
+    item.ObjectText = "Rocket"
+    item.MaxActivationDistance = Config.FrontierReach
+    table.insert(placePrompts, item)
+end
 refreshPrompts()
 if RunService:IsStudio() then
     -- Studio-only playtest hook: Invoke("fill", fraction) adds that share of the current

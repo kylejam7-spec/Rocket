@@ -266,14 +266,20 @@ function Build:setProgress(buildFraction, fuelFraction)
 end
 
 -- Where material goes next: a ring around the fill line (axis along the rocket), its
--- diameter, and the reachable point just above the segment's upper (+Z) face.
-function Build:frontier()
+-- diameter, and `count` reachable points spread across the segment's width just above
+-- its upper (+Z) face, so material can be placed anywhere along the lowest level.
+function Build:frontier(count)
     local item = self.frontierItem
     if not item then return nil end
     local y = item.low.Y + (item.high.Y - item.low.Y) * self.frontierAmount
     local center = Vector3.new((item.low.X + item.high.X) / 2, y, (item.low.Z + item.high.Z) / 2)
     local diameter = math.max(item.high.X - item.low.X, item.high.Z - item.low.Z, 3) + 1.5
-    return self.pivot * CFrame.new(center) * UPRIGHT, diameter, self.pivot * Vector3.new(center.X, y, item.high.Z + 1.5)
+    local points = {}
+    for index = 1, count do
+        local x = count == 1 and center.X or center.X + diameter * (index - 1 / 2 - count / 2) / count
+        table.insert(points, self.pivot * Vector3.new(x, y, item.high.Z + 1.5))
+    end
+    return self.pivot * CFrame.new(center) * UPRIGHT, diameter, points
 end
 
 -- True for points on the tilted rocket or the arms over it (the ramps are outside).
