@@ -63,6 +63,8 @@ end
 RunService:BindToRenderStep("RocketMouseCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
     local camera = workspace.CurrentCamera
     if not camera then return end
+    -- LaunchEffects owns the camera while a passenger rides the rocket.
+    if camera:GetAttribute("Cinematic") then return end
     local character = player.Character
     local root = character and character:FindFirstChild("HumanoidRootPart")
     local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -75,7 +77,7 @@ RunService:BindToRenderStep("RocketMouseCamera", Enum.RenderPriority.Camera.Valu
         previousType = camera.CameraType
         local look = camera.CFrame.LookVector
         yaw = math.atan2(-look.X, -look.Z)
-        pitch = math.clamp(math.asin(look.Y), math.rad(-65), math.rad(70))
+        pitch = math.clamp(math.asin(look.Y), math.rad(-65), math.rad(80))
         active = true
     end
     camera.CameraType = Enum.CameraType.Scriptable
@@ -87,7 +89,7 @@ RunService:BindToRenderStep("RocketMouseCamera", Enum.RenderPriority.Camera.Valu
     if not free then
         local delta = Input:GetMouseDelta()
         yaw -= delta.X * SENSITIVITY
-        pitch = math.clamp(pitch - delta.Y * SENSITIVITY, math.rad(-65), math.rad(70))
+        pitch = math.clamp(pitch - delta.Y * SENSITIVITY, math.rad(-65), math.rad(80))
     end
     distance += (zoom - distance) * (1 - math.exp(-14 * dt))
     local focus = root.Position + Vector3.new(0, 2, 0)

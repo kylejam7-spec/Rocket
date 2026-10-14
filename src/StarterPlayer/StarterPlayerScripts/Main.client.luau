@@ -14,7 +14,8 @@ gui.ResetOnSpawn = false
 gui.Parent = player:WaitForChild("PlayerGui")
 local frame = Instance.new("Frame")
 frame.Position = UDim2.fromOffset(16, 16)
-frame.Size = UDim2.new(0.9, 0, 0, 360)
+-- Half width leaves the top-right corner for the rocket progress panel.
+frame.Size = UDim2.new(0.5, -24, 0, 360)
 frame.BackgroundColor3 = Color3.fromRGB(20, 29, 43)
 frame.BackgroundTransparency = 0.08
 frame.Parent = gui
@@ -43,15 +44,17 @@ local function render()
     if not snapshot then return end
     local state = snapshot
     local remaining = math.max(0, math.ceil(state.deadline - workspace:GetServerTimeNow()))
-    local headline = "ROCKET " .. ((state.successfulLaunches or 0) + 1) .. "  •  " .. state.phase
+    local headline = "CYCLE " .. state.cycle .. "/" .. state.cycleCount .. "  •  " .. state.phase
     if state.deadline > 0 then headline ..= "  •  " .. remaining .. "s" end
-    local instructions = "Hold E to collect Metal / Fuel. Hold E at a matching rocket section to place."
-    if state.phase == "Boarding" then
-        instructions = state.boarded and "ABOARD — stay INSIDE the rocket until departure." or "BOARD NOW — enter the open end of the rocket before the timer ends."
+    local instructions = "Hold or tap E at the SCRAP PIT to grow a scrap ball, then climb the ramp to the glowing ring on the rocket and hold E to place it."
+    if state.phase == "Fueling" then
+        instructions = "Rocket built! Fill your jerry can at the OIL REFINERY, then climb to the glowing ring on the fuel gauge and hold E to pour it in."
+    elseif state.phase == "Boarding" then
+        instructions = state.boarded and "ABOARD — stay on the green BOARD pad until liftoff." or "BOARD NOW — stand on the green BOARD pad in front of the rocket."
     elseif state.phase == "Launching" then
         instructions = state.passenger and "You made it! Launching to Meadow…" or "You missed this launch. The next build starts shortly."
     elseif state.phase == "Rewarding" then
-        instructions = state.passenger and "Meadows: +3 strength and +3 speed each second for 30 seconds. Check save status below." or "Passengers are visiting Meadow. Next build shortly."
+        instructions = state.passenger and "Meadows: bonus strength and speed every second. Check save status below." or "Passengers are visiting Meadow. Next build shortly."
     elseif state.phase == "Resetting" then instructions = "Returning home. A fresh shared build starts next." end
     if state.training then instructions = state.training .. " — auto-training! Press E or Leave station to stop." end
     local carried = {}
@@ -62,7 +65,7 @@ local function render()
         end
     end
     local cargo = #carried > 0 and table.concat(carried, " + ") or "empty"
-    local lines = { headline, "", "Metal: " .. state.totals.Metal .. "/" .. state.required.Metal .. "     Fuel: " .. state.totals.Fuel .. "/" .. state.required.Fuel,
+    local lines = { headline, "", state.tierName .. "  •  Build " .. state.totals.Metal .. "/" .. state.required.Metal .. "   Fuel " .. state.totals.Fuel .. "/" .. state.required.Fuel,
         "Carrying: " .. cargo .. "   •   Your deliveries this cycle: " .. state.contribution }
     if state.profile then
         local p = state.profile
@@ -74,7 +77,7 @@ local function render()
             elseif not nextTier then nextTier = tier.cycles end
         end
         table.insert(lines, "Advanced gyms: " .. unlocked .. "/" .. #Config.TrainingTiers .. " unlocked"
-            .. (nextTier and " • Next: " .. nextTier .. " cycles" or " • All unlocked"))
+            .. (nextTier and " • Next at " .. nextTier .. (nextTier == 1 and " launch" or " launches") or " • All unlocked"))
     end
     table.insert(lines, "")
     table.insert(lines, os.clock() < feedbackUntil and feedbackText or instructions)
@@ -83,6 +86,25 @@ local function render()
     text.Text = table.concat(lines, "\n")
 end
 stateEvent.OnClientEvent:Connect(function(state) snapshot = state; render() end)
+-- Each player sees their own lock status on the gym signs (local-only text change).
+stateEvent.OnClientEvent:Connect(function(state)
+    local world = workspace:FindFirstChild("RocketWorld")
+    if not world or not state.profile then return end
+    local launches = state.profile.completedLaunches
+    for _, sign in world:GetChildren() do
+        local required = sign:GetAttribute("RequiredCycles")
+        local status = required and sign.Name:match("^TrainingSign") and sign:FindFirstChild("SignText") and sign.SignText:FindFirstChild("Status")
+        if status then
+            if launches >= required then
+                status.Text = "UNLOCKED"
+                status.TextColor3 = Color3.fromRGB(150, 255, 170)
+            else
+                status.Text = "LOCKED • " .. launches .. "/" .. required .. (required == 1 and " launch" or " launches")
+                status.TextColor3 = Color3.fromRGB(255, 200, 200)
+            end
+        end
+    end
+end)
 feedbackEvent.OnClientEvent:Connect(function(message)
     feedbackText, feedbackUntil = message, os.clock() + 3
     render()
@@ -174,9 +196,11 @@ local function startMaterialHold(item)
     materialHold:FireServer(item, true)
 end
 ProximityPromptService.PromptButtonHoldBegan:Connect(startMaterialHold)
+-- Holding the key while walking up starts the transfer as soon as the prompt appears.
 ProximityPromptService.PromptShown:Connect(function(item)
     if UserInputService:GetFocusedTextBox() then return end
-    if UserInputService:IsKeyDown(item.KeyboardKeyCode) then
+    if UserInputService:IsKeyDown(item.KeyboardKeyCode)
+        or UserInputService:IsGamepadButtonDown(Enum.UserInputType.Gamepad1, item.GamepadKeyCode) then
         startMaterialHold(item)
     end
 end)
