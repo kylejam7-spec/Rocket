@@ -1,0 +1,47 @@
+{
+  "name": "Rocket",
+  "tree": {
+    "ReplicatedStorage": {
+      "$path": "src/ReplicatedStorage"
+    },
+    "SoundService": {
+      "$path": "world/SoundService.rbxm"
+    },
+    "MaterialService": {
+      "$path": "world/MaterialService.rbxm"
+    },
+    "Workspace": {
+      "$path": "world/Workspace.rbxm"
+    },
+    "StarterPlayer": {
+      "$path": "src/StarterPlayer"
+    },
+    "StarterPack": {
+      "$path": "world/StarterPack.rbxm"
+    },
+    "$className": "DataModel",
+    "ServerStorage": {
+      "$path": "world/ServerStorage.rbxm"
+    },
+    "StarterGui": {
+      "$path": "world/StarterGui.rbxm"
+    },
+    "ServerScriptService": {
+      "$path": "src/ServerScriptService"
+    },
+    "$ignoreUnknownInstances": true,
+    "ReplicatedFirst": {
+      "$path": "world/ReplicatedFirst.rbxm"
+    },
+    "Teams": {
+      "$path": "world/Teams.rbxm"
+    },
+    "TextChatService": {
+      "$path": "world/TextChatService.rbxm"
+    },
+    "Lighting": {
+      "$path": "world/Lighting.rbxm"
+    }
+  },
+  "servePort": 34873
+}

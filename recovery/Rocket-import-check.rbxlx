@@ -1,0 +1,2283 @@
+<roblox version="4">
+  <Item class="Lighting" referent="0">
+    <Properties>
+      <string name="Name">Lighting</string>
+      <Color3 name="Ambient">
+        <R>0.5</R>
+        <G>0.5</G>
+        <B>0.5</B>
+      </Color3>
+      <BinaryString name="AttributesSerialize">BQAAABQAAABSQlhfQmFja3VwQnJpZ2h0bmVzcwUAAIA/HgAAAFJCWF9CYWNrdXBFeHBvc3VyZUNvbXBlbnNhdGlvbgUAAAAAIQAAAFJCWF9MaWdodGluZ0NvbXBhdGliaWxpdHlNaWdyYXRlZAMBJgAAAFJCWF9MaWdodGluZ1RlY2hub2xvZ3lVbmlmaWVkTWlncmF0aW9uAwEgAAAAUkJYX09yaWdpbmFsVGVjaG5vbG9neU9uRmlsZUxvYWQEAQAAAA==</BinaryString>
+      <float name="Brightness">1.9812492</float>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <Color3 name="ColorShift_Bottom">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <Color3 name="ColorShift_Top">
+        <R>0</R>
+        <G>0</G>
+        <B>0</B>
+      </Color3>
+      <float name="EnvironmentDiffuseScale">0</float>
+      <float name="EnvironmentSpecularScale">0</float>
+      <float name="ExposureCompensation">0</float>
+      <token name="ExtendLightRangeTo120">0</token>
+      <Color3 name="FogColor">
+        <R>0.75</R>
+        <G>0.75</G>
+        <B>0.75</B>
+      </Color3>
+      <float name="FogEnd">100000</float>
+      <float name="FogStart">0</float>
+      <float name="GeographicLatitude">41.7333</float>
+      <bool name="GlobalShadows">false</bool>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <token name="LightingStyle">1</token>
+      <Color3 name="OutdoorAmbient">
+        <R>0.5</R>
+        <G>0.5</G>
+        <B>0.5</B>
+      </Color3>
+      <bool name="Outlines">true</bool>
+      <bool name="PrioritizeLightingQuality">false</bool>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <float name="ShadowSoftness">0.5</float>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <token name="Technology">1</token>
+      <string name="TimeOfDay">14:00:00</string>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003fb</UniqueId>
+    </Properties>
+    <Item class="ColorGradingEffect" referent="1">
+      <Properties>
+        <string name="Name">ColorGrading</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">true</bool>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <token name="TonemapperPreset">1</token>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000015d2</UniqueId>
+      </Properties>
+    </Item>
+    <Item class="BloomEffect" referent="2">
+      <Properties>
+        <string name="Name">Bloom</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">true</bool>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <float name="Intensity">0</float>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <float name="Size">24</float>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <float name="Threshold">0.95</float>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000015d3</UniqueId>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="MaterialService" referent="3">
+    <Properties>
+      <string name="Name">MaterialService</string>
+      <string name="AsphaltName">Asphalt</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <string name="BasaltName">Basalt</string>
+      <string name="BrickName">Brick</string>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <string name="CardboardName">Cardboard</string>
+      <string name="CarpetName">Carpet</string>
+      <string name="CeramicTilesName">CeramicTiles</string>
+      <string name="ClayRoofTilesName">ClayRoofTiles</string>
+      <string name="CobblestoneName">Cobblestone</string>
+      <string name="ConcreteName">Concrete</string>
+      <string name="CorrodedMetalName">CorrodedMetal</string>
+      <string name="CrackedLavaName">CrackedLava</string>
+      <string name="DiamondPlateName">DiamondPlate</string>
+      <string name="FabricName">Fabric</string>
+      <string name="FoilName">Foil</string>
+      <string name="GlacierName">Glacier</string>
+      <string name="GraniteName">Granite</string>
+      <string name="GrassName">Grass</string>
+      <string name="GroundName">Ground</string>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <string name="IceName">Ice</string>
+      <string name="LeafyGrassName">LeafyGrass</string>
+      <string name="LeatherName">Leather</string>
+      <string name="LimestoneName">Limestone</string>
+      <string name="MarbleName">Marble</string>
+      <string name="MetalName">Metal</string>
+      <string name="MudName">Mud</string>
+      <string name="PavementName">Pavement</string>
+      <string name="PebbleName">Pebble</string>
+      <string name="PlasterName">Plaster</string>
+      <string name="PlasticName">Plastic</string>
+      <string name="RockName">Rock</string>
+      <string name="RoofShinglesName">RoofShingles</string>
+      <string name="RubberName">Rubber</string>
+      <string name="SaltName">Salt</string>
+      <string name="SandName">Sand</string>
+      <bool name="DefinesCapabilities">false</bool>
+      <string name="SandstoneName">Sandstone</string>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <string name="SlateName">Slate</string>
+      <string name="SmoothPlasticName">SmoothPlastic</string>
+      <string name="SnowName">Snow</string>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae0282300000382</UniqueId>
+      <bool name="Use2022MaterialsXml">false</bool>
+      <string name="WoodName">Wood</string>
+      <string name="WoodPlanksName">WoodPlanks</string>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedFirst" referent="4">
+    <Properties>
+      <string name="Name">ReplicatedFirst</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae028230000037f</UniqueId>
+    </Properties>
+  </Item>
+  <Item class="ReplicatedStorage" referent="5">
+    <Properties>
+      <string name="Name">ReplicatedStorage</string>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+    </Properties>
+    <Item class="Folder" referent="6">
+      <Properties>
+        <string name="Name">Shared</string>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+      </Properties>
+      <Item class="ModuleScript" referent="7">
+        <Properties>
+          <string name="Name">Config</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[return table.freeze({
+    Materials = table.freeze({ Metal = 6, Fuel = 4 }),
+    MaterialsPerSlotPerLaunch = 1,
+    MaterialHoldSeconds = 0.05,
+    BoardingSeconds = 20,
+    LaunchSeconds = 4,
+    RewardSeconds = 30,
+    InteractionDistance = 10,
+    ActionCooldown = 0.5,
+    TrainingSeconds = 1,
+    MaxLevel = 50,
+    MaxPlanetBonus = 1000000,
+    BaseSpeed = 16,
+    SpeedPerLevel = 0.3,
+    MaxSpeed = 32,
+    MaxCapacity = 5,
+    AdvancedGymCompletions = 1,
+    Planet = table.freeze({ Id = "Meadow", StrengthBonus = 3, SpeedBonus = 3 }),
+    -- Persistence stays off for reproducible, non-production Studio tests.
+    PersistenceEnabled = false,
+    DataStoreName = "RocketProfiles_v1_test",
+    AutosaveSeconds = 30,
+    LeaseSeconds = 120,
+    RecentRewardLimit = 64,
+})
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerScriptService" referent="8">
+    <Properties>
+      <string name="Name">ServerScriptService</string>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+    </Properties>
+    <Item class="Script" referent="9">
+      <Properties>
+        <string name="Name">Main</string>
+        <token name="RunContext">0</token>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <string name="Source"><![CDATA[local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local Config = require(ReplicatedStorage.Shared.Config)
+local Rocket = require(script.Parent.Services.RocketService)
+local Profiles = require(script.Parent.Services.ProfileService)
+
+local remotes = Instance.new("Folder")
+remotes.Name = "Remotes"
+local stateEvent = Instance.new("RemoteEvent")
+stateEvent.Name = "StateUpdated"
+stateEvent.Parent = remotes
+local requestState = Instance.new("RemoteEvent")
+requestState.Name = "RequestState"
+requestState.Parent = remotes
+local feedbackEvent = Instance.new("RemoteEvent")
+feedbackEvent.Name = "Feedback"
+feedbackEvent.Parent = remotes
+remotes.Parent = ReplicatedStorage
+
+local world = Instance.new("Folder")
+world.Name = "RocketWorld"
+local function part(name, position, size, color, className)
+    local object = Instance.new(className or "Part")
+    object.Name = name
+    object.Anchored = true
+    object.Position = position
+    object.Size = size
+    object.Color = color
+    object.TopSurface = Enum.SurfaceType.Smooth
+    object.BottomSurface = Enum.SurfaceType.Smooth
+    object.Parent = world
+    return object
+end
+local function label(object, text)
+    local gui = Instance.new("BillboardGui")
+    gui.Size = UDim2.fromOffset(260, 60)
+    gui.StudsOffset = Vector3.new(0, 5, 0)
+    gui.AlwaysOnTop = true
+    gui.Parent = object
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Size = UDim2.fromScale(1, 1)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = text
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    textLabel.TextStrokeTransparency = 0.3
+    textLabel.TextSize = 18
+    textLabel.Font = Enum.Font.GothamBold
+    textLabel.Parent = gui
+end
+local prompts = {}
+local function prompt(object, action, hold)
+    local result = Instance.new("ProximityPrompt")
+    result.ActionText = action
+    result.ObjectText = object.Name
+    result.MaxActivationDistance = Config.InteractionDistance
+    result.HoldDuration = hold or 0
+    result.RequiresLineOfSight = false
+    result.KeyboardKeyCode = Enum.KeyCode.E
+    result.Parent = object
+    table.insert(prompts, result)
+    return result
+end
+
+local expandMap = require(script.Parent.Services.MapExpansionService).build(part, label)
+local mapCycle = 1
+expandMap(mapCycle)
+local spawn = part("Spawn", Vector3.new(0, 1, 36), Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation")
+spawn.Neutral = true
+label(spawn, "ROCKET • Train, gather, launch together")
+local metal = part("Metal", Vector3.new(-24, 2, 12), Vector3.new(6, 4, 6), Color3.fromRGB(139, 166, 185))
+local fuel = part("Fuel", Vector3.new(24, 2, 12), Vector3.new(6, 4, 6), Color3.fromRGB(245, 182, 71))
+label(metal, "METAL • Pick up a piece")
+label(fuel, "FUEL • Pick up a canister")
+-- Horizontal, walkable chassis. Ghost hull slots become solid as players build.
+local chassis = part("RocketChassis", Vector3.new(0, 1, -22), Vector3.new(38, 2, 12), Color3.fromRGB(70, 83, 103))
+local boarding = part("CabinInterior", Vector3.new(0, 2.1, -22), Vector3.new(34, 0.2, 9), Color3.fromRGB(89, 210, 165))
+boarding.Transparency = 0.35
+boarding.CanCollide = false
+label(chassis, "ROCKET TEMPLATE • Hold E at a matching outlined block")
+local entrance = part("CabinEntrance", Vector3.new(-20, 0.5, -22), Vector3.new(4, 1, 9), Color3.fromRGB(89, 210, 165))
+label(entrance, "BOARD INSIDE • Enter at this open end")
+-- Permanent stairs let builders reach the roof without trapping the cabin entrance.
+for index = 1, 6 do
+    part("RoofStep" .. index, Vector3.new(-21 + index * 3, index, -32), Vector3.new(3, index * 2, 5), Color3.fromRGB(98, 111, 131))
+end
+local slots = {}
+local function slot(id, material, position, size)
+    local block = part(id, position, size, material == "Metal" and Color3.fromRGB(194, 211, 226) or Color3.fromRGB(245, 182, 71))
+    block.Transparency = 0.78
+    block.CanCollide = false
+    block:SetAttribute("MaterialId", material)
+    block:SetAttribute("Placed", false)
+    local outline = Instance.new("SelectionBox")
+    outline.Adornee = block
+    outline.LineThickness = 0.05
+    outline.Color3 = block.Color
+    outline.Parent = block
+    slots[id] = { part = block, material = material, outline = outline }
+end
+for index, x in {-9, 9} do
+    slot("MetalLeft" .. index, "Metal", Vector3.new(x, 7, -28), Vector3.new(18, 10, 1))
+    slot("MetalRight" .. index, "Metal", Vector3.new(x, 7, -16), Vector3.new(18, 10, 1))
+    slot("MetalRoof" .. index, "Metal", Vector3.new(x, 12.5, -22), Vector3.new(18, 1, 13))
+end
+for index, z in {-27, -17} do
+    slot("FuelEngine" .. index, "Fuel", Vector3.new(-20, 4, z), Vector3.new(4, 4, 3))
+    slot("FuelNose" .. index, "Fuel", Vector3.new(20, 5, z), Vector3.new(4, 6, 3))
+end
+local nose = part("RocketNose", Vector3.new(22, 5, -22), Vector3.new(6, 8, 8), Color3.fromRGB(216, 91, 73), "WedgePart")
+nose.CFrame = CFrame.new(nose.Position) * CFrame.Angles(0, math.rad(90), 0)
+local frontWall = part("CabinFront", Vector3.new(18.5, 7, -22), Vector3.new(1, 10, 12), Color3.fromRGB(70, 83, 103))
+local function resetTemplate()
+    for _, item in slots do
+        item.part.Transparency = 0.78
+        item.part.CanCollide = false
+        item.part:SetAttribute("Placed", false)
+        item.outline.Visible = true
+    end
+end
+local strengthStation = part("StrengthGym", Vector3.new(-26, 1, 38), Vector3.new(7, 2, 7), Color3.fromRGB(191, 94, 109))
+local speedStation = part("SpeedGym", Vector3.new(26, 1, 38), Vector3.new(7, 2, 7), Color3.fromRGB(110, 115, 218))
+local advanced = part("AdvancedGym", Vector3.new(-44, 1, 38), Vector3.new(7, 2, 7), Color3.fromRGB(225, 191, 98))
+label(strengthStation, "BENCH PRESS • E to train")
+label(speedStation, "TREADMILL • E to train")
+label(advanced, "ADVANCED GYM • Requires 1 launch")
+local planet = part("MeadowPlanet", Vector3.new(0, 2, -220), Vector3.new(65, 4, 65), Color3.fromRGB(113, 177, 95))
+label(planet, "MEADOWS • +3 strength & speed / second for 30 seconds")
+world.Parent = workspace
+
+local rocket = Rocket.new(Config, HttpService:GenerateGUID(false))
+local function equipment(base, treadmill)
+    local p = base.Position
+    base.Size = Vector3.new(8, 0.4, 10)
+    base.Position = Vector3.new(p.X, 0.2, p.Z)
+    local dark, steel = Color3.fromRGB(35, 40, 50), Color3.fromRGB(165, 175, 190)
+    if treadmill then
+        part("TreadmillBelt", p, Vector3.new(4, 0.5, 7), dark)
+        for _, x in {-2.5, 2.5} do
+            part("TreadmillRail", p + Vector3.new(x, 0.5, 0), Vector3.new(0.4, 1, 8), steel)
+            part("TreadmillPost", p + Vector3.new(x, 2, -3), Vector3.new(0.4, 4, 0.4), steel)
+        end
+        part("TreadmillConsole", p + Vector3.new(0, 3.5, -3), Vector3.new(5, 1, 0.7), base.Color)
+    else
+        part("BenchCushion", p + Vector3.new(0, 1, 0), Vector3.new(2.5, 0.6, 6), dark)
+        for _, x in {-2.5, 2.5} do
+            part("BenchRack", p + Vector3.new(x, 1.5, -2), Vector3.new(0.4, 4, 0.4), steel)
+            part("WeightPlate", p + Vector3.new(x, 3, -2), Vector3.new(0.7, 2.2, 2.2), dark)
+        end
+        part("Barbell", p + Vector3.new(0, 3, -2), Vector3.new(7, 0.25, 0.25), steel)
+    end
+end
+equipment(strengthStation, false)
+equipment(speedStation, true)
+equipment(advanced, false)
+local CargoVisual = require(script.Parent.Services.CargoVisualService)
+local function cargoVisual(player)
+    local cargo = rocket.cargo[player.UserId]
+    CargoVisual.update(player.Character, cargo and cargo.materials, {Metal = metal.Color, Fuel = fuel.Color})
+end
+local motion, lastAction = {}, {}
+local training
+local deadline = 0
+local boarded = {}
+local profiles
+local holds = require(script.Parent.Services.HoldService).new(Config.MaterialHoldSeconds)
+local lastReject = {}
+local function feedback(player, message, rejection)
+    feedbackEvent:FireClient(player, message)
+    if rejection and os.clock() - (lastReject[player.UserId] or -math.huge) >= 5 then
+        lastReject[player.UserId] = os.clock()
+        warn("Rocket rejected interaction", player.UserId, rejection)
+    end
+end
+local function speed(profile)
+    return math.min(Config.MaxSpeed, Config.BaseSpeed + (profile.speedLevel + profile.planetBonuses.speed) * Config.SpeedPerLevel)
+end
+local function capacity(profile)
+    return math.min(Config.MaxCapacity, 1 + math.floor((profile.strengthLevel + profile.planetBonuses.strength) / 5))
+end
+local function updateStats(player)
+    local record = profiles.records[player.UserId]
+    if not record then return end
+    local profile = record.profile
+    local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid then humanoid.WalkSpeed = speed(profile) end
+    local stats = player:FindFirstChild("leaderstats")
+    if stats then
+        stats.CompletedLaunches.Value = profile.completedLaunches
+        stats.LifetimeDeliveries.Value = profile.lifetimeDeliveries
+    end
+end
+local function send(player)
+    local record = profiles.records[player.UserId]
+    local profile = record and record.profile
+    stateEvent:FireClient(player, {
+        phase = rocket.phase, cycle = rocket.cycle, deadline = deadline,
+        totals = table.clone(rocket.totals), required = rocket.required, successfulLaunches = rocket.successfulLaunches, slotCost = rocket.slotCost,
+        cargo = rocket.cargo[player.UserId], contribution = rocket.contributions[player.UserId] or 0,
+        boarded = boarded[player.UserId] == true, passenger = rocket.passengers[player.UserId] == true,
+        profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, walkSpeed = speed(profile), capacity = capacity(profile) },
+        saveStatus = record and record.status or "Loading",
+        persistent = Config.PersistenceEnabled,
+        training = training and training.sessions[player.UserId] and training.sessions[player.UserId].station.name,
+    })
+end
+local function broadcast()
+    for _, player in Players:GetPlayers() do send(player) end
+end
+profiles = Profiles.new(Config, function(userId)
+    local player = Players:GetPlayerByUserId(userId)
+    if player then updateStats(player); send(player) end
+end)
+
+local function finite(vector)
+    return vector.X == vector.X and vector.Y == vector.Y and vector.Z == vector.Z and vector.Magnitude < 1e7
+end
+local function body(player)
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not root or not root:IsA("BasePart") or not humanoid or humanoid.Health <= 0 or not finite(root.Position) then return nil end
+    return root, humanoid
+end
+local function observed(player)
+    local root = body(player)
+    if not root then return nil end
+    local sample = motion[player.UserId]
+    if not sample or sample.root ~= root or os.clock() < sample.blockedUntil then return nil end
+    -- Check again in the interaction handler, covering the gap between samples.
+    local delta = root.Position - sample.position
+    local elapsed = math.max(0, os.clock() - sample.time)
+    if Vector3.new(delta.X, 0, delta.Z).Magnitude > Config.MaxSpeed * elapsed + 3 then return nil end
+    return root
+end
+local function near(player, object)
+    local root = observed(player)
+    return not (training and training.sessions[player.UserId]) and profiles:ready(player.UserId) and root and object:IsA("BasePart") and object.Anchored and object:IsDescendantOf(world) and (root.Position - object.Position).Magnitude <= Config.InteractionDistance
+end
+local function insideBoarding(player)
+    local root = observed(player)
+    if not root or not profiles:ready(player.UserId) then return false end
+    local localPosition = boarding.CFrame:PointToObjectSpace(root.Position)
+    return math.abs(localPosition.X) <= boarding.Size.X / 2 and math.abs(localPosition.Z) <= boarding.Size.Z / 2 and localPosition.Y >= 0 and localPosition.Y <= 9
+end
+local function allowed(player, action)
+    local now = os.clock()
+    local history = lastAction[player.UserId] or {}
+    lastAction[player.UserId] = history
+    if now - (history[action] or -math.huge) < Config.ActionCooldown then return false end
+    history[action] = now
+    return true
+end
+local function relocate(player, position)
+    local root = body(player)
+    if not root then return end
+    player.Character:PivotTo(CFrame.new(position))
+    root.AssemblyLinearVelocity = Vector3.zero
+    motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(), blockedUntil = os.clock() + 0.5 }
+end
+local function beginBoarding()
+    deadline = workspace:GetServerTimeNow() + Config.BoardingSeconds
+    for _, item in prompts do
+        if item.Parent == metal or item.Parent == fuel then item.Enabled = false end
+    end
+    broadcast()
+    local cycle = rocket.cycle
+    task.delay(Config.BoardingSeconds, function()
+        if rocket.cycle ~= cycle or rocket.phase ~= "Boarding" then return end
+        local passengers = {}
+        for _, player in Players:GetPlayers() do
+            if insideBoarding(player) then passengers[player.UserId] = true end
+        end
+        if not rocket:lockPassengers(passengers) then return end
+        boarded = passengers
+        deadline = workspace:GetServerTimeNow() + Config.LaunchSeconds
+        broadcast()
+        for userId in passengers do
+            local player = Players:GetPlayerByUserId(userId)
+            if player then
+                local root = body(player)
+                if root then root.Anchored = true end
+            end
+        end
+        task.wait(Config.LaunchSeconds)
+        rocket.phase = "Rewarding"
+        deadline = workspace:GetServerTimeNow() + Config.RewardSeconds
+        for userId in rocket.passengers do
+
+            local player = Players:GetPlayerByUserId(userId)
+            if player then
+                local root = body(player)
+                if root then root.Anchored = false end
+                relocate(player, planet.Position + Vector3.new(0, 6, 0))
+            end
+        end
+        broadcast()
+        -- Cumulative tick counts are idempotent even when a save retries.
+        for tick = 1, Config.RewardSeconds do
+            task.wait(1)
+            for userId in rocket.passengers do
+                profiles:queueReward(userId, cycle, tick)
+                local player = Players:GetPlayerByUserId(userId)
+                if player then feedback(player, "Meadows +" .. Config.Planet.StrengthBonus .. " strength / +" .. Config.Planet.SpeedBonus .. " speed (" .. tick .. "/" .. Config.RewardSeconds .. ")") end
+            end
+            broadcast()
+        end
+        rocket.phase = "Resetting"
+        deadline = 0
+        broadcast()
+        for userId in rocket.passengers do
+            local player = Players:GetPlayerByUserId(userId)
+            if player then relocate(player, spawn.Position + Vector3.new(0, 5, 0)) end
+        end
+        task.wait(1)
+        rocket = rocket:nextCycle(HttpService:GenerateGUID(false))
+        mapCycle += 1
+        expandMap(mapCycle)
+
+        for _, player in Players:GetPlayers() do cargoVisual(player) end
+        resetTemplate()
+        boarded = {}
+        for _, item in prompts do item.Enabled = true end
+        for _, data in slots do
+            data.part:SetAttribute("MaterialsPlaced", 0)
+            data.part:SetAttribute("MaterialsRequired", rocket.slotCost)
+            data.prompt.ObjectText = data.material .. " section 0/" .. rocket.slotCost
+        end
+        broadcast()
+    end)
+end
+
+local function materialNear(player, object)
+    local root = observed(player)
+    if not root or not profiles:ready(player.UserId) or (training and training.sessions[player.UserId]) then return false end
+    if rocket.phase ~= "Building" then return false end
+    local point = object.CFrame:PointToObjectSpace(root.Position)
+    local half = object.Size / 2
+    local closest = Vector3.new(math.clamp(point.X, -half.X, half.X), math.clamp(point.Y, -half.Y, half.Y), math.clamp(point.Z, -half.Z, half.Z))
+    return (point - closest).Magnitude <= Config.InteractionDistance
+end
+local materialTargets, materialCallbacks = {}, {}
+local materialHold = Instance.new("RemoteEvent")
+materialHold.Name = "MaterialHold"
+materialHold.Parent = remotes
+local function holdPrompt(object, action, callback)
+    local item = prompt(object, action, Config.MaterialHoldSeconds)
+    materialTargets[item], materialCallbacks[item] = object, callback
+    return item
+end
+materialHold.OnServerEvent:Connect(function(player, item, holding)
+    if holding == false then
+        holds:cancel(player.UserId)
+        return
+    end
+    local object = materialTargets[item]
+    if holding ~= true or not object or not item.Enabled or not materialNear(player, object) then return end
+    local entry = holds.active[player.UserId]
+    if entry and entry.target == item and entry.cycle == rocket.cycle then return end
+    holds:begin(player.UserId, item, rocket.cycle, os.clock())
+end)
+for material, source in { Metal = metal, Fuel = fuel } do
+    holdPrompt(source, "Pick up " .. material, function(player)
+        if rocket:pickup(player.UserId, material, capacity(profiles.records[player.UserId].profile)) then
+            cargoVisual(player)
+            feedback(player, "Picked up " .. material .. ". Hold E at a matching rocket section.")
+            send(player)
+        else feedback(player, "Cargo full or this material is complete.") end
+    end)
+end
+local function refreshSlot(id, data)
+    local progress = rocket.slotProgress[id] or 0
+    local complete = rocket.placedSlots[id] == true
+    data.part.Transparency = complete and 0 or 0.78 - 0.4 * progress / rocket.slotCost
+    data.part.CanCollide = complete
+    data.part:SetAttribute("Placed", complete)
+    data.part:SetAttribute("MaterialsPlaced", progress)
+    data.part:SetAttribute("MaterialsRequired", rocket.slotCost)
+    data.outline.Visible = not complete
+    data.prompt.Enabled = rocket.phase == "Building" and not complete
+    data.prompt.ObjectText = data.material .. " section " .. progress .. "/" .. rocket.slotCost
+end
+for id, data in slots do
+    data.prompt = holdPrompt(data.part, "Place " .. data.material, function(player)
+        if rocket:place(player.UserId, id, data.material) == 0 then
+            feedback(player, "Carry " .. data.material .. " for this unfinished section.")
+            return
+        end
+        refreshSlot(id, data)
+        cargoVisual(player)
+        profiles.records[player.UserId].profile.lifetimeDeliveries += 1
+        profiles:dirty(player.UserId)
+        updateStats(player)
+        feedback(player, data.material .. " section: " .. rocket.slotProgress[id] .. "/" .. rocket.slotCost)
+        if rocket.phase == "Boarding" then beginBoarding() else broadcast() end
+    end)
+    refreshSlot(id, data)
+end
+-- Repeat on the server while the prompt button remains held.
+RunService.Heartbeat:Connect(function()
+    local now = os.clock()
+    for userId, entry in holds.active do
+        local player = Players:GetPlayerByUserId(userId)
+        local target = materialTargets[entry.target]
+        if not player or not target or not entry.target.Enabled or entry.cycle ~= rocket.cycle
+            or not materialNear(player, target) then
+            holds:cancel(userId)
+        elseif now - entry.started >= Config.MaterialHoldSeconds then
+            entry.started = now
+            materialCallbacks[entry.target](player)
+        end
+    end
+end)
+local discardCargo = Instance.new("RemoteEvent")
+discardCargo.Name = "DiscardCargo"
+discardCargo.Parent = remotes
+discardCargo.OnServerEvent:Connect(function(player)
+    if not allowed(player, "discard") or not rocket.cargo[player.UserId] then return end
+    rocket.cargo[player.UserId] = nil
+    cargoVisual(player)
+    feedback(player, "Cargo cleared. Pick up another material.")
+    send(player)
+end)
+training = require(script.Parent.Services.TrainingService).new({
+    players = Players, config = Config, profiles = profiles, remotes = remotes,
+    prompt = prompt, allowed = allowed, near = near, body = body, relocate = relocate,
+    feedback = feedback, changed = function(player) updateStats(player); send(player) end,
+    phaseAllowed = function() return rocket.phase == "Building" or rocket.phase == "Boarding" end,
+    stations = {
+        { part = strengthStation, name = "Bench press", stat = "strengthLevel", gain = 2 },
+        { part = speedStation, name = "Treadmill", stat = "speedLevel", gain = 2 },
+        { part = advanced, name = "Advanced bench", stat = "strengthLevel", gain = 4, required = Config.AdvancedGymCompletions },
+    },
+})
+local function joined(player)
+    local stats = Instance.new("Folder")
+    stats.Name = "leaderstats"
+    for _, name in { "CompletedLaunches", "LifetimeDeliveries" } do
+        local value = Instance.new("IntValue")
+        value.Name = name
+        value.Parent = stats
+    end
+    stats.Parent = player
+    local function characterAdded(character)
+        local root = character:WaitForChild("HumanoidRootPart", 10)
+        if not root or player.Character ~= character then return end
+        motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(), blockedUntil = os.clock() + 1 }
+        updateStats(player)
+        cargoVisual(player)
+        if rocket.phase == "Rewarding" and rocket.passengers[player.UserId] then relocate(player, planet.Position + Vector3.new(0, 6, 0)) end
+    end
+    player.CharacterAdded:Connect(characterAdded)
+    if player.Character then task.spawn(characterAdded, player.Character) end
+    profiles:load(player.UserId)
+end
+Players.PlayerAdded:Connect(joined)
+Players.PlayerRemoving:Connect(function(player)
+    holds:cancel(player.UserId)
+    training.stop(player)
+    rocket:forget(player.UserId)
+    if rocket.phase == "Boarding" then boarded[player.UserId] = nil end
+    motion[player.UserId], lastAction[player.UserId] = nil, nil
+    lastReject[player.UserId] = nil
+    profiles:remove(player.UserId)
+end)
+for _, player in Players:GetPlayers() do task.spawn(joined, player) end
+requestState.OnServerEvent:Connect(function(player)
+    if allowed(player, "snapshot") then send(player) end
+end)
+profiles:start()
+
+local sampleElapsed, broadcastElapsed = 0, 0
+RunService.Heartbeat:Connect(function(dt)
+    sampleElapsed += dt
+    broadcastElapsed += dt
+    if sampleElapsed < 0.2 then return end
+    sampleElapsed = 0
+    training.tick(os.clock())
+    local now = os.clock()
+    for _, player in Players:GetPlayers() do
+        local root = body(player)
+        local sample = motion[player.UserId]
+        if root and sample and sample.root == root then
+            local delta = root.Position - sample.position
+            if Vector3.new(delta.X, 0, delta.Z).Magnitude > Config.MaxSpeed * (now - sample.time) + 3 then
+                root.CFrame = sample.safe
+                root.AssemblyLinearVelocity = Vector3.zero
+                sample.blockedUntil = now + 2
+
+            end
+            sample.position, sample.safe, sample.time = root.Position, root.CFrame, now
+
+        end
+        if rocket.phase == "Boarding" then boarded[player.UserId] = insideBoarding(player) end
+    end
+    if broadcastElapsed >= 1 then broadcastElapsed = 0; broadcast() end
+end)
+]]></string>
+      </Properties>
+    </Item>
+    <Item class="Folder" referent="10">
+      <Properties>
+        <string name="Name">Services</string>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+      </Properties>
+      <Item class="ModuleScript" referent="11">
+        <Properties>
+          <string name="Name">CargoVisualCheck</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source">return function()
+    local visual = require(script.Parent.CargoVisualService)
+    local character = Instance.new("Model")
+    local root = Instance.new("Part")
+    root.Name, root.Anchored, root.Parent = "HumanoidRootPart", true, character
+    local colors = {Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71)}
+    local previousRadius = -1
+    for _, count in {1, 2, 5, 10, 25, 100} do
+        visual.update(character, {Metal = math.ceil(count / 2), Fuel = math.floor(count / 2)}, colors)
+        local model = assert(character:FindFirstChild("CarriedMaterials"))
+        assert(#model:GetChildren() == count, "Every held item must be visible")
+        local radius = 0.85 * (count - 1) ^ (1 / 3)
+        local center = Vector3.new(0, 0.3 + radius * 0.2, -2 - radius)
+        local outer = 0
+        for _, block in model:GetChildren() do
+            local position = root.CFrame:PointToObjectSpace(block.Position)
+            outer = math.max(outer, (position - center).Magnitude)
+            assert(position.Z &lt;= -1.99, "Cargo must stay in front")
+            assert(not block.CanCollide and not block.CanTouch and not block.CanQuery and block.Massless)
+            local weld = assert(block:FindFirstChildOfClass("WeldConstraint"))
+            assert(weld.Part0 == root and weld.Part1 == block)
+        end
+        assert(outer &gt; previousRadius, "Mass must expand with more cargo")
+        previousRadius = outer
+    end
+    visual.update(character, {Metal = 1}, colors)
+    assert(#character.CarriedMaterials:GetChildren() == 1, "Delivery must shrink the mass")
+    visual.update(character, nil, colors)
+    assert(not character:FindFirstChild("CarriedMaterials"), "Clearing must remove the mass")
+    visual.update(character, {Metal = 0, Fuel = 0}, colors)
+    assert(not character:FindFirstChild("CarriedMaterials"))
+    character:Destroy()
+    return "Cargo checks passed: mixed materials, growth 1–100, shrinking, clearing, welds, and collisions"
+end</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="12">
+        <Properties>
+          <string name="Name">CargoVisualService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[local CargoVisual = {}
+
+function CargoVisual.update(character, materials, colors)
+    if not character then return end
+    local previous = character:FindFirstChild("CarriedMaterials")
+    if previous then previous:Destroy() end
+    local root = character:FindFirstChild("HumanoidRootPart")
+    if not materials or not root then return end
+    local count = (materials.Metal or 0) + (materials.Fuel or 0)
+    if count == 0 then return end
+    local radius = 0.85 * (count - 1) ^ (1 / 3)
+    local center = Vector3.new(0, 0.3 + radius * 0.2, -2 - radius)
+    local model = Instance.new("Model")
+    model.Name = "CarriedMaterials"
+    local index = 0
+    for _, material in {"Metal", "Fuel"} do
+        for _ = 1, materials[material] or 0 do
+            index += 1
+            local offset = Vector3.zero
+            if index > 1 then
+                local distance = 0.85 * (index - 1) ^ (1 / 3)
+                local y = 1 - 2 * ((index * 0.61803398875) % 1)
+                local angle = index * 2.39996322973
+                local ring = math.sqrt(1 - y * y)
+                offset = Vector3.new(math.cos(angle) * ring, y, math.sin(angle) * ring) * distance
+            end
+            local block = Instance.new("Part")
+            block.Name = material
+            block.Size = Vector3.new(1.5, 1.2, 1.5)
+            block.Color = colors[material]
+            block.CanCollide, block.CanTouch, block.CanQuery, block.Massless = false, false, false, true
+            block.CFrame = root.CFrame * CFrame.new(center + offset)
+                * CFrame.Angles(math.sin(index * 2) * 0.25, index * 2.39996322973, math.cos(index * 3) * 0.25)
+            block.Parent = model
+            local weld = Instance.new("WeldConstraint")
+            weld.Part0, weld.Part1, weld.Parent = root, block, block
+        end
+    end
+    model.Parent = character
+end
+
+return CargoVisual
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="13">
+        <Properties>
+          <string name="Name">HoldService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[local Hold = {}
+Hold.__index = Hold
+function Hold.new(duration)
+    return setmetatable({ duration = duration, active = {} }, Hold)
+end
+function Hold:begin(id, target, cycle, now)
+    self.active[id] = { target = target, cycle = cycle, started = now }
+end
+function Hold:ended(id, target)
+    local entry = self.active[id]
+    if entry and entry.target == target then self.active[id] = nil end
+end
+function Hold:cancel(id) self.active[id] = nil end
+return Hold
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="14">
+        <Properties>
+          <string name="Name">MapExpansionService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[-- Map space grows every three cycles; rocket construction remains separate.
+local Map = {}
+function Map.build(part, label)
+    local grass = Color3.fromRGB(62, 103, 72)
+    local concrete = Color3.fromRGB(81, 91, 107)
+    local paint = Color3.fromRGB(245, 182, 71)
+    part("Ground", Vector3.new(0, -1, -45), Vector3.new(240, 2, 230), grass)
+    part("LaunchApron", Vector3.new(0, -0.25, -22), Vector3.new(160, 0.5, 100), concrete)
+    local sign = part("ExpansionSign", Vector3.new(0, 0.1, 60), Vector3.new(12, 0.2, 4), paint)
+    label(sign, "SPACEPORT • New construction bays every 3 cycles")
+    -- Flat markings leave the cabin entrance and future boosters unobstructed.
+    for _, z in {-72, 28} do
+        part("ApronMarking", Vector3.new(0, 0.02, z), Vector3.new(160, 0.04, 1), paint).CanCollide = false
+    end
+    local stage = 0
+    return function(cycle)
+        local target = math.floor((cycle - 1) / 3)
+        for index = stage + 1, target do
+            for _, side in {-1, 1} do
+                part("ExpansionGround" .. index .. "_" .. side,
+                    Vector3.new(side * (80 + index * 80), -1, -45), Vector3.new(80, 2, 230), grass)
+                local bay = part("ConstructionBay" .. index .. "_" .. side,
+                    Vector3.new(side * (40 + index * 80), -0.25, -22), Vector3.new(80, 0.5, 100), concrete)
+                label(bay, "EXPANSION " .. index .. " • Booster / rocket space")
+                for _, z in {-72, 28} do
+                    part("BayMarking", Vector3.new(bay.Position.X, 0.02, z),
+                        Vector3.new(80, 0.04, 1), paint).CanCollide = false
+                end
+            end
+            if index % 10 == 0 then task.wait() end
+        end
+        stage = math.max(stage, target)
+    end
+end
+return Map
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="15">
+        <Properties>
+          <string name="Name">MaterialInteractionCheck</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source">return function()
+    local Rocket = require(script.Parent.RocketService)
+    local Hold = require(script.Parent.HoldService)
+    local config = require(game.ReplicatedStorage.Shared.Config)
+    assert(config.MaterialHoldSeconds == 0.05)
+    local rocket = Rocket.new(config, "check", 1)
+    assert(rocket:pickup(1, "Metal", 3))
+    assert(rocket:pickup(1, "Fuel", 3))
+    assert(rocket:pickup(1, "Metal", 3))
+    assert(not rocket:pickup(1, "Fuel", 3))
+    assert(rocket.cargo[1].count == 3)
+    assert(rocket:place(1, "wall", "Metal") == 1)
+    assert(rocket:place(1, "wall", "Metal") == 1)
+    assert(rocket:place(1, "wall", "Metal") == 0)
+    assert(rocket.cargo[1].materials.Fuel == 1 and rocket.cargo[1].count == 1)
+    assert(rocket:place(1, "engine", "Fuel") == 1)
+    assert(rocket.cargo[1] == nil)
+    local holds = Hold.new(0.05)
+    holds:begin(1, "prompt", "cycle", 0)
+    assert(holds.active[1].started == 0 and holds.duration == 0.05)
+    holds:ended(1, "other")
+    assert(holds.active[1])
+    holds:ended(1, "prompt")
+    assert(not holds.active[1])
+    return "Mixed pickup, shared capacity, matching placement, empty cargo, and release checks passed"
+end</string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="16">
+        <Properties>
+          <string name="Name">ProfileService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[local DataStoreService = game:GetService("DataStoreService")
+local HttpService = game:GetService("HttpService")
+local Profiles = {}
+Profiles.__index = Profiles
+
+local function defaults()
+    return { schemaVersion = 1, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, rewardedLaunchIds = {} }
+end
+
+local function copy(profile)
+    local result = table.clone(profile)
+    result.planetBonuses = table.clone(profile.planetBonuses)
+    result.rewardedLaunchIds = table.clone(profile.rewardedLaunchIds)
+    result.rewardedLaunchTicks = table.clone(profile.rewardedLaunchTicks or {})
+    return result
+end
+
+local function validate(raw, config)
+    if raw == nil then return defaults() end
+    if type(raw) ~= "table" or raw.schemaVersion ~= 1 then error("Unsupported profile schema; refusing overwrite") end
+    for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries" } do
+        local value = raw[key]
+        if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid profile " .. key) end
+    end
+    if type(raw.planetBonuses) ~= "table" or type(raw.rewardedLaunchIds) ~= "table" then error("Invalid profile collections") end
+    for _, key in { "strength", "speed" } do
+        local value = raw.planetBonuses[key]
+        if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid bonus") end
+    end
+    if raw.strengthLevel > config.MaxLevel or raw.speedLevel > config.MaxLevel then error("Invalid stat cap") end
+    for _, id in raw.rewardedLaunchIds do if type(id) ~= "string" then error("Invalid reward ledger") end end
+    if raw.rewardedLaunchTicks ~= nil then
+        if type(raw.rewardedLaunchTicks) ~= "table" then error("Invalid reward ticks") end
+        for id, ticks in raw.rewardedLaunchTicks do
+            if type(id) ~= "string" or type(ticks) ~= "number" or ticks ~= ticks or ticks < 0 or ticks % 1 ~= 0 or ticks == math.huge then error("Invalid reward ticks") end
+        end
+    end
+    local result = copy(raw)
+    for _, id in result.rewardedLaunchIds do
+        if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
+    end
+    return result
+end
+
+function Profiles.new(config, changed)
+    return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil }, Profiles)
+end
+
+function Profiles:load(userId)
+    local previous = self.records[userId]
+    if previous and not string.find(previous.status, "Load failed", 1, true) then
+        while previous.busy do task.wait(0.1) end
+        previous.leaving = false
+        self.changed(userId)
+        return not previous.blocked
+    end
+    local record = { profile = defaults(), pending = {}, status = "Loading", busy = true, leaving = false }
+    self.records[userId] = record
+    local ok, profile = pcall(function()
+        if not self.store then return defaults() end
+        local now = os.time()
+        return self.store:UpdateAsync("Player_" .. userId, function(raw)
+            local current = validate(raw, self.config)
+            if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
+            current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
+            return current
+        end)
+    end)
+    record.busy = false
+    if not ok or not profile then
+        record.status = "Load failed — rejoin; progress disabled"
+        warn("Rocket profile load failed", userId, ok and "Profile in use" or tostring(profile))
+        self.changed(userId)
+        return false
+    end
+    record.profile = profile
+    record.status = self.store and "Saved" or "Studio only — progress is not permanent"
+    self.changed(userId)
+    return true
+end
+
+function Profiles:ready(userId)
+    local record = self.records[userId]
+    return record and not record.blocked and not record.leaving and record.status ~= "Loading" and not string.find(record.status, "Load failed", 1, true)
+end
+
+function Profiles:dirty(userId)
+    local record = self.records[userId]
+    record.dirty = true
+    if self.store and not next(record.pending) then record.status = "Unsaved changes — autosave pending" end
+end
+
+function Profiles:queueReward(userId, launchId, ticks)
+    local record = self.records[userId]
+    if not record or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return end
+    record.pending[launchId] = math.max(record.pending[launchId] or 0, ticks or 1)
+    record.status = "Reward pending — saving"
+    self.changed(userId)
+    task.spawn(function() self:save(userId) end)
+end
+
+function Profiles:save(userId)
+    local record = self.records[userId]
+    if not record or record.busy or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return false end
+    record.busy = true
+    local snapshot = copy(record.profile)
+    local batch = {}
+    local batchCount = 0
+    for id, ticks in record.pending do
+        if batchCount >= self.config.RecentRewardLimit then break end
+        batch[id] = ticks
+        batchCount += 1
+    end
+    local function applyRewards(profile)
+        profile.rewardedLaunchTicks = profile.rewardedLaunchTicks or {}
+        for id, ticks in batch do
+            local previous = profile.rewardedLaunchTicks[id] or (table.find(profile.rewardedLaunchIds, id) and 1 or 0)
+            local delta = math.max(0, ticks - previous)
+            if not table.find(profile.rewardedLaunchIds, id) then
+                profile.completedLaunches += 1
+                table.insert(profile.rewardedLaunchIds, id)
+            end
+            local cap = self.config.MaxPlanetBonus or self.config.MaxLevel
+            profile.planetBonuses.strength = math.min(cap, profile.planetBonuses.strength + delta * self.config.Planet.StrengthBonus)
+            profile.planetBonuses.speed = math.min(cap, profile.planetBonuses.speed + delta * self.config.Planet.SpeedBonus)
+            profile.rewardedLaunchTicks[id] = math.max(previous, ticks)
+        end
+        while #profile.rewardedLaunchIds > self.config.RecentRewardLimit do
+            -- Never evict an ID in this transaction's retry batch.
+            for index, id in profile.rewardedLaunchIds do
+                if not batch[id] then profile.rewardedLaunchTicks[id] = nil; table.remove(profile.rewardedLaunchIds, index); break end
+            end
+        end
+        return profile
+    end
+    local ok, saved
+    for attempt = 1, 3 do
+        ok, saved = pcall(function()
+            if not self.store then return applyRewards(copy(snapshot)) end
+            return self.store:UpdateAsync("Player_" .. userId, function(raw)
+                local current = validate(raw, self.config)
+                if not current.session or current.session.owner ~= self.owner then return nil end
+                -- Retain the stored reward ledger after an ambiguous previous write.
+                current.strengthLevel = snapshot.strengthLevel
+                current.speedLevel = snapshot.speedLevel
+                current.lifetimeDeliveries = snapshot.lifetimeDeliveries
+                applyRewards(current)
+                current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
+                return current
+            end)
+        end)
+        if ok and saved then break end
+        if attempt < 3 then task.wait(2 ^ attempt) end
+    end
+    record.busy = false
+    if ok and saved then
+        -- Preserve training/deliveries earned while UpdateAsync was yielding.
+        record.profile.completedLaunches = saved.completedLaunches
+        record.profile.planetBonuses = saved.planetBonuses
+        record.profile.rewardedLaunchIds = saved.rewardedLaunchIds
+        record.profile.rewardedLaunchTicks = saved.rewardedLaunchTicks
+        for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
+        record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries
+        record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
+        if record.leaving and not next(record.pending) and not record.dirty then
+            -- Keep lease until expiry: protects a disconnected locked passenger.
+            -- Rejoining another server may wait up to LeaseSeconds.
+            record.status = self.store and "Saved — session expires shortly" or record.status
+        end
+    else
+        record.dirty = true
+        if ok and saved == nil then record.blocked = true end
+        record.status = next(record.pending) and "Reward pending — save failed; retrying" or "Save failed — retrying"
+        if record.blocked then record.status = "Save blocked — session ownership lost; progress disabled" end
+        warn("Rocket save failed", userId, ok and "Session ownership lost" or tostring(saved))
+    end
+    self.changed(userId)
+    return ok and saved ~= nil
+end
+
+function Profiles:remove(userId)
+    local record = self.records[userId]
+    if not record then return end
+    record.leaving = true
+    record.dirty = true
+    task.spawn(function() self:save(userId) end)
+end
+
+function Profiles:start()
+    -- ponytail: retain disconnected records for late locked rewards; prune after
+    -- cycle completion if long-lived servers make historical player count large.
+    task.spawn(function()
+        while true do
+            task.wait(self.config.AutosaveSeconds)
+            for userId, record in self.records do
+                if not record.leaving or record.dirty or next(record.pending) then task.spawn(function() self:save(userId) end) end
+            end
+        end
+    end)
+    game:BindToClose(function()
+        local left = 0
+        for userId in self.records do
+            left += 1
+            task.spawn(function()
+                local record = self.records[userId]
+                while record.busy do task.wait(0.1) end
+                self:save(userId)
+                left -= 1
+            end)
+        end
+        local deadline = os.clock() + 25
+        while left > 0 and os.clock() < deadline do task.wait(0.1) end
+    end)
+end
+
+return Profiles
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="17">
+        <Properties>
+          <string name="Name">RocketService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[-- This module never yields: validation, spending and phase transition are atomic.
+local Rocket = {}
+Rocket.__index = Rocket
+
+function Rocket.new(config, id, successfulLaunches)
+    local self = setmetatable({ config = config, cycle = id, phase = "Building", totals = {}, cargo = {}, contributions = {}, passengers = {}, placedSlots = {} }, Rocket)
+    self.successfulLaunches = successfulLaunches or 0
+    self.slotCost = 1 + self.successfulLaunches * (config.MaterialsPerSlotPerLaunch or 1)
+    self.required, self.slotProgress = {}, {}
+    for material, base in config.Materials do
+        self.totals[material] = 0
+        self.required[material] = base * self.slotCost
+    end
+    return self
+end
+
+function Rocket:pickup(userId, material, capacity)
+    if self.phase ~= "Building" or type(material) ~= "string" or not self.required[material] then return false end
+    if self.totals[material] >= self.required[material] then return false end
+    local cargo = self.cargo[userId]
+    if cargo and cargo.count >= capacity then return false end
+    cargo = cargo or { count = 0, materials = {} }
+    cargo.count += 1
+    cargo.materials[material] = (cargo.materials[material] or 0) + 1
+    self.cargo[userId] = cargo
+    return true
+end
+
+function Rocket:deliver(userId)
+    if self.phase ~= "Building" then return 0 end
+    local cargo = self.cargo[userId]
+    if not cargo then return 0 end
+    local accepted = 0
+    for material, count in cargo.materials do
+        local amount = math.min(count, self.required[material] - self.totals[material])
+        self.totals[material] += amount
+        cargo.materials[material] -= amount
+        cargo.count -= amount
+        accepted += amount
+    end
+    if cargo.count == 0 then self.cargo[userId] = nil end
+    self.contributions[userId] = (self.contributions[userId] or 0) + accepted
+    for material, required in self.required do
+        if self.totals[material] < required then return accepted end
+    end
+    self.phase = "Boarding"
+    return accepted
+end
+
+-- A slot is spent once, in the same non-yielding transaction as its cargo.
+function Rocket:place(userId, slotId, material)
+    if self.phase ~= "Building" or self.placedSlots[slotId] or not self.required[material] then return 0 end
+    local cargo = self.cargo[userId]
+    if not cargo or (cargo.materials[material] or 0) < 1 or self.totals[material] >= self.required[material] then return 0 end
+    self.slotProgress[slotId] = (self.slotProgress[slotId] or 0) + 1
+    self.placedSlots[slotId] = self.slotProgress[slotId] >= self.slotCost
+    self.totals[material] += 1
+    cargo.materials[material] -= 1
+    cargo.count -= 1
+    if cargo.count == 0 then self.cargo[userId] = nil end
+    self.contributions[userId] = (self.contributions[userId] or 0) + 1
+    for key, required in self.required do
+        if self.totals[key] < required then return 1 end
+    end
+    self.phase = "Boarding"
+    return 1
+end
+function Rocket:lockPassengers(eligible)
+    if self.phase ~= "Boarding" then return false end
+    self.passengers = table.clone(eligible)
+    self.phase = "Launching"
+    return true
+end
+
+-- Only a locked, nonempty passenger list counts as a successful blast off.
+function Rocket:nextCycle(id)
+    assert(self.phase == "Resetting", "Reset only after the launch sequence")
+    local successes = self.successfulLaunches + (next(self.passengers) and 1 or 0)
+    return Rocket.new(self.config, id, successes)
+end
+function Rocket:forget(userId)
+    self.cargo[userId] = nil
+    -- Keep a locked passenger's entitlement even after disconnect.
+    if self.phase == "Boarding" then self.passengers[userId] = nil end
+end
+
+return Rocket
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="ModuleScript" referent="18">
+        <Properties>
+          <string name="Name">TrainingService</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[-- Server-owned mounting and timed gains. Clients can only request an exit.
+local Training = {}
+function Training.new(context)
+    local sessions, lastExit = {}, {}
+    local function stop(player)
+        local session = sessions[player.UserId]
+        if not session then return end
+        sessions[player.UserId] = nil
+        lastExit[player.UserId] = os.clock()
+        session.station.occupant = nil
+        if session.root.Parent then
+            session.root.Anchored = session.anchored
+            session.humanoid.AutoRotate = session.autoRotate
+            session.humanoid.Sit = false
+            if player.Character == session.character then
+                context.relocate(player, session.station.part.Position + Vector3.new(5, 4, 0))
+            end
+        end
+        context.changed(player)
+    end
+    local exit = Instance.new("RemoteEvent")
+    exit.Name = "ExitTraining"
+    exit.Parent = context.remotes
+    exit.OnServerEvent:Connect(function(player) stop(player) end)
+    local stations = context.stations
+    for _, station in stations do
+        context.prompt(station.part, "Train " .. station.name).Triggered:Connect(function(player)
+            if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
+            if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
+            if not context.phaseAllowed() then return end
+            if station.occupant then context.feedback(player, "Station occupied."); return end
+            local profile = context.profiles.records[player.UserId].profile
+            if profile.completedLaunches < (station.required or 0) then context.feedback(player, "Complete one launch to unlock this bench."); return end
+            if profile[station.stat] >= context.config.MaxLevel then context.feedback(player, "Playtest level cap reached."); return end
+            local root, humanoid = context.body(player)
+            if not root then return end
+            station.occupant = player
+            sessions[player.UserId] = { station = station, root = root, humanoid = humanoid, character = player.Character,
+                anchored = root.Anchored, autoRotate = humanoid.AutoRotate, nextTick = os.clock() + context.config.TrainingSeconds }
+            context.relocate(player, station.part.Position + Vector3.new(0, station.stat == "speedLevel" and 4 or 3, 0))
+            root.Anchored = true
+            humanoid.AutoRotate = false
+            humanoid.Sit = station.stat == "strengthLevel"
+            context.feedback(player, station.name .. ": training! Press E or Leave station to exit.")
+            context.changed(player)
+        end)
+    end
+    local service = { sessions = sessions, stop = stop }
+    function service.tick(now)
+        for userId, session in sessions do
+            local player = context.players:GetPlayerByUserId(userId)
+            if player then
+                if player.Character ~= session.character or session.humanoid.Health <= 0 or not session.root.Parent
+                    or not context.profiles:ready(userId) or not context.phaseAllowed()
+                    or (session.root.Position - session.station.part.Position).Magnitude > 7 then
+                    stop(player)
+                elseif now >= session.nextTick then
+                    session.nextTick = now + context.config.TrainingSeconds
+                    local profile = context.profiles.records[userId].profile
+                    local stat = session.station.stat
+                    local gain = math.min(session.station.gain, context.config.MaxLevel - profile[stat])
+                    profile[stat] += gain
+                    context.profiles:dirty(userId)
+                    context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")
+                    context.changed(player)
+                    if profile[stat] >= context.config.MaxLevel then
+                        stop(player)
+                        context.feedback(player, "Level cap reached! Try your upgraded stats.")
+                    end
+                end
+            end
+        end
+    end
+    return service
+end
+return Training
+
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="ServerStorage" referent="19">
+    <Properties>
+      <string name="Name">ServerStorage</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003bb</UniqueId>
+    </Properties>
+  </Item>
+  <Item class="SoundService" referent="20">
+    <Properties>
+      <string name="Name">SoundService</string>
+      <bool name="AcousticSimulationEnabled">false</bool>
+      <token name="AmbientReverb">0</token>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <token name="AudioApiByDefault">0</token>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <token name="CharacterSoundsUseNewApi">0</token>
+      <token name="DefaultListenerLocation">0</token>
+      <bool name="DiffractionEnabled">true</bool>
+      <float name="DistanceFactor">3.33</float>
+      <float name="DopplerScale">1</float>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="IsNewExpForAudioApiByDefault">false</bool>
+      <CoordinateFrame name="ListenerCFrame">
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <R00>1</R00>
+        <R01>0</R01>
+        <R02>0</R02>
+        <R10>0</R10>
+        <R11>1</R11>
+        <R12>0</R12>
+        <R20>0</R20>
+        <R21>0</R21>
+        <R22>1</R22>
+      </CoordinateFrame>
+      <Ref name="ListenerObject">null</Ref>
+      <token name="ListenerType">0</token>
+      <bool name="OcclusionEnabled">true</bool>
+      <bool name="RespectFilteringEnabled">false</bool>
+      <bool name="ReverbEnabled">true</bool>
+      <float name="RolloffScale">1</float>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae0282300000366</UniqueId>
+      <token name="VolumetricAudio">1</token>
+    </Properties>
+  </Item>
+  <Item class="StarterGui" referent="21">
+    <Properties>
+      <string name="Name">StarterGui</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <token name="ClipsDescendantsSupportsRotation">0</token>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="ResetPlayerGuiOnSpawn">true</bool>
+      <token name="RtlTextSupport">0</token>
+      <bool name="DefinesCapabilities">false</bool>
+      <token name="ScreenOrientation">2</token>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <bool name="ShowDevelopmentGui">true</bool>
+      <int64 name="SourceAssetId">-1</int64>
+      <Ref name="StudioDefaultStyleSheet">null</Ref>
+      <Ref name="StudioInsertWidgetLayerCollectorAutoLinkStyleSheet">null</Ref>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae028230000038d</UniqueId>
+      <token name="VirtualCursorMode">0</token>
+    </Properties>
+  </Item>
+  <Item class="StarterPack" referent="22">
+    <Properties>
+      <string name="Name">StarterPack</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae028230000038c</UniqueId>
+    </Properties>
+  </Item>
+  <Item class="StarterPlayer" referent="23">
+    <Properties>
+      <string name="Name">StarterPlayer</string>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <token name="UseImprovedCharacterEvents">0</token>
+    </Properties>
+    <Item class="StarterCharacterScripts" referent="24">
+      <Properties>
+        <string name="Name">StarterCharacterScripts</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e2</UniqueId>
+      </Properties>
+    </Item>
+    <Item class="StarterPlayerScripts" referent="25">
+      <Properties>
+        <string name="Name">StarterPlayerScripts</string>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+      </Properties>
+      <Item class="LocalScript" referent="26">
+        <Properties>
+          <string name="Name">Camera</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[-- Desktop mouse-look; Roblox retains its native touch/controller camera.
+local Players = game:GetService("Players")
+local Input = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM = 8, 24, 12
+local SENSITIVITY = 0.003
+player.CameraMinZoomDistance = MIN_ZOOM
+player.CameraMaxZoomDistance = MAX_ZOOM
+local zoom, distance = DEFAULT_ZOOM, DEFAULT_ZOOM
+local yaw, pitch = 0, math.rad(-15)
+local active, cursorFree, focused = false, false, true
+local previousType
+local gui = Instance.new("ScreenGui")
+gui.Name = "CameraControls"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+local hint = Instance.new("TextLabel")
+hint.AnchorPoint = Vector2.new(1, 1)
+hint.Position = UDim2.new(1, -16, 1, -16)
+hint.Size = UDim2.fromOffset(300, 30)
+hint.BackgroundColor3 = Color3.fromRGB(20, 29, 43)
+hint.BackgroundTransparency = 0.2
+hint.TextColor3 = Color3.new(1, 1, 1)
+hint.Font = Enum.Font.GothamMedium
+hint.TextSize = 13
+hint.Parent = gui
+local dot = Instance.new("Frame")
+dot.AnchorPoint = Vector2.new(0.5, 0.5)
+dot.Position = UDim2.fromScale(0.5, 0.5)
+dot.Size = UDim2.fromOffset(4, 4)
+dot.BackgroundColor3 = Color3.new(1, 1, 1)
+dot.BorderSizePixel = 0
+dot.Parent = gui
+local function desktop()
+    return Input.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
+end
+local function released()
+    return cursorFree or not focused or GuiService.MenuIsOpen or Input:GetFocusedTextBox() ~= nil
+end
+Input.InputBegan:Connect(function(input, processed)
+    if not processed and desktop() and input.KeyCode == Enum.KeyCode.V then cursorFree = not cursorFree end
+end)
+Input.InputChanged:Connect(function(input, processed)
+    if active and not released() and not processed and input.UserInputType == Enum.UserInputType.MouseWheel then
+        zoom = math.clamp(zoom - input.Position.Z * 2, MIN_ZOOM, MAX_ZOOM)
+    end
+end)
+Input.WindowFocusReleased:Connect(function() focused = false end)
+Input.WindowFocused:Connect(function() focused = true end)
+local params = RaycastParams.new()
+params.FilterType = Enum.RaycastFilterType.Exclude
+params.RespectCanCollide = true
+local function restore(camera)
+    if active then
+        camera.CameraType = previousType or Enum.CameraType.Custom
+        Input.MouseBehavior = Enum.MouseBehavior.Default
+        Input.MouseIconEnabled = true
+        active = false
+    end
+end
+RunService:BindToRenderStep("RocketMouseCamera", Enum.RenderPriority.Camera.Value + 1, function(dt)
+    local camera = workspace.CurrentCamera
+    if not camera then return end
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if not desktop() or not root or not humanoid or humanoid.Health <= 0 then
+        restore(camera)
+        hint.Visible, dot.Visible = false, false
+        return
+    end
+    if not active then
+        previousType = camera.CameraType
+        local look = camera.CFrame.LookVector
+        yaw = math.atan2(-look.X, -look.Z)
+        pitch = math.clamp(math.asin(look.Y), math.rad(-65), math.rad(70))
+        active = true
+    end
+    camera.CameraType = Enum.CameraType.Scriptable
+    local free = released()
+    Input.MouseBehavior = free and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter
+    Input.MouseIconEnabled = free
+    hint.Visible, dot.Visible = true, not free
+    hint.Text = cursorFree and "V: resume mouse-look" or "Mouse: look  •  Scroll: zoom  •  V: cursor"
+    if not free then
+        local delta = Input:GetMouseDelta()
+        yaw -= delta.X * SENSITIVITY
+        pitch = math.clamp(pitch - delta.Y * SENSITIVITY, math.rad(-65), math.rad(70))
+    end
+    distance += (zoom - distance) * (1 - math.exp(-14 * dt))
+    local focus = root.Position + Vector3.new(0, 2, 0)
+    local direction = CFrame.fromOrientation(pitch, yaw, 0).LookVector
+    params.FilterDescendantsInstances = { character }
+    local offset = -direction * distance
+    -- Ghost template panels don't obstruct the camera; completed hulls do.
+    local hit = workspace:Spherecast(focus, 0.4, offset, params)
+    if hit then offset = -direction * math.max(0.5, hit.Distance - 0.3) end
+    camera.CFrame = CFrame.lookAt(focus + offset, focus)
+    camera.Focus = CFrame.new(focus)
+    script:SetAttribute("RequestedZoom", zoom)
+end)
+script.Destroying:Connect(function()
+    RunService:UnbindFromRenderStep("RocketMouseCamera")
+    if workspace.CurrentCamera then restore(workspace.CurrentCamera) end
+    gui:Destroy()
+end)
+]]></string>
+        </Properties>
+      </Item>
+      <Item class="LocalScript" referent="27">
+        <Properties>
+          <string name="Name">Main</string>
+          <BinaryString name="SerializedOverrides">
+          </BinaryString>
+          <string name="Source"><![CDATA[local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local stateEvent = remotes:WaitForChild("StateUpdated")
+local requestState = remotes:WaitForChild("RequestState")
+local feedbackEvent = remotes:WaitForChild("Feedback")
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "RocketHUD"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
+local frame = Instance.new("Frame")
+frame.Position = UDim2.fromOffset(16, 16)
+frame.Size = UDim2.new(0.9, 0, 0, 360)
+frame.BackgroundColor3 = Color3.fromRGB(20, 29, 43)
+frame.BackgroundTransparency = 0.08
+frame.Parent = gui
+local constraint = Instance.new("UISizeConstraint")
+constraint.MaxSize = Vector2.new(440, 360)
+constraint.Parent = frame
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+local text = Instance.new("TextLabel")
+text.Position = UDim2.fromOffset(16, 12)
+text.Size = UDim2.new(1, -32, 1, -24)
+text.BackgroundTransparency = 1
+text.TextColor3 = Color3.fromRGB(234, 241, 250)
+text.Font = Enum.Font.GothamMedium
+text.TextSize = 14
+text.TextWrapped = true
+text.TextXAlignment = Enum.TextXAlignment.Left
+text.TextYAlignment = Enum.TextYAlignment.Top
+text.Text = "ROCKET\nConnecting to the server…"
+text.Parent = frame
+
+local snapshot
+local feedbackText, feedbackUntil = "", 0
+local function render()
+    if not snapshot then return end
+    local state = snapshot
+    local remaining = math.max(0, math.ceil(state.deadline - workspace:GetServerTimeNow()))
+    local headline = "ROCKET " .. ((state.successfulLaunches or 0) + 1) .. "  •  " .. state.phase
+    if state.deadline > 0 then headline ..= "  •  " .. remaining .. "s" end
+    local instructions = "Hold E to collect Metal / Fuel. Hold E at a matching rocket section to place."
+    if state.phase == "Boarding" then
+        instructions = state.boarded and "ABOARD — stay INSIDE the rocket until departure." or "BOARD NOW — enter the open end of the rocket before the timer ends."
+    elseif state.phase == "Launching" then
+        instructions = state.passenger and "You made it! Launching to Meadow…" or "You missed this launch. The next build starts shortly."
+    elseif state.phase == "Rewarding" then
+        instructions = state.passenger and "Meadows: +3 strength and +3 speed each second for 30 seconds. Check save status below." or "Passengers are visiting Meadow. Next build shortly."
+    elseif state.phase == "Resetting" then instructions = "Returning home. A fresh shared build starts next." end
+    if state.training then instructions = state.training .. " — auto-training! Press E or Leave station to stop." end
+    local carried = {}
+    if state.cargo then
+        for _, material in {"Metal", "Fuel"} do
+            local count = state.cargo.materials[material] or 0
+            if count > 0 then table.insert(carried, count .. " " .. material) end
+        end
+    end
+    local cargo = #carried > 0 and table.concat(carried, " + ") or "empty"
+    local lines = { headline, "", "Metal: " .. state.totals.Metal .. "/" .. state.required.Metal .. "     Fuel: " .. state.totals.Fuel .. "/" .. state.required.Fuel,
+        "Carrying: " .. cargo .. "   •   Your deliveries this cycle: " .. state.contribution }
+    if state.profile then
+        local p = state.profile
+        table.insert(lines, "Strength " .. p.strength .. "   Speed " .. p.speed .. "   Carry " .. p.capacity .. "   Walk " .. string.format("%.1f", p.walkSpeed))
+        table.insert(lines, "Launches " .. p.completedLaunches .. "   Lifetime deliveries " .. p.lifetimeDeliveries)
+        table.insert(lines, p.completedLaunches >= 1 and "Advanced gym: UNLOCKED" or "Advanced gym: locked until your first launch")
+    end
+    table.insert(lines, "")
+    table.insert(lines, os.clock() < feedbackUntil and feedbackText or instructions)
+    table.insert(lines, "")
+    table.insert(lines, state.saveStatus)
+    text.Text = table.concat(lines, "\n")
+end
+stateEvent.OnClientEvent:Connect(function(state) snapshot = state; render() end)
+feedbackEvent.OnClientEvent:Connect(function(message)
+    feedbackText, feedbackUntil = message, os.clock() + 3
+    render()
+end)
+requestState:FireServer()
+local elapsed = 0
+RunService.Heartbeat:Connect(function(dt)
+    elapsed += dt
+    if elapsed >= 0.25 then elapsed = 0; render() end
+end)
+
+-- One explicit exit action works on keyboard, controller and touch.
+local ContextActionService = game:GetService("ContextActionService")
+local exitTraining = remotes:WaitForChild("ExitTraining")
+local exitButton = Instance.new("TextButton")
+exitButton.Name = "LeaveStation"
+exitButton.Size = UDim2.fromOffset(220, 48)
+exitButton.Position = UDim2.new(0.5, -110, 1, -72)
+exitButton.BackgroundColor3 = Color3.fromRGB(235, 160, 65)
+exitButton.Text = "Leave station [E]"
+exitButton.TextSize = 20
+exitButton.Visible = false
+exitButton.Parent = gui
+exitButton.Activated:Connect(function() exitTraining:FireServer() end)
+local bound = false
+stateEvent.OnClientEvent:Connect(function(state)
+    local active = state.training ~= nil
+    exitButton.Visible = active
+    if active and not bound then
+        ContextActionService:BindActionAtPriority("ExitGym", function(_, inputState)
+            if inputState == Enum.UserInputState.Begin then exitTraining:FireServer() end
+            return Enum.ContextActionResult.Sink
+        end, false, 3000, Enum.KeyCode.E, Enum.KeyCode.ButtonB)
+    elseif not active and bound then
+        ContextActionService:UnbindAction("ExitGym")
+    end
+    bound = active
+end)
+
+local UserInputService = game:GetService("UserInputService")
+local mountedAt = 0
+stateEvent.OnClientEvent:Connect(function(state)
+    if state.training and mountedAt == 0 then mountedAt = os.clock() end
+    if not state.training then mountedAt = 0 end
+    local world = workspace:FindFirstChild("RocketWorld")
+    if world then
+        for _, name in {"StrengthGym", "SpeedGym", "AdvancedGym"} do
+            local station = world:FindFirstChild(name)
+            local prompt = station and station:FindFirstChildOfClass("ProximityPrompt")
+            if prompt then prompt.Enabled = not state.training end
+        end
+    end
+end)
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.E and mountedAt > 0 and os.clock() - mountedAt > 0.3 then
+        exitTraining:FireServer()
+    end
+end)
+
+local discardCargo = remotes:WaitForChild("DiscardCargo")
+local discardButton = Instance.new("TextButton")
+discardButton.Name = "DiscardCargo"
+discardButton.Size = UDim2.fromOffset(220, 42)
+discardButton.Position = UDim2.new(0.5, -110, 1, -122)
+discardButton.BackgroundColor3 = Color3.fromRGB(80, 110, 140)
+discardButton.TextColor3 = Color3.new(1, 1, 1)
+discardButton.Text = "Clear carried materials"
+discardButton.TextSize = 16
+discardButton.Visible = false
+discardButton.Parent = gui
+discardButton.Activated:Connect(function() discardCargo:FireServer() end)
+stateEvent.OnClientEvent:Connect(function(state) discardButton.Visible = state.cargo ~= nil end)
+
+-- PromptButtonHoldEnded fires at completion, so use physical input release instead.
+local ProximityPromptService = game:GetService("ProximityPromptService")
+local materialHold = remotes:WaitForChild("MaterialHold")
+local activeMaterialPrompt
+local function stopMaterialHold()
+    if not activeMaterialPrompt then return end
+    materialHold:FireServer(activeMaterialPrompt, false)
+    activeMaterialPrompt = nil
+end
+local function startMaterialHold(item)
+    local world = workspace:FindFirstChild("RocketWorld")
+    if not world or not item:IsDescendantOf(world) or not item.Enabled then return end
+    if not (item.ActionText:match("^Pick up ") or item.ActionText:match("^Place ")) then return end
+    if activeMaterialPrompt == item then return end
+    stopMaterialHold()
+    activeMaterialPrompt = item
+    materialHold:FireServer(item, true)
+end
+ProximityPromptService.PromptButtonHoldBegan:Connect(startMaterialHold)
+ProximityPromptService.PromptShown:Connect(function(item)
+    if UserInputService:GetFocusedTextBox() then return end
+    if UserInputService:IsKeyDown(item.KeyboardKeyCode) then
+        startMaterialHold(item)
+    end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    local item = activeMaterialPrompt
+    if item and (input.KeyCode == item.KeyboardKeyCode or input.KeyCode == item.GamepadKeyCode
+        or input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1) then
+        stopMaterialHold()
+    end
+end)
+UserInputService.WindowFocusReleased:Connect(stopMaterialHold)
+ProximityPromptService.PromptHidden:Connect(function(item)
+    if activeMaterialPrompt == item then stopMaterialHold() end
+end)
+player.CharacterRemoving:Connect(stopMaterialHold)
+]]></string>
+        </Properties>
+      </Item>
+    </Item>
+  </Item>
+  <Item class="Teams" referent="28">
+    <Properties>
+      <string name="Name">Teams</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">3b525c576ac909e20ae04a2e00000e67</UniqueId>
+    </Properties>
+  </Item>
+  <Item class="TextChatService" referent="29">
+    <Properties>
+      <string name="Name">TextChatService</string>
+      <BinaryString name="AttributesSerialize"></BinaryString>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <bool name="ChatTranslationFTUXShown">true</bool>
+      <bool name="ChatTranslationToggleEnabled">false</bool>
+      <token name="ChatVersion">0</token>
+      <bool name="CreateDefaultCommands">true</bool>
+      <bool name="CreateDefaultTextChannels">true</bool>
+      <bool name="HasSeenDeprecationDialog">false</bool>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <bool name="IsLegacyChatDisabled">false</bool>
+      <token name="PlatformIntegratedChat">0</token>
+      <bool name="DefinesCapabilities">false</bool>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <int64 name="SourceAssetId">-1</int64>
+      <BinaryString name="Tags"></BinaryString>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae0282300000383</UniqueId>
+    </Properties>
+    <Item class="ChatWindowConfiguration" referent="30">
+      <Properties>
+        <string name="Name">ChatWindowConfiguration</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <Color3 name="BackgroundColor3">
+          <R>0.09803922</R>
+          <G>0.105882354</G>
+          <B>0.11372549</B>
+        </Color3>
+        <double name="BackgroundTransparency">0.3</double>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">true</bool>
+        <Font name="FontFace">
+          <Family>
+            <url>rbxasset://fonts/families/GothamSSm.json</url>
+          </Family>
+          <Weight>500</Weight>
+          <Style>Normal</Style>
+          <CachedFaceId>
+            <url>rbxasset://fonts/Montserrat-Medium.ttf</url>
+          </CachedFaceId>
+        </Font>
+        <float name="HeightScale">1</float>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <token name="HorizontalAlignment">1</token>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <token name="TextChannelDisplayMode">0</token>
+        <Color3 name="TextColor3">
+          <R>1</R>
+          <G>1</G>
+          <B>1</B>
+        </Color3>
+        <int64 name="TextSize">14</int64>
+        <Color3 name="TextStrokeColor3">
+          <R>0</R>
+          <G>0</G>
+          <B>0</B>
+        </Color3>
+        <double name="TextStrokeTransparency">0.5</double>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e3</UniqueId>
+        <token name="VerticalAlignment">1</token>
+        <float name="WidthScale">1</float>
+      </Properties>
+    </Item>
+    <Item class="ChatInputBarConfiguration" referent="31">
+      <Properties>
+        <string name="Name">ChatInputBarConfiguration</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <bool name="AutocompleteEnabled">true</bool>
+        <Color3 name="BackgroundColor3">
+          <R>0.09803922</R>
+          <G>0.105882354</G>
+          <B>0.11372549</B>
+        </Color3>
+        <double name="BackgroundTransparency">0.2</double>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">true</bool>
+        <Font name="FontFace">
+          <Family>
+            <url>rbxasset://fonts/families/GothamSSm.json</url>
+          </Family>
+          <Weight>500</Weight>
+          <Style>Normal</Style>
+          <CachedFaceId>
+            <url>rbxasset://fonts/Montserrat-Medium.ttf</url>
+          </CachedFaceId>
+        </Font>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <token name="KeyboardKeyCode">47</token>
+        <Color3 name="PlaceholderColor3">
+          <R>0.69803923</R>
+          <G>0.69803923</G>
+          <B>0.69803923</B>
+        </Color3>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <Ref name="TargetTextChannel">null</Ref>
+        <Color3 name="TextColor3">
+          <R>1</R>
+          <G>1</G>
+          <B>1</B>
+        </Color3>
+        <int64 name="TextSize">14</int64>
+        <Color3 name="TextStrokeColor3">
+          <R>0</R>
+          <G>0</G>
+          <B>0</B>
+        </Color3>
+        <double name="TextStrokeTransparency">0.5</double>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e4</UniqueId>
+      </Properties>
+    </Item>
+    <Item class="BubbleChatConfiguration" referent="32">
+      <Properties>
+        <string name="Name">BubbleChatConfiguration</string>
+        <string name="AdorneeName">HumanoidRootPart</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <Color3 name="BackgroundColor3">
+          <R>0.98039216</R>
+          <G>0.98039216</G>
+          <B>0.98039216</B>
+        </Color3>
+        <double name="BackgroundTransparency">0.1</double>
+        <float name="BubbleDuration">15</float>
+        <float name="BubblesSpacing">6</float>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">true</bool>
+        <token name="Font">18</token>
+        <Font name="FontFace">
+          <Family>
+            <url>rbxasset://fonts/families/GothamSSm.json</url>
+          </Family>
+          <Weight>500</Weight>
+          <Style>Normal</Style>
+          <CachedFaceId>
+            <url>rbxasset://fonts/Montserrat-Medium.ttf</url>
+          </CachedFaceId>
+        </Font>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <Vector3 name="LocalPlayerStudsOffset">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+        </Vector3>
+        <float name="MaxBubbles">3</float>
+        <float name="MaxDistance">100</float>
+        <float name="MinimizeDistance">40</float>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <bool name="TailVisible">true</bool>
+        <Color3 name="TextColor3">
+          <R>0.22352941</R>
+          <G>0.23137255</G>
+          <B>0.23921569</B>
+        </Color3>
+        <int64 name="TextSize">16</int64>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e5</UniqueId>
+        <float name="VerticalStudsOffset">0</float>
+      </Properties>
+    </Item>
+    <Item class="ChannelTabsConfiguration" referent="33">
+      <Properties>
+        <string name="Name">ChannelTabsConfiguration</string>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <Color3 name="BackgroundColor3">
+          <R>0.09803922</R>
+          <G>0.105882354</G>
+          <B>0.11372549</B>
+        </Color3>
+        <double name="BackgroundTransparency">0</double>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="Enabled">false</bool>
+        <Font name="FontFace">
+          <Family>
+            <url>rbxasset://fonts/families/BuilderSans.json</url>
+          </Family>
+          <Weight>700</Weight>
+          <Style>Normal</Style>
+          <CachedFaceId>
+            <url>rbxasset://fonts/BuilderSans-Bold.otf</url>
+          </CachedFaceId>
+        </Font>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <Color3 name="HoverBackgroundColor3">
+          <R>0.49019608</R>
+          <G>0.49019608</G>
+          <B>0.49019608</B>
+        </Color3>
+        <bool name="DefinesCapabilities">false</bool>
+        <Color3 name="SelectedTabTextColor3">
+          <R>1</R>
+          <G>1</G>
+          <B>1</B>
+        </Color3>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <Color3 name="TextColor3">
+          <R>0.6862745</R>
+          <G>0.6862745</G>
+          <B>0.6862745</B>
+        </Color3>
+        <int64 name="TextSize">18</int64>
+        <Color3 name="TextStrokeColor3">
+          <R>0</R>
+          <G>0</G>
+          <B>0</B>
+        </Color3>
+        <double name="TextStrokeTransparency">1</double>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e6</UniqueId>
+      </Properties>
+    </Item>
+  </Item>
+  <Item class="Workspace" referent="34">
+    <Properties>
+      <string name="Name">Workspace</string>
+      <float name="AirDensity">0.0012</float>
+      <float name="AirTurbulenceIntensity">0</float>
+      <bool name="AllowThirdPartySales">false</bool>
+      <BinaryString name="AttributesSerialize">AQAAABkAAABSb2pvX1RhcmdldF9DdXJyZW50Q2FtZXJhAiAAAAA0ZGYwMzk3ZDlhNTY1OGE5MGFlMDI4MjMwMDAwMDNmMQ==</BinaryString>
+      <token name="AuthorityMode">1</token>
+      <bool name="AutoSimulate">true</bool>
+      <token name="AvatarUnificationMode">0</token>
+      <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+      <token name="ClientAnimatorThrottling">0</token>
+      <BinaryString name="CollisionGroupData"><![CDATA[AQEABP////8HRGVmYXVsdA==]]></BinaryString>
+      <Ref name="CurrentCamera">35</Ref>
+      <double name="DistributedGameTime">0</double>
+      <token name="EnableSLIMAvatars">0</token>
+      <token name="ExpandedTerrain">0</token>
+      <bool name="ExplicitAutoJoints">true</bool>
+      <bool name="FallHeightEnabled">true</bool>
+      <float name="FallenPartsDestroyHeight">-500</float>
+      <token name="FluidForces">0</token>
+      <Vector3 name="GlobalWind">
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+      </Vector3>
+      <float name="Gravity">196.2</float>
+      <Vector3 name="GravityDirection">
+        <X>0</X>
+        <Y>-1</Y>
+        <Z>0</Z>
+      </Vector3>
+      <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+      <token name="IKControlConstraintSupport">0</token>
+      <token name="ImprovedAnimationConstraint">0</token>
+      <token name="ImprovedPhysicsReplication">0</token>
+      <token name="LayeredClothingCacheOptimizations">0</token>
+      <token name="LevelOfDetail">0</token>
+      <token name="LuauTypeCheckMode">0</token>
+      <token name="MapTVRemoteToGamepadKeycodes">0</token>
+      <token name="MeshPartHeadsAndAccessories">0</token>
+      <token name="MeshStreamingAndImprovedLods">0</token>
+      <CoordinateFrame name="ModelMeshCFrame">
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+        <R00>1</R00>
+        <R01>0</R01>
+        <R02>0</R02>
+        <R10>0</R10>
+        <R11>1</R11>
+        <R12>0</R12>
+        <R20>0</R20>
+        <R21>0</R21>
+        <R22>1</R22>
+      </CoordinateFrame>
+      <SharedString name="ModelMeshData">rxNJufX5oaagQE3qNtzJSQ==</SharedString>
+      <Vector3 name="ModelMeshSize">
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+      </Vector3>
+      <token name="ModelStreamingBehavior">0</token>
+      <token name="ModelStreamingMode">0</token>
+      <bool name="NeedsPivotMigration">false</bool>
+      <token name="NextGenerationReplication">0</token>
+      <token name="PathfindingUseImprovedSearch">0</token>
+      <token name="PhysicsSteppingMethod">0</token>
+      <token name="PlayerCharacterDestroyBehavior">0</token>
+      <token name="PlayerScriptsUseInputActionSystem">0</token>
+      <token name="PredictiveStreamingMode">0</token>
+      <token name="PrimalPhysicsSolver">0</token>
+      <Ref name="PrimaryPart">null</Ref>
+      <token name="RejectCharacterDeletions">0</token>
+      <token name="RenderingCacheOptimizations">0</token>
+      <token name="ReplicateInstanceDestroySetting">0</token>
+      <token name="ReplicationFrequency">0</token>
+      <token name="ReplicationThroughput">0</token>
+      <token name="Retargeting">0</token>
+      <bool name="DefinesCapabilities">false</bool>
+      <token name="SandboxedInstanceMode">0</token>
+      <float name="ScaleFactor">1</float>
+      <BinaryString name="SerializedOverrides">
+      </BinaryString>
+      <token name="SignalBehavior2">0</token>
+      <float name="SimulationRate">1</float>
+      <SharedString name="SlimHash">rxNJufX5oaagQE3qNtzJSQ==</SharedString>
+      <int64 name="SourceAssetId">-1</int64>
+      <token name="StreamOutBehavior">0</token>
+      <bool name="StreamingAdaptiveRadius">false</bool>
+      <bool name="StreamingEnabled">false</bool>
+      <token name="StreamingIntegrityMode">0</token>
+      <int name="StreamingMinRadius">64</int>
+      <int name="StreamingTargetRadius">1024</int>
+      <BinaryString name="Tags"></BinaryString>
+      <bool name="TerrainWeldsFixed">true</bool>
+      <token name="TouchEventsUseCollisionGroups">0</token>
+      <bool name="TouchesUseCollisionGroups">false</bool>
+      <UniqueId name="UniqueId">4df0397d9a5658a90ae0282300000002</UniqueId>
+      <token name="UseFixedSimulation">0</token>
+      <token name="UseInputSink">0</token>
+      <token name="UseNewLuauTypeSolver">2</token>
+      <token name="ValidateEnabledProximityPrompt">0</token>
+      <float name="Wind">0</float>
+      <Vector3 name="WindDirection">
+        <X>0</X>
+        <Y>0</Y>
+        <Z>0</Z>
+      </Vector3>
+      <OptionalCoordinateFrame name="WorldPivotData">
+      </OptionalCoordinateFrame>
+    </Properties>
+    <Item class="Terrain" referent="36">
+      <Properties>
+        <string name="Name">Terrain</string>
+        <token name="AcquisitionMethod">0</token>
+        <bool name="Anchored">true</bool>
+        <BinaryString name="AttributesSerialize"></BinaryString>
+        <bool name="AudioCanCollide">true</bool>
+        <float name="BackParamA">-0.5</float>
+        <float name="BackParamB">0.5</float>
+        <token name="BackSurface">0</token>
+        <token name="BackSurfaceInput">0</token>
+        <float name="BottomParamA">-0.5</float>
+        <float name="BottomParamB">0.5</float>
+        <token name="BottomSurface">4</token>
+        <token name="BottomSurfaceInput">0</token>
+        <CoordinateFrame name="CFrame">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="CanCollide">true</bool>
+        <bool name="CanQuery">true</bool>
+        <bool name="CanTouch">true</bool>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <bool name="CastShadow">true</bool>
+        <string name="CollisionGroup">Default</string>
+        <int name="CollisionGroupId">0</int>
+        <Color3uint8 name="Color3uint8">10724005</Color3uint8>
+        <PhysicalProperties name="CustomPhysicalProperties">
+          <CustomPhysics>false</CustomPhysics>
+        </PhysicalProperties>
+        <bool name="Decoration">false</bool>
+        <bool name="EnableFluidForces">true</bool>
+        <float name="FrontParamA">-0.5</float>
+        <float name="FrontParamB">0.5</float>
+        <token name="FrontSurface">0</token>
+        <token name="FrontSurfaceInput">0</token>
+        <float name="GrassLength">0.7</float>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <float name="LeftParamA">-0.5</float>
+        <float name="LeftParamB">0.5</float>
+        <token name="LeftSurface">0</token>
+        <token name="LeftSurfaceInput">0</token>
+        <bool name="Locked">true</bool>
+        <bool name="Massless">false</bool>
+        <token name="Material">256</token>
+        <BinaryString name="MaterialColors">AAAAAAAAan8/P39rf2Y/ilY+j35fi21PZmxvZbDqw8faiVpHOi4kHh4lZlw76JxKc3trhHtagcLgc4RKxr21zq2UlJSM</BinaryString>
+        <string name="MaterialVariantSerialized"></string>
+        <SharedString name="Materials">hpU/56POWelGgTP/IASPQw==</SharedString>
+        <BinaryString name="PhysicsGrid"><![CDATA[AgMAAAAAAAAAAAAAAAA=]]></BinaryString>
+        <CoordinateFrame name="PivotOffset">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <float name="Reflectance">0</float>
+        <float name="RightParamA">-0.5</float>
+        <float name="RightParamB">0.5</float>
+        <token name="RightSurface">0</token>
+        <token name="RightSurfaceInput">0</token>
+        <int name="RootPriority">0</int>
+        <Vector3 name="RotVelocity">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+        </Vector3>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <Vector3 name="size">
+          <X>2044</X>
+          <Y>252</Y>
+          <Z>2044</Z>
+        </Vector3>
+        <BinaryString name="SmoothGrid"><![CDATA[AQU=]]></BinaryString>
+        <bool name="SmoothVoxelsUpgraded">false</bool>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <float name="TopParamA">-0.5</float>
+        <float name="TopParamB">0.5</float>
+        <token name="TopSurface">3</token>
+        <token name="TopSurfaceInput">0</token>
+        <float name="Transparency">0</float>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003e1</UniqueId>
+        <Vector3 name="Velocity">
+          <X>0</X>
+          <Y>0</Y>
+          <Z>0</Z>
+        </Vector3>
+        <Color3 name="WaterColor">
+          <R>0.05</R>
+          <G>0.33</G>
+          <B>0.36</B>
+        </Color3>
+        <float name="WaterReflectance">1</float>
+        <float name="WaterTransparency">0.3</float>
+        <float name="WaterWaveSize">0.15</float>
+        <float name="WaterWaveSpeed">10</float>
+      </Properties>
+    </Item>
+    <Item class="Camera" referent="35">
+      <Properties>
+        <string name="Name">Camera</string>
+        <BinaryString name="AttributesSerialize">AQAAAAcAAABSb2pvX0lkAiAAAAA0ZGYwMzk3ZDlhNTY1OGE5MGFlMDI4MjMwMDAwMDNmMQ==</BinaryString>
+        <CoordinateFrame name="CFrame">
+          <X>46.73073</X>
+          <Y>-110.47061</Y>
+          <Z>-71.21149</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>-0</R02>
+          <R10>-0</R10>
+          <R11>0.7808688</R11>
+          <R12>0.62469506</R12>
+          <R20>0</R20>
+          <R21>-0.62469506</R21>
+          <R22>0.7808688</R22>
+        </CoordinateFrame>
+        <Ref name="CameraSubject">null</Ref>
+        <token name="CameraType">0</token>
+        <SecurityCapabilities name="Capabilities">0</SecurityCapabilities>
+        <float name="FieldOfView">70</float>
+        <token name="FieldOfViewMode">0</token>
+        <CoordinateFrame name="Focus">
+          <X>46.73073</X>
+          <Y>-130.47061</Y>
+          <Z>-96.21149</Z>
+          <R00>1</R00>
+          <R01>0</R01>
+          <R02>0</R02>
+          <R10>0</R10>
+          <R11>1</R11>
+          <R12>0</R12>
+          <R20>0</R20>
+          <R21>0</R21>
+          <R22>1</R22>
+        </CoordinateFrame>
+        <bool name="HeadLocked">true</bool>
+        <float name="HeadScale">1</float>
+        <UniqueId name="HistoryId">00000000000000000000000000000000</UniqueId>
+        <token name="OrthographicMode">0</token>
+        <float name="OrthographicSize">300</float>
+        <token name="ProjectionType">0</token>
+        <bool name="DefinesCapabilities">false</bool>
+        <BinaryString name="SerializedOverrides">
+        </BinaryString>
+        <int64 name="SourceAssetId">-1</int64>
+        <BinaryString name="Tags"></BinaryString>
+        <UniqueId name="UniqueId">4df0397d9a5658a90ae02823000003f1</UniqueId>
+        <bool name="VRTiltAndRollEnabled">false</bool>
+        <float name="ViewStretch">1</float>
+      </Properties>
+    </Item>
+  </Item>
+  <SharedStrings>
+    <SharedString md5="hpU/56POWelGgTP/IASPQw==">AQAAABUAAAACAAAAan8/AAUAAAAAAAADAAAAP39rIAMAAAAAAAAEAAAAf2Y/MAMAAAAAAAAFAAAAilY+UAMAAAAAAAAGAAAAj35fEAUAAAAAAAAHAAAAi21PEAIAAAAAAAAIAAAAZmxvgAMAAAAAAAAJAAAAZbDqEAYAAAAAAAAKAAAAw8faMAUAAAAAAAALAAAAiVpHkAMAAAAAAAAMAAAAOi4kQAUAAAAAAAANAAAAHh4lFAMAAAAAAAAOAAAAZlw7UAUAAAAAAAAPAAAA6JxKJAMAAAAAAAAQAAAAc3trYAUAAAAAAAARAAAAhHtacAMAAAAAAAASAAAAgcLgAAYAAAAAAAATAAAAc4RKBAUAAAAAAAAUAAAAxr21cAUAAAAAAAAVAAAAzq2UNAMAAAAAAAAWAAAAlJSMRAMAAAAAAAA=</SharedString>
+    <SharedString md5="rxNJufX5oaagQE3qNtzJSQ=="></SharedString>
+  </SharedStrings>
+</roblox>
