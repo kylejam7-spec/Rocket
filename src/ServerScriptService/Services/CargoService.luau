@@ -140,7 +140,7 @@ function Cargo.new(ctx)
             return false
         end
         service.visual(player)
-        ctx.profiles.records[player.UserId].profile.lifetimeDeliveries += amount
+        ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config)
         ctx.profiles:dirty(player.UserId)
         ctx.Stats.update(player)
         local emptied = rocket.cargo[player.UserId] == nil

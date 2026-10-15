@@ -4,7 +4,7 @@ local Profiles = {}
 Profiles.__index = Profiles
 
 local function defaults()
-    return { schemaVersion = 1, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, rewardedLaunchIds = {} }
+    return { schemaVersion = 2, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {} }
 end
 
 local function copy(profile)
@@ -17,8 +17,10 @@ end
 
 local function validate(raw, config)
     if raw == nil then return defaults() end
-    if type(raw) ~= "table" or raw.schemaVersion ~= 1 then error("Unsupported profile schema; refusing overwrite") end
-    for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries" } do
+    if type(raw) ~= "table" or (raw.schemaVersion ~= 1 and raw.schemaVersion ~= 2) then error("Unsupported profile schema; refusing overwrite") end
+    -- v1 -> v2 adds coins.
+    if raw.schemaVersion == 1 then raw = table.clone(raw); raw.schemaVersion, raw.coins = 2, 0 end
+    for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins" } do
         local value = raw[key]
         if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid profile " .. key) end
     end
@@ -40,6 +42,16 @@ local function validate(raw, config)
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
     end
     return result
+end
+
+-- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
+-- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
+function Profiles.credit(profile, delivered, config)
+    if type(delivered) ~= "number" or delivered <= 0 or delivered % 1 ~= 0 then return 0 end
+    local coins = delivered * config.CoinsPerUnit
+    profile.lifetimeDeliveries += delivered
+    profile.coins += coins
+    return coins
 end
 
 function Profiles.new(config, changed)
@@ -144,6 +156,7 @@ function Profiles:save(userId)
                 current.strengthLevel = snapshot.strengthLevel
                 current.speedLevel = snapshot.speedLevel
                 current.lifetimeDeliveries = snapshot.lifetimeDeliveries
+                current.coins = snapshot.coins
                 applyRewards(current)
                 current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
                 return current
@@ -160,7 +173,7 @@ function Profiles:save(userId)
         record.profile.rewardedLaunchIds = saved.rewardedLaunchIds
         record.profile.rewardedLaunchTicks = saved.rewardedLaunchTicks
         for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
-        record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries
+        record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if record.leaving and not next(record.pending) and not record.dirty then
             -- Keep lease until expiry: protects a disconnected locked passenger.

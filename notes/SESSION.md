@@ -1,4 +1,32 @@
-# Latest session: 2026-10-14, Phase 0 client half + reference-style HUD
+# Latest session: 2026-10-14, Phase 1 coins
+
+- Branch: `claude/great-ellis-195d97`, on top of `claude/brave-turing-b9188d` @ 2f203c7.
+  Rojo for this branch was served from its worktree on **127.0.0.1:34874** (another
+  checkout still held 34873). Point the plugin back at 34873 to return.
+- Server: `Profiles.credit(profile, delivered, config)` adds lifetime deliveries and
+  `CoinsPerUnit` (1) coins per unit `Rocket:deliver` accepted. `CargoService.place`
+  calls it. Profile schema is v2 (`coins`); v1 migrates to 0 coins on load and
+  `save` writes coins back. `StateUpdated.profile.coins` carries the total.
+  Persistence is still off.
+- Client: a gold 🪙 Coins row tops the left stat stack. On a coin gain up to 5
+  coins pop from over your head and `Tween.flyTo` the row (max 15 in the air). The
+  first to land counts the row up to the latest total with the usual bounce and
+  "+N"; later ones just bump the icon.
+- `MaterialInteractionCheck` now covers coins: they match delivered units, and
+  empty, discarded, leftover and invalid (negative, fractional, NaN, inf) deliveries
+  pay nothing.
+- Studio verification (real client): `RunChecks` all pass. Picked up 10 Metal at
+  the Scrap Pit, placed from the ramp at about (18, 23, -107): Coins 0 → 4 → 9 with
+  up to 4 coins in flight, matching Delivered 9; no stray coins left; only Roblox
+  core UIBlox warnings, no game errors.
+- Studio MCP tips: firing `Remotes.MaterialHold` (prompt, true/false) from the
+  Client drives pickup/place reliably; `prompt:InputHoldBegin()` does not. Path to
+  the ramp: MoveTo (22, 3, -78), then (21, 23, -107). From (18, 23, -107) the ring
+  is ~12.3 studs away, right at `FrontierReach` 12 + slack, so holds can end early.
+- Not covered: two clients, phone layout of the taller stack, persistence.
+- Next: the rest of Phase 1 (stat curve, delivery pulse/ring flash).
+
+# Previous session: 2026-10-14, Phase 0 client half + reference-style HUD
 
 - Branch: `claude/brave-turing-b9188d`, on top of `claude/phase0-on-master` @ 4f4e4c7.
   Rojo for this branch was served from its worktree on 127.0.0.1:34873. To go back,

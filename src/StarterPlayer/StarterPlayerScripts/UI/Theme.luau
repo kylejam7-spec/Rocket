@@ -27,6 +27,7 @@ Theme.color = {
 }
 
 Theme.icon = {
+    Coin = "🪙",
     Strength = "💪",
     Speed = "⚡",
     Launch = "🚀",

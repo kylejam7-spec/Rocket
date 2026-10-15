@@ -61,6 +61,32 @@ return function()
     final.passengers, final.phase = { [1] = true }, "Resetting"
     local restarted = final:nextCycle("restart")
     assert(restarted.cycleNumber == 1 and restarted.programRuns == 1)
+    -- Coins: credited only for units the rocket accepted, never twice, never for
+    -- empty, discarded or leftover cargo.
+    local Profiles = require(script.Parent.ProfileService)
+    local profile = { lifetimeDeliveries = 0, coins = 0 }
+    local paid = Rocket.new(config, "coins", 1)
+    paid.required = { Metal = 12, Fuel = 5 }
+    local function credit(userId, limit)
+        local amount, done = paid:deliver(userId, limit)
+        Profiles.credit(profile, amount, config)
+        return amount, done
+    end
+    assert(paid:pickup(1, "Metal", 10) == 10)
+    for _ = 1, 20 do credit(1, 1) end
+    assert(profile.coins == 10 * config.CoinsPerUnit and profile.lifetimeDeliveries == 10, "Coins match delivered units")
+    assert(credit(1) == 0 and profile.coins == 10 * config.CoinsPerUnit, "Empty cargo grants nothing")
+    paid:pickup(1, "Metal", 10)
+    paid.cargo[1] = nil -- DiscardCargo
+    assert(credit(1) == 0 and profile.coins == 10 * config.CoinsPerUnit, "Discarded cargo grants nothing")
+    paid:pickup(1, "Metal", 10)
+    paid:pickup(2, "Metal", 10)
+    assert(select(2, credit(1)) and profile.coins == 12 * config.CoinsPerUnit, "Only units the rocket needs pay")
+    assert(paid:deliver(2) == 0, "Leftover Metal is dropped, so it can't pay later")
+    for _, bad in { -5, 0, 0.5, 0 / 0, math.huge } do
+        assert(Profiles.credit(profile, bad, config) == 0, "Invalid amount " .. tostring(bad))
+    end
+    assert(profile.coins == 12 * config.CoinsPerUnit and profile.lifetimeDeliveries == 12)
     local holds = Hold.new(0.05)
     holds:begin(1, "prompt", "cycle", 0)
     assert(holds.active[1].started == 0 and holds.duration == 0.05)
@@ -68,5 +94,5 @@ return function()
     assert(holds.active[1])
     holds:ended(1, "prompt")
     assert(not holds.active[1])
-    return "Cycle config, tier bounds/heights, phase-gated pickup, capacity, delivery, cycle advance and program reset checks passed"
+    return "Cycle config, tier bounds/heights, phase-gated pickup, capacity, delivery, cycle advance, program reset and coin credit checks passed"
 end

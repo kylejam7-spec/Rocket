@@ -45,7 +45,7 @@ function Cycle.new(ctx)
             totals = table.clone(rocket.totals), required = rocket.required,
             cargo = rocket.cargo[player.UserId], contribution = rocket.contributions[player.UserId] or 0,
             boarded = service.boarded[player.UserId] == true, passenger = rocket.passengers[player.UserId] == true,
-            profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, walkSpeed = stats.speed(profile), capacity = stats.capacity(profile) },
+            profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, coins = profile.coins, walkSpeed = stats.speed(profile), capacity = stats.capacity(profile) },
             saveStatus = record and record.status or "Loading",
             persistent = config.PersistenceEnabled,
             training = training and training.station.name,

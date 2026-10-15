@@ -79,3 +79,15 @@
   height (clamped 0.6–1.6); `Tween.flyTo` divides that scale back out.
 - Shop, Pets, boost badges, purchase chips and coins stay out until they work
   (monetization decision).
+
+## 2026-10-14: Coins (Phase 1)
+
+- Coins are the soft currency for Phase 4 upgrades. The server credits them, one
+  per accepted delivery unit (`Config.CoinsPerUnit`), through `Profiles.credit`.
+  The amount always comes from `Rocket:deliver`'s return, so coins can never
+  exceed units carried and then accepted.
+- Profile schema v2 adds `coins`; v1 profiles migrate to 0 on load. Persistence
+  stays off.
+- The client gets no coin remote: like other stat juice, the HUD diffs
+  `state.profile.coins` against the previous snapshot and plays the burst. The row
+  shows the server total once the first coin lands, so batched updates can't drift.

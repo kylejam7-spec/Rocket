@@ -26,6 +26,8 @@ return table.freeze({
     PourSeconds = 1.5,
     -- Reach from the glowing frontier ring; a bit more than InteractionDistance for wide tanks.
     FrontierReach = 12,
+    -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
+    CoinsPerUnit = 1,
     TrainingTiers = table.freeze({
         table.freeze({ cycles = 1, gain = 4 }),
         table.freeze({ cycles = 3, gain = 6 }),

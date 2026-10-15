@@ -1,6 +1,7 @@
--- The reference-style HUD: left stat stack (Strength, Speed, Launches), the
+-- The reference-style HUD: left stat stack (Coins, Strength, Speed, Launches), the
 -- top-centre objective line, Feedback toasts, the save-status tag, and stat-gain
--- juice ("+2 💪" over your head, "Strength Level Up!" when capacity grows).
+-- juice ("+2 💪" over your head, "Strength Level Up!" when capacity grows, coins
+-- that fly from your head to the Coins row on delivery).
 local Players = game:GetService("Players")
 local State = require(script.Parent.State)
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -48,9 +49,11 @@ function HudController.start()
 
     local stack = Create.new("Frame", {
         Name = "StatStack", BackgroundTransparency = 1,
-        Position = UDim2.new(0, Theme.gutter, 0.24, 0), Size = UDim2.fromOffset(260, 220), Parent = gui,
+        Position = UDim2.new(0, Theme.gutter, 0.2, 0), Size = UDim2.fromOffset(260, 290), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
+    local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
+    coins.value.TextColor3 = Theme.color.Gold
     local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", LayoutOrder = 1, Parent = stack })
     local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 16", LayoutOrder = 2, Parent = stack })
     local launches = StatRow.new({ Name = "Launches", icon = icon.Launch, color = Theme.color.Launch, sub = "Delivered: 0", LayoutOrder = 3, Parent = stack })
@@ -79,14 +82,62 @@ function HudController.start()
         end
     end
 
+    -- Coin bursts: a few coins pop out over your head and fly to the Coins row; the
+    -- row counts up when the first lands. Bursts overlap freely while you hold E, but
+    -- the row always ends on the newest server total.
+    local coinTarget, inFlight = 0, 0
+    local function burst(gain)
+        local camera = workspace.CurrentCamera
+        local adornee = head()
+        local scale = gui:FindFirstChildOfClass("UIScale")
+        local origin = camera.ViewportSize / 2
+        if adornee then
+            local point, visible = camera:WorldToScreenPoint(adornee.Position + Vector3.new(0, 2, 0))
+            if visible then origin = Vector2.new(point.X, point.Y) - gui.AbsolutePosition end
+        end
+        origin /= scale and scale.Scale or 1
+        local landed, spawned = false, 0
+        for index = 1, math.min(gain, 5) do
+            if inFlight >= 15 then break end
+            inFlight += 1
+            spawned += 1
+            local coin = StrokedText.new({
+                Name = "FlyingCoin", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(40, 40),
+                Position = UDim2.fromOffset(origin.X, origin.Y), Text = icon.Coin, Font = Theme.font.Display,
+                TextSize = 34, stroke = 2, ZIndex = 5, Parent = gui,
+            })
+            -- Pop outward first, then fly to the counter, staggered.
+            local spread = Vector2.new(math.random(-70, 70), math.random(-60, -10))
+            Tween.play(coin, Tween.info(0.18, Enum.EasingStyle.Back), { Position = UDim2.fromOffset(origin.X + spread.X, origin.Y + spread.Y) })
+            task.delay(0.18 + index * 0.06, function()
+                Tween.flyTo(coin, coins.icon, 0.45, function()
+                    if not landed then
+                        landed = true
+                        coins:set(coinTarget)
+                    else
+                        Tween.bounce(coins.icon, 1.2, 0.2)
+                    end
+                end).Completed:Connect(function()
+                    inFlight -= 1
+                    coin:Destroy()
+                end)
+            end)
+        end
+        -- Too many coins in the air already: just count the row up.
+        if spawned == 0 then coins:set(coinTarget) end
+    end
+
     State.subscribe(function(state, previous)
         local p = state.profile
         if p then
+            local before = previous and previous.profile
+            coinTarget = p.coins or 0
+            local gain = before and coinTarget - (before.coins or 0) or 0
+            if gain > 0 then burst(gain) elseif coinTarget ~= coins.current then coins:set(coinTarget) end
             local material, count = carrying(state)
             strength:set(p.strength, "Capacity: " .. (material and count or 0) .. "/" .. p.capacity)
             speed:set(p.speed, "Walk Speed: " .. math.floor(p.walkSpeed))
             launches:set(p.completedLaunches, "Delivered: " .. Theme.number(p.lifetimeDeliveries))
-            local before = previous and previous.profile
             if before then
                 if p.strength > before.strength then worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength) end
                 if p.speed > before.speed then worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed) end
