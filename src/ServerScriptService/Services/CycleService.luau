@@ -40,6 +40,7 @@ function Cycle.new(ctx)
         ctx.Remote.StateUpdated:FireClient(player, {
             phase = rocket.phase, deadline = service.deadline,
             cycle = rocket.cycleNumber, cycleCount = Cycles.Count, tierName = definition.Tier.Name,
+            destination = config.Destinations[definition.ModelTier].name, destinationTier = definition.ModelTier,
             modelTier = definition.ModelTier, variant = definition.Variant, isFinal = definition.IsFinalCycle,
             programRuns = rocket.programRuns, nextTierIn = Cycles.launchesUntilNextTier(rocket.cycleNumber),
             totals = table.clone(rocket.totals), required = rocket.required,

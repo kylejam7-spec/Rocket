@@ -156,3 +156,15 @@
 - Ranks are server-set billboards from lifetime deliveries and launches; higher ranks
   need launches so deliveries alone can't reach Commander.
 
+## 2026-10-15: Rocket cabin and destinations
+
+- Boarding means getting inside: the hatch teleports you into a shared cabin interior
+  (an isolated room, not geometry inside each rocket model), so it works for every
+  design and the launch stays client-animated.
+- One destination per rocket design, not per cycle: Space Station, Moon, Mars, Saturn,
+  Pluto. Rewards stay passive and per-second (RewardMultiplier still scales them).
+- Destinations are far-off walled areas 10,000 studs apart, so giant backdrop planets
+  never show in another destination's sky. Gravity is set on the passenger's client.
+- Built before Phase 5 art so the asset list (five destinations, cabin) follows the
+  gameplay.
+

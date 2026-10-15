@@ -78,7 +78,7 @@ function ProgressController.start()
         elseif state.phase == "Launching" then
             bar:set(1, color.Gold, "LIFTOFF! " .. icon.Launch)
         elseif state.phase == "Rewarding" then
-            bar:set(1, color.Launch, "MEADOW " .. math.ceil(remaining) .. "s")
+            bar:set(1, color.Launch, (state.destination or "SPACE"):gsub("^THE ", "") .. " " .. math.ceil(remaining) .. "s")
         else
             bar:set(1, color.Purple, "NEXT ROCKET…")
         end
