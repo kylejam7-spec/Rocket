@@ -77,7 +77,8 @@ local function target(state)
     elseif current == "Bench" or current == "Treadmill" then
         local stat = current == "Bench" and "strengthLevel" or "speedLevel"
         for _, station in CollectionService:GetTagged("TrainingStation") do
-            if station:GetAttribute("TrainingStat") == stat and (station:GetAttribute("RequiredCycles") or 0) == 0 then
+            if station:GetAttribute("TrainingStat") == stat and (station:GetAttribute("RequiredCycles") or 0) == 0
+                and not station:GetAttribute("Destination") then
                 return station.Position, station
             end
         end

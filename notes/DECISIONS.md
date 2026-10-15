@@ -165,6 +165,9 @@
   Pluto. Rewards stay passive and per-second (RewardMultiplier still scales them).
 - Destinations are far-off walled areas 10,000 studs apart, so giant backdrop planets
   never show in another destination's sky. Gravity is set on the passenger's client.
+- The reward size lives on the destination (Config.Destinations reward 1/2/4/6/10),
+  not the cycle; RocketCycles keeps a multiplier only for the final mission. Each
+  destination's gym pays double its passive rate and works only during its stay.
 - Built before Phase 5 art so the asset list (five destinations, cabin) follows the
   gameplay.
 

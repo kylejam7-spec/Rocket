@@ -12,6 +12,8 @@
         ConstructionRequired Metal units to build the rocket (phase 1)
         FuelRequired         Fuel units to fuel the rocket (phase 2)
         RewardMultiplier     integer multiplier on the destination's per-second reward
+                             (1 normally: Config.Destinations[ModelTier].reward already grows
+                             with each design; the final mission doubles it)
         IsFinalCycle         true on the last cycle only: special launch + program reset
         RewardSeconds        optional override of Config.RewardSeconds
 
@@ -39,15 +41,15 @@ local Cycles = {
     { ModelTier = 2, ConstructionRequired = 750, FuelRequired = 400, RewardMultiplier = 1 }, -- 1,150
     { ModelTier = 2, ConstructionRequired = 900, FuelRequired = 500, RewardMultiplier = 1 }, -- 1,400
     { ModelTier = 2, ConstructionRequired = 1075, FuelRequired = 625, RewardMultiplier = 1 }, -- 1,700
-    { ModelTier = 3, ConstructionRequired = 1300, FuelRequired = 800, RewardMultiplier = 2 }, -- 2,100
-    { ModelTier = 3, ConstructionRequired = 1550, FuelRequired = 1000, RewardMultiplier = 2 }, -- 2,550
-    { ModelTier = 3, ConstructionRequired = 1825, FuelRequired = 1225, RewardMultiplier = 2 }, -- 3,050
-    { ModelTier = 4, ConstructionRequired = 2200, FuelRequired = 1500, RewardMultiplier = 2 }, -- 3,700
-    { ModelTier = 4, ConstructionRequired = 2575, FuelRequired = 1825, RewardMultiplier = 2 }, -- 4,400
-    { ModelTier = 4, ConstructionRequired = 3000, FuelRequired = 2200, RewardMultiplier = 2 }, -- 5,200
-    { ModelTier = 5, ConstructionRequired = 3475, FuelRequired = 2625, RewardMultiplier = 3 }, -- 6,100
-    { ModelTier = 5, ConstructionRequired = 4000, FuelRequired = 3100, RewardMultiplier = 3 }, -- 7,100
-    { ModelTier = 5, ConstructionRequired = 4600, FuelRequired = 3650, RewardMultiplier = 5, IsFinalCycle = true, RewardSeconds = 45 }, -- 8,250
+    { ModelTier = 3, ConstructionRequired = 1300, FuelRequired = 800, RewardMultiplier = 1 }, -- 2,100
+    { ModelTier = 3, ConstructionRequired = 1550, FuelRequired = 1000, RewardMultiplier = 1 }, -- 2,550
+    { ModelTier = 3, ConstructionRequired = 1825, FuelRequired = 1225, RewardMultiplier = 1 }, -- 3,050
+    { ModelTier = 4, ConstructionRequired = 2200, FuelRequired = 1500, RewardMultiplier = 1 }, -- 3,700
+    { ModelTier = 4, ConstructionRequired = 2575, FuelRequired = 1825, RewardMultiplier = 1 }, -- 4,400
+    { ModelTier = 4, ConstructionRequired = 3000, FuelRequired = 2200, RewardMultiplier = 1 }, -- 5,200
+    { ModelTier = 5, ConstructionRequired = 3475, FuelRequired = 2625, RewardMultiplier = 1 }, -- 6,100
+    { ModelTier = 5, ConstructionRequired = 4000, FuelRequired = 3100, RewardMultiplier = 1 }, -- 7,100
+    { ModelTier = 5, ConstructionRequired = 4600, FuelRequired = 3650, RewardMultiplier = 2, IsFinalCycle = true, RewardSeconds = 45 }, -- 8,250
 }
 
 -- Resolve each cycle once: validated, with its tier and variant (1st/2nd/3rd use of a tier).

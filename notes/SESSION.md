@@ -32,9 +32,20 @@
   preview screenshots. Fixed on the way: seats blocked the aisle (exit unreachable);
   neighbouring destinations' giant planets were visible (spacing 1,000 → 10,000).
   Only UIBlox warnings.
-- Not verified: Mars/Saturn/Pluto via a real launch (layout via preview + check),
+- Not verified: Saturn/Pluto via a real launch (layout via preview + check),
   two clients boarding together, the cabin and destinations on the phone emulator.
 - Edit-mode screen captures don't render SurfaceGui text; Play captures do.
+- Follow-up (user): rewards grow with the destination and each destination has its
+  own gym. `Config.Destinations[n].reward` = 1, 2, 4, 6, 10 (× Planet 3/s → 3, 6, 12,
+  18, 30 per second); RocketCycles RewardMultiplier is now 1 except the final
+  mission (2). Each destination has a bench and treadmill (gold, "2× BONUS", at
+  ±28/24 from its centre, scatter keeps those and the arrival clear) giving double
+  the destination's per-second reward; usable only during that destination's stay
+  (`phaseAllowed(station)`); training stops before the trip home. Tutorial ignores
+  destination gyms. `DestinationCheck` adds growing rewards and gym spots on ground.
+- Studio: RunChecks 7/7. Cycle 7 → Mars by a real launch: passive +12/s strength and
+  speed; on the Mars bench +36/s strength (24 bench + 12 passive), "+24" popups; home
+  unanchored, walking, gravity 196.2.
 
 # Earlier session: 2026-10-15, Phase 4 upgrades and ranks (merged)
 

@@ -126,7 +126,7 @@ function World.new(ctx)
     local function equipment(base, treadmill)
         local p = base.Position
         base.Size = Vector3.new(8, 0.4, 10)
-        base.Position = Vector3.new(p.X, 0.2, p.Z)
+        base.Position = Vector3.new(p.X, p.Y - 0.8, p.Z)
         local dark, steel = Color3.fromRGB(35, 40, 50), Color3.fromRGB(165, 175, 190)
         if treadmill then
             part("TreadmillBelt", p, Vector3.new(4, 0.5, 7), dark)
@@ -212,6 +212,20 @@ function World.new(ctx)
             equipment(base, treadmill)
             table.insert(stations, { part = base, name = tier.cycles .. "-cycle " .. kind,
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = tier.gain, required = tier.cycles })
+        end
+    end
+    -- Each destination's own bench and treadmill: double that destination's per-second
+    -- reward, usable only there during the reward stay (Main's phaseAllowed).
+    for tier, place in service.destinations do
+        for _, kind in { "bench", "treadmill" } do
+            local treadmill = kind == "treadmill"
+            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(255, 190, 40))
+            equipment(base, treadmill)
+            base:SetAttribute("Destination", place.id)
+            label(base, (treadmill and "TREADMILL" or "BENCH") .. " • 2× BONUS")
+            local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
+            table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
+                stat = treadmill and "speedLevel" or "strengthLevel", gain = 2 * bonus * place.reward, required = 0 })
         end
     end
     service.stations = stations

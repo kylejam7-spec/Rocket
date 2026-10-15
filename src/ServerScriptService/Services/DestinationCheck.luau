@@ -18,6 +18,10 @@ return function()
             local tier = Cycles.get(number).ModelTier
             assert(built[tier], "cycle " .. number .. " has no destination for design " .. tier)
         end
+        -- Further destinations pay more per second.
+        for tier = 2, #config.Destinations do
+            assert(config.Destinations[tier].reward > config.Destinations[tier - 1].reward, "destination rewards must grow with the design")
+        end
         local ids = {}
         for tier, place in built do
             local spec = config.Destinations[tier]
@@ -26,6 +30,13 @@ return function()
             assert(type(place.name) == "string" and place.gravity > 0, spec.id .. " name/gravity")
             -- Far from the main map (±520 x, -340..160 z) and from each other.
             assert(math.abs(place.center.X) > 1000 or math.abs(place.center.Z) > 1000, spec.id .. " is on the main map")
+            -- Both gym spots stand on this destination's ground, clear of the arrival.
+            for kind, spot in place.gym do
+                local floor = workspace:Raycast(spot + Vector3.new(0, 2, 0), Vector3.new(0, -6, 0), params)
+                assert(floor and floor.Instance:IsDescendantOf(scratch:FindFirstChild(spec.id)), spec.id .. ": no ground under the " .. kind)
+                assert(math.abs(floor.Position.Y - (spot.Y - 1)) < 0.6, spec.id .. ": " .. kind .. " spot is not on the ground (hit " .. floor.Instance.Name .. ")")
+                assert((Vector3.new(spot.X, 0, spot.Z) - Vector3.new(place.arrival.X, 0, place.arrival.Z)).Magnitude > 15, spec.id .. ": " .. kind .. " too close to the arrival")
+            end
             local hit = workspace:Raycast(place.arrival, Vector3.new(0, -12, 0), params)
             assert(hit and hit.Instance:IsDescendantOf(scratch:FindFirstChild(spec.id)), spec.id .. ": arrival has no ground under it")
             -- Walking straight out from the arrival hits a fence before the edge.
