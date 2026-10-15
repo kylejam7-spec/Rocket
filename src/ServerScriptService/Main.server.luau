@@ -19,12 +19,17 @@ ctx.profiles = Profiles.new(Config, function(userId)
 end)
 ctx.Launch = require(Services.LaunchService).new(ctx)
 ctx.Cargo = require(Services.CargoService).new(ctx)
+ctx.Tutorial = require(Services.TutorialService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,
     prompt = ctx.World.prompt, allowed = ctx.Interaction.allowed, near = ctx.Interaction.near,
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
+    -- Starter gym ticks finish the tutorial's bench and treadmill steps.
+    trained = function(player, station)
+        if (station.required or 0) == 0 then ctx.Tutorial.observe(player, station.stat == "strengthLevel" and "Bench" or "Treadmill") end
+    end,
     phaseAllowed = function()
         local phase = ctx.Cycle.rocket.phase
         return phase == "Building" or phase == "Fueling" or phase == "Boarding"

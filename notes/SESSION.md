@@ -1,4 +1,36 @@
-# Latest session: 2026-10-15, Phase 2 HUD parity
+# Latest session: 2026-10-15, Phase 3 tutorial
+
+- Branch `claude/phase3-tutorial` from `master` @ bbb24d4 (Phase 2 merged). Rojo on
+  127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.
+- `Services/TutorialService`: steps Pickup → Carry → Place → Bench → Treadmill →
+  Together → Done, stored by name in the profile (`tutorialStep`). Only server events
+  advance it: a pickup, standing in place reach with cargo (5 Hz sample; Carry falls
+  back to Pickup if the cargo is gone), an accepted delivery, a training tick at the
+  starter bench / treadmill (TrainingService `trained` hook). Together ends after
+  `TutorialFinalSeconds` (8). `TutorialSkip` sets Done; `TutorialSeen` marks a
+  one-time callout only while its phase is on. "Upgrade" slots in after Place in
+  Phase 4.
+- Profile schema v3: `tutorialStep`, `seenCallouts`. v1/v2 migrate; anyone with
+  deliveries skips the tutorial. Saves copy both fields. Debug: `RocketDebug:Invoke(
+  "tutorial", step?)` restarts everyone's tutorial.
+- `Controllers/TutorialController`: objective line (HudController asks it first), a
+  green beam + bouncing arrow at the target, a ring arrow toward off-screen targets
+  (the pit is behind you at spawn), the world dimmed around a ground target within
+  40 studs of its edge, SKIP TUTORIAL (right, under the settings), callouts for the
+  first Fuel phase and first boarding, "TUTORIAL COMPLETE!" banner.
+- `TutorialCheck`: step order (no skipping ahead, Done final) and v1/v2/v3 profile
+  migration and validation.
+- Studio (single sync verified): RunChecks 5/5. Fresh run: every step advanced on its
+  server event; real play time ≈ 40 s (≈6 s to the pit, 10 s pit → ring, ≈15 s gym,
+  8 s closing line). SKIP by real click cleared line, arrow and beam. Debug fills:
+  both callouts showed after the phase banner, server recorded `Fuel,Boarding`.
+  Dimming and the ring arrow checked by screenshot. Only UIBlox warnings.
+- Not verified: rejoin with persistence on (needs the published test place; the
+  v3 round trip is covered by TutorialCheck), two clients, phone layout of the new
+  button and arrow.
+- Pit exit for MoveTo: (-42,-4,78) → (-20,0,78) → (-10,0,40), then the ramp.
+
+# Earlier session: 2026-10-15, Phase 2 HUD parity (merged)
 
 - Branch `claude/phase2-hud` from `master` @ aa8ddde (Phases 0–1 merged). Rojo for it on
   127.0.0.1:34874 from this worktree.

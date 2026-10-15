@@ -92,6 +92,8 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 ### Phase 3: Tutorial and onboarding
 
+**Status (2026-10-15):** built on `claude/phase3-tutorial`: server-confirmed steps 1–3 and 5–7, waypoints, dimming, skip, callouts, profile v3. Step 4 (first upgrade) waits for Phase 4. Fresh run ≈ 40 s in Studio; rejoin with persistence on is unverified.
+
 - A `TutorialController` step machine. The server confirms each step, so a client can't skip ahead to rewards.
   1. Pick up Metal at the SCRAP PIT.
   2. Carry it to the glowing ring.

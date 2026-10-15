@@ -1,6 +1,7 @@
 -- Studio-only playtest hook, parented to the Main script as RocketDebug:
 -- Invoke("fill", fraction) adds that share of the current phase's requirement;
--- Invoke("cycle", n) jumps to cycle n while building.
+-- Invoke("cycle", n) jumps to cycle n while building; Invoke("tutorial", step?)
+-- restarts every player's tutorial (at Pickup by default) and clears seen callouts.
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Debug = {}
@@ -21,6 +22,11 @@ function Debug.new(ctx, parent)
             ctx.Cargo.delivered(advanced)
         elseif action == "cycle" and material then
             Cycle.replace(Rocket.new(ctx.config, Cycle.newId(), value, rocket.programRuns))
+            Cycle.broadcast()
+        elseif action == "tutorial" then
+            for _, record in ctx.profiles.records do
+                record.profile.tutorialStep, record.profile.seenCallouts = value or "Pickup", {}
+            end
             Cycle.broadcast()
         end
         rocket = Cycle.rocket
