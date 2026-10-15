@@ -27,6 +27,7 @@ function Training.new(context)
         station.part:SetAttribute("TrainingStation", true)
         station.part:SetAttribute("RequiredCycles", station.required or 0)
         station.part:SetAttribute("TrainingGain", station.gain)
+        station.part:SetAttribute("TrainingStat", station.stat)
         context.prompt(station.part, "Train " .. station.name).Triggered:Connect(function(player)
             if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
@@ -67,6 +68,7 @@ function Training.new(context)
                     profile[stat] += gain
                     context.profiles:dirty(userId)
                     context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")
+                    if context.trained then context.trained(player, session.station) end
                     context.changed(player)
                 end
             end

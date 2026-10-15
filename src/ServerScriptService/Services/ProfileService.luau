@@ -1,10 +1,12 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local Tutorial = require(script.Parent.TutorialService)
 local Profiles = {}
 Profiles.__index = Profiles
 
 local function defaults()
-    return { schemaVersion = 2, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {} }
+    return { schemaVersion = 3, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
+        tutorialStep = Tutorial.Steps[1], seenCallouts = {} }
 end
 
 local function copy(profile)
@@ -12,14 +14,24 @@ local function copy(profile)
     result.planetBonuses = table.clone(profile.planetBonuses)
     result.rewardedLaunchIds = table.clone(profile.rewardedLaunchIds)
     result.rewardedLaunchTicks = table.clone(profile.rewardedLaunchTicks or {})
+    result.seenCallouts = table.clone(profile.seenCallouts)
     return result
 end
 
 local function validate(raw, config)
     if raw == nil then return defaults() end
-    if type(raw) ~= "table" or (raw.schemaVersion ~= 1 and raw.schemaVersion ~= 2) then error("Unsupported profile schema; refusing overwrite") end
+    if type(raw) ~= "table" or (raw.schemaVersion ~= 1 and raw.schemaVersion ~= 2 and raw.schemaVersion ~= 3) then error("Unsupported profile schema; refusing overwrite") end
     -- v1 -> v2 adds coins.
     if raw.schemaVersion == 1 then raw = table.clone(raw); raw.schemaVersion, raw.coins = 2, 0 end
+    -- v2 -> v3 adds the tutorial; anyone who already delivered has played, so skip it.
+    if raw.schemaVersion == 2 then
+        raw = table.clone(raw)
+        raw.schemaVersion, raw.seenCallouts = 3, {}
+        raw.tutorialStep = (type(raw.lifetimeDeliveries) == "number" and raw.lifetimeDeliveries > 0) and Tutorial.Done or Tutorial.Steps[1]
+    end
+    if not Tutorial.valid(raw.tutorialStep) then error("Invalid tutorial step") end
+    if type(raw.seenCallouts) ~= "table" then error("Invalid callouts") end
+    for _, name in raw.seenCallouts do if type(name) ~= "string" then error("Invalid callouts") end end
     for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins" } do
         local value = raw[key]
         if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid profile " .. key) end
@@ -42,6 +54,7 @@ local function validate(raw, config)
     end
     return result
 end
+Profiles.validate = validate
 
 -- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
@@ -156,6 +169,8 @@ function Profiles:save(userId)
                 current.speedLevel = snapshot.speedLevel
                 current.lifetimeDeliveries = snapshot.lifetimeDeliveries
                 current.coins = snapshot.coins
+                current.tutorialStep = snapshot.tutorialStep
+                current.seenCallouts = snapshot.seenCallouts
                 applyRewards(current)
                 current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
                 return current
@@ -173,6 +188,7 @@ function Profiles:save(userId)
         record.profile.rewardedLaunchTicks = saved.rewardedLaunchTicks
         for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
+            or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if record.leaving and not next(record.pending) and not record.dirty then
             -- Keep lease until expiry: protects a disconnected locked passenger.

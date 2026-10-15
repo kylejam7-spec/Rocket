@@ -34,6 +34,8 @@ return table.freeze({
     FrontierReach = 12,
     -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
     CoinsPerUnit = 1,
+    -- The tutorial's closing "work with everyone" step stays up this long, then ends.
+    TutorialFinalSeconds = 8,
     TrainingTiers = table.freeze({
         table.freeze({ cycles = 1, gain = 4 }),
         table.freeze({ cycles = 3, gain = 6 }),

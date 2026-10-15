@@ -131,3 +131,14 @@
 - On touch the action cluster is a fixed 2×2 grid with a minimum on-screen size
   (70 px), not the desktop row scaled down: thumbs need big targets, and a button
   must not move when another (DROP, LEAVE) appears.
+
+## 2026-10-15: Tutorial (Phase 3)
+
+- The server owns the step and moves it only on what it saw (pickup, reach, accepted
+  delivery, starter-gym tick). The client renders and can only skip, which grants
+  nothing, so no tutorial step can be used to farm rewards.
+- Steps are stored by name, not index, so Phase 4 can insert "Upgrade" without
+  shifting saved progress.
+- Existing profiles with deliveries skip the tutorial on migration; new ones get it.
+- The upgrade step is deferred to Phase 4 rather than faked with a placeholder shop.
+

@@ -100,6 +100,7 @@ function Cargo.new(ctx)
             end
             service.visual(player)
             ctx.Cycle.sendSoon(player)
+            ctx.Tutorial.observe(player, "Pickup")
             return true
         end
         depotPrompts[material] = {}
@@ -140,6 +141,9 @@ function Cargo.new(ctx)
         ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config)
         ctx.profiles:dirty(player.UserId)
         ctx.Stats.update(player)
+        -- A delivery also proves the carry, in case it beat the 5 Hz reach sample.
+        ctx.Tutorial.observe(player, "Carry")
+        ctx.Tutorial.observe(player, "Place")
         local emptied = rocket.cargo[player.UserId] == nil
         if emptied then Remote.feedback(player, material .. " placed! Your deliveries this cycle: " .. (rocket.contributions[player.UserId] or 0)) end
         service.delivered(advanced)

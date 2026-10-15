@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local State = require(script.Parent.State)
 local Settings = require(script.Parent.Settings)
+local Tutorial = require(script.Parent.TutorialController)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -22,8 +23,10 @@ local function carrying(state)
     return (cargo.materials.Fuel or 0) > 0 and "Fuel" or "Metal", cargo.count
 end
 
--- One short, punchy instruction for what to do right now.
+-- One short, punchy instruction for what to do right now (the tutorial's, while on).
 local function objective(state)
+    local tip = Tutorial.objective(state)
+    if tip then return tip end
     if state.training then return "Training on the " .. state.training .. "! Press E to leave." end
     local material, count = carrying(state)
     local full = material and state.profile and count >= state.profile.capacity
