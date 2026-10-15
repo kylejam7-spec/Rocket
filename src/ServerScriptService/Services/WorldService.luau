@@ -9,7 +9,6 @@ World.Tags = table.freeze({
     Boarding = "BoardingZone",
     Training = "TrainingStation", -- attributes TrainingGain, RequiredCycles (TrainingService)
     GymSign = "GymSign", -- attribute RequiredCycles on tiered gyms
-    Planet = "PlanetDestination", -- attribute PlanetId
     Upgrades = "UpgradesHut", -- its "Open Upgrades" prompt opens the client panel
 })
 
@@ -120,8 +119,8 @@ function World.new(ctx)
     local speedStation = part("SpeedGym", Vector3.new(gymX(1) + 7, 1, GYM_Z), Vector3.new(7, 2, 7), Color3.fromRGB(110, 115, 218))
     label(strengthStation, "BENCH")
     label(speedStation, "TREADMILL")
-    -- Well past the tilted Tier 5 rocket, which leans ~150 studs out over -Z.
-    service.planet = tag(part("MeadowPlanet", Vector3.new(0, 2, -420), Vector3.new(65, 4, 65), Color3.fromRGB(113, 177, 95)), World.Tags.Planet, { PlanetId = config.Planet.Id })
+    -- The rocket cabin and the five destinations (DestinationService), far off the map.
+    service.destinations, service.cabin = require(script.Parent.DestinationService).build(world, config)
     world.Parent = workspace
 
     local function equipment(base, treadmill)

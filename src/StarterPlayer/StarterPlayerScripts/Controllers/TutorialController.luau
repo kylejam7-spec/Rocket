@@ -20,7 +20,7 @@ local TutorialController = {}
 local MATERIAL = { Building = "Metal", Fueling = "Fuel" }
 local CALLOUTS = {
     Fuel = { phase = "Fueling", text = "FIRST FUEL RUN! Fill a jerry can at the OIL REFINERY, then pour it in at the ring!", color = Theme.color.Fuel },
-    Boarding = { phase = "Boarding", text = "Stand on the green BOARD pad before the countdown ends to fly to Meadow for free stats!", color = Theme.color.Ready },
+    Boarding = { phase = "Boarding", text = "Walk into the rocket at the green BOARD hatch to fly to space for free stats!", color = Theme.color.Ready },
 }
 
 local function step(state)

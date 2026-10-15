@@ -39,11 +39,11 @@ local function objective(state)
         if material == "Fuel" then return "Pour the fuel into the rocket at the glowing ring!" end
         return "Rocket built! Fill your jerry can at the OIL REFINERY!"
     elseif state.phase == "Boarding" then
-        return state.boarded and "You're aboard! Stay on the green pad!" or "BOARD NOW! Stand on the green BOARD pad!"
+        return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
     elseif state.phase == "Launching" then
-        return state.passenger and "LIFTOFF! Off to Meadow!" or "You missed this one. Next build starts soon!"
+        return state.passenger and "LIFTOFF! Off to " .. state.destination .. "!" or "You missed this one. Next build starts soon!"
     elseif state.phase == "Rewarding" then
-        return state.passenger and "Meadow bonus: free strength & speed!" or "Passengers are on Meadow. Next build soon!"
+        return state.passenger and "Welcome to " .. state.destination .. "! Free strength & speed!" or "The crew is on " .. state.destination .. ". Next build soon!"
     end
     return "Returning home. A bigger rocket is next!"
 end
@@ -160,14 +160,14 @@ function HudController.start()
         save.Text = state.persistent and ("Progress: " .. state.saveStatus) or "Studio test: progress isn't saved"
     end)
 
-    -- Training ticks and Meadow rewards already show as stat popups; everything else
+    -- Training ticks and destination rewards already show as stat popups; everything else
     -- is a toast above the progress pill, so the objective line always stays up.
     local toasts = Toast.stack({
         Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96),
         Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
     })
     State.onFeedback(function(message)
-        if message:match("^%+%d+ %a+!$") or message:match("^Meadows %+") then return end
+        if message:match("^%+%d+ %a+!$") or message:match("%+%d+ strength / %+%d+ speed %(") then return end
         toasts:push(message)
     end)
 end

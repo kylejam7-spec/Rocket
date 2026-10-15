@@ -1,4 +1,42 @@
-# Latest session: 2026-10-15, Phase 4 upgrades and ranks
+# Latest session: 2026-10-15, rocket cabin and destinations (Phase 4.5)
+
+- Branch `claude/destinations` from `master` @ e156ee3 (Phase 4 merged). Rojo on
+  127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.
+- User's change: no more Meadow slab. Players get inside the rocket, countdown, the
+  liftoff cutscene, then an isolated destination per design (1 Space Station, 2 Moon,
+  3 Mars, 4 Saturn, 5 Pluto) with the same passive per-second bonus, then spawn.
+  Done before Phase 5 assets so the art list follows the gameplay.
+- `Services/DestinationService` builds the cabin (Config.CabinPosition, -3000/200/0:
+  seats with a centre aisle, portholes, CountdownScreen, ExitHatch) and the five
+  areas (Config.Destinations: id, name, gravity, color, position; 10,000 studs apart
+  on x, z 10000, because Saturn's rings are visible ~4,000 away). Each: walled play
+  area (invisible fence ring), themed primitives, ArrivalPad tagged
+  DestinationArrival, welcome sign ahead of the arrival.
+- `LaunchService`: on the BOARD hatch during Boarding → relocated into the cabin;
+  boarded = in the cabin box (raw body, so a just-teleported player counts); cabin
+  "Leave rocket" prompt puts you beside the hatch (away from the rocket). Lock = in
+  cabin at the deadline; stragglers without a lock go to spawn. Rewarding: spread
+  arrival at the design's destination; reward toasts name it. Hull standers at
+  boarding start go beside the hatch, not onto it.
+- Client: `DestinationController` (cabin screen "LIFTOFF IN n → THE MOON", local
+  Gravity while a passenger at the destination, reset after). HUD/pill/tutorial text
+  name the destination (`state.destination`, `state.destinationTier`).
+- `DestinationCheck`: builds into a scratch folder; every cycle's design has a
+  destination; arrivals on their ground; fence before every edge; ≥ 8,000 studs
+  apart; cabin closed on all sides; clear aisle from arrival to the exit hatch.
+- Studio (single sync verified, desktop): RunChecks 7/7. Cycle 1: hatch → cabin
+  (screen counting down) → liftoff → Space Station, +3/s ticks, back to spawn.
+  Cycle 4: in, out through the exit hatch (beside the BOARD hatch, objective back to
+  "BOARD NOW!"), in again → Moon (gravity 60, jump +23.5 studs, sign, "MOON 26s"
+  pill) → spawn with gravity 196.2, Cycle 5. Mars, Saturn, Pluto checked by Edit
+  preview screenshots. Fixed on the way: seats blocked the aisle (exit unreachable);
+  neighbouring destinations' giant planets were visible (spacing 1,000 → 10,000).
+  Only UIBlox warnings.
+- Not verified: Mars/Saturn/Pluto via a real launch (layout via preview + check),
+  two clients boarding together, the cabin and destinations on the phone emulator.
+- Edit-mode screen captures don't render SurfaceGui text; Play captures do.
+
+# Earlier session: 2026-10-15, Phase 4 upgrades and ranks (merged)
 
 - Branch `claude/phase4-upgrades` from `master` @ 2ea6f97 (Phase 3 merged). Rojo on
   127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.
