@@ -5,15 +5,20 @@ return table.freeze({
     InteractionDistance = 10,
     ActionCooldown = 0.5,
     TrainingSeconds = 1,
-    MaxLevel = 50,
+    -- Strength and speed are uncapped point totals; soft curves turn them into stats.
     MaxPlanetBonus = 1000000,
-    BaseSpeed = 16,
-    SpeedPerLevel = 0.3,
-    MaxSpeed = 32,
-    -- Carry = BaseCarryCapacity + floor(strength / StrengthPerCarry), capped.
+    -- Walk = BaseSpeed + (MaxSpeed - BaseSpeed) * points / (points + SpeedHalfPoints):
+    -- 24 at 0, ~34 after a minute on the starter treadmill, never above MaxSpeed
+    -- (which MovementService also uses as its anti-teleport limit).
+    BaseSpeed = 24,
+    MaxSpeed = 44,
+    SpeedHalfPoints = 120,
+    -- Carry = BaseCarryCapacity + floor(StrengthCarryScale * sqrt(strength)), capped:
+    -- the first starter-bench tick (+2) already adds 2, a minute there gives 26, then
+    -- growth slows (1,000 strength -> 57).
     -- Base 10 per ~10 s depot round trip gives a new solo player ~10 min on Cycle 1.
     BaseCarryCapacity = 10,
-    StrengthPerCarry = 15,
+    StrengthCarryScale = 1.5,
     MaxCapacity = 1000,
     -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth.
     ScrapBallBaseDiameter = 2,

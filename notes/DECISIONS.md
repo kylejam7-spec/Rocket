@@ -91,3 +91,14 @@
 - The client gets no coin remote: like other stat juice, the HUD diffs
   `state.profile.coins` against the previous snapshot and plays the burst. The row
   shows the server total once the first coin lands, so batched updates can't drift.
+
+## 2026-10-14: Stat curve and delivery feedback (Phase 1)
+
+- Strength and speed are uncapped point totals. Stats come from soft curves in
+  `StatsService`: walk speed is hyperbolic toward `MaxSpeed` (base 24, half at 120
+  points), so the anti-teleport limit stays valid. Capacity is square-root
+  (10 + 1.5√s), so the first training seconds visibly add capacity and later gains
+  slow without a hard wall. `MaxCapacity` stays as a safety cap.
+- Delivery juice is client-only and keyed on the shared totals, so every player
+  sees everyone's deliveries land. Effects are local clones under the camera;
+  server parts are never edited from the client.

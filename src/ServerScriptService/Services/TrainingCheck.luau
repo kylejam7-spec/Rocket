@@ -43,9 +43,11 @@ return function()
             assert(root.Anchored and not humanoid.AutoRotate)
             service.tick(session.nextTick)
             assert(profile[station.stat] == station.gain, "Incorrect tier gain")
-            profile[station.stat] = config.MaxLevel - 1
+            -- No level cap: training well past the old playtest cap of 50 keeps going.
+            profile[station.stat] = 10000
             service.tick(session.nextTick)
-            assert(profile[station.stat] == config.MaxLevel, "Training exceeded cap")
+            assert(profile[station.stat] == 10000 + station.gain and service.sessions[player.UserId], "Training stopped at a cap")
+            service.stop(player)
             assert(not service.sessions[player.UserId] and not station.occupant)
             assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit)
         end
@@ -53,5 +55,26 @@ return function()
     for _, station in stations do station.part:Destroy() end
     remotes:Destroy()
     assert(ok, failure)
-    return "All 10 advanced stations: locked below milestone, unlocked at milestone, correct gains, cap and exit passed"
+    -- Stat curves: start at the base, rise every step, flatten out, stay under limits.
+    local Stats = require(script.Parent.StatsService).new({ config = config })
+    local function stats(points)
+        local p = { strengthLevel = points, speedLevel = points, planetBonuses = { strength = 0, speed = 0 } }
+        return Stats.speed(p), Stats.capacity(p)
+    end
+    local speed0, carry0 = stats(0)
+    assert(speed0 == config.BaseSpeed and carry0 == config.BaseCarryCapacity)
+    assert(config.BaseSpeed >= 24 and config.BaseSpeed <= 32, "Base walk speed in the reference range")
+    -- The starter gym gives +2 a second.
+    local _, carry1 = stats(2)
+    assert(carry1 > carry0, "The first starter-bench tick visibly raises capacity")
+    assert(math.floor(stats(2 * 5)) > math.floor(speed0), "Five starter-treadmill ticks raise whole walk speed")
+    local lastSpeed, lastCarry, lastStep = speed0, carry0, math.huge
+    for points = 60, 1e6, 60 * 7 do
+        local speed, carry = stats(points)
+        assert(speed > lastSpeed and carry >= lastCarry and speed < config.MaxSpeed and carry <= config.MaxCapacity)
+        lastSpeed, lastCarry = speed, carry
+    end
+    local a, b, c = stats(100), stats(200), stats(300)
+    assert(b - a > c - b, "Speed gains diminish")
+    return "All 10 advanced stations: locked below milestone, unlocked at milestone, correct gains, no cap, exit; stat curves passed"
 end

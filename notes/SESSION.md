@@ -1,4 +1,30 @@
-# Latest session: 2026-10-14, Phase 1 coins
+# Latest session: 2026-10-14, Phase 1 stat curve + delivery feedback
+
+- Same branch and Rojo port (34874) as the coins work below.
+- Stat curve: no level cap. Walk speed = 24 + 20 · p / (p + 120), so it never
+  passes `MaxSpeed` 44 (also the anti-teleport limit). Carry = 10 + ⌊1.5 · √strength⌋,
+  capped at 1,000. `MaxLevel`, `SpeedPerLevel` and `StrengthPerCarry` are gone, and
+  so are the training cap stop and the profile stat-cap check.
+- `TrainingCheck`: training past 10,000 keeps going; the curves start at base, the
+  first starter-bench tick raises capacity, five treadmill ticks raise whole walk
+  speed, both rise monotonically to 1e6 within limits, and speed gains diminish.
+- New `Controllers/DeliveryFeedbackController`: when the current phase's shared
+  total rises (anyone's delivery), it flashes a local neon shell out of the
+  `Filling` segment (gold for Metal, pink for Fuel) and a white ring off the
+  `BuildFrontier`, at most once every 0.2 s. Coin bursts cover the coin pop.
+- Studio verification (real client): `RunChecks` all pass. Starter bench, 10 s:
+  Capacity 10 → 16. Treadmill, 12 s: Walk Speed 24 → 27, Humanoid 27.1. Delivered
+  Metal from the ramp: coins 0 → 15 = Delivered 15; both flash parts (segment
+  and ring) appeared per batch; only Roblox UIBlox warnings.
+- Reach: as the fill line rises, (17.3, 23, -107) falls out of `FrontierReach`. Move
+  up the ramp edge to about (17.2, 26, -110) (11.2 studs). Pours still stop partway
+  as the ring moves, worth a look in Phase 3 (onboarding).
+- Pit exit for MoveTo: (-72, 0, 73) → (-64, 0, 75) → (-64, 3, 90), then the ramp.
+- Not done: the 10-minute solo acceptance run, two clients, phone layout.
+- Next: that 10-minute run, then Phase 2 leftovers (settings, mobile Place/Jump,
+  safe areas, toasts, screenshot comparison).
+
+# Earlier session: 2026-10-14, Phase 1 coins
 
 - Branch: `claude/great-ellis-195d97`, on top of `claude/brave-turing-b9188d` @ 2f203c7.
   Rojo for this branch was served from its worktree on **127.0.0.1:34874** (another

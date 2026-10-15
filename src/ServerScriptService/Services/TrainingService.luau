@@ -37,7 +37,6 @@ function Training.new(context)
                 context.feedback(player, "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")
                 return
             end
-            if profile[station.stat] >= context.config.MaxLevel then context.feedback(player, "Playtest level cap reached."); return end
             local root, humanoid = context.body(player)
             if not root then return end
             station.occupant = player
@@ -64,15 +63,11 @@ function Training.new(context)
                     session.nextTick = now + context.config.TrainingSeconds
                     local profile = context.profiles.records[userId].profile
                     local stat = session.station.stat
-                    local gain = math.min(session.station.gain, context.config.MaxLevel - profile[stat])
+                    local gain = session.station.gain
                     profile[stat] += gain
                     context.profiles:dirty(userId)
                     context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")
                     context.changed(player)
-                    if profile[stat] >= context.config.MaxLevel then
-                        stop(player)
-                        context.feedback(player, "Level cap reached! Try your upgraded stats.")
-                    end
                 end
             end
         end

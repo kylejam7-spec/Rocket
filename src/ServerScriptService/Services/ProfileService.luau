@@ -29,7 +29,6 @@ local function validate(raw, config)
         local value = raw.planetBonuses[key]
         if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid bonus") end
     end
-    if raw.strengthLevel > config.MaxLevel or raw.speedLevel > config.MaxLevel then error("Invalid stat cap") end
     for _, id in raw.rewardedLaunchIds do if type(id) ~= "string" then error("Invalid reward ledger") end end
     if raw.rewardedLaunchTicks ~= nil then
         if type(raw.rewardedLaunchTicks) ~= "table" then error("Invalid reward ticks") end
@@ -132,7 +131,7 @@ function Profiles:save(userId)
                 profile.completedLaunches += 1
                 table.insert(profile.rewardedLaunchIds, id)
             end
-            local cap = self.config.MaxPlanetBonus or self.config.MaxLevel
+            local cap = self.config.MaxPlanetBonus
             profile.planetBonuses.strength = math.min(cap, profile.planetBonuses.strength + delta * self.config.Planet.StrengthBonus)
             profile.planetBonuses.speed = math.min(cap, profile.planetBonuses.speed + delta * self.config.Planet.SpeedBonus)
             profile.rewardedLaunchTicks[id] = math.max(previous, ticks)

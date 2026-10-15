@@ -4,13 +4,15 @@ local Stats = {}
 function Stats.new(ctx)
     local config = ctx.config
     local service = {}
+    -- Soft curves (see Config): fast early gains, diminishing later, no level cap.
     function service.speed(profile)
-        return math.min(config.MaxSpeed, config.BaseSpeed + (profile.speedLevel + profile.planetBonuses.speed) * config.SpeedPerLevel)
+        local points = profile.speedLevel + profile.planetBonuses.speed
+        return config.BaseSpeed + (config.MaxSpeed - config.BaseSpeed) * points / (points + config.SpeedHalfPoints)
     end
     -- Strength raises carry capacity, so stronger players make fewer trips.
     function service.capacity(profile)
-        return math.min(config.MaxCapacity, config.BaseCarryCapacity
-            + math.floor((profile.strengthLevel + profile.planetBonuses.strength) / config.StrengthPerCarry))
+        local points = profile.strengthLevel + profile.planetBonuses.strength
+        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points)))
     end
     function service.attach(player)
         local stats = Instance.new("Folder")

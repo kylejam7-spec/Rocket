@@ -55,7 +55,7 @@ function HudController.start()
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
     local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", LayoutOrder = 1, Parent = stack })
-    local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 16", LayoutOrder = 2, Parent = stack })
+    local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 24", LayoutOrder = 2, Parent = stack })
     local launches = StatRow.new({ Name = "Launches", icon = icon.Launch, color = Theme.color.Launch, sub = "Delivered: 0", LayoutOrder = 3, Parent = stack })
 
     local goal = StrokedText.new({
