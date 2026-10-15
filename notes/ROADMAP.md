@@ -79,7 +79,7 @@ Each phase ends with a Studio play test (two clients where it matters) and passi
 
 Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone with `UIScale` and safe areas.
 
-**Status (2026-10-15):** built on `claude/phase2-hud`: stat stack, pill, objective, toasts, banners, action cluster, settings, phone scaling. SHOP/PETS stay hidden. Still open: the phone-emulator half of the screenshot acceptance.
+**Status (2026-10-15):** done on `claude/phase2-hud` (PR #1): stat stack, pill, objective, toasts, banners, action cluster (2×2 touch grid), settings, phone scaling. Screenshot acceptance passed at 1920×1080 and in the phone emulator. SHOP/PETS stay hidden until Phase 7.
 
 - **Left stat stack:** Coins, Speed and Strength, each with a multiplier badge and sub-label. Numbers count up on change.
 - **Bottom progress pill:** `Metal 312 / 400`, then `Fuel 80 / 200`, then the boarding/launch countdown. The current `RocketProgress` panel moves here; tier name and cycle `n/15` become a small tag above it.

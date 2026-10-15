@@ -127,3 +127,7 @@
   goes through "Music"/"SFX" SoundGroups so future sounds just join a group.
 - Reduced effects removes motion (shake, flashes, flying coins) but keeps
   information (numbers, popups, banners).
+
+- On touch the action cluster is a fixed 2×2 grid with a minimum on-screen size
+  (70 px), not the desktop row scaled down: thumbs need big targets, and a button
+  must not move when another (DROP, LEAVE) appears.
