@@ -11,6 +11,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local State = require(script.Parent.State)
+local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -47,13 +48,21 @@ function UpgradesController.start()
         Size = UDim2.fromOffset(WIDTH, HEIGHT), BackgroundTransparency = 0.05, radius = 18,
         stroke = 4, strokeColor = Theme.color.Gold, Visible = false, Parent = gui,
     })
-    -- Phones shrink the HUD to ~0.45; keep the panel readable (≥ 0.75) while it fits.
+    -- Phones shrink the HUD to ~0.45; keep the panel readable (≥ 0.75) while it fits,
+    -- and on touch slide it left of the action buttons so GRAB/JUMP stay usable.
     local screenScale = gui:FindFirstChildOfClass("UIScale")
     local panelScale = Create.new("UIScale", { Name = "ReadableScale", Parent = panel })
     local function fit()
         local s = screenScale and screenScale.Scale or 1
         local want = math.max(s, math.min(0.75, 0.9 * gui.AbsoluteSize.Y / HEIGHT))
         panelScale.Scale = want / s
+        local shift = 0
+        if Actions.touch then
+            local cluster = Actions.cluster()
+            local right = gui.AbsoluteSize.X / 2 + WIDTH * want / 2
+            shift = math.min(0, cluster.AbsolutePosition.X - 8 - right)
+        end
+        panel.Position = UDim2.new(0.5, shift / s, 0.5, 0)
     end
     if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
     gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
@@ -149,6 +158,7 @@ function UpgradesController.start()
     ProximityPromptService.PromptTriggered:Connect(function(prompt)
         local part = hut()
         if part and prompt.Parent == part then
+            fit()
             panel.Visible = true
             if current then render(current) end
             Tween.bounce(panel, 1.08, 0.3)
