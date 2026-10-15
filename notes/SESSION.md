@@ -1,4 +1,31 @@
-# Latest session: 2026-10-14, wide ramps + ramp place reach
+# Latest session: 2026-10-15, Phase 2 HUD parity
+
+- Branch `claude/phase2-hud` from `master` @ aa8ddde (Phases 0–1 merged). Rojo for it on
+  127.0.0.1:34874 from this worktree.
+- Toasts: `UI/Toast` stack above the progress pill (max 3, 3 s, repeats re-bounce).
+  Feedback goes there; the objective line never gets overwritten now.
+- Action cluster (`Controllers/ActionController`): one bottom-right row of round
+  buttons, LEAVE (red, was a pill) · DROP · GRAB/PLACE · JUMP. GRAB/PLACE (hold = the
+  material button, caption by cargo) and JUMP show on touch only; Roblox's own jump
+  button is hidden on touch.
+- Settings (`Controllers/Settings` store + `SettingsController`): gold ⚙️ button top
+  right opens a panel with Music and Sounds sliders (`UI/Slider`, driving the "Music"
+  and "SFX" SoundGroups for future audio) and a Reduced effects switch (`UI/Toggle`)
+  that drops launch camera shake, delivery flashes and flying coins. Session-only.
+- Phone fit: UIScale now follows the ScreenGui's inset height, floor 0.45 (was 0.6
+  of the viewport, which overflowed ~375 px landscape phones); `CoreUISafeInsets` set
+  explicitly. Stat stack pinned under the objective (fixed 160 design px) instead of
+  20% of the height, which clipped it on wide screens. Camera hint moved bottom-left.
+- 🪙 doesn't render in Roblox (blank coin icon); Coin is 💰 now.
+- Studio (1920×1080-class viewport, single sync verified): RunChecks 4/4; no HUD
+  rectangle overlaps; toasts, settings panel, slider (Music 0.6 → 0.5 on the group) and
+  toggle by real mouse clicks; with Reduced effects on, a 10-unit delivery gave coins
+  0 → 10 with no flashes or flying coins; no game errors or warnings.
+- Not verified: touch-only buttons and the phone layout in Studio's Device Emulator
+  (the MCP can't switch devices); the layout math for 812×375 shows no overlaps.
+- Left out on purpose: SHOP/PETS column and boost badges (hidden until those exist).
+
+# Earlier session: 2026-10-14, wide ramps + ramp place reach
 
 - Branch `claude/great-ellis-195d97` is now rebased onto `claude/place-pickup-anywhere`
   (6101de9: hold E anywhere, one place prompt that slides around a ring encircling the

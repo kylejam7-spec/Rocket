@@ -1,4 +1,5 @@
--- Carried materials: the round DROP button and the held E / ButtonX / prompt-card input
+-- Carried materials: the round DROP button (and GRAB/PLACE on touch) in the action
+-- cluster, and the held E / ButtonX / prompt-card input
 -- that streams pickups and placements while in range.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -6,8 +7,8 @@ local RunService = game:GetService("RunService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local UserInputService = game:GetService("UserInputService")
 local State = require(script.Parent.State)
+local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
-local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local Tween = require(UI.Tween)
@@ -22,12 +23,11 @@ function CargoController.start()
         icon = Theme.icon.Drop,
         caption = "DROP",
         color = Theme.color.Purple,
-        AnchorPoint = Vector2.new(1, 1),
-        Position = UDim2.new(1, -28, 1, -70),
         Size = UDim2.fromOffset(72, 72),
+        LayoutOrder = 2,
         Visible = false,
         onActivated = function() discardCargo:FireServer() end,
-        Parent = Create.screen("RocketHUD"),
+        Parent = Actions.cluster(),
     })
     State.subscribe(function(state)
         local show = state.cargo ~= nil
@@ -66,6 +66,25 @@ function CargoController.start()
     UserInputService.InputEnded:Connect(function(input)
         if holding and (KEYS[input.KeyCode] or input == holdInput) then setHolding(false) end
     end)
+    -- Touch: a big GRAB/PLACE button in the action cluster is the material button.
+    if Actions.touch then
+        local material = Button.new({
+            Name = "MaterialButton", shape = "circle", icon = Theme.icon.Hand, caption = "GRAB",
+            color = Theme.color.Go, Size = UDim2.fromOffset(84, 84), LayoutOrder = 3, Visible = false,
+            Parent = Actions.cluster(),
+        })
+        material.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                setHolding(true, input)
+            end
+        end)
+        State.subscribe(function(state)
+            local phase = state.phase == "Building" or state.phase == "Fueling"
+            material.Visible = phase and not state.training
+            material.Caption.Text = state.cargo and "PLACE" or "GRAB"
+            material.BackgroundColor3 = state.cargo and Theme.color.Build or Theme.color.Go
+        end)
+    end
     UserInputService.WindowFocusReleased:Connect(function() setHolding(false) end)
     Players.LocalPlayer.CharacterRemoving:Connect(function() setHolding(false) end)
 

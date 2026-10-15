@@ -8,7 +8,8 @@ local State = require(Controllers:WaitForChild("State"))
 Players.LocalPlayer:WaitForChild("PlayerGui")
 
 for _, name in { "CameraController", "LaunchEffectsController", "HudController", "ProgressController",
-    "GymSignController", "TrainingController", "CargoController", "PromptController", "DeliveryFeedbackController" } do
+    "GymSignController", "TrainingController", "CargoController", "PromptController", "DeliveryFeedbackController",
+    "ActionController", "SettingsController" } do
     task.spawn(require(Controllers:WaitForChild(name)).start)
 end
 State.start()

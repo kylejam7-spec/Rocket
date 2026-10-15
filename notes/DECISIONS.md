@@ -76,7 +76,8 @@
   still handles key and gamepad input, and the card drives InputHoldBegin/End for
   touch. Material-hold logic in `CargoController` is unchanged.
 - Each ScreenGui from `UI.Create.screen` carries a UIScale from a 720 px design
-  height (clamped 0.6–1.6); `Tween.flyTo` divides that scale back out.
+  height (clamped 0.6–1.6; Phase 2 made it 0.45–1.6 of the inset height); `Tween.flyTo`
+  divides that scale back out.
 - Shop, Pets, boost badges, purchase chips and coins stay out until they work
   (monetization decision).
 
@@ -114,3 +115,15 @@
   within `FrontierReach` of the fill line along the rocket counts, because where the
   rocket is narrow the ramps can be far outside the ring. Server and client share the
   rule through the ring's ramp attributes.
+
+## 2026-10-15: Phase 2 HUD
+
+- Feedback is toasts, not a takeover of the objective line: the "what to do now"
+  line must always be readable.
+- All round action buttons share one bottom-right row (`ActionController.cluster()`),
+  so new actions slot in by LayoutOrder instead of fighting for corners. Touch gets a
+  GRAB/PLACE hold button and our own JUMP; Roblox's jump button is hidden there.
+- Settings are client-side and session-only until persistence is on. Audio volume
+  goes through "Music"/"SFX" SoundGroups so future sounds just join a group.
+- Reduced effects removes motion (shake, flashes, flying coins) but keeps
+  information (numbers, popups, banners).
