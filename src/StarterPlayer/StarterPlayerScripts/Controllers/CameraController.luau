@@ -22,13 +22,13 @@ function CameraController.start()
     local gui = Create.screen("CameraControls")
     local hint = StrokedText.new({
         AnchorPoint = Vector2.new(1, 1),
-        Position = UDim2.new(1, -Theme.gutter, 1, -Theme.gutter),
-        Size = UDim2.fromOffset(300, 30),
-        BackgroundColor3 = Theme.color.Panel,
-        BackgroundTransparency = 0.2,
-        TextColor3 = Theme.color.White,
-        Font = Theme.font.Body,
-        TextSize = 13,
+        Position = UDim2.new(1, -Theme.gutter, 1, -10),
+        Size = UDim2.fromOffset(320, 18),
+        TextColor3 = Theme.color.Muted,
+        TextXAlignment = Enum.TextXAlignment.Right,
+        Font = Theme.font.Display,
+        TextSize = 14,
+        stroke = 1.5,
         Parent = gui,
     })
     local dot = Create.new("Frame", {

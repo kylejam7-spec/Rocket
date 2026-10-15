@@ -59,3 +59,23 @@
   Phase 2 restyles them.
 - Animation goes through `UI.Tween` (`play`, `bounce` via a UIScale child so
   layout never moves, `countUp` with cancel-on-retarget, `flyTo` in ScreenGui space).
+
+## 2026-10-14: Reference-style HUD
+
+- The HUD follows the eight *Build a Pyramid* frames: left stat stack, top-centre
+  objective line, bottom-centre progress pill, round action buttons bottom right,
+  world-space "+N" popups and level-up text. No dark panels behind HUD text:
+  white text with a heavy dark UIStroke (FredokaOne) carries it.
+- Icons are emoji in `Theme.icon` until Phase 5 art; swapping a value to
+  "rbxassetid://…" makes StatRow use an ImageLabel.
+- Stat feedback is derived on the client by diffing `state.profile` against the
+  previous snapshot, so training, Meadow rewards and any future source get the same
+  popups without new remotes. "Level Up" thresholds: capacity +1 (strength) and
+  each whole walk-speed point (speed).
+- Proximity prompts use Custom style, set locally by `PromptController`; Roblox
+  still handles key and gamepad input, and the card drives InputHoldBegin/End for
+  touch. Material-hold logic in `CargoController` is unchanged.
+- Each ScreenGui from `UI.Create.screen` carries a UIScale from a 720 px design
+  height (clamped 0.6–1.6); `Tween.flyTo` divides that scale back out.
+- Shop, Pets, boost badges, purchase chips and coins stay out until they work
+  (monetization decision).

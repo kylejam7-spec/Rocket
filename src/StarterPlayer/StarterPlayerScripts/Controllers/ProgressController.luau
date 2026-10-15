@@ -1,107 +1,99 @@
--- Shared rocket progress: BUILD -> FUEL -> READY bar, launch countdown and
+-- Shared rocket progress as the reference's bottom pill ("🔩 312 / 400"), a
+-- cycle/tier tag above it, the boarding countdown, delivery pops and the big
 -- milestone banners (new rocket design, final mission, program complete).
 local RunService = game:GetService("RunService")
 local State = require(script.Parent.State)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
-local Panel = require(UI.Panel)
 local Pill = require(UI.Pill)
+local Popup = require(UI.Popup)
 local StrokedText = require(UI.StrokedText)
+local Tween = require(UI.Tween)
 local ProgressController = {}
-local BUILD, FUEL, READY = Theme.color.Build, Theme.color.Fuel, Theme.color.Ready
-
-local function text(parent, name, size, position, textSize, alignment)
-    return StrokedText.new({
-        Name = name, Size = size, Position = position, TextSize = textSize,
-        TextXAlignment = alignment or Enum.TextXAlignment.Left, Parent = parent,
-    })
-end
+local color, icon = Theme.color, Theme.icon
 
 function ProgressController.start()
     local gui = Create.screen("RocketProgress")
-    local panel = Panel.new({
-        AnchorPoint = Vector2.new(1, 0),
-        Position = UDim2.new(1, -Theme.gutter, 0, Theme.gutter),
-        Size = UDim2.new(0.5, -24, 0, 104),
-        maxSize = Vector2.new(400, 104),
-        Parent = gui,
-    })
-    local header = text(panel, "Header", UDim2.new(1, -24, 0, 16), UDim2.fromOffset(12, 8), 12)
-    header.TextColor3 = Theme.color.Muted
-    local title = text(panel, "Title", UDim2.new(0.6, -12, 0, 24), UDim2.fromOffset(12, 26), 20)
-    local count = text(panel, "Count", UDim2.new(0.4, -12, 0, 24), UDim2.new(0.6, 0, 0, 26), 18, Enum.TextXAlignment.Right)
     local bar = Pill.new({
-        Size = UDim2.new(1, -24, 0, 14),
-        Position = UDim2.fromOffset(12, 54),
-        radius = UDim.new(0, 7),
-        Parent = panel,
+        Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
+        Size = UDim2.fromOffset(380, 46), label = true, animate = true, Parent = gui,
     })
-    local footer = text(panel, "Footer", UDim2.new(1, -24, 0, 16), UDim2.fromOffset(12, 78), 12)
-    footer.Font = Theme.font.Body
-    footer.TextColor3 = Theme.color.Subtle
-
-    local countdown = text(gui, "Countdown", UDim2.fromOffset(400, 90), UDim2.new(0.5, -200, 0.3, -45), 72, Enum.TextXAlignment.Center)
-    countdown.TextStrokeTransparency = 0.4
-    countdown.Visible = false
-    local banner = text(gui, "Banner", UDim2.new(1, -40, 0, 64), UDim2.new(0, 20, 0.18, 0), 30, Enum.TextXAlignment.Center)
-    banner.TextWrapped = true
-    banner.TextStrokeTransparency = 0.3
-    banner.Visible = false
-    local bannerUntil = 0
-    local function showBanner(message, color, seconds)
-        banner.Text, banner.TextColor3 = message, color
-        banner.Visible, bannerUntil = true, os.clock() + seconds
+    local tag = StrokedText.new({
+        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -64),
+        Size = UDim2.fromOffset(520, 22), Font = Theme.font.Display, TextSize = 18, stroke = 2, Parent = gui,
+    })
+    local countdown = StrokedText.new({
+        Name = "Countdown", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36),
+        Size = UDim2.fromOffset(300, 120), Font = Theme.font.Display, TextSize = 110, stroke = 5,
+        Visible = false, Parent = gui,
+    })
+    local function banner(message, tint, seconds)
+        Popup.banner({
+            Name = "Banner", Text = message, TextColor3 = tint, seconds = seconds,
+            AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.26), Parent = gui,
+        })
     end
 
     State.subscribe(function(state, previous)
         if not previous then return end
         local phaseChanged = state.phase ~= previous.phase
         if state.modelTier ~= previous.modelTier then
-            showBanner("NEW ROCKET UNLOCKED: " .. state.tierName:upper(), READY, 6)
+            banner("NEW ROCKET UNLOCKED: " .. state.tierName:upper() .. "!", color.Ready, 6)
         elseif phaseChanged and state.phase == "Fueling" then
-            showBanner("ROCKET BUILT — FUEL IT UP!", FUEL, 4)
+            banner("ROCKET BUILT! FUEL IT UP! " .. icon.Fuel, color.Fuel, 4)
         elseif phaseChanged and state.phase == "Boarding" then
-            showBanner(state.isFinal and "FINAL MISSION — BOARD THE ROCKET!" or "ROCKET READY — BOARD NOW!", READY, 4)
+            banner(state.isFinal and "FINAL MISSION! BOARD THE ROCKET!" or "ROCKET READY! BOARD NOW! " .. icon.Launch, color.Ready, 4)
+        elseif phaseChanged and state.phase == "Launching" and state.passenger then
+            banner("LIFTOFF! " .. icon.Launch, color.Gold, 4)
         elseif phaseChanged and state.phase == "Rewarding" and state.isFinal then
-            showBanner("SPACE PROGRAM COMPLETE!\nAll " .. state.cycleCount .. " rockets launched.", Theme.color.Gold, 12)
+            banner("SPACE PROGRAM COMPLETE!\nAll " .. state.cycleCount .. " rockets launched!", color.Gold, 12)
         elseif phaseChanged and state.phase == "Building" and state.cycle == 1 and state.programRuns > 0 then
-            showBanner("A NEW SPACE PROGRAM BEGINS", READY, 6)
+            banner("A NEW SPACE PROGRAM BEGINS!", color.Ready, 6)
+        end
+        -- Your own delivery: pop the amount over the pill.
+        if state.cycle == previous.cycle and state.contribution > previous.contribution then
+            local material = previous.phase == "Fueling" and icon.Fuel or icon.Metal
+            Popup.show({
+                Text = "+" .. Theme.number(state.contribution - previous.contribution) .. " " .. material,
+                TextColor3 = color.Gold, TextSize = 34, AnchorPoint = Vector2.new(0.5, 1),
+                Position = UDim2.new(0.5, math.random(-120, 120), 1, -70), rise = 70, Parent = gui,
+            })
         end
     end)
 
+    local lastCount
     RunService.Heartbeat:Connect(function()
         local state = State.get()
-        if banner.Visible and os.clock() > bannerUntil then banner.Visible = false end
         if not state then return end
-        header.Text = "CYCLE " .. state.cycle .. "/" .. state.cycleCount .. "  •  " .. state.tierName:upper()
-            .. (state.isFinal and "  •  FINAL MISSION" or "")
         local remaining = math.max(0, state.deadline - workspace:GetServerTimeNow())
-        local progress, color
+        local metal, fuel = state.totals.Metal, state.totals.Fuel
+        local needMetal, needFuel = state.required.Metal, state.required.Fuel
         if state.phase == "Building" then
-            title.Text, count.Text = "BUILD ROCKET", state.totals.Metal .. " / " .. state.required.Metal
-            progress, color = state.totals.Metal / state.required.Metal, BUILD
+            bar:set(metal / needMetal, color.Build, icon.Metal .. " " .. Theme.number(metal) .. " / " .. Theme.number(needMetal))
         elseif state.phase == "Fueling" then
-            title.Text, count.Text = "FUEL ROCKET", state.totals.Fuel .. " / " .. state.required.Fuel
-            progress, color = state.totals.Fuel / state.required.Fuel, FUEL
+            bar:set(fuel / needFuel, color.Fuel, icon.Fuel .. " " .. Theme.number(fuel) .. " / " .. Theme.number(needFuel))
         elseif state.phase == "Boarding" then
-            title.Text, count.Text = "ROCKET READY", "T-" .. math.ceil(remaining)
-            progress, color = 1, READY
+            bar:set(1, color.Ready, "BOARD NOW! T-" .. math.ceil(remaining))
+        elseif state.phase == "Launching" then
+            bar:set(1, color.Gold, "LIFTOFF! " .. icon.Launch)
+        elseif state.phase == "Rewarding" then
+            bar:set(1, color.Launch, "MEADOW " .. math.ceil(remaining) .. "s")
         else
-            title.Text, count.Text = state.phase == "Launching" and "LIFTOFF!" or state.phase:upper(), ""
-            progress, color = 1, READY
+            bar:set(1, color.Purple, "NEXT ROCKET…")
         end
-        bar:set(progress, color)
-        local buildMark = state.totals.Metal >= state.required.Metal and "Build ✓" or "Build " .. math.floor(state.totals.Metal / state.required.Metal * 100) .. "%"
-        local fuelMark = state.totals.Fuel >= state.required.Fuel and "Fuel ✓" or "Fuel " .. math.floor(state.totals.Fuel / state.required.Fuel * 100) .. "%"
-        local nextTier = state.nextTierIn and ("Next rocket design in " .. state.nextTierIn .. (state.nextTierIn == 1 and " launch" or " launches"))
-            or (state.isFinal and "Final rocket" or "Final rocket tier")
-        footer.Text = buildMark .. "   •   " .. fuelMark .. "   •   " .. nextTier
+        local next = state.nextTierIn and ("  •  New design in " .. state.nextTierIn .. (state.nextTierIn == 1 and " launch" or " launches"))
+            or (state.isFinal and "  •  FINAL MISSION" or "")
+        tag.Text = "CYCLE " .. state.cycle .. "/" .. state.cycleCount .. "  •  " .. state.tierName:upper()
+            .. "  •  You: " .. Theme.number(state.contribution) .. next
         local showCountdown = state.phase == "Boarding" and remaining <= 10
         countdown.Visible = showCountdown
         if showCountdown then
-            countdown.Text = tostring(math.ceil(remaining))
-            countdown.TextColor3 = remaining <= 3 and Theme.color.Danger or Theme.color.White
+            local count = math.ceil(remaining)
+            countdown.Text = tostring(count)
+            countdown.TextColor3 = remaining <= 3 and color.Danger or color.White
+            if count ~= lastCount then Tween.bounce(countdown, 1.5, 0.4) end
+            lastCount = count
         end
     end)
 end

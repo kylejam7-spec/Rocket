@@ -1,4 +1,4 @@
--- Carried materials: the Clear-cargo button and the hold/E input that streams
+-- Carried materials: the round DROP button and the hold/E input that streams
 -- pickups and placements while a material prompt is held.
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
@@ -8,24 +8,30 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
+local Tween = require(UI.Tween)
 local CargoController = {}
 
 function CargoController.start()
     local discardCargo = State.remote("DiscardCargo")
+    -- Round action button in the bottom-right cluster, like the reference's drop button.
     local discardButton = Button.new({
-        themed = false,
         Name = "DiscardCargo",
-        Size = UDim2.fromOffset(220, 42),
-        Position = UDim2.new(0.5, -110, 1, -122),
-        BackgroundColor3 = Theme.color.Secondary,
-        TextColor3 = Theme.color.White,
-        Text = "Clear carried materials",
-        TextSize = 16,
+        shape = "circle",
+        icon = Theme.icon.Drop,
+        caption = "DROP",
+        color = Theme.color.Purple,
+        AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(1, -28, 1, -70),
+        Size = UDim2.fromOffset(72, 72),
         Visible = false,
         onActivated = function() discardCargo:FireServer() end,
         Parent = Create.screen("RocketHUD"),
     })
-    State.subscribe(function(state) discardButton.Visible = state.cargo ~= nil end)
+    State.subscribe(function(state)
+        local show = state.cargo ~= nil
+        if show and not discardButton.Visible then Tween.bounce(discardButton, 1.3, 0.4) end
+        discardButton.Visible = show
+    end)
 
     -- PromptButtonHoldEnded fires at completion, so use physical input release instead.
     local materialHold = State.remote("MaterialHold")

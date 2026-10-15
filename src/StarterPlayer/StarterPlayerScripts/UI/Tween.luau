@@ -52,7 +52,9 @@ end
 function Tween.flyTo(gui, target, seconds, onArrive)
     local screen = gui:FindFirstAncestorWhichIsA("LayerCollector")
     local origin = screen and screen.AbsolutePosition or Vector2.zero
-    local goal = target.AbsolutePosition + target.AbsoluteSize / 2 - origin
+    -- Offsets are multiplied by the screen's UIScale, so divide pixels back out.
+    local scale = screen and screen:FindFirstChildOfClass("UIScale")
+    local goal = (target.AbsolutePosition + target.AbsoluteSize / 2 - origin) / (scale and scale.Scale or 1)
     gui.AnchorPoint = Vector2.new(0.5, 0.5)
     local tween = Tween.play(gui, Tween.info(seconds or 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
         { Position = UDim2.fromOffset(goal.X, goal.Y) })
