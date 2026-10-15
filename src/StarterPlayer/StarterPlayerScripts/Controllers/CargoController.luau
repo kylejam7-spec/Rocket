@@ -6,6 +6,9 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage.Shared.Config)
+local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -33,6 +36,10 @@ function CargoController.start()
         local show = state.cargo ~= nil
         if show and not discardButton.Visible then Tween.bounce(discardButton, 1.3, 0.4) end
         discardButton.Visible = show
+        -- The place prompt shows from this player's (upgraded) reach, like the server's check.
+        local ring = CollectionService:GetTagged("BuildFrontier")[1]
+        local prompt = ring and ring:FindFirstChild("PlacePoint") and ring.PlacePoint:FindFirstChildOfClass("ProximityPrompt")
+        if prompt and state.profile then prompt.MaxActivationDistance = Upgrades.reach(Config, state.profile) end
     end)
 
     -- The server streams pickups/placements while the material button is down, at

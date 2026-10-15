@@ -20,6 +20,7 @@ end)
 ctx.Launch = require(Services.LaunchService).new(ctx)
 ctx.Cargo = require(Services.CargoService).new(ctx)
 ctx.Tutorial = require(Services.TutorialService).new(ctx)
+ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,

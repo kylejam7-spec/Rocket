@@ -15,12 +15,13 @@ return function()
         assert(step == (steps[index + 1] or Tutorial.Done), "bad advance from " .. name)
     end
     assert(step == Tutorial.Done)
+    assert(Tutorial.advance("Place", "Place") == "Upgrade", "first upgrade comes right after the first delivery")
     for _, name in steps do assert(Tutorial.advance(Tutorial.Done, name) == nil, "Done must be final") end
     assert(Tutorial.advance(steps[1], "Skip") == nil and not Tutorial.valid("Skip") and Tutorial.valid(Tutorial.Done))
 
     -- New profiles start the tutorial with nothing seen.
     local fresh = Profiles.validate(nil, config)
-    assert(fresh.schemaVersion == 3 and fresh.tutorialStep == steps[1] and #fresh.seenCallouts == 0)
+    assert(fresh.schemaVersion == 4 and fresh.tutorialStep == steps[1] and #fresh.seenCallouts == 0)
     -- v2 players who already delivered skip it; brand-new v2 (and v1) profiles get it.
     local function v2(deliveries)
         return { schemaVersion = 2, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 },
@@ -30,7 +31,7 @@ return function()
     assert(Profiles.validate(v2(0), config).tutorialStep == steps[1])
     local v1 = v2(0); v1.schemaVersion, v1.coins = 1, nil
     local migrated = Profiles.validate(v1, config)
-    assert(migrated.schemaVersion == 3 and migrated.coins == 0 and migrated.tutorialStep == steps[1])
+    assert(migrated.schemaVersion == 4 and migrated.coins == 0 and migrated.tutorialStep == steps[1])
     -- Saved v3 progress round-trips; bad values are refused rather than overwritten.
     local saved = Profiles.validate(v2(0), config)
     saved.tutorialStep, saved.seenCallouts = "Bench", { "Fuel" }

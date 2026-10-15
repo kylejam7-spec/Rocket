@@ -10,6 +10,7 @@ World.Tags = table.freeze({
     Training = "TrainingStation", -- attributes TrainingGain, RequiredCycles (TrainingService)
     GymSign = "GymSign", -- attribute RequiredCycles on tiered gyms
     Planet = "PlanetDestination", -- attribute PlanetId
+    Upgrades = "UpgradesHut", -- its "Open Upgrades" prompt opens the client panel
 })
 
 function World.new(ctx)
@@ -215,6 +216,20 @@ function World.new(ctx)
         end
     end
     service.stations = stations
+
+    -- Upgrades hut beside the lane between the gyms and the launch pad, door facing the
+    -- lane. Its prompt only opens the panel (client); purchases go through BuyUpgrade.
+    local hutColor, roofColor = Color3.fromRGB(70, 175, 95), Color3.fromRGB(255, 204, 40)
+    local hut = tag(part("UpgradesHut", Vector3.new(-26, 4, -32), Vector3.new(12, 8, 14), hutColor), World.Tags.Upgrades)
+    part("UpgradesRoof", Vector3.new(-26, 8.6, -32), Vector3.new(14, 1.2, 16), roofColor)
+    part("UpgradesDoor", Vector3.new(-19.9, 3, -32), Vector3.new(0.2, 6, 4), Color3.fromRGB(40, 32, 60))
+    local hutSign = part("UpgradesSign", Vector3.new(-19.6, 10.6, -32), Vector3.new(0.4, 3, 12), roofColor)
+    signText(hutSign, { { name = "Title", text = "UPGRADES", height = 0.8 } })
+    hutSign:FindFirstChild("SignText").Face = Enum.NormalId.Right
+    local hutPrompt = service.prompt(hut, "Open Upgrades")
+    hutPrompt.ObjectText = "Upgrades"
+    hutPrompt.MaxActivationDistance = 14
+    service.upgradesHut = hut
 
     function service.anchors(name)
         local found = {}
