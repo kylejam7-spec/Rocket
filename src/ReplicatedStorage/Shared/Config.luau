@@ -1,5 +1,5 @@
 return table.freeze({
-    -- Per-cycle requirements, countdown and launch timings live in Shared.RocketCycles.
+    -- Mission build sizes, wheel odds, countdown and launch timings live in Shared.Missions.
     MaterialHoldSeconds = 0.05,
     RewardSeconds = 30,
     InteractionDistance = 10,
@@ -67,18 +67,23 @@ return table.freeze({
         table.freeze({ cycles = 100, multiplier = 100 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
-    -- reward (further out pays more) x the cycle's RewardMultiplier (final mission x2).
+    -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
     -- Each destination's own bench and treadmill give double its per-second reward.
     Planet = table.freeze({ StrengthBonus = 3, SpeedBonus = 3 }),
-    -- Where each rocket design flies (by RocketCycles ModelTier): isolated areas far
-    -- from the main map and 10,000 studs apart (Saturn's rings carry ~4,000) so their giant backdrops never overlap.
-    -- Gravity is applied on the passenger's client while there.
+    -- Mission wheel: it starts this many seconds before a reward stay ends and spins
+    -- for WheelSpinSeconds; everyone sees it (WheelController).
+    WheelLeadSeconds = 10,
+    WheelSpinSeconds = 6,
+    -- Where each mission flies (same index as Shared.Missions: Common → Legendary):
+    -- isolated areas far from the main map, 10,000 studs apart so their giant
+    -- backdrops (Saturn's rings carry ~4,000) never show in another sky. Gravity is
+    -- applied on the passenger's client while there.
     Destinations = table.freeze({
-        table.freeze({ id = "SpaceStation", reward = 1, name = "THE SPACE STATION", gravity = 196.2, color = Color3.fromRGB(120, 200, 255), position = Vector3.new(10000, 200, 10000) }),
-        table.freeze({ id = "Moon", reward = 2, name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(20000, 200, 10000) }),
-        table.freeze({ id = "Mars", reward = 3, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(30000, 200, 10000) }),
-        table.freeze({ id = "Saturn", reward = 4, name = "SATURN", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
-        table.freeze({ id = "Pluto", reward = 6, name = "PLUTO", gravity = 50, color = Color3.fromRGB(180, 215, 255), position = Vector3.new(50000, 200, 10000) }),
+        table.freeze({ id = "Moon", reward = 1, name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(10000, 200, 10000) }),
+        table.freeze({ id = "Mars", reward = 2, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(20000, 200, 10000) }),
+        table.freeze({ id = "Europa", reward = 3, name = "EUROPA", gravity = 50, color = Color3.fromRGB(150, 225, 255), position = Vector3.new(30000, 200, 10000) }),
+        table.freeze({ id = "Saturn", reward = 5, name = "SATURN'S RINGS", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
+        table.freeze({ id = "BlackHole", reward = 10, name = "THE BLACK HOLE", gravity = 80, color = Color3.fromRGB(190, 110, 255), position = Vector3.new(50000, 200, 10000) }),
     }),
     -- The inside of the rocket: boarding players wait here for liftoff.
     CabinPosition = Vector3.new(-3000, 200, 0),

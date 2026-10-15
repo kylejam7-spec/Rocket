@@ -3,16 +3,34 @@
 -- cabin (the inside of the rocket, DestinationService); its exit hatch lets you out
 -- until liftoff. Everyone in the cabin when the countdown ends flies to the design's
 -- destination (Config.Destinations by ModelTier), gets the per-second bonus there,
--- then returns to spawn.
+-- then returns to spawn. WheelLeadSeconds before the stay ends the server spins the
+-- mission wheel (Shared.Missions) for everyone; the next rocket is the result.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Cycles = require(ReplicatedStorage.Shared.RocketCycles)
+local Missions = require(ReplicatedStorage.Shared.Missions)
 local Launch = {}
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
     local boarding, spawn, rocketBuild, cabin = World.boarding, World.spawn, World.rocketBuild, World.cabin
     local service = {}
+    local random = Random.new()
+    -- Spins once per stay: stamps Cycle.wheel (clients animate it in sync), updates
+    -- the pity counter and announces the result when the wheel stops.
+    local function spinWheel(rocket)
+        local weights = Missions.weights(Cycle.misses)
+        local result, pity = Missions.spin(random, Cycle.misses)
+        Cycle.misses = Missions.afterSpin(Cycle.misses, result)
+        rocket.nextMission = result
+        local mission = Missions.get(result)
+        -- `offset` (0..1 within the winning slice) makes every client's wheel stop on the same spot.
+        Cycle.wheel = { result = result, mission = mission.Id, rarity = mission.Rarity, pity = pity, weights = weights,
+            offset = random:NextNumber(0.2, 0.8), startAt = workspace:GetServerTimeNow(), seconds = config.WheelSpinSeconds }
+        Cycle.broadcast()
+        task.delay(config.WheelSpinSeconds, function()
+            Remote.announce("NEXT MISSION: " .. config.Destinations[result].name .. "! (" .. mission.Rarity:upper() .. ")")
+        end)
+    end
     -- Spread arrivals so a full server doesn't land in one stack.
     local function spread(position, radius)
         local angle, distance = math.random() * math.pi * 2, math.random() * radius
@@ -73,7 +91,7 @@ function Launch.new(ctx)
         end
         rocketBuild:erect(workspace:GetServerTimeNow(), config.ErectSeconds)
         ctx.Cargo.refreshPrompts()
-        Remote.announce(definition.IsFinalCycle and "FINAL MISSION READY! Board the " .. tier.Name .. " now!" or "ROCKET READY! Board now: launch countdown started.")
+        Remote.announce(definition.IsLegendary and "LEGENDARY MISSION READY! Board the " .. tier.Name .. " now!" or "ROCKET READY! Board now: launch countdown started.")
         Cycle.broadcast()
         local cycle = rocket.cycle
         task.delay(tier.BoardingSeconds, function()
@@ -99,13 +117,13 @@ function Launch.new(ctx)
             end
             local launchAt = workspace:GetServerTimeNow()
             Cycle.deadline = launchAt + tier.LaunchSeconds
-            rocketBuild:launch(launchAt, tier, definition.IsFinalCycle)
+            rocketBuild:launch(launchAt, tier, definition.IsLegendary)
             Cycle.broadcast()
             task.wait(tier.LaunchSeconds)
             rocket.phase = "Rewarding"
             local rewardSeconds = definition.RewardSeconds or config.RewardSeconds
             local place = destination()
-            -- Further destinations pay more; the final mission multiplies on top.
+            -- Rarer destinations pay more (Config.Destinations reward x the mission's multiplier).
             local multiplier = definition.RewardMultiplier * place.reward
             for _, station in World.stations do
                 if station.destination == definition.ModelTier then
@@ -123,9 +141,6 @@ function Launch.new(ctx)
                     Movement.relocate(player, spread(place.arrival, 8))
                 end
             end
-            if definition.IsFinalCycle then
-                Remote.announce("SPACE PROGRAM COMPLETE! All " .. Cycles.Count .. " rockets launched. A new program begins soon.")
-            end
             Cycle.broadcast()
             -- Cumulative tick counts are idempotent even when a save retries; the
             -- multiplier scales the ticks so the ledger stays an integer total.
@@ -136,6 +151,7 @@ function Launch.new(ctx)
                     local player = Players:GetPlayerByUserId(userId)
                     if player then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier .. " strength / +" .. config.Planet.SpeedBonus * multiplier .. " speed (" .. tick .. "/" .. rewardSeconds .. ")") end
                 end
+                if rewardSeconds - tick == config.WheelLeadSeconds then spinWheel(rocket) end
                 Cycle.broadcast()
             end
             rocket.phase = "Resetting"
@@ -152,14 +168,9 @@ function Launch.new(ctx)
             task.wait(1)
             -- Shared progression only: profiles (stats, launches, unlocks) are untouched.
             Cycle.boarded = {}
-            Cycle.replace(rocket:nextCycle(Cycle.newId()))
-            local upcoming = Cycle.rocket.definition
-            if upcoming.Variant == 1 and upcoming.Number > 1 then
-                Remote.announce("NEW ROCKET DESIGN: " .. upcoming.Tier.Name .. "! Cycle " .. upcoming.Number .. "/" .. Cycles.Count)
-            elseif upcoming.Number == 1 and Cycle.rocket.programRuns > 0 then
-                Remote.announce("A new space program begins! Cycle 1/" .. Cycles.Count)
-            end
-            Cycle.broadcast()
+            Cycle.replace(rocket:nextCycle(Cycle.newId(), rocket.nextMission))
+            Cycle.wheel = nil
+            Cycle.broadcast() -- clients banner the new mission
         end)
     end
 

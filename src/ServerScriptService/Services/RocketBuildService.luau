@@ -342,6 +342,7 @@ function Build:erect(serverTime, seconds)
 end
 
 -- Clients play ignition + ascent; the server rocket stays put until the next load.
+-- `isFinal` (legendary missions) makes the launch bigger and louder.
 function Build:launch(serverTime, tierDefinition, isFinal)
     local vehicle = self.vehicle
     vehicle:SetAttribute("LaunchSeconds", tierDefinition.LaunchSeconds)

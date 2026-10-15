@@ -1,3 +1,40 @@
+# Latest session: 2026-10-16, mission wheel (Phase 4.6)
+
+- Branch `claude/mission-wheel` from `master` @ 77826d8 (Gym District + UI polish merged).
+- The linear 15-cycle program is gone. `Shared/Missions` (replaces RocketCycles): five
+  missions, one rocket design and destination each — Moon (Common 40%), Mars (Uncommon
+  28%), Europa (Rare 19%), Saturn's Rings (Epic 10%), Black Hole (Legendary 3%). New
+  servers start on the Moon; WheelLeadSeconds (10) before each stay ends the server
+  spins (`LaunchService` spinWheel → `Cycle.wheel`, sent in state) and the next rocket is
+  the result. Pity: after 4 spins in a row below Rare the next spin uses Europa 34 /
+  Saturn 33 / Black Hole 33. Long-run share: 36.8 / 25.8 / 20.2 / 11.8 / 5.4%.
+- Rarer = bigger build and reward: 600 / 1,150 / 2,100 / 3,700 / 6,100 units;
+  destination reward 1/2/3/5/10 (3, 6, 9, 15, 30 per second, gyms 2×); Black Hole stays
+  45 s and launches with bigger exhaust and shake. Rocket names: Lunar Rocket, Mars
+  Rocket, Europa Heavy-Lift, Saturn Super Heavy, Event Horizon Explorer.
+- Destinations: Moon, Mars, Saturn moved; Europa (ice shell, cyan fissures, ridges,
+  GeyserVent-tagged vents, banded Jupiter with the Great Red Spot) and Black Hole
+  (obsidian disc, purple fissures, debris, neon-black horizon, tilted accretion disk,
+  lensed halo) new; Space Station and Pluto removed. Planet bands are thin discs:
+  Ball parts are always round, so squashed balls don't work.
+- `WheelController`: pie of 144 spokes coloured by rarity (Theme.rarity), radial labels,
+  eased 6 s spin to the server's slice + offset on the shared clock, result in rarity
+  colour; hides the objective line while up. Progress tag: "EUROPA MISSION • RARE",
+  "Rare+ in N spins" / "NEXT SPIN: RARE+ GUARANTEED". New-mission banner in rarity colour.
+- Checks: `MissionCheck` (odds, pity after 4, pity pool Rare+, sampled shares, ≤4 misses
+  in a row, exact long-run chain); MaterialInteraction/Destination checks moved to
+  missions. `ProgressionReport` simulates N launches of a seeded wheel. Debug:
+  `Invoke("mission", id or index)`, `Invoke("misses", n)`.
+- Studio: RunChecks 8/8. Pity spin (misses 4) on the Moon → "PITY SPIN!" Rare+ wheel →
+  EUROPA, then home on the Europa mission (0 / 1,300, blue banner). Normal wheel checked
+  by screenshot (40/28/19/10/3). Europa and Black Hole by Edit preview.
+- Sync gotcha: Rojo (34874, even after a restart) delivered new files but no edits to
+  existing scripts; scripts were written into Studio from the worktree over a local
+  HTTP server (Source set directly) and all 66 lengths matched before testing.
+- Not done: destination mechanics (Mars dust storm, Europa geysers, drifting Saturn
+  chunks, Black Hole slow motion + exit cutscene) — next PR; a real Black Hole launch
+  (its hatch sits elsewhere for the big rocket); two clients; phone layout of the wheel.
+
 # Latest session: 2026-10-15, planet destination UI polish
 
 - Merged `claude/gym-area-tiered-ordering-2997f1` (Gym District + Phases 2–4,

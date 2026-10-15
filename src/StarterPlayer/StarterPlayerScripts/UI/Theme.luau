@@ -41,6 +41,15 @@ Theme.icon = {
     Jump = "⬆",
 }
 
+-- Mission wheel rarities (Shared.Missions); WheelController and the progress tag.
+Theme.rarity = {
+    Common = Color3.fromRGB(170, 180, 200),
+    Uncommon = Color3.fromRGB(80, 210, 90),
+    Rare = Color3.fromRGB(60, 150, 255),
+    Epic = Color3.fromRGB(175, 80, 255),
+    Legendary = Color3.fromRGB(255, 170, 30),
+}
+
 Theme.font = {
     Body = Enum.Font.GothamBold,
     Bold = Enum.Font.GothamBlack,

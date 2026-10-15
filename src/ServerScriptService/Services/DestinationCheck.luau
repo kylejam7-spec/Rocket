@@ -4,7 +4,7 @@
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
-    local Cycles = require(ReplicatedStorage.Shared.RocketCycles)
+    local Missions = require(ReplicatedStorage.Shared.Missions)
     local Destinations = require(script.Parent.DestinationService)
     local scratch = Instance.new("Folder")
     scratch.Name = "DestinationCheckScratch"
@@ -14,11 +14,12 @@ return function()
         local params = RaycastParams.new()
         params.FilterType = Enum.RaycastFilterType.Include
         params.FilterDescendantsInstances = { scratch }
-        for number = 1, Cycles.Count do
-            local tier = Cycles.get(number).ModelTier
-            assert(built[tier], "cycle " .. number .. " has no destination for design " .. tier)
+        for index = 1, Missions.Count do
+            local mission = Missions.get(index)
+            assert(built[mission.ModelTier], "mission " .. mission.Id .. " has no destination")
+            assert(config.Destinations[mission.ModelTier].id == mission.Id, "mission " .. mission.Id .. " flies to the wrong destination")
         end
-        -- Further destinations pay more per second.
+        -- Rarer destinations pay more per second.
         for tier = 2, #config.Destinations do
             assert(config.Destinations[tier].reward > config.Destinations[tier - 1].reward, "destination rewards must grow with the design")
         end

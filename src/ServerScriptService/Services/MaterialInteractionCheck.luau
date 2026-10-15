@@ -2,20 +2,19 @@ return function()
     local Rocket = require(script.Parent.RocketService)
     local Hold = require(script.Parent.HoldService)
     local Models = require(script.Parent.RocketModels)
-    local Cycles = require(game.ReplicatedStorage.Shared.RocketCycles)
+    local Missions = require(game.ReplicatedStorage.Shared.Missions)
     local config = require(game.ReplicatedStorage.Shared.Config)
     assert(config.MaterialHoldSeconds == 0.05)
-    -- Cycle data: 15 cycles, 5 tiers x 3, rising work, final cycle wraps to 1.
-    assert(Cycles.Count == 15 and Cycles.next(15) == 1 and Cycles.get(15).IsFinalCycle)
+    -- Mission data: five missions, one rocket design each, rarer = more work.
+    assert(Missions.Count == 5 and Missions.First == 1)
     local previous = 0
-    for number = 1, Cycles.Count do
-        local cycle = Cycles.get(number)
-        assert(cycle.ModelTier == math.ceil(number / 3) and cycle.Variant == (number - 1) % 3 + 1)
-        local work = cycle.ConstructionRequired + cycle.FuelRequired
-        assert(work > previous, "Each cycle must need more work")
+    for index = 1, Missions.Count do
+        local mission = Missions.get(index)
+        assert(mission.ModelTier == index and mission.Rank == index)
+        local work = mission.ConstructionRequired + mission.FuelRequired
+        assert(work > previous, "Rarer missions must need more work")
         previous = work
     end
-    assert(Cycles.launchesUntilNextTier(2) == 2 and Cycles.launchesUntilNextTier(13) == nil)
     -- Tiers fit the reserved launch complex and grow visibly taller.
     local lastHeight = 0
     for tier = 1, 5 do
@@ -50,17 +49,14 @@ return function()
     accepted, advanced = rocket:deliver(1)
     assert(accepted == 10 and advanced and rocket.phase == "Boarding")
     assert(rocket.contributions[1] == 20 and rocket.contributions[2] == 15)
-    -- Cycle advance only on a crewed launch; the final cycle restarts the program.
+    -- The next rocket is the spun mission (the same one if nothing was spun).
     rocket:lockPassengers({ [1] = true })
     rocket.phase = "Resetting"
-    assert(rocket:nextCycle("next").cycleNumber == 2)
-    local empty = Rocket.new(config, "empty", 4)
-    empty.phase = "Resetting"
-    assert(empty:nextCycle("retry").cycleNumber == 4, "An uncrewed launch repeats the cycle")
-    local final = Rocket.new(config, "final", 15, 0)
-    final.passengers, final.phase = { [1] = true }, "Resetting"
-    local restarted = final:nextCycle("restart")
-    assert(restarted.cycleNumber == 1 and restarted.programRuns == 1)
+    local spun = rocket:nextCycle("next", 3)
+    assert(spun.mission == 3 and spun.launches == 1 and spun.required.Metal == Missions.get(3).ConstructionRequired)
+    local again = Rocket.new(config, "again", 4, 7)
+    again.phase = "Resetting"
+    assert(again:nextCycle("same").mission == 4 and again:nextCycle("same").launches == 8)
     -- Coins: credited only for units the rocket accepted, never twice, never for
     -- empty, discarded or leftover cargo.
     local Profiles = require(script.Parent.ProfileService)

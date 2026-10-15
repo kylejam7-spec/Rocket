@@ -129,6 +129,14 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 - Built with primitives; Phase 5 adds art, skies and ambience.
 - **Accept:** a full cycle per design reaches its destination and returns, `DestinationCheck` passes.
 
+### Phase 4.6: Mission wheel (added 2026-10-16)
+
+**Status (2026-10-16):** built on `claude/mission-wheel`.
+
+- The fixed 15-rocket program is replaced by a wheel: during each stay, with 10 s left, the server spins for the next mission. Moon 40%, Mars 28%, Europa 19%, Saturn's Rings 10%, Black Hole 3%; pity makes the next spin Rare+ (34/33/33) after 4 misses. New servers start on the Moon.
+- Each mission has its own rocket; rarer missions are bigger builds that pay more.
+- Next: each destination's mechanic — Mars dust storm, Europa geysers, drifting Saturn ring chunks, Black Hole slow motion with an exit cutscene.
+
 ### Phase 5: Art, world and audio (your assets and Blender)
 
 **Pipeline:**

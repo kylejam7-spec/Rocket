@@ -75,6 +75,13 @@ end
 -- treadmill right of the arrival) and the arrival itself.
 Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3.new(28, 0, 24) }
 local CLEAR = { Destinations.GymOffsets.bench, Destinations.GymOffsets.treadmill, Vector3.new(0, 0, 18) }
+-- A coloured band around a planet ball: a thin disc through it at `height`, just wider
+-- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
+local function band(parent, name, center, radius, height, thickness, color)
+    local width = 2 * math.sqrt(math.max(0, radius * radius - height * height)) + 6
+    return decor(parent, name, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(thickness, width, width),
+        CFrame = CFrame.new(center + Vector3.new(0, height, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = color })
+end
 -- Deterministic scatter so every server builds the same destination; skips the clear spots.
 local function scatter(seed, count, radius, fn)
     local random = Random.new(seed)
@@ -90,28 +97,8 @@ local function scatter(seed, count, radius, fn)
 end
 
 local builders = {}
--- 1: an orbital deck with glass rails, a hub, solar wings, and Earth below.
+-- 1 (Common): grey regolith with craters, a flag and a lander; Earth hangs in the sky.
 builders[1] = function(folder, c)
-    local floor = make(folder, "Deck", { Size = Vector3.new(110, 2, 70), CFrame = CFrame.new(c - Vector3.new(0, 1, 0)), Color = Color3.fromRGB(190, 196, 206), Material = Enum.Material.DiamondPlate })
-    for x = -50, 50, 10 do decor(folder, "DeckStripe", { Size = Vector3.new(0.6, 0.1, 70), CFrame = CFrame.new(c + Vector3.new(x, 0.05, 0)), Color = Color3.fromRGB(120, 128, 140) }) end
-    for _, side in { -1, 1 } do
-        make(folder, "GlassRail", { Size = Vector3.new(110, 8, 1), CFrame = CFrame.new(c + Vector3.new(0, 4, side * 35)), Color = Color3.fromRGB(170, 220, 255), Transparency = 0.6, Material = Enum.Material.Glass })
-        make(folder, "GlassRail", { Size = Vector3.new(1, 8, 70), CFrame = CFrame.new(c + Vector3.new(side * 55, 4, 0)), Color = Color3.fromRGB(170, 220, 255), Transparency = 0.6, Material = Enum.Material.Glass })
-        decor(folder, "SolarWing", { Size = Vector3.new(80, 0.4, 24), CFrame = CFrame.new(c + Vector3.new(side * 100, 6, 0)), Color = Color3.fromRGB(40, 70, 160), Material = Enum.Material.Glass })
-        decor(folder, "WingTruss", { Size = Vector3.new(50, 1.5, 1.5), CFrame = CFrame.new(c + Vector3.new(side * 70, 6, 0)), Color = Color3.fromRGB(150, 150, 160) })
-    end
-    make(folder, "Hub", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(16, 22, 22), CFrame = CFrame.new(c + Vector3.new(0, 8, -22)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(235, 238, 245) })
-    decor(folder, "HubWindows", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 22.4, 22.4), CFrame = CFrame.new(c + Vector3.new(0, 11, -22)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(120, 200, 255), Material = Enum.Material.Neon })
-    for _, x in { -36, 36 } do
-        make(folder, "Module", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(26, 10, 10), CFrame = CFrame.new(c + Vector3.new(x, 5, -24)), Color = Color3.fromRGB(225, 228, 236) })
-    end
-    decor(folder, "Earth", { Shape = Enum.PartType.Ball, Size = Vector3.one * 700, CFrame = CFrame.new(c + Vector3.new(0, -520, -700)), Color = Color3.fromRGB(50, 120, 220) })
-    decor(folder, "EarthLand", { Shape = Enum.PartType.Ball, Size = Vector3.one * 702, CFrame = CFrame.new(c + Vector3.new(0, -520, -700)), Color = Color3.fromRGB(70, 160, 80), Transparency = 0.55 })
-    fence(folder, c, 72, 40)
-    return floor, Vector3.new(0, 0, 12)
-end
--- 2: grey regolith with craters, a flag and a lander; Earth hangs in the sky.
-builders[2] = function(folder, c)
     local ground = disc(folder, "Regolith", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(170, 170, 175), Enum.Material.Slate)
     scatter(2, 7, 70, function(index, offset, random)
         local r = random:NextNumber(5, 11)
@@ -128,8 +115,8 @@ builders[2] = function(folder, c)
     fence(folder, c, 75, 60)
     return ground, Vector3.new(0, 0, 20)
 end
--- 3: red dust, rocks and dunes, a glass habitat dome and a rover.
-builders[3] = function(folder, c)
+-- 2 (Uncommon): red dust, rocks and dunes, a glass habitat dome and a rover.
+builders[2] = function(folder, c)
     local ground = disc(folder, "Dust", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(196, 92, 52), Enum.Material.Sand)
     scatter(3, 14, 70, function(index, offset, random)
         local size = random:NextNumber(2, 6)
@@ -147,7 +134,40 @@ builders[3] = function(folder, c)
     fence(folder, c, 75, 45)
     return ground, Vector3.new(0, 0, 20)
 end
--- 4: an icy chunk of Saturn's rings under the giant planet.
+-- 3 (Rare): Jupiter's ice moon. A cracked ice shell with glowing cyan fissures, ice
+-- ridges and geyser vents (tagged for the geyser mechanic), under a giant banded Jupiter.
+builders[3] = function(folder, c)
+    local ground = disc(folder, "IceShell", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(225, 235, 245), Enum.Material.Glacier)
+    scatter(31, 16, 70, function(index, offset, random)
+        decor(folder, "Fissure", { Size = Vector3.new(random:NextNumber(14, 34), 0.12, random:NextNumber(0.4, 0.9)),
+            CFrame = CFrame.new(c + offset + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
+            Color = Color3.fromRGB(90, 220, 255), Material = Enum.Material.Neon })
+    end)
+    scatter(32, 6, 62, function(index, offset, random)
+        disc(folder, "GeyserRim", c + offset + Vector3.new(0, 0.2, 0), 4.5, 0.6, Color3.fromRGB(200, 225, 240), Enum.Material.Ice)
+        local vent = disc(folder, "GeyserVent", c + offset + Vector3.new(0, 0.35, 0), 2.8, 0.6, Color3.fromRGB(20, 60, 110), Enum.Material.Neon)
+        vent.CanCollide = false
+        CollectionService:AddTag(vent, "GeyserVent")
+    end)
+    scatter(33, 8, 68, function(index, offset, random)
+        local height = random:NextNumber(3, 7)
+        make(folder, "IceRidge", { ClassName = "WedgePart", Size = Vector3.new(random:NextNumber(10, 18), height, 5),
+            CFrame = CFrame.new(c + offset + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
+            Color = Color3.fromRGB(190, 220, 245), Material = Enum.Material.Ice })
+    end)
+    local jupiter = c + Vector3.new(320, 300, -1100)
+    decor(folder, "Jupiter", { Shape = Enum.PartType.Ball, Size = Vector3.one * 900, CFrame = CFrame.new(jupiter), Color = Color3.fromRGB(215, 170, 125) })
+    for index, stripe in { { 250, 70, Color3.fromRGB(170, 105, 70) }, { 120, 45, Color3.fromRGB(235, 205, 170) },
+        { -30, 80, Color3.fromRGB(185, 120, 80) }, { -210, 60, Color3.fromRGB(160, 100, 70) } } do
+        band(folder, "JupiterBand" .. index, jupiter, 450, stripe[1], stripe[2], stripe[3])
+    end
+    local facing = (c - jupiter).Unit
+    decor(folder, "GreatRedSpot", { Shape = Enum.PartType.Ball, Size = Vector3.one * 130,
+        CFrame = CFrame.new(jupiter + facing * 405 + Vector3.new(0, -150, 0)), Color = Color3.fromRGB(200, 80, 50) })
+    fence(folder, c, 75, 70)
+    return ground, Vector3.new(0, 0, 20)
+end
+-- 4 (Epic): an icy chunk of Saturn's rings under the giant ringed planet.
 builders[4] = function(folder, c)
     local ground = disc(folder, "RingRock", c - Vector3.new(0, 2, 0), 65, 4, Color3.fromRGB(205, 195, 170), Enum.Material.Rock)
     scatter(4, 10, 60, function(index, offset, random)
@@ -156,7 +176,8 @@ builders[4] = function(folder, c)
     end)
     local saturn = c + Vector3.new(0, 220, -900)
     decor(folder, "Saturn", { Shape = Enum.PartType.Ball, Size = Vector3.one * 640, CFrame = CFrame.new(saturn), Color = Color3.fromRGB(225, 195, 140) })
-    decor(folder, "SaturnBand", { Shape = Enum.PartType.Ball, Size = Vector3.new(646, 120, 646), CFrame = CFrame.new(saturn + Vector3.new(0, 80, 0)), Color = Color3.fromRGB(200, 160, 105), Transparency = 0.3 })
+    band(folder, "SaturnBand", saturn, 320, 90, 70, Color3.fromRGB(200, 160, 105))
+    band(folder, "SaturnBand2", saturn, 320, -60, 40, Color3.fromRGB(240, 215, 165))
     decor(folder, "SaturnRings", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 1500, 1500), CFrame = CFrame.new(saturn) * CFrame.Angles(math.rad(14), 0, math.rad(90)), Color = Color3.fromRGB(215, 200, 165), Transparency = 0.45 })
     scatter(40, 12, 260, function(index, offset, random)
         local size = random:NextNumber(6, 18)
@@ -165,17 +186,32 @@ builders[4] = function(folder, c)
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end
--- 5: pale ice plains with spikes, the bright heart plain, and Charon overhead.
+-- 5 (Legendary): an obsidian shard at the edge of a black hole. Purple fissures and
+-- floating debris; above, the hole itself (neon black, so lighting never greys it)
+-- with its tilted accretion disk and the lensed far side as a halo behind it.
 builders[5] = function(folder, c)
-    local ground = disc(folder, "IcePlain", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(205, 215, 230), Enum.Material.Glacier)
-    disc(folder, "HeartPlainLeft", c + Vector3.new(-9, 0.1, -28), 14, 0.4, Color3.fromRGB(245, 235, 225), Enum.Material.Snow)
-    disc(folder, "HeartPlainRight", c + Vector3.new(9, 0.1, -28), 14, 0.4, Color3.fromRGB(245, 235, 225), Enum.Material.Snow)
-    scatter(5, 12, 70, function(index, offset, random)
-        local height = random:NextNumber(6, 16)
-        make(folder, "IceSpike", { ClassName = "WedgePart", Size = Vector3.new(3, height, 4), CFrame = CFrame.new(c + offset + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0), Color = Color3.fromRGB(170, 205, 240), Material = Enum.Material.Ice })
+    local ground = disc(folder, "Obsidian", c - Vector3.new(0, 2, 0), 70, 4, Color3.fromRGB(28, 22, 40), Enum.Material.Basalt)
+    disc(folder, "EdgeGlow", c - Vector3.new(0, 2.6, 0), 72, 0.6, Color3.fromRGB(170, 80, 255), Enum.Material.Neon).CanCollide = false
+    scatter(51, 14, 66, function(index, offset, random)
+        decor(folder, "VoidFissure", { Size = Vector3.new(random:NextNumber(12, 30), 0.12, random:NextNumber(0.4, 0.8)),
+            CFrame = CFrame.new(c + offset + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
+            Color = Color3.fromRGB(180, 90, 255), Material = Enum.Material.Neon })
     end)
-    decor(folder, "Charon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 220, CFrame = CFrame.new(c + Vector3.new(-300, 280, -600)), Color = Color3.fromRGB(150, 145, 150) })
-    fence(folder, c, 75, 60)
+    scatter(52, 16, 240, function(index, offset, random)
+        local size = random:NextNumber(5, 16)
+        decor(folder, "Debris", { Size = Vector3.new(size, size * 0.6, size * 0.8),
+            CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(20, 110), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0),
+            Color = Color3.fromRGB(40, 32, 60), Material = Enum.Material.Basalt })
+    end)
+    local hole = c + Vector3.new(0, 260, -1100)
+    decor(folder, "AccretionDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 1500, 1500),
+        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(25), 0, math.rad(90)), Color = Color3.fromRGB(255, 130, 40), Material = Enum.Material.Neon, Transparency = 0.3 })
+    decor(folder, "InnerDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.4, 820, 820),
+        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(25), 0, math.rad(90)), Color = Color3.fromRGB(255, 225, 160), Material = Enum.Material.Neon, Transparency = 0.2 })
+    decor(folder, "LensedArc", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 900, 900),
+        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(80), 0, math.rad(90)), Color = Color3.fromRGB(255, 170, 80), Material = Enum.Material.Neon, Transparency = 0.45 })
+    decor(folder, "EventHorizon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 500, CFrame = CFrame.new(hole), Color = Color3.new(0, 0, 0), Material = Enum.Material.Neon })
+    fence(folder, c, 70, 60)
     return ground, Vector3.new(0, 0, 20)
 end
 

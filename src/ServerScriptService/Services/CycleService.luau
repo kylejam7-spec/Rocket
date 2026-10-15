@@ -1,17 +1,19 @@
--- Owns the current rocket cycle and replicates its snapshot to clients. Other
--- services read ctx.Cycle.rocket each time; replace() swaps in a new cycle.
+-- Owns the current rocket (one mission) and replicates its snapshot to clients. Other
+-- services read ctx.Cycle.rocket each time; replace() swaps in the next rocket.
+-- Also holds the mission wheel: `wheel` is the current spin (sent to clients so they
+-- animate it in sync) and `misses` the pity counter (spins in a row below Rare).
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Cycles = require(ReplicatedStorage.Shared.RocketCycles)
+local Missions = require(ReplicatedStorage.Shared.Missions)
 local Rocket = require(script.Parent.RocketService)
 local Cycle = {}
 
 function Cycle.new(ctx)
     local config = ctx.config
-    local service = { deadline = 0, boarded = {} }
-    service.rocket = Rocket.new(config, HttpService:GenerateGUID(false), 1, 0)
+    local service = { deadline = 0, boarded = {}, wheel = nil, misses = 0 }
+    service.rocket = Rocket.new(config, HttpService:GenerateGUID(false), Missions.First, 0)
     local function loadRocket()
         local definition = service.rocket.definition
         local boarding = ctx.World.boarding
@@ -23,7 +25,8 @@ function Cycle.new(ctx)
     function service.replace(rocket)
         service.rocket = rocket
         loadRocket()
-        ctx.World.expandMap(rocket.cycleNumber)
+        -- The spaceport grows every three launches, up to four expansions.
+        ctx.World.expandMap(math.min(rocket.launches + 1, 13))
         ctx.Cargo.refreshVisuals()
         ctx.Cargo.refreshPrompts()
     end
@@ -39,10 +42,10 @@ function Cycle.new(ctx)
         local training = ctx.Training and ctx.Training.sessions[player.UserId]
         ctx.Remote.StateUpdated:FireClient(player, {
             phase = rocket.phase, deadline = service.deadline,
-            cycle = rocket.cycleNumber, cycleCount = Cycles.Count, tierName = definition.Tier.Name,
+            cycle = rocket.launches + 1, tierName = definition.Tier.Name,
             destination = config.Destinations[definition.ModelTier].name, destinationTier = definition.ModelTier,
-            modelTier = definition.ModelTier, variant = definition.Variant, isFinal = definition.IsFinalCycle,
-            programRuns = rocket.programRuns, nextTierIn = Cycles.launchesUntilNextTier(rocket.cycleNumber),
+            modelTier = definition.ModelTier, mission = definition.Id, rarity = definition.Rarity, legendary = definition.IsLegendary,
+            wheel = service.wheel, pityIn = math.max(0, Missions.PityAfter - service.misses),
             totals = table.clone(rocket.totals), required = rocket.required,
             cargo = rocket.cargo[player.UserId], contribution = rocket.contributions[player.UserId] or 0,
             boarded = service.boarded[player.UserId] == true, passenger = rocket.passengers[player.UserId] == true,
