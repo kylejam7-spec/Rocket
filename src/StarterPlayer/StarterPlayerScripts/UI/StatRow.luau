@@ -26,8 +26,8 @@ function StatRow.new(props)
         Font = Theme.font.Display, TextSize = 44, TextXAlignment = Enum.TextXAlignment.Left, stroke = 3, Parent = row,
     })
     local sub = StrokedText.new({
-        Name = "Sub", Size = UDim2.new(1, -66, 0, 18), Position = UDim2.fromOffset(68, 42),
-        Font = Theme.font.Display, TextSize = 14, TextColor3 = Theme.color.Muted,
+        Name = "Sub", Size = UDim2.new(1, -66, 0, 22), Position = UDim2.fromOffset(68, 42),
+        Font = Theme.font.Display, TextSize = 20, TextColor3 = Theme.color.Muted,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, Parent = row,
     })
     local badge = StrokedText.new({

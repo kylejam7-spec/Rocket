@@ -21,8 +21,20 @@
   rectangle overlaps; toasts, settings panel, slider (Music 0.6 → 0.5 on the group) and
   toggle by real mouse clicks; with Reduced effects on, a 10-unit delivery gave coins
   0 → 10 with no flashes or flying coins; no game errors or warnings.
-- Not verified: touch-only buttons and the phone layout in Studio's Device Emulator
-  (the MCP can't switch devices); the layout math for 812×375 shows no overlaps.
+- Phone pass (Studio Device Emulator, landscape phone, 750×323 inset, UIScale 0.45):
+  the action buttons were 37 px and the stat sub-labels 6 px. Fixed: on touch the cluster
+  is a fixed 2×2 grid (JUMP bottom right, GRAB/PLACE left of it, DROP and LEAVE above;
+  slots by LayoutOrder, so nothing shifts) with its own UIScale keeping buttons ≥ 70 px
+  (Roblox's own phone jump size); sub-labels 14 → 20 and cycle tag 18 → 22 design px
+  (9 px on the phone). Verified by real emulated touches: JUMP held 1.5 s = 4 jumps, then
+  stops; Roblox's jump button hidden; GRAB held at the pit filled 10/10, caption → PLACE,
+  DROP appeared above it. No HUD rectangle overlaps with all four buttons shown.
+  RunChecks 4/4; only Roblox UIBlox warnings.
+- 1920×1080 capture matches the reference frames 4/5 layout (left stack, top objective,
+  bottom pill + tag, bottom-right round buttons); no overlaps.
+- Studio MCP: in the Device Emulator `user_mouse_input` instance_path clicks miss (they
+  ignore the letterbox and inset). Calibrate by logging InputBegan positions; here GUI
+  (x, y) = screen (x − 62, y − 20).
 - Left out on purpose: SHOP/PETS column and boost badges (hidden until those exist).
 
 # Earlier session: 2026-10-14, wide ramps + ramp place reach

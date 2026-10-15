@@ -21,7 +21,7 @@ function ProgressController.start()
     })
     local tag = StrokedText.new({
         Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -64),
-        Size = UDim2.fromOffset(520, 22), Font = Theme.font.Display, TextSize = 18, stroke = 2, Parent = gui,
+        Size = UDim2.fromOffset(520, 26), Font = Theme.font.Display, TextSize = 22, stroke = 2, Parent = gui,
     })
     local countdown = StrokedText.new({
         Name = "Countdown", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36),

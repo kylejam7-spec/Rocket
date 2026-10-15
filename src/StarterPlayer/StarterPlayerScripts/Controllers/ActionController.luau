@@ -1,7 +1,8 @@
 -- The reference's bottom-right action cluster: one row of round buttons (LEAVE,
--- DROP, GRAB/PLACE, JUMP from left to right). ActionController.cluster() is the
--- shared row other controllers parent their buttons to (LayoutOrder sets the
--- place); ActionController.touch says whether touch-only buttons show.
+-- DROP, GRAB/PLACE, JUMP from left to right; a 2×2 grid on touch).
+-- ActionController.cluster() is the shared frame other controllers parent their
+-- buttons to (LayoutOrder sets the place); ActionController.touch says whether
+-- touch-only buttons show.
 -- On touch devices this also replaces Roblox's jump button with a matching JUMP.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -13,10 +14,48 @@ local Button = require(UI.Button)
 local ActionController = {}
 ActionController.touch = UserInputService.TouchEnabled
 
+-- Touch layout: a fixed 2×2 grid so a button never shifts when another appears.
+-- Slots by LayoutOrder (cell centres in design px): LEAVE top right, DROP top left,
+-- GRAB/PLACE bottom left, JUMP bottom right.
+local CELL, GAP, CAPTION = 84, 16, 24
+local SLOTS = {
+    [1] = Vector2.new(CELL * 1.5 + GAP, CELL / 2),
+    [2] = Vector2.new(CELL / 2, CELL / 2),
+    [3] = Vector2.new(CELL / 2, CELL * 1.5 + CAPTION),
+    [4] = Vector2.new(CELL * 1.5 + GAP, CELL * 1.5 + CAPTION),
+}
+-- Smallest on-screen button, in real pixels (Roblox's own phone jump button is 70).
+local MIN_TOUCH_PX = 70
+
+local function touchGrid(gui)
+    local grid = Create.new("Frame", {
+        Name = "ActionCluster", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -Theme.gutter, 1, -30),
+        Size = UDim2.fromOffset(CELL * 2 + GAP, (CELL + CAPTION) * 2), BackgroundTransparency = 1, Parent = gui,
+    })
+    -- The whole HUD shrinks to fit a phone; the buttons you thumb must not.
+    local screenScale = gui:FindFirstChildOfClass("UIScale")
+    local scale = Create.new("UIScale", { Name = "TouchScale", Parent = grid })
+    local function fit()
+        local s = screenScale and screenScale.Scale or 1
+        scale.Scale = math.max(1, MIN_TOUCH_PX / (CELL * s))
+    end
+    if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
+    fit()
+    local function place(child)
+        local slot = child:IsA("GuiObject") and SLOTS[child.LayoutOrder]
+        if not slot then return end
+        child.AnchorPoint = Vector2.new(0.5, 0.5)
+        child.Position = UDim2.fromOffset(slot.X, slot.Y)
+    end
+    grid.ChildAdded:Connect(place)
+    return grid
+end
+
 function ActionController.cluster()
     local gui = Create.screen("RocketHUD")
     local row = gui:FindFirstChild("ActionCluster")
     if row then return row end
+    if ActionController.touch then return touchGrid(gui) end
     row = Create.new("Frame", {
         Name = "ActionCluster", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -Theme.gutter, 1, -30),
         Size = UDim2.fromOffset(0, 0), AutomaticSize = Enum.AutomaticSize.XY, BackgroundTransparency = 1, Parent = gui,
