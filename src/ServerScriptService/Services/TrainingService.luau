@@ -27,10 +27,11 @@ function Training.new(context)
         station.part:SetAttribute("TrainingStation", true)
         station.part:SetAttribute("RequiredCycles", station.required or 0)
         station.part:SetAttribute("TrainingGain", station.gain)
+        station.part:SetAttribute("TrainingStat", station.stat)
         context.prompt(station.part, "Train " .. station.name).Triggered:Connect(function(player)
             if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
-            if not context.phaseAllowed() then return end
+            if not context.phaseAllowed(station) then return end
             if station.occupant then context.feedback(player, "Station occupied."); return end
             local profile = context.profiles.records[player.UserId].profile
             if profile.completedLaunches < (station.required or 0) then
@@ -56,7 +57,7 @@ function Training.new(context)
             local player = context.players:GetPlayerByUserId(userId)
             if player then
                 if player.Character ~= session.character or session.humanoid.Health <= 0 or not session.root.Parent
-                    or not context.profiles:ready(userId) or not context.phaseAllowed()
+                    or not context.profiles:ready(userId) or not context.phaseAllowed(session.station)
                     or (session.root.Position - session.station.part.Position).Magnitude > 7 then
                     stop(player)
                 elseif now >= session.nextTick then
@@ -67,6 +68,7 @@ function Training.new(context)
                     profile[stat] += gain
                     context.profiles:dirty(userId)
                     context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")
+                    if context.trained then context.trained(player, session.station) end
                     context.changed(player)
                 end
             end

@@ -21,11 +21,12 @@ function CameraController.start()
     local previousType
     local gui = Create.screen("CameraControls")
     local hint = StrokedText.new({
-        AnchorPoint = Vector2.new(1, 1),
-        Position = UDim2.new(1, -Theme.gutter, 1, -10),
+        AnchorPoint = Vector2.new(0, 1),
+        -- Bottom left above the save tag; the action cluster owns the bottom right.
+        Position = UDim2.new(0, Theme.gutter, 1, -34),
         Size = UDim2.fromOffset(320, 18),
         TextColor3 = Theme.color.Muted,
-        TextXAlignment = Enum.TextXAlignment.Right,
+        TextXAlignment = Enum.TextXAlignment.Left,
         Font = Theme.font.Display,
         TextSize = 14,
         stroke = 1.5,

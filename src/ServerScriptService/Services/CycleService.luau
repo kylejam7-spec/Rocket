@@ -40,12 +40,15 @@ function Cycle.new(ctx)
         ctx.Remote.StateUpdated:FireClient(player, {
             phase = rocket.phase, deadline = service.deadline,
             cycle = rocket.cycleNumber, cycleCount = Cycles.Count, tierName = definition.Tier.Name,
+            destination = config.Destinations[definition.ModelTier].name, destinationTier = definition.ModelTier,
             modelTier = definition.ModelTier, variant = definition.Variant, isFinal = definition.IsFinalCycle,
             programRuns = rocket.programRuns, nextTierIn = Cycles.launchesUntilNextTier(rocket.cycleNumber),
             totals = table.clone(rocket.totals), required = rocket.required,
             cargo = rocket.cargo[player.UserId], contribution = rocket.contributions[player.UserId] or 0,
             boarded = service.boarded[player.UserId] == true, passenger = rocket.passengers[player.UserId] == true,
-            profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, coins = profile.coins, walkSpeed = stats.speed(profile), capacity = stats.capacity(profile) },
+            profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, coins = profile.coins, walkSpeed = stats.speed(profile), capacity = stats.capacity(profile),
+                tutorialStep = profile.tutorialStep, seenCallouts = table.clone(profile.seenCallouts),
+                upgrades = table.clone(profile.upgrades), rank = player:GetAttribute("Rank") },
             saveStatus = record and record.status or "Loading",
             persistent = config.PersistenceEnabled,
             training = training and training.station.name,
@@ -75,6 +78,7 @@ function Cycle.new(ctx)
             for _, player in Players:GetPlayers() do
                 ctx.Movement.sample(player, now)
                 ctx.Launch.trackBoarding(player)
+                ctx.Tutorial.sample(player)
             end
             -- Deliveries request a broadcast; batching keeps 50-player servers to <=4 sends/s each.
             if broadcastElapsed >= 1 or (broadcastSoon and broadcastElapsed >= 0.25) then

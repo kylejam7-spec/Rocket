@@ -79,6 +79,8 @@ Each phase ends with a Studio play test (two clients where it matters) and passi
 
 Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone with `UIScale` and safe areas.
 
+**Status (2026-10-15):** done on `claude/phase2-hud` (PR #1): stat stack, pill, objective, toasts, banners, action cluster (2×2 touch grid), settings, phone scaling. Screenshot acceptance passed at 1920×1080 and in the phone emulator. SHOP/PETS stay hidden until Phase 7.
+
 - **Left stat stack:** Coins, Speed and Strength, each with a multiplier badge and sub-label. Numbers count up on change.
 - **Bottom progress pill:** `Metal 312 / 400`, then `Fuel 80 / 200`, then the boarding/launch countdown. The current `RocketProgress` panel moves here; tier name and cycle `n/15` become a small tag above it.
 - **Top-center objective banner,** driven by the tutorial and phase. This replaces the text panel's instructions.
@@ -89,6 +91,8 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 - **Accept:** side-by-side screenshots against reference frames 4 and 5 at 1920×1080 and on a phone emulator, with no overlaps.
 
 ### Phase 3: Tutorial and onboarding
+
+**Status (2026-10-15):** merged: server-confirmed steps, waypoints, dimming, skip, callouts, profile v3. Step 4 (first upgrade) added with Phase 4. Fresh run ≈ 40 s in Studio; rejoin with persistence on is unverified.
 
 - A `TutorialController` step machine. The server confirms each step, so a client can't skip ahead to rewards.
   1. Pick up Metal at the SCRAP PIT.
@@ -105,6 +109,8 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 ### Phase 4: Upgrades and ranks
 
+**Status (2026-10-15):** merged: hut + panel, four tracks (Training Power left out), idempotent purchases, rank tags, tutorial Upgrade step, profile v4. The first-hour sim in `UpgradeCheck` passes; rejoin with persistence on is unverified.
+
 - An **Upgrades** hut on the road, with a prompt that opens the panel. Each track maps onto existing tunables:
   - **Bulk Pickup:** more units per pickup tick (today: 1 per `MaterialHoldSeconds`).
   - **Bulk Place:** faster pour (`PourSeconds`).
@@ -113,6 +119,15 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 - Price curves live in `Config.Upgrades`. Purchases are server-validated and idempotent per request ID.
 - **Rank titles** (Apprentice → Mechanic → Engineer → Flight Director → Commander) come from lifetime deliveries and launches, shown above the name.
 - **Accept:** a simulated first hour stays within the targets (first upgrade under 1 minute, then one every 3–5 minutes), and purchases survive rejoin with persistence on.
+
+### Phase 4.5: Rocket cabin and destinations (added 2026-10-15)
+
+**Status (2026-10-15):** built on `claude/destinations`.
+
+- During boarding, the BOARD hatch takes players inside the rocket: an enclosed cabin with seats, portholes, a countdown screen and an exit hatch. Whoever is in the cabin at the end of the countdown flies.
+- The liftoff cutscene plays, then passengers land on the design's own destination: Space Station (design 1), the Moon (2), Mars (3), Saturn (4) and Pluto (5). These are isolated, walled areas far from the map with their own gravity, and passengers run around while the per-second bonus ticks (bigger the further out: 3, 6, 9, 12, 18 per second). Each destination has its own bench and treadmill worth double its per-second bonus. Then everyone returns to spawn.
+- Built with primitives; Phase 5 adds art, skies and ambience.
+- **Accept:** a full cycle per design reaches its destination and returns, `DestinationCheck` passes.
 
 ### Phase 5: Art, world and audio (your assets and Blender)
 
@@ -129,7 +144,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 2. **Scrap ball and jerry can** carry meshes.
 3. **Scrap pit and oil refinery** hero pieces. They are already elaborate primitives, so mesh them last.
 4. **Gyms:** bench and treadmill meshes, with tier colors as material variants.
-5. **Environment:** desert or launch-site terrain, skybox, Atmosphere/Lighting presets, upgrades hut, and a Mission Control NPC.
+5. **Environment:** desert or launch-site terrain, skybox, Atmosphere/Lighting presets, upgrades hut, and a Mission Control NPC. Destination art and per-destination skies/lighting (space station, Moon, Mars, Saturn, Pluto) and the rocket cabin interior.
 6. **Animations:** carry, bench rep and treadmill run.
 7. **VFX:** coin burst, `+N` icons, place sparkle. Launch smoke and fire already exist.
 8. **Audio:** pickup, place, coin, training rep, level-up, countdown and launch roar, plus an ambient track.
@@ -141,7 +156,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 - **Friend Boost:** +X% coins or training for each friend in the server.
 - **Leaderboards:** in-world boards for top builders and launches using OrderedDataStore.
-- **Destinations:** give each tier its own planet (Meadow → Moon → Mars…) with its own reward, in place of one Meadow.
+- **Destinations:** moved up to Phase 4.5 (one destination per rocket design).
 - **Pets** (optional, only if retention data supports it).
 - **Daily rewards and playtime gifts.**
 

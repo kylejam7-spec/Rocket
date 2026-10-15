@@ -76,7 +76,8 @@
   still handles key and gamepad input, and the card drives InputHoldBegin/End for
   touch. Material-hold logic in `CargoController` is unchanged.
 - Each ScreenGui from `UI.Create.screen` carries a UIScale from a 720 px design
-  height (clamped 0.6–1.6); `Tween.flyTo` divides that scale back out.
+  height (clamped 0.6–1.6; Phase 2 made it 0.45–1.6 of the inset height); `Tween.flyTo`
+  divides that scale back out.
 - Shop, Pets, boost badges, purchase chips and coins stay out until they work
   (monetization decision).
 
@@ -114,3 +115,68 @@
   within `FrontierReach` of the fill line along the rocket counts, because where the
   rocket is narrow the ramps can be far outside the ring. Server and client share the
   rule through the ring's ramp attributes.
+
+## 2026-10-15: Phase 2 HUD
+
+- Feedback is toasts, not a takeover of the objective line: the "what to do now"
+  line must always be readable.
+- All round action buttons share one bottom-right row (`ActionController.cluster()`),
+  so new actions slot in by LayoutOrder instead of fighting for corners. Touch gets a
+  GRAB/PLACE hold button and our own JUMP; Roblox's jump button is hidden there.
+- Settings are client-side and session-only until persistence is on. Audio volume
+  goes through "Music"/"SFX" SoundGroups so future sounds just join a group.
+- Reduced effects removes motion (shake, flashes, flying coins) but keeps
+  information (numbers, popups, banners).
+
+- On touch the action cluster is a fixed 2×2 grid with a minimum on-screen size
+  (70 px), not the desktop row scaled down: thumbs need big targets, and a button
+  must not move when another (DROP, LEAVE) appears.
+
+## 2026-10-15: Tutorial (Phase 3)
+
+- The server owns the step and moves it only on what it saw (pickup, reach, accepted
+  delivery, starter-gym tick). The client renders and can only skip, which grants
+  nothing, so no tutorial step can be used to farm rewards.
+- Steps are stored by name, not index, so Phase 4 can insert "Upgrade" without
+  shifting saved progress.
+- Existing profiles with deliveries skip the tutorial on migration; new ones get it.
+- The upgrade step is deferred to Phase 4 rather than faked with a placeholder shop.
+
+## 2026-10-15: Upgrades and ranks (Phase 4)
+
+- Four coin tracks: the reference's three plus Carry Capacity, the one that visibly
+  raises income. Training Power is left out (training already scales well).
+- Prices double per level from small bases (10/90/120/150). A deterministic
+  first-hour sim in UpgradeCheck holds the targets, so retuning a price or a trip
+  time fails a check instead of drifting.
+- Purchases are idempotent by client request ID kept in the profile, so a retried
+  click or a resent remote never charges twice; the profile saves right after a buy.
+- The hut prompt only opens the panel; buying doesn't need you at the hut (it's a
+  coin spend with nothing to exploit).
+- Ranks are server-set billboards from lifetime deliveries and launches; higher ranks
+  need launches so deliveries alone can't reach Commander.
+
+## 2026-10-15: Rocket cabin and destinations
+
+- Boarding means getting inside: the hatch teleports you into a shared cabin interior
+  (an isolated room, not geometry inside each rocket model), so it works for every
+  design and the launch stays client-animated.
+- One destination per rocket design, not per cycle: Space Station, Moon, Mars, Saturn,
+  Pluto. Rewards stay passive and per-second (RewardMultiplier still scales them).
+- Destinations are far-off walled areas 10,000 studs apart, so giant backdrop planets
+  never show in another destination's sky. Gravity is set on the passenger's client.
+- The reward size lives on the destination (Config.Destinations reward 1/2/4/6/10),
+  not the cycle; RocketCycles keeps a multiplier only for the final mission. Each
+  destination's gym pays double its passive rate and works only during its stay.
+- Built before Phase 5 art so the asset list (five destinations, cabin) follows the
+  gameplay.
+
+## 2026-10-15: First balance pass
+
+- Pacing is measured by `ProgressionReport` from the live tunables; numbers live in
+  `notes/BALANCE.md`, refreshed after tuning.
+- Rocket requirements don't scale with player count for now; a later overhaul makes
+  stages much longer.
+- MaxSpeed 60 (speed curve unchanged); destination rewards 3/6/9/12/18 per second;
+  upgrades grow ×2.2 per level so the first-hour pacing still holds with faster walking.
+
