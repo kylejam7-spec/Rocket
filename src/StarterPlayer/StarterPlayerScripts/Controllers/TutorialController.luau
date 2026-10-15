@@ -83,12 +83,24 @@ end
 function TutorialController.start()
     local player = Players.LocalPlayer
     local gui = Create.screen("RocketHUD")
+    -- The holder carries the touch scale (the button's own UIScale is its hover grow).
+    local holder = Create.new("Frame", {
+        Name = "SkipTutorialHolder", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 160),
+        Size = UDim2.fromOffset(170, 44), BackgroundTransparency = 1, Parent = gui,
+    })
     local skip = Button.new({
         Name = "SkipTutorial", Text = "SKIP TUTORIAL", TextSize = 18, color = Theme.color.Purple,
-        AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 160), Size = UDim2.fromOffset(170, 44),
-        Visible = false, Parent = gui,
+        Size = UDim2.fromScale(1, 1), Visible = false, Parent = holder,
         onActivated = function() State.remote("TutorialSkip"):FireServer() end,
     })
+    -- On a phone the HUD scales to ~0.45; keep SKIP a thumb-sized target (≥ 36 px tall).
+    if Actions.touch then
+        local screenScale = gui:FindFirstChildOfClass("UIScale")
+        local scale = Create.new("UIScale", { Name = "TouchScale", Parent = holder })
+        local function fit() scale.Scale = math.max(1, 36 / (44 * (screenScale and screenScale.Scale or 1))) end
+        if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
+        fit()
+    end
 
     -- Waypoint: a local anchor at the target with a bouncing arrow, and a beam to it.
     local anchor = Create.new("Part", {
@@ -189,6 +201,9 @@ function TutorialController.start()
             if relative.Z > 0 then direction = Vector2.new(relative.X, math.abs(relative.Y) + 1) end
             direction = direction.Magnitude > 1e-3 and direction.Unit or Vector2.new(0, 1)
             local at = size / 2 + direction * size * 0.3
+            -- Sized to the screen so it stays clear of the stat stack on a phone.
+            local arrowSize = math.clamp(size.Y * 0.12, 48, 110)
+            edgeArrow.Size = UDim2.fromOffset(arrowSize, arrowSize)
             edgeArrow.Position = UDim2.fromOffset(at.X, at.Y)
             edgeArrow.Rotation = math.deg(math.atan2(direction.Y, direction.X)) + 90
         end

@@ -25,9 +25,13 @@
   8 s closing line). SKIP by real click cleared line, arrow and beam. Debug fills:
   both callouts showed after the phase banner, server recorded `Fuel,Boarding`.
   Dimming and the ring arrow checked by screenshot. Only UIBlox warnings.
+- Phone pass (landscape phone emulator): SKIP was 19 px tall and the ring arrow
+  (fixed 110 px) covered the stat stack. SKIP now sits in a holder with a touch
+  UIScale (≥ 36 px tall, 14 px text; the button's own UIScale is its hover grow, and
+  only one UIScale applies per object); the arrow is 12% of the screen height
+  (48–110 px). No HUD overlaps; a real emulated tap on SKIP ended the tutorial.
 - Not verified: rejoin with persistence on (needs the published test place; the
-  v3 round trip is covered by TutorialCheck), two clients, phone layout of the new
-  button and arrow.
+  v3 round trip is covered by TutorialCheck), two clients.
 - Pit exit for MoveTo: (-42,-4,78) → (-20,0,78) → (-10,0,40), then the ramp.
 
 # Earlier session: 2026-10-15, Phase 2 HUD parity (merged)
