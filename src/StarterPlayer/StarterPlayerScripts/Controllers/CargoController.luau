@@ -1,6 +1,8 @@
 -- Carried materials: the round DROP button and the hold/E input that streams
 -- pickups and placements while a material prompt is held.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local UserInputService = game:GetService("UserInputService")
 local State = require(script.Parent.State)
@@ -72,6 +74,21 @@ function CargoController.start()
         if activeMaterialPrompt == item then stopMaterialHold() end
     end)
     Players.LocalPlayer.CharacterRemoving:Connect(stopMaterialHold)
+
+    -- The rocket has one place prompt; keep it (locally) at the ring point nearest this
+    -- character, so material can be dropped from anywhere around the lowest level.
+    RunService.RenderStepped:Connect(function()
+        local ring = CollectionService:GetTagged("BuildFrontier")[1]
+        local point = ring and ring:FindFirstChild("PlacePoint")
+        local character = Players.LocalPlayer.Character
+        local root = character and character:FindFirstChild("HumanoidRootPart")
+        if not point or not root or ring.Transparency >= 1 then return end
+        -- The ring is a cylinder along its X axis: its circle lies in the local YZ plane.
+        local offset = ring.CFrame:PointToObjectSpace(root.Position)
+        local radial = Vector3.new(0, offset.Y, offset.Z)
+        radial = radial.Magnitude > 0.01 and radial.Unit or Vector3.yAxis
+        point.Position = radial * (ring.Size.Y / 2 + 0.5)
+    end)
 end
 
 return CargoController

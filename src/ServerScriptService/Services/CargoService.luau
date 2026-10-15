@@ -6,14 +6,13 @@ local Rocket = require(script.Parent.RocketService)
 local CargoVisual = require(script.Parent.CargoVisualService)
 local Hold = require(script.Parent.HoldService)
 local Cargo = {}
-local PLACE_POINTS = 7
 
 function Cargo.new(ctx)
     local config, World, Remote = ctx.config, ctx.World, ctx.Remote
     local frontier, frontierSign = World.frontier, World.frontierSign
     local colors = World.materialColors
     local holds = Hold.new(config.MaterialHoldSeconds)
-    local depotPrompts, placePrompts = {}, {}
+    local depotPrompts, placePrompt = {}, nil
     local materialTargets, materialCallbacks = {}, {}
     local lastTransfer = {}
     local service = { holds = holds }
@@ -25,19 +24,18 @@ function Cargo.new(ctx)
     function service.refreshVisuals()
         for _, player in Players:GetPlayers() do service.visual(player) end
     end
-    -- Moves the ring and its prompt to the current fill point; hidden outside delivery phases.
+    -- Moves the ring to the current fill point; hidden outside delivery phases. Each
+    -- client slides the place prompt to the ring point nearest its own character.
     function service.updateFrontier()
         local material = Rocket.PhaseMaterial[ctx.Cycle.rocket.phase]
-        local cframe, diameter, points = World.rocketBuild:frontier(PLACE_POINTS)
+        local cframe, diameter = World.rocketBuild:frontier()
         local active = material ~= nil and cframe ~= nil
         frontierSign.Enabled = active
         frontier.Transparency = active and 0.55 or 1
-        for _, item in placePrompts do item.Enabled = active end
+        placePrompt.Enabled = active
         if not active then return end
         frontier.CFrame, frontier.Size = cframe, Vector3.new(0.4, diameter, diameter)
         frontier.Color = colors[material]
-        -- After the ring moves: attachment world positions are stored relative to it.
-        for index, item in placePrompts do item.Parent.WorldPosition = points[index] end
     end
     -- Only the material the current phase needs can be picked up or placed.
     function service.refreshPrompts()
@@ -45,7 +43,7 @@ function Cargo.new(ctx)
         for kind, items in depotPrompts do
             for _, item in items do item.Enabled = material == kind end
         end
-        for _, item in placePrompts do item.ActionText = "Place " .. (material or "materials") end
+        placePrompt.ActionText = "Place " .. (material or "materials")
         service.updateFrontier()
     end
 
@@ -148,17 +146,15 @@ function Cargo.new(ctx)
         service.delivered(advanced)
         return not (emptied or advanced)
     end
-    -- Several prompt points span the fill line; the nearest one shows, so players can
-    -- place anywhere along the rocket's lowest level instead of aiming at one spot.
-    for _ = 1, PLACE_POINTS do
-        local point = Instance.new("Attachment")
-        point.Name = "PlacePoint"
-        point.Parent = frontier
-        local item = holdPrompt(frontier, "Place Metal", place, point)
-        item.ObjectText = "Rocket"
-        item.MaxActivationDistance = config.FrontierReach
-        table.insert(placePrompts, item)
-    end
+    -- One prompt for the whole ring (CargoController keeps it at the nearest ring point),
+    -- so walking around the rocket never swaps prompts and a held E keeps pouring.
+    -- The server checks range against the whole ring.
+    local point = Instance.new("Attachment")
+    point.Name = "PlacePoint"
+    point.Parent = frontier
+    placePrompt = holdPrompt(frontier, "Place Metal", place, point)
+    placePrompt.ObjectText = "Rocket"
+    placePrompt.MaxActivationDistance = config.FrontierReach
     service.refreshPrompts()
 
     -- Repeat on the server while the prompt button remains held.

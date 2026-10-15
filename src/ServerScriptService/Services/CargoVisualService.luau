@@ -108,8 +108,9 @@ function CargoVisual.update(character, materials, colors)
     local size = CargoVisual.diameter(metal + fuel)
     local main = model:FindFirstChild("JerryCan") or model.ScrapBall
     main.Size = kind == "Fuel" and CAN_BODY * size or Vector3.one * size
+    -- Only C0 moves the load. Writing a welded part's CFrame on the server drags the
+    -- whole character back to the server's lagged position (players froze mid-walk).
     main.Weld.C0 = CFrame.new(0, 2.4 + size / 2, -0.3)
-    main.CFrame = root.CFrame * main.Weld.C0
     local specs = kind == "Fuel" and CAN or CHUNKS
     for _, part in model:GetChildren() do
         local index = part:GetAttribute("Index")
@@ -118,7 +119,6 @@ function CargoVisual.update(character, materials, colors)
             part.Size = spec[2] * size
             part.Weld.C0 = kind == "Fuel" and scaled(spec[3], size)
                 or CFrame.new(spec[1].Unit * size * 0.42) * CFrame.Angles(index, index * 2.4, index * 0.7)
-            part.CFrame = main.CFrame * part.Weld.C0
         end
     end
 end

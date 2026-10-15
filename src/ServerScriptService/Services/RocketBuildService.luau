@@ -265,21 +265,22 @@ function Build:setProgress(buildFraction, fuelFraction)
     self.filling.part.Size, self.filling.part.CFrame = size, self.pivot * cframe
 end
 
--- Where material goes next: a ring around the fill line (axis along the rocket), its
--- diameter, and `count` reachable points spread across the segment's width just above
--- its upper (+Z) face, so material can be placed anywhere along the lowest level.
-function Build:frontier(count)
+-- Where material goes next: a ring around the whole rocket (on its axis) at the lowest
+-- unfilled level, wide enough to clear every part at that height, and its diameter.
+-- Material can be placed from any point around the ring, whichever part it fills.
+function Build:frontier()
     local item = self.frontierItem
     if not item then return nil end
     local y = item.low.Y + (item.high.Y - item.low.Y) * self.frontierAmount
-    local center = Vector3.new((item.low.X + item.high.X) / 2, y, (item.low.Z + item.high.Z) / 2)
-    local diameter = math.max(item.high.X - item.low.X, item.high.Z - item.low.Z, 3) + 1.5
-    local points = {}
-    for index = 1, count do
-        local x = count == 1 and center.X or center.X + diameter * (index - 1 / 2 - count / 2) / count
-        table.insert(points, self.pivot * Vector3.new(x, y, item.high.Z + 1.5))
+    local radius = 1.5
+    for _, list in self.lists do
+        for _, other in list.items do
+            if other.low.Y <= y and other.high.Y >= y then
+                radius = math.max(radius, -other.low.X, other.high.X, -other.low.Z, other.high.Z)
+            end
+        end
     end
-    return self.pivot * CFrame.new(center) * UPRIGHT, diameter, points
+    return self.pivot * CFrame.new(0, y, 0) * UPRIGHT, 2 * radius + 1.5
 end
 
 -- True for points on the tilted rocket or the arms over it (the ramps are outside).
