@@ -79,6 +79,14 @@ function CargoController.start()
         if not point or not root or ring.Transparency >= 1 then return end
         -- The ring is a cylinder along its X axis: its circle lies in the local YZ plane.
         local offset = ring.CFrame:PointToObjectSpace(root.Position)
+        -- On a ramp beside the fill line (outside the ring): show it on the ramp right
+        -- beside you, matching the server's reach rule (Build:inPlaceReach).
+        local inner, outer, surface = ring:GetAttribute("RampInner"), ring:GetAttribute("RampOuter"), ring:GetAttribute("RampSurface")
+        local across = math.abs(offset.Y)
+        if inner and across >= inner - 1 and across <= outer + 1 and offset.Z >= surface - 1 and offset.Z <= surface + 8 then
+            point.Position = Vector3.new(0, offset.Y, surface + 1.5)
+            return
+        end
         local radial = Vector3.new(0, offset.Y, offset.Z)
         radial = radial.Magnitude > 0.01 and radial.Unit or Vector3.yAxis
         point.Position = radial * (ring.Size.Y / 2 + 0.5)

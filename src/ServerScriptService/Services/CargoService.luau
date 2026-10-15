@@ -36,6 +36,11 @@ function Cargo.new(ctx)
         if not active then return end
         frontier.CFrame, frontier.Size = cframe, Vector3.new(0.4, diameter, diameter)
         frontier.Color = colors[material]
+        -- Ramp extents (rocket frame) let clients show the prompt on a ramp beside the line.
+        local build = World.rocketBuild
+        frontier:SetAttribute("RampInner", build.rampInner)
+        frontier:SetAttribute("RampOuter", build.rampOuter)
+        frontier:SetAttribute("RampSurface", build.rampSurface)
     end
     -- Only the material the current phase needs can be picked up or placed.
     function service.refreshPrompts()
@@ -51,10 +56,12 @@ function Cargo.new(ctx)
         local root = ctx.Movement.observed(player)
         if not root or not ctx.profiles:ready(player.UserId) or ctx.Interaction.training(player) then return false end
         if not Rocket.PhaseMaterial[ctx.Cycle.rocket.phase] then return false end
+        -- The ring, or a ramp beside the fill line (CargoController shows the prompt there).
+        if object == frontier then return World.rocketBuild:inPlaceReach(root.Position, config.FrontierReach) end
         local point = object.CFrame:PointToObjectSpace(root.Position)
         local half = object.Size / 2
         local closest = Vector3.new(math.clamp(point.X, -half.X, half.X), math.clamp(point.Y, -half.Y, half.Y), math.clamp(point.Z, -half.Z, half.Z))
-        return (point - closest).Magnitude <= (object == frontier and config.FrontierReach or config.InteractionDistance)
+        return (point - closest).Magnitude <= config.InteractionDistance
     end
     -- Prompts only show where to stand (and give touch a button); transfers come from the
     -- held material button, checked against the whole object each tick.

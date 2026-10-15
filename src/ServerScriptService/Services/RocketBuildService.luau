@@ -10,8 +10,10 @@ local GHOST_COLOR, GHOST_TRANSPARENCY = Color3.fromRGB(150, 200, 255), 0.86
 local FUEL_LIT = Color3.fromRGB(255, 150, 40)
 local SCRAP = Color3.fromRGB(125, 118, 108)
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
--- Each ramp is wide enough for players to pass one another going up and down.
-local RAMP_WIDTH, ARM_WIDTH, ARM_SPACING = 10, 4, 14
+-- Each ramp is at least RAMP_MIN_WIDTH wide, so a full 50-player server can climb, pass
+-- and stand along the fill line at once. The outer edge stays RAMP_PAST_MOUNT beyond the
+-- launch mount, inside the floodlights.
+local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 14, 11, 4, 14
 local reveal = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local Build = {}
@@ -138,10 +140,12 @@ function Build:load(tier, variant)
     local data = Models[tier]()
     local complex = Instance.new("Model")
     complex.Name = "LaunchComplex"
-    local mountHalf = 0
+    local mountHalf, mountTop, mountFront = 0, 0, 0
     for _, spec in data.infra do
         create(spec, self.origin * spec.cframe, complex)
-        if spec.name == "LaunchMount" then mountHalf = spec.size.X / 2 end
+        if spec.name == "LaunchMount" then
+            mountHalf, mountTop, mountFront = spec.size.X / 2, spec.cframe.Y + spec.size.Y / 2, spec.cframe.Z + spec.size.Z / 2
+        end
     end
 
     -- Bounds of this variant's rocket decide the hinge, ramp and arms.
@@ -169,35 +173,46 @@ function Build:load(tier, variant)
     local tilted = self.origin * hinge * CFrame.Angles(-tilt, 0, 0) * hinge:Inverse()
     self.pivot, self.bounds = tilted, { low = low, high = high }
 
-    -- A ramp runs parallel to the rocket on each flank (-X and +X), just outside the
-    -- boosters and mount, its surface level with the core's top ridge; its foot sinks
-    -- into the pad in front. Two wide ramps give a full server room to climb at once.
+    -- A ramp runs parallel to the rocket on each flank (-X and +X). Its inner edge is just
+    -- outside the widest segment (boosters, fins), so players stand right beside the fill
+    -- line and nothing being built hides under it; it rides over the low mount slab. Its
+    -- surface is level with the core's top ridge (raised just enough to clear the mount
+    -- where needed, see below) and its foot sinks into the pad in front.
     local c, s = math.cos(tilt), math.sin(tilt)
-    local rampX = math.max(high.X, -low.X, mountHalf) + 1 + RAMP_WIDTH / 2
-    local inner, outer = rampX - RAMP_WIDTH / 2, rampX + RAMP_WIDTH / 2
-    self.rampInner = inner
-    local y0 = low.Y - (low.Y + (coreRadius - low.Z) * s) / c - 2
+    local inner = math.max(high.X, -low.X, coreRadius) + 1
+    local outer = math.max(inner + RAMP_MIN_WIDTH, math.max(high.X, -low.X, mountHalf) + RAMP_PAST_MOUNT)
+    local rampX, rampWidth = (inner + outer) / 2, outer - inner
+    -- Where the ramp crosses the mount's front edge its surface must clear the mount top,
+    -- or the inner strip meets a ledge. Lifting the ramp plane by d raises it there by d / s.
+    local surface = coreRadius
+    if mountHalf > inner then
+        local depth = surface - low.Z
+        local atFront = low.Y + (depth * c - (mountFront - low.Z)) / s * c + depth * s
+        surface += math.max(0, (mountTop + 0.3 - atFront) * s)
+    end
+    self.rampInner, self.rampOuter, self.rampSurface = inner, outer, surface
+    local y0 = low.Y - (low.Y + (surface - low.Z) * s) / c - 2
     local y1 = high.Y - 8
     local steel, dark = Models.Colors.tower, Models.Colors.dark
     for _, side in { -1, 1 } do
-        create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(RAMP_WIDTH, y1 - y0, 1), color = steel, material = "DiamondPlate" },
-            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, coreRadius - 0.5), complex)
+        create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
+            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex)
         create({ name = "RampRail", shape = "Block", size = Vector3.new(0.6, y1 - y0, 1.4), color = dark, material = "Metal" },
-            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, coreRadius + 0.2), complex)
+            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, surface + 0.2), complex)
         create({ name = "RampBeacon", shape = "Block", size = Vector3.new(1.5, 1, 1.5), color = Color3.fromRGB(255, 70, 60), material = "Neon",
             light = { color = Color3.fromRGB(255, 80, 60), range = 24, brightness = 2 } },
-            tilted * CFrame.new(side * rampX, y1, coreRadius + 0.75), complex)
+            tilted * CFrame.new(side * rampX, y1, surface + 0.75), complex)
     end
     local up = self.origin.Rotation
     for y = low.Y + 10, y1, ARM_SPACING do
-        -- Level bridges across the core's top ridge, joining both ramps' inner edges.
-        local center = tilted * Vector3.new(0, y, coreRadius)
+        -- Level bridges over the core's top ridge at ramp height, joining both ramps' inner edges.
+        local center = tilted * Vector3.new(0, y, surface)
         local arm = create({ name = "RampArm", shape = "Block", size = Vector3.new(2 * inner + 2, 1, ARM_WIDTH), color = Models.Colors.grey, material = "Metal" },
             CFrame.new(center.X, center.Y - 0.5, center.Z) * up, complex)
         table.insert(self.arms, arm)
         -- Support posts under every other arm keep tall ramps from looking like a fence.
         for _, x in (#self.arms % 2 == 1 and { -outer + 0.5, -inner - 0.5, inner + 0.5, outer - 0.5 } or {}) do
-            local top = tilted * Vector3.new(x, y, coreRadius - 1)
+            local top = tilted * Vector3.new(x, y, surface - 1)
             local height = top.Y - self.origin.Y
             if height > 2 then
                 create({ name = "RampPost", shape = "Block", size = Vector3.new(1, height, 1), color = steel, material = "Metal" },
@@ -281,6 +296,23 @@ function Build:frontier()
         end
     end
     return self.pivot * CFrame.new(0, y, 0) * UPRIGHT, 2 * radius + 1.5
+end
+
+-- Whether a player at `position` can place: within `reach` of the frontier ring, or
+-- standing on either ramp within `reach` of the fill line along the rocket. The wide
+-- ramps sit beside the widest segment, which can be far outside the ring where the
+-- rocket is narrow, so the ring alone would leave most of a ramp out of reach.
+function Build:inPlaceReach(position, reach)
+    local cframe, diameter = self:frontier()
+    if not cframe then return false end
+    local ring = cframe:PointToObjectSpace(position)
+    local half = Vector3.new(0.2, diameter / 2, diameter / 2)
+    local closest = Vector3.new(math.clamp(ring.X, -half.X, half.X), math.clamp(ring.Y, -half.Y, half.Y), math.clamp(ring.Z, -half.Z, half.Z))
+    if (ring - closest).Magnitude <= reach then return true end
+    -- In the ring frame X runs along the rocket, -Y is the rocket's X and Z its Z.
+    local across, height = math.abs(ring.Y), ring.Z
+    return math.abs(ring.X) <= reach and across >= self.rampInner - 1 and across <= self.rampOuter + 1
+        and height >= self.rampSurface - 1 and height <= self.rampSurface + 8
 end
 
 -- True for points on the tilted rocket or the arms over it (the ramps are outside).

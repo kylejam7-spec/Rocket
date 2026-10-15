@@ -29,7 +29,8 @@ return table.freeze({
     ErectSeconds = 5,
     -- Holding E at the build frontier pours a full ball in about this long, whatever its size.
     PourSeconds = 1.5,
-    -- Reach from the glowing frontier ring; a bit more than InteractionDistance for wide tanks.
+    -- Place reach: from the glowing frontier ring, or along the rocket from the fill line
+    -- while standing on a ramp (Build:inPlaceReach); also the place prompt's range.
     FrontierReach = 12,
     -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
     CoinsPerUnit = 1,
