@@ -8,7 +8,13 @@
   wide, sliding in from the left, so early fill grows as a smooth sliver (0.35 s tween).
 - Material how-to toasts (cargo full, X placed!, pick up first, cargo cleared) show
   once per session, filtered client-side in `HudController`.
-- Not verified in Studio (it was mid-playtest on another branch; no local compiler).
+- Studio (this worktree served on 34873; all five changed scripts match by length):
+  1% fill = 5.5 of 552 px, 6% = small rounded sliver; Meadow trip logged 33 head
+  popups: gains at x ≈ −55 / +55, both level-ups on one tick at shift 50 / 100 px.
+  Material hints sent twice each showed once. Only UIBlox warnings. Screen capture
+  does not show BillboardGuis, so popup lanes are checked by log, not by eye.
+- Studio gotcha: a teleport via PivotTo is snapped back by the anti-teleport; walk to
+  the BOARD pad with Humanoid:MoveTo (-40,3,-10) → (-40,3,-87) → (0,3,-87).
 
 # Earlier session: 2026-10-14, wide ramps + ramp place reach
 
