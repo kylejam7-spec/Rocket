@@ -1,9 +1,11 @@
--- Full-program pacing report: simulates the 15 rockets with N identical players from
--- the live tunables (Config, RocketCycles, Shared.Upgrades), so balance changes show
--- up here before anyone plays them. Not a check: it reports, it doesn't assert.
+-- Pacing report: simulates a server's first `launches` missions (Moon, then the seeded
+-- mission wheel with pity) with N identical players from the live tunables (Config,
+-- Shared.Missions, Shared.Upgrades), so balance changes show up here before anyone
+-- plays them. Every player count sees the same mission sequence (same `seed`).
+-- Not a check: it reports, it doesn't assert.
 -- From the Studio command bar or MCP (server):
 --   print(require(game.ServerScriptService.ProgressionReport)())
---   print(require(game.ServerScriptService.ProgressionReport)({ players = { 1, 8 }, train = 0.3 }))
+--   print(require(game.ServerScriptService.ProgressionReport)({ players = { 1, 8 }, train = 0.3, launches = 30, seed = 7 }))
 --
 -- Model (timings measured in Studio, 2026-10-15): a trip is 230 studs from the pit or
 -- refinery to the ramp foot and back, plus the climb along the tilted rocket to the
@@ -13,14 +15,14 @@
 -- the passive bonus and spend `gymShare` of the stay on its 2x gym.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local config = require(ReplicatedStorage.Shared.Config)
-local Cycles = require(ReplicatedStorage.Shared.RocketCycles)
+local Missions = require(ReplicatedStorage.Shared.Missions)
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 
 -- Rocket lengths per design (RocketModels header comments), for the ramp climb.
 local HEIGHT = { 53, 78, 109, 143, 194 }
 local TRIP_BASE, HANDLING, RESET_SECONDS = 230, 2, 6
 
-local function simulate(players, train, gymShare)
+local function simulate(players, train, gymShare, sequence)
     local profile = { strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, upgrades = {}, coins = 0 }
     local launches, buys, t, fromDestinations, fromGyms = 0, 0, 0, 0, 0
     local rows = {}
@@ -53,8 +55,8 @@ local function simulate(players, train, gymShare)
             buys += 1
         end
     end
-    for number = 1, Cycles.Count do
-        local cycle = Cycles.get(number)
+    for number, mission in sequence do
+        local cycle = Missions.get(mission)
         local tier = cycle.ModelTier
         local started = t
         for _, need in { cycle.ConstructionRequired, cycle.FuelRequired } do
@@ -76,7 +78,7 @@ local function simulate(players, train, gymShare)
                 t += trip / (1 - train)
             end
         end
-        local tierInfo = Cycles.Tiers[tier]
+        local tierInfo = cycle.Tier
         local stay = cycle.RewardSeconds or config.RewardSeconds
         local perSecond = config.Planet.StrengthBonus * config.Destinations[tier].reward * cycle.RewardMultiplier
         local passive = perSecond * stay
@@ -87,7 +89,7 @@ local function simulate(players, train, gymShare)
         t += tierInfo.BoardingSeconds + tierInfo.LaunchSeconds + stay + RESET_SECONDS
         launches += 1
         table.insert(rows, {
-            cycle = number, design = tier, minutes = (t - started) / 60, total = t / 60, capacity = capacity(), walk = walk(),
+            cycle = number, design = tier, id = cycle.Id, minutes = (t - started) / 60, total = t / 60, capacity = capacity(), walk = walk(),
             strength = profile.strengthLevel, speed = profile.speedLevel, upgrades = buys,
             destinationShare = fromDestinations / math.max(1, fromDestinations + fromGyms),
         })
@@ -98,15 +100,27 @@ end
 return function(options)
     options = options or {}
     local train, gymShare = options.train or 0.15, options.gymShare or 0.66
+    -- One mission sequence for every player count: Moon first, then wheel spins.
+    local random, misses, sequence = Random.new(options.seed or 1969), 0, { Missions.First }
+    for _ = 2, options.launches or 20 do
+        local mission = Missions.spin(random, misses)
+        misses = Missions.afterSpin(misses, mission)
+        table.insert(sequence, mission)
+    end
     local lines, results = {}, {}
+    local shares = Missions.longRun()
+    local odds = {}
+    for index = 1, Missions.Count do odds[index] = ("%s %.1f%%"):format(Missions.get(index).Id, shares[index] * 100) end
+    table.insert(lines, "Long-run mission share with pity: " .. table.concat(odds, ", "))
+    table.insert(lines, "")
     for _, players in options.players or { 1, 4, 8 } do
-        local rows = simulate(players, train, gymShare)
+        local rows = simulate(players, train, gymShare, sequence)
         results[players] = rows
-        table.insert(lines, ("%d player(s), %d%% of time training — full program %.0f min"):format(players, train * 100, rows[#rows].total))
-        table.insert(lines, " cyc des   min  total   cap  walk  strength   speed  upg  from-destinations")
+        table.insert(lines, ("%d player(s), %d%% of time training — %d launches in %.0f min"):format(players, train * 100, #rows, rows[#rows].total))
+        table.insert(lines, " #   mission     min  total   cap  walk  strength   speed  upg  from-destinations")
         for _, r in rows do
-            table.insert(lines, ("  %2d   %d  %5.1f %6.1f  %4d  %4.1f  %8.0f  %6.0f  %3d  %3.0f%%"):format(
-                r.cycle, r.design, r.minutes, r.total, r.capacity, r.walk, r.strength, r.speed, r.upgrades, r.destinationShare * 100))
+            table.insert(lines, (" %2d  %-9s %5.1f %6.1f  %4d  %4.1f  %8.0f  %6.0f  %3d  %3.0f%%"):format(
+                r.cycle, r.id, r.minutes, r.total, r.capacity, r.walk, r.strength, r.speed, r.upgrades, r.destinationShare * 100))
         end
         table.insert(lines, "")
     end

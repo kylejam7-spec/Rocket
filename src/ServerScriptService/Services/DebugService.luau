@@ -1,10 +1,12 @@
 -- Studio-only playtest hook, parented to the Main script as RocketDebug:
 -- Invoke("fill", fraction) adds that share of the current phase's requirement;
--- Invoke("cycle", n) jumps to cycle n while building; Invoke("tutorial", step?)
+-- Invoke("mission", n or id) swaps in that mission while building; Invoke("misses", n) sets
+-- the wheel's pity counter; Invoke("tutorial", step?)
 -- restarts every player's tutorial (at Pickup by default) and clears seen callouts;
 -- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades.
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
+local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
 local Debug = {}
 
 function Debug.new(ctx, parent)
@@ -21,8 +23,13 @@ function Debug.new(ctx, parent)
             local _, advanced = rocket:deliver(0)
             rocket.cargo[0] = nil
             ctx.Cargo.delivered(advanced)
-        elseif action == "cycle" and material then
-            Cycle.replace(Rocket.new(ctx.config, Cycle.newId(), value, rocket.programRuns))
+        elseif action == "mission" and material then
+            -- value: mission index (1 Moon .. 5 Black Hole) or id ("Europa").
+            local index = Missions.index(value) or value
+            Cycle.replace(Rocket.new(ctx.config, Cycle.newId(), index, rocket.launches))
+            Cycle.broadcast()
+        elseif action == "misses" then
+            Cycle.misses = value or 0 -- pity counter, e.g. 4 makes the next spin Rare or better
             Cycle.broadcast()
         elseif action == "tutorial" then
             for _, record in ctx.profiles.records do
@@ -37,7 +44,7 @@ function Debug.new(ctx, parent)
             Cycle.broadcast()
         end
         rocket = Cycle.rocket
-        return rocket.cycleNumber, rocket.phase, rocket.totals.Metal, rocket.totals.Fuel
+        return rocket.definition.Id, rocket.phase, rocket.totals.Metal, rocket.totals.Fuel
     end
     debugHook.Parent = parent
 end

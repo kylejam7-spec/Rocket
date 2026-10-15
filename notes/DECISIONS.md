@@ -180,3 +180,15 @@
 - MaxSpeed 60 (speed curve unchanged); destination rewards 3/6/9/12/18 per second;
   upgrades grow ×2.2 per level so the first-hour pacing still holds with faster walking.
 
+## 2026-10-16: Mission wheel instead of a linear program
+
+- Each launch's stay ends with a server-wide wheel spin that picks the next mission;
+  one mission = one rocket design + one destination. Odds 40/28/19/10/3 by rarity
+  (Moon, Mars, Europa, Saturn's Rings, Black Hole). New servers start on the Moon.
+- Pity: after 4 spins in a row below Rare, the next spin is Rare+ only, split 34/33/33.
+  Long-run Black Hole share is 5.4% (about 1 launch in 18).
+- Rarer missions are bigger builds and pay more (reward 1/2/3/5/10 × 3/s).
+- The server picks the result and a landing offset; clients only animate it, from the
+  shared clock, so everyone sees the same wheel stop.
+- Destination mechanics come in a follow-up so the wheel can ship first.
+

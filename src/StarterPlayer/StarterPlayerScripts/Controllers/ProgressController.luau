@@ -12,6 +12,8 @@ local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
 local ProgressController = {}
 local color, icon = Theme.color, Theme.icon
+-- Rarity colours shared with the mission wheel (WheelController).
+local function rarityColor(rarity) return Theme.rarity[rarity] or color.Ready end
 
 function ProgressController.start()
     local gui = Create.screen("RocketProgress")
@@ -38,18 +40,14 @@ function ProgressController.start()
     State.subscribe(function(state, previous)
         if not previous then return end
         local phaseChanged = state.phase ~= previous.phase
-        if state.modelTier ~= previous.modelTier then
-            banner("NEW ROCKET UNLOCKED: " .. state.tierName:upper() .. "!", color.Ready, 6)
+        if state.cycle ~= previous.cycle then
+            banner("NEW MISSION: " .. state.destination .. "!", rarityColor(state.rarity), 6)
         elseif phaseChanged and state.phase == "Fueling" then
             banner("ROCKET BUILT! FUEL IT UP! " .. icon.Fuel, color.Fuel, 4)
         elseif phaseChanged and state.phase == "Boarding" then
-            banner(state.isFinal and "FINAL MISSION! BOARD THE ROCKET!" or "ROCKET READY! BOARD NOW! " .. icon.Launch, color.Ready, 4)
+            banner(state.legendary and "LEGENDARY MISSION! BOARD THE ROCKET!" or "ROCKET READY! BOARD NOW! " .. icon.Launch, color.Ready, 4)
         elseif phaseChanged and state.phase == "Launching" and state.passenger then
             banner("LIFTOFF! " .. icon.Launch, color.Gold, 4)
-        elseif phaseChanged and state.phase == "Rewarding" and state.isFinal then
-            banner("SPACE PROGRAM COMPLETE!\nAll " .. state.cycleCount .. " rockets launched!", color.Gold, 12)
-        elseif phaseChanged and state.phase == "Building" and state.cycle == 1 and state.programRuns > 0 then
-            banner("A NEW SPACE PROGRAM BEGINS!", color.Ready, 6)
         end
         -- Your own delivery: pop the amount over the pill.
         if state.cycle == previous.cycle and state.contribution > previous.contribution then
@@ -82,10 +80,10 @@ function ProgressController.start()
         else
             bar:set(1, color.Purple, "NEXT ROCKET…")
         end
-        local next = state.nextTierIn and ("  •  New design in " .. state.nextTierIn .. (state.nextTierIn == 1 and " launch" or " launches"))
-            or (state.isFinal and "  •  FINAL MISSION" or "")
-        tag.Text = "CYCLE " .. state.cycle .. "/" .. state.cycleCount .. "  •  " .. state.tierName:upper()
-            .. "  •  You: " .. Theme.number(state.contribution) .. next
+        tag.Text = (state.destination or "?"):gsub("^THE ", "") .. " MISSION  •  " .. (state.rarity or ""):upper()
+            .. "  •  You: " .. Theme.number(state.contribution)
+            .. (state.pityIn == 0 and "  •  NEXT SPIN: RARE+ GUARANTEED"
+                or state.pityIn and state.pityIn <= 2 and ("  •  Rare+ in " .. state.pityIn .. (state.pityIn == 1 and " spin" or " spins")) or "")
         local showCountdown = state.phase == "Boarding" and remaining <= 10
         countdown.Visible = showCountdown
         if showCountdown then

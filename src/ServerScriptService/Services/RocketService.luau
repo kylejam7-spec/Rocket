@@ -1,18 +1,19 @@
 -- This module never yields: validation, spending and phase transition are atomic.
 -- Phases: Building (Metal) -> Fueling (Fuel) -> Boarding -> Launching -> Rewarding -> Resetting.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Cycles = require(ReplicatedStorage.Shared.RocketCycles)
+local Missions = require(ReplicatedStorage.Shared.Missions)
 local Rocket = {}
 Rocket.__index = Rocket
 -- The single material each delivery phase accepts.
 Rocket.PhaseMaterial = table.freeze({ Building = "Metal", Fueling = "Fuel" })
 
--- `id` is a unique launch id (reward ledger key); `cycleNumber` is the 1..15 server cycle.
-function Rocket.new(config, id, cycleNumber, programRuns)
-    local definition = Cycles.get(cycleNumber or 1)
+-- `id` is a unique launch id (reward ledger key); `mission` is the Missions index;
+-- `launches` counts this server's launches before this rocket.
+function Rocket.new(config, id, mission, launches)
+    local definition = Missions.get(mission or Missions.First)
     return setmetatable({
-        config = config, cycle = id, cycleNumber = definition.Number, definition = definition,
-        programRuns = programRuns or 0, phase = "Building",
+        config = config, cycle = id, mission = definition.Number, definition = definition,
+        launches = launches or 0, phase = "Building",
         totals = { Metal = 0, Fuel = 0 },
         required = { Metal = definition.ConstructionRequired, Fuel = definition.FuelRequired },
         cargo = {}, contributions = {}, passengers = {},
@@ -66,13 +67,11 @@ function Rocket:lockPassengers(eligible)
     return true
 end
 
--- Only a locked, nonempty passenger list counts as a successful blast off and
--- advances the server cycle; after the final cycle the program restarts at 1.
-function Rocket:nextCycle(id)
+-- The next rocket is the mission the wheel picked during the reward stay (the same
+-- mission again if no spin happened).
+function Rocket:nextCycle(id, mission)
     assert(self.phase == "Resetting", "Reset only after the launch sequence")
-    if not next(self.passengers) then return Rocket.new(self.config, id, self.cycleNumber, self.programRuns) end
-    local final = self.definition.IsFinalCycle
-    return Rocket.new(self.config, id, Cycles.next(self.cycleNumber), self.programRuns + (final and 1 or 0))
+    return Rocket.new(self.config, id, mission or self.mission, self.launches + 1)
 end
 
 function Rocket:forget(userId)
