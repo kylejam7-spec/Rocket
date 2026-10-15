@@ -125,7 +125,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 **Status (2026-10-15):** built on `claude/destinations`.
 
 - During boarding, the BOARD hatch takes players inside the rocket: an enclosed cabin with seats, portholes, a countdown screen and an exit hatch. Whoever is in the cabin at the end of the countdown flies.
-- The liftoff cutscene plays, then passengers land on the design's own destination: Space Station (design 1), the Moon (2), Mars (3), Saturn (4) and Pluto (5). These are isolated, walled areas far from the map with their own gravity, and passengers run around while the per-second bonus ticks (bigger the further out: 3, 6, 12, 18, 30 per second). Each destination has its own bench and treadmill worth double its per-second bonus. Then everyone returns to spawn.
+- The liftoff cutscene plays, then passengers land on the design's own destination: Space Station (design 1), the Moon (2), Mars (3), Saturn (4) and Pluto (5). These are isolated, walled areas far from the map with their own gravity, and passengers run around while the per-second bonus ticks (bigger the further out: 3, 6, 9, 12, 18 per second). Each destination has its own bench and treadmill worth double its per-second bonus. Then everyone returns to spawn.
 - Built with primitives; Phase 5 adds art, skies and ambience.
 - **Accept:** a full cycle per design reaches its destination and returns, `DestinationCheck` passes.
 
