@@ -1,9 +1,10 @@
 -- The reference-style HUD: left stat stack (Coins, Strength, Speed, Launches), the
--- top-centre objective line, Feedback toasts, the save-status tag, and stat-gain
--- juice ("+2 💪" over your head, "Strength Level Up!" when capacity grows, coins
--- that fly from your head to the Coins row on delivery).
+-- top-centre objective line, Feedback toasts above the pill, the save-status tag,
+-- and stat-gain juice ("+2 💪" over your head, "Strength Level Up!" when capacity
+-- grows, coins that fly from your head to the Coins row on delivery).
 local Players = game:GetService("Players")
 local State = require(script.Parent.State)
+local Settings = require(script.Parent.Settings)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -11,6 +12,7 @@ local StrokedText = require(UI.StrokedText)
 local StatRow = require(UI.StatRow)
 local Popup = require(UI.Popup)
 local Tween = require(UI.Tween)
+local Toast = require(UI.Toast)
 local HudController = {}
 local icon = Theme.icon
 
@@ -49,7 +51,8 @@ function HudController.start()
 
     local stack = Create.new("Frame", {
         Name = "StatStack", BackgroundTransparency = 1,
-        Position = UDim2.new(0, Theme.gutter, 0.2, 0), Size = UDim2.fromOffset(260, 290), Parent = gui,
+        -- Just under the objective line (64 + 84 design px), whatever the aspect ratio.
+        Position = UDim2.fromOffset(Theme.gutter, 160), Size = UDim2.fromOffset(260, 290), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
@@ -70,7 +73,6 @@ function HudController.start()
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, Parent = gui,
     })
 
-    local feedbackUntil = 0
     local function head()
         local character = player.Character
         return character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
@@ -133,7 +135,7 @@ function HudController.start()
             local before = previous and previous.profile
             coinTarget = p.coins or 0
             local gain = before and coinTarget - (before.coins or 0) or 0
-            if gain > 0 then burst(gain) elseif coinTarget ~= coins.current then coins:set(coinTarget) end
+            if gain > 0 and not Settings.get("reducedEffects") then burst(gain) elseif coinTarget ~= coins.current then coins:set(coinTarget) end
             local material, count = carrying(state)
             strength:set(p.strength, "Capacity: " .. (material and count or 0) .. "/" .. p.capacity)
             speed:set(p.speed, "Walk Speed: " .. math.floor(p.walkSpeed))
@@ -151,20 +153,19 @@ function HudController.start()
                 end
             end
         end
-        if os.clock() >= feedbackUntil then goal.Text = objective(state) end
+        goal.Text = objective(state)
         save.Text = state.persistent and ("Progress: " .. state.saveStatus) or "Studio test: progress isn't saved"
     end)
 
-    -- Training ticks and Meadow rewards already show as stat popups.
+    -- Training ticks and Meadow rewards already show as stat popups; everything else
+    -- is a toast above the progress pill, so the objective line always stays up.
+    local toasts = Toast.stack({
+        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96),
+        Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
+    })
     State.onFeedback(function(message)
         if message:match("^%+%d+ %a+!$") or message:match("^Meadows %+") then return end
-        feedbackUntil = os.clock() + 3
-        goal.Text = message
-        Tween.bounce(goal, 1.2, 0.35)
-        task.delay(3.05, function()
-            local state = State.get()
-            if state and os.clock() >= feedbackUntil then goal.Text = objective(state) end
-        end)
+        toasts:push(message)
     end)
 end
 

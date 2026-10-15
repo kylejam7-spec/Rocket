@@ -4,6 +4,7 @@
 -- Effects are local parts; the server's rocket and ring are never touched.
 local CollectionService = game:GetService("CollectionService")
 local State = require(script.Parent.State)
+local Settings = require(script.Parent.Settings)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Tween = require(UI.Tween)
 local DeliveryFeedbackController = {}
@@ -27,7 +28,7 @@ function DeliveryFeedbackController.start()
     State.subscribe(function(state, previous)
         if not previous or state.cycle ~= previous.cycle or state.phase ~= previous.phase then return end
         local material = state.phase == "Building" and "Metal" or state.phase == "Fueling" and "Fuel" or nil
-        if not material or state.totals[material] <= previous.totals[material] then return end
+        if not material or state.totals[material] <= previous.totals[material] or Settings.get("reducedEffects") then return end
         local now = os.clock()
         if now - lastPulse < 0.2 then return end
         lastPulse = now
