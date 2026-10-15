@@ -64,7 +64,7 @@ Each phase ends with a Studio play test (two clients where it matters) and passi
 - **Split `Main.server.luau`** into services in the existing context style (`X.new(context)`, like `TrainingService`). The server half was done 2026-10-14; see `notes/DECISIONS.md`.
 - **Tag the anchors** with `CollectionService`: spawn, material zones, build frontier, boarding pad, gyms, gym signs and planet. Services and clients can then find them by tag instead of by name or captured local variables.
 - **Add a check runner:** one `RunChecks` entry that runs every `*Check` module in Studio and reports pass/fail. It's used by every phase.
-- **Client half:** add a `Controllers/` folder and a `UI/` component library. The existing HUD keeps working on top of them until Phase 2 replaces it.
+- **Client half:** add a `Controllers/` folder and a `UI/` component library. The existing HUD keeps working on top of them until Phase 2 replaces it. Done 2026-10-14; see `notes/DECISIONS.md`.
 - **Accept:** the README play test behaves as before and every check passes.
 
 ### Phase 1: Economy and feedback

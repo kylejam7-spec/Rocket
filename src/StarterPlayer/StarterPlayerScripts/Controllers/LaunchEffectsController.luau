@@ -8,6 +8,7 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 local FIRE = "rbxasset://textures/particles/fire_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local LaunchEffectsController = {}
 
 local function emitter(parent, props)
     local item = Instance.new("ParticleEmitter")
@@ -155,6 +156,9 @@ local function watch(site)
     site.ChildAdded:Connect(track)
     for _, child in site:GetChildren() do track(child) end
 end
-task.spawn(function()
+
+function LaunchEffectsController.start()
     watch(workspace:WaitForChild("RocketWorld"):WaitForChild("RocketSite"))
-end)
+end
+
+return LaunchEffectsController
