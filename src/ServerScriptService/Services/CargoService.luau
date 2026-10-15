@@ -13,7 +13,7 @@ function Cargo.new(ctx)
     local colors = World.materialColors
     local holds = Hold.new(config.MaterialHoldSeconds)
     local depotPrompts, placePrompt = {}, nil
-    local materialTargets, materialCallbacks = {}, {}
+    local targets = {}
     local lastTransfer = {}
     local service = { holds = holds }
 
@@ -56,41 +56,32 @@ function Cargo.new(ctx)
         local closest = Vector3.new(math.clamp(point.X, -half.X, half.X), math.clamp(point.Y, -half.Y, half.Y), math.clamp(point.Z, -half.Z, half.Z))
         return (point - closest).Magnitude <= (object == frontier and config.FrontierReach or config.InteractionDistance)
     end
-    -- `point` (an attachment) places the prompt somewhere on a large object; range is
-    -- still checked against the whole object.
-    local function holdPrompt(object, action, callback, point)
+    -- Prompts only show where to stand (and give touch a button); transfers come from the
+    -- held material button, checked against the whole object each tick.
+    -- `point` (an attachment) places the prompt somewhere on a large object.
+    local function holdPrompt(object, action, point)
         local item = World.prompt(object, action, config.MaterialHoldSeconds)
         if point then
             item.Parent = point
             -- A station has many prompt points; show only the nearest one.
             item.Exclusivity = Enum.ProximityPromptExclusivity.OnePerButton
         end
-        materialTargets[item], materialCallbacks[item] = object, callback
         return item
     end
-    -- One unit moves per MaterialHoldSeconds. Each callback returns false to end the hold.
-    local function stepHold(player, entry, now)
-        if now - entry.started < config.MaterialHoldSeconds then return end
-        -- Catch up at most one missed tick so a stalled frame can't burst transfers.
-        entry.started = math.max(entry.started + config.MaterialHoldSeconds, now - config.MaterialHoldSeconds)
-        lastTransfer[player.UserId] = now
-        if not materialCallbacks[entry.target](player) then holds:cancel(player.UserId) end
+    -- { object, prompt, callback }: callback moves one unit, false when it refuses.
+    local function addTarget(object, item, callback)
+        table.insert(targets, { object = object, prompt = item, callback = callback })
     end
-    Remote.MaterialHold.OnServerEvent:Connect(function(player, item, holding)
+    -- The client reports the material button (E / ButtonX / touch on a material prompt)
+    -- going down or up, wherever the player is. A press moves a unit right away once in
+    -- range; spacing from the last transfer keeps spam-tapping at the holding rate.
+    Remote.MaterialHold.OnServerEvent:Connect(function(player, holding)
         if holding == false then
-            holds:cancel(player.UserId)
-            return
+            holds:release(player.UserId)
+        elseif holding == true then
+            holds:press(player.UserId, ctx.Cycle.rocket.cycle,
+                math.max((lastTransfer[player.UserId] or -math.huge) + config.MaterialHoldSeconds, os.clock()))
         end
-        local object = materialTargets[item]
-        if holding ~= true or not object or not item.Enabled or not materialNear(player, object) then return end
-        local rocket = ctx.Cycle.rocket
-        local entry = holds.active[player.UserId]
-        if entry and entry.target == item and entry.cycle == rocket.cycle then return end
-        -- A press moves a unit right away so taps count; spacing from the last transfer
-        -- keeps spam-tapping at the same rate as holding.
-        local now = os.clock()
-        holds:begin(player.UserId, item, rocket.cycle, math.max(lastTransfer[player.UserId] or -math.huge, now - config.MaterialHoldSeconds))
-        stepHold(player, holds.active[player.UserId], now)
     end)
 
     for material, station in World.materialStations do
@@ -106,8 +97,9 @@ function Cargo.new(ctx)
         end
         depotPrompts[material] = {}
         for _, point in station.points do
-            table.insert(depotPrompts[material], holdPrompt(station.zone, "Pick up " .. material, pickup, point))
+            table.insert(depotPrompts[material], holdPrompt(station.zone, "Pick up " .. material, point))
         end
+        addTarget(station.zone, depotPrompts[material][1], pickup)
     end
 
     -- Shared by player deliveries and the Studio debug hook.
@@ -146,28 +138,35 @@ function Cargo.new(ctx)
         service.delivered(advanced)
         return not (emptied or advanced)
     end
-    -- One prompt for the whole ring (CargoController keeps it at the nearest ring point),
-    -- so walking around the rocket never swaps prompts and a held E keeps pouring.
+    -- One prompt for the whole ring (CargoController keeps it at the nearest ring point).
     -- The server checks range against the whole ring.
     local point = Instance.new("Attachment")
     point.Name = "PlacePoint"
     point.Parent = frontier
-    placePrompt = holdPrompt(frontier, "Place Metal", place, point)
+    placePrompt = holdPrompt(frontier, "Place Metal", point)
     placePrompt.ObjectText = "Rocket"
     placePrompt.MaxActivationDistance = config.FrontierReach
+    addTarget(frontier, placePrompt, place)
     service.refreshPrompts()
 
-    -- Repeat on the server while the prompt button remains held.
+    -- While the button is held, move one unit per MaterialHoldSeconds at whichever
+    -- enabled target the player is in range of.
     RunService.Heartbeat:Connect(function()
         local now = os.clock()
+        local cycle = ctx.Cycle.rocket.cycle
         for userId, entry in holds.active do
             local player = Players:GetPlayerByUserId(userId)
-            local target = materialTargets[entry.target]
-            if not player or not target or not entry.target.Enabled or entry.cycle ~= ctx.Cycle.rocket.cycle
-                or not materialNear(player, target) then
-                holds:cancel(userId)
+            if not player then
+                holds:release(userId)
             else
-                stepHold(player, entry, now)
+                if entry.cycle ~= cycle then entry.cycle, entry.spent = cycle, {} end
+                local target = holds:pick(entry, now, targets, function(candidate)
+                    return candidate.prompt.Enabled and materialNear(player, candidate.object)
+                end)
+                if target then
+                    lastTransfer[userId] = now
+                    if not target.callback(player) then holds:refused(entry, target) end
+                end
             end
         end
     end)
@@ -181,7 +180,7 @@ function Cargo.new(ctx)
     end)
 
     function service.forget(player)
-        holds:cancel(player.UserId)
+        holds:release(player.UserId)
         lastTransfer[player.UserId] = nil
     end
     return service

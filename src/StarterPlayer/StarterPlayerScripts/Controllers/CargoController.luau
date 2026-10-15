@@ -1,5 +1,5 @@
--- Carried materials: the round DROP button and the hold/E input that streams
--- pickups and placements while a material prompt is held.
+-- Carried materials: the round DROP button and the held E / ButtonX / prompt-card input
+-- that streams pickups and placements while in range.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -35,45 +35,39 @@ function CargoController.start()
         discardButton.Visible = show
     end)
 
-    -- PromptButtonHoldEnded fires at completion, so use physical input release instead.
+    -- The server streams pickups/placements while the material button is down, at
+    -- whatever pit or ring the player is in range of, so E can be held before reaching
+    -- a prompt and kept down for a whole grab, place, grab, place loop.
     local materialHold = State.remote("MaterialHold")
-    local activeMaterialPrompt
-    local function stopMaterialHold()
-        if not activeMaterialPrompt then return end
-        materialHold:FireServer(activeMaterialPrompt, false)
-        activeMaterialPrompt = nil
+    local KEYS = { [Enum.KeyCode.E] = true, [Enum.KeyCode.ButtonX] = true }
+    local holding, holdInput, lastTouch = false, nil, nil
+    local function setHolding(down, input)
+        if holding == down then return end
+        holding, holdInput = down, down and input or nil
+        materialHold:FireServer(down)
     end
-    local function startMaterialHold(item)
+    UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            lastTouch = input
+        elseif KEYS[input.KeyCode] and not UserInputService:GetFocusedTextBox() then
+            setHolding(true, input)
+        end
+    end)
+    -- Touch/click: holding a material prompt card counts until that finger lifts.
+    ProximityPromptService.PromptButtonHoldBegan:Connect(function(item, inputType)
+        if inputType ~= Enum.ProximityPromptInputType.Touch and inputType ~= Enum.ProximityPromptInputType.Keyboard then return end
         local world = workspace:FindFirstChild("RocketWorld")
-        if not world or not item:IsDescendantOf(world) or not item.Enabled then return end
+        if not world or not item:IsDescendantOf(world) then return end
         if not (item.ActionText:match("^Pick up ") or item.ActionText:match("^Place ")) then return end
-        if activeMaterialPrompt == item then return end
-        stopMaterialHold()
-        activeMaterialPrompt = item
-        materialHold:FireServer(item, true)
-    end
-    ProximityPromptService.PromptButtonHoldBegan:Connect(startMaterialHold)
-    -- Holding the key while walking up starts the transfer as soon as the prompt appears.
-    ProximityPromptService.PromptShown:Connect(function(item)
-        if UserInputService:GetFocusedTextBox() then return end
-        if UserInputService:IsKeyDown(item.KeyboardKeyCode)
-            or UserInputService:IsGamepadButtonDown(Enum.UserInputType.Gamepad1, item.GamepadKeyCode) then
-            startMaterialHold(item)
+        if not holding and lastTouch and lastTouch.UserInputState == Enum.UserInputState.Begin then
+            setHolding(true, lastTouch)
         end
     end)
     UserInputService.InputEnded:Connect(function(input)
-        local item = activeMaterialPrompt
-        if item and (input.KeyCode == item.KeyboardKeyCode or input.KeyCode == item.GamepadKeyCode
-            or input.UserInputType == Enum.UserInputType.Touch
-            or input.UserInputType == Enum.UserInputType.MouseButton1) then
-            stopMaterialHold()
-        end
+        if holding and (KEYS[input.KeyCode] or input == holdInput) then setHolding(false) end
     end)
-    UserInputService.WindowFocusReleased:Connect(stopMaterialHold)
-    ProximityPromptService.PromptHidden:Connect(function(item)
-        if activeMaterialPrompt == item then stopMaterialHold() end
-    end)
-    Players.LocalPlayer.CharacterRemoving:Connect(stopMaterialHold)
+    UserInputService.WindowFocusReleased:Connect(function() setHolding(false) end)
+    Players.LocalPlayer.CharacterRemoving:Connect(function() setHolding(false) end)
 
     -- The rocket has one place prompt; keep it (locally) at the ring point nearest this
     -- character, so material can be dropped from anywhere around the lowest level.

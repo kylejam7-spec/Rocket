@@ -87,12 +87,25 @@ return function()
         assert(Profiles.credit(profile, bad, config) == 0, "Invalid amount " .. tostring(bad))
     end
     assert(profile.coins == 12 * config.CoinsPerUnit and profile.lifetimeDeliveries == 12)
+    -- Held button: transfers wherever the player is in range, one per tick.
     local holds = Hold.new(0.05)
-    holds:begin(1, "prompt", "cycle", 0)
-    assert(holds.active[1].started == 0 and holds.duration == 0.05)
-    holds:ended(1, "other")
-    assert(holds.active[1])
-    holds:ended(1, "prompt")
+    assert(holds:press(1, "cycle", 0) and not holds:press(1, "cycle", 0), "One hold per player")
+    local entry = holds.active[1]
+    local inRange = {}
+    local function near(target) return inRange[target] end
+    assert(holds:pick(entry, 0, { "pit", "ring" }, near) == nil, "Held while walking, out of range: nothing")
+    inRange.pit = true
+    assert(holds:pick(entry, 0.01, { "pit", "ring" }, near) == "pit", "Reaching a target with E held transfers at once")
+    assert(holds:pick(entry, 0.03, { "pit", "ring" }, near) == nil, "Rate limited to one per tick")
+    assert(holds:pick(entry, 0.06, { "pit", "ring" }, near) == "pit")
+    holds:refused(entry, "pit")
+    assert(holds:pick(entry, 0.2, { "pit", "ring" }, near) == nil, "A full ball stops pickups without spamming")
+    inRange.pit, inRange.ring = nil, true
+    assert(holds:pick(entry, 0.3, { "pit", "ring" }, near) == "ring", "Walk to the ring, still held: place")
+    holds:refused(entry, "ring")
+    inRange.ring, inRange.pit = nil, true
+    assert(holds:pick(entry, 0.4, { "pit", "ring" }, near) == "pit", "Leaving range re-arms a refused target")
+    holds:release(1)
     assert(not holds.active[1])
     return "Cycle config, tier bounds/heights, phase-gated pickup, capacity, delivery, cycle advance, program reset and coin credit checks passed"
 end
