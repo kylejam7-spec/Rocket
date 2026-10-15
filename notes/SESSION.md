@@ -2,6 +2,9 @@
 
 - Merged `claude/gym-area-tiered-ordering-2997f1` (Gym District + Phases 2–4,
   destinations, balance). Material hints now filter before the toast stack.
+- Merged build in Studio (34873): all 63 scripts match by length; RunChecks 7/7 in a
+  Play server. Edit-mode require returned a stale cached Config (TrainingCheck and
+  UpgradeCheck failed there), so run RunChecks in Play after a big sync.
 - Head popups have lanes (`HudController` `lanes`): +Strength left, +Speed right,
   "Strength Level Up!" / "Speed Level Up!" raised 50 / 100 px via `Popup.world`'s new
   `shift` (BillboardGui.SizeOffset, pixel-stable). Meadow ticks no longer stack them.
