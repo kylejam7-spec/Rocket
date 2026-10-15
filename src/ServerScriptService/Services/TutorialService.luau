@@ -1,13 +1,15 @@
 -- Server-confirmed onboarding. A player's step lives in their profile
 -- (tutorialStep) and only server observations advance it: cargo picked up, standing
 -- in place reach with it, an accepted delivery, a training tick on the starter bench
--- and treadmill. The client can only ask to skip, which grants nothing.
+-- and treadmill, a bought upgrade. The client can only ask to skip, which grants nothing.
+-- Entering "Upgrade" tops coins up to the cheapest upgrade, so the step can't stall.
 -- One-time callouts (first Fuel phase, first boarding) are shown by the client and
 -- marked seen here, only while that phase is on.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local Tutorial = {}
--- Phase 4 adds "Upgrade" after "Place" (buy a first upgrade) once the shop exists.
 -- Steps are stored by name, so inserting one later keeps saved progress valid.
-Tutorial.Steps = table.freeze({ "Pickup", "Carry", "Place", "Bench", "Treadmill", "Together" })
+Tutorial.Steps = table.freeze({ "Pickup", "Carry", "Place", "Upgrade", "Bench", "Treadmill", "Together" })
 Tutorial.Done = "Done"
 Tutorial.Callouts = table.freeze({ Fuel = "Fueling", Boarding = "Boarding" })
 
@@ -32,6 +34,13 @@ function Tutorial.new(ctx)
     end
     local function set(player, profile, step)
         profile.tutorialStep = step
+        if step == "Upgrade" then
+            -- Count the ball still being poured (the step starts on the first unit placed).
+            local cargo = ctx.Cycle.rocket.cargo[player.UserId]
+            local coming = (cargo and cargo.count or 0) * config.CoinsPerUnit
+            local cheapest = Upgrades.cheapest(config, profile)
+            if cheapest and profile.coins + coming < cheapest then profile.coins = cheapest - coming end
+        end
         ctx.profiles:dirty(player.UserId)
         ctx.Cycle.sendSoon(player)
         if step == "Together" then
@@ -53,7 +62,7 @@ function Tutorial.new(ctx)
         if not profile or profile.tutorialStep ~= "Carry" then return end
         if not ctx.Cycle.rocket.cargo[player.UserId] then set(player, profile, "Pickup"); return end
         local root = ctx.Movement.observed(player)
-        if root and ctx.World.rocketBuild:inPlaceReach(root.Position, config.FrontierReach) then
+        if root and ctx.World.rocketBuild:inPlaceReach(root.Position, Upgrades.reach(config, profile)) then
             service.observe(player, "Carry")
         end
     end

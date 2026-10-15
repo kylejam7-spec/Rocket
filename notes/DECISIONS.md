@@ -142,3 +142,17 @@
 - Existing profiles with deliveries skip the tutorial on migration; new ones get it.
 - The upgrade step is deferred to Phase 4 rather than faked with a placeholder shop.
 
+## 2026-10-15: Upgrades and ranks (Phase 4)
+
+- Four coin tracks: the reference's three plus Carry Capacity, the one that visibly
+  raises income. Training Power is left out (training already scales well).
+- Prices double per level from small bases (10/90/120/150). A deterministic
+  first-hour sim in UpgradeCheck holds the targets, so retuning a price or a trip
+  time fails a check instead of drifting.
+- Purchases are idempotent by client request ID kept in the profile, so a retried
+  click or a resent remote never charges twice; the profile saves right after a buy.
+- The hut prompt only opens the panel; buying doesn't need you at the hut (it's a
+  coin spend with nothing to exploit).
+- Ranks are server-set billboards from lifetime deliveries and launches; higher ranks
+  need launches so deliveries alone can't reach Commander.
+

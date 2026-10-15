@@ -42,6 +42,8 @@ function TutorialController.objective(state)
         return "Carry it up the ramp to the glowing ring!"
     elseif current == "Place" and material and not state.training then
         return (Actions.touch and "Hold PLACE" or "Hold E") .. " by the ring to build the rocket and earn coins!"
+    elseif current == "Upgrade" and not state.training then
+        return "Spend your coins! Buy an upgrade at the UPGRADES hut."
     elseif current == "Bench" or current == "Treadmill" then
         -- state.training is the station name ("Bench press", "Treadmill", "1-cycle Bench"…).
         local bench = current == "Bench"
@@ -69,6 +71,9 @@ local function target(state)
         local ring = CollectionService:GetTagged("BuildFrontier")[1]
         local point = ring and ring:FindFirstChild("PlacePoint")
         if point then return point.WorldPosition, false end
+    elseif current == "Upgrade" then
+        local hut = CollectionService:GetTagged("UpgradesHut")[1]
+        if hut then return hut.Position, hut end
     elseif current == "Bench" or current == "Treadmill" then
         local stat = current == "Bench" and "strengthLevel" or "speedLevel"
         for _, station in CollectionService:GetTagged("TrainingStation") do
@@ -239,7 +244,7 @@ function TutorialController.start()
                 Name = "Banner", Text = "TUTORIAL COMPLETE! " .. Theme.icon.Star, TextColor3 = Theme.color.Gold, seconds = 4,
                 AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.26), Parent = Create.screen("RocketProgress"),
             })
-        elseif last and now and now ~= last and now ~= "Done" and table.find({ "Carry", "Place", "Bench", "Treadmill", "Together" }, now) then
+        elseif last and now and now ~= last and now ~= "Done" and table.find({ "Carry", "Place", "Upgrade", "Bench", "Treadmill", "Together" }, now) then
             Tween.bounce(gui:FindFirstChild("Objective") or skip, 1.25, 0.35)
         end
         last = now

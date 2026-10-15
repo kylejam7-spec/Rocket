@@ -36,6 +36,24 @@ return table.freeze({
     CoinsPerUnit = 1,
     -- The tutorial's closing "work with everyone" step stays up this long, then ends.
     TutorialFinalSeconds = 8,
+    -- Coin upgrades (Shared.Upgrades has the math). Price of level n+1 = base * growth^n,
+    -- rounded to 5. Tuned by UpgradeCheck's first-hour sim: first buy < 1 min, then
+    -- one every 3-5 min on average.
+    Upgrades = table.freeze({
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", base = 10, growth = 2, max = 10, step = 1 }), -- +1 unit per pickup tick
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", base = 90, growth = 2, max = 10, step = 0.25 }), -- pour speed +25%
+        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", base = 120, growth = 2, max = 8, step = 2 }), -- +2 studs reach
+        CarryCapacity = table.freeze({ name = "Carry Capacity", icon = "🎒", base = 150, growth = 2, max = 10, step = 5 }), -- +5 carry
+    }),
+    UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange", "CarryCapacity" }),
+    -- Rank titles above names: the highest rank whose deliveries and launches you have.
+    Ranks = table.freeze({
+        table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),
+        table.freeze({ name = "MECHANIC", deliveries = 250, launches = 0 }),
+        table.freeze({ name = "ENGINEER", deliveries = 1500, launches = 1 }),
+        table.freeze({ name = "FLIGHT DIRECTOR", deliveries = 6000, launches = 3 }),
+        table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
+    }),
     TrainingTiers = table.freeze({
         table.freeze({ cycles = 1, gain = 4 }),
         table.freeze({ cycles = 3, gain = 6 }),

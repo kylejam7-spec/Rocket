@@ -92,7 +92,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 ### Phase 3: Tutorial and onboarding
 
-**Status (2026-10-15):** built on `claude/phase3-tutorial`: server-confirmed steps 1–3 and 5–7, waypoints, dimming, skip, callouts, profile v3. Step 4 (first upgrade) waits for Phase 4. Fresh run ≈ 40 s in Studio; rejoin with persistence on is unverified.
+**Status (2026-10-15):** merged: server-confirmed steps, waypoints, dimming, skip, callouts, profile v3. Step 4 (first upgrade) added with Phase 4. Fresh run ≈ 40 s in Studio; rejoin with persistence on is unverified.
 
 - A `TutorialController` step machine. The server confirms each step, so a client can't skip ahead to rewards.
   1. Pick up Metal at the SCRAP PIT.
@@ -108,6 +108,8 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 - **Accept:** a fresh account finishes in under 2 minutes, and skip and rejoin behave correctly.
 
 ### Phase 4: Upgrades and ranks
+
+**Status (2026-10-15):** built on `claude/phase4-upgrades`: hut + panel, four tracks (Training Power left out), idempotent purchases, rank tags, tutorial Upgrade step, profile v4. The first-hour sim in `UpgradeCheck` passes; rejoin with persistence on is unverified.
 
 - An **Upgrades** hut on the road, with a prompt that opens the panel. Each track maps onto existing tunables:
   - **Bulk Pickup:** more units per pickup tick (today: 1 per `MaterialHoldSeconds`).

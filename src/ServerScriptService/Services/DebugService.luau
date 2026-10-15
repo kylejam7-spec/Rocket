@@ -1,7 +1,8 @@
 -- Studio-only playtest hook, parented to the Main script as RocketDebug:
 -- Invoke("fill", fraction) adds that share of the current phase's requirement;
 -- Invoke("cycle", n) jumps to cycle n while building; Invoke("tutorial", step?)
--- restarts every player's tutorial (at Pickup by default) and clears seen callouts.
+-- restarts every player's tutorial (at Pickup by default) and clears seen callouts;
+-- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades.
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Debug = {}
@@ -27,6 +28,12 @@ function Debug.new(ctx, parent)
             for _, record in ctx.profiles.records do
                 record.profile.tutorialStep, record.profile.seenCallouts = value or "Pickup", {}
             end
+            Cycle.broadcast()
+        elseif action == "coins" or action == "upgrades" then
+            for _, record in ctx.profiles.records do
+                if action == "coins" then record.profile.coins = value or 0 else record.profile.upgrades = {} end
+            end
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Stats.update(player) end
             Cycle.broadcast()
         end
         rocket = Cycle.rocket

@@ -1,4 +1,38 @@
-# Latest session: 2026-10-15, Phase 3 tutorial
+# Latest session: 2026-10-15, Phase 4 upgrades and ranks
+
+- Branch `claude/phase4-upgrades` from `master` @ 2ea6f97 (Phase 3 merged). Rojo on
+  127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.
+- Tracks (`Config.Upgrades`, math in `Shared/Upgrades`): Bulk Pickup (+1 unit per
+  pickup tick, from 10 coins), Bulk Place (+25% pour speed, 90), Placement Range
+  (+2 studs reach, 120), Carry Capacity (+5, 150). Each level doubles, rounded to 5.
+  Effects: Stats.capacity, Cargo pickup/pour/reach, Tutorial reach, and the client
+  place prompt's distance.
+- `Services/UpgradeService`: `BuyUpgrade(track, requestId)` validates and charges once
+  per request ID (ledger of the last 32 IDs in the profile), saves right away, toasts,
+  and finishes the tutorial's new "Upgrade" step. Rank tag (APPRENTICE → MECHANIC 250
+  deliveries → ENGINEER 1500 + 1 launch → FLIGHT DIRECTOR 6000 + 3 → COMMANDER 20000 +
+  8) over every head, refreshed on Stats.update.
+- Profile schema v4: `upgrades`, `purchaseIds` (v3 migrates empty; bad levels refused).
+- Upgrades hut (green, gold roof, UPGRADES sign) at (-26, 4, -32) beside the lane;
+  its prompt opens `Controllers/UpgradesController` (rows: icon, name + level,
+  now → next, coin button; grey when unaffordable, MAX at the cap; closes past 22
+  studs). The panel keeps ≥ 0.75 scale on phones while it fits.
+- Tutorial: "Upgrade" after "Place" (target: the hut). Entering it tops coins up to the
+  cheapest upgrade, counting the ball still being poured (exactly 10 in Studio).
+- `UpgradeCheck`: prices, purchase validation and idempotency, effects, ranks, v4
+  migration, and a first-hour sim (trip model from Studio timings): first buy at 23 s;
+  mean gap after the second buy 189 s with gym time, 285 s without.
+- Debug: `RocketDebug:Invoke("coins", n)` and `Invoke("upgrades")` (clear).
+- Studio (single sync verified, desktop): RunChecks 6/6. Fresh run pit → ring →
+  "Spend your coins!" with 10 coins; prompt opened the panel; a real click bought Bulk
+  Pickup (19 → 9 coins, price 10 → 20) and moved the tutorial to the bench. With 1000
+  coins: Carry Capacity (capacity /15), retry of the same ID not charged, Placement
+  Range (prompt distance 14), unknown track ignored → 730 coins. Rank tag APPRENTICE.
+  Only UIBlox warnings.
+- Not verified: purchases across rejoin with persistence on (published test place),
+  two clients, the panel on the phone emulator.
+
+# Earlier session: 2026-10-15, Phase 3 tutorial (merged)
 
 - Branch `claude/phase3-tutorial` from `master` @ bbb24d4 (Phase 2 merged). Rojo on
   127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.

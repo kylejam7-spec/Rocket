@@ -1,6 +1,8 @@
 -- Material pickup at the stations, placement at the build frontier, the
 -- server-driven hold loop and carried-material visuals. Rocket rules live in RocketService.
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local CargoVisual = require(script.Parent.CargoVisualService)
@@ -57,7 +59,9 @@ function Cargo.new(ctx)
         if not root or not ctx.profiles:ready(player.UserId) or ctx.Interaction.training(player) then return false end
         if not Rocket.PhaseMaterial[ctx.Cycle.rocket.phase] then return false end
         -- The ring, or a ramp beside the fill line (CargoController shows the prompt there).
-        if object == frontier then return World.rocketBuild:inPlaceReach(root.Position, config.FrontierReach) end
+        if object == frontier then
+            return World.rocketBuild:inPlaceReach(root.Position, Upgrades.reach(config, ctx.profiles.records[player.UserId].profile))
+        end
         local point = object.CFrame:PointToObjectSpace(root.Position)
         local half = object.Size / 2
         local closest = Vector3.new(math.clamp(point.X, -half.X, half.X), math.clamp(point.Y, -half.Y, half.Y), math.clamp(point.Z, -half.Z, half.Z))
@@ -93,7 +97,8 @@ function Cargo.new(ctx)
 
     for material, station in World.materialStations do
         local function pickup(player)
-            local amount = ctx.Cycle.rocket:pickup(player.UserId, material, ctx.Stats.capacity(ctx.profiles.records[player.UserId].profile), 1)
+            local profile = ctx.profiles.records[player.UserId].profile
+            local amount = ctx.Cycle.rocket:pickup(player.UserId, material, ctx.Stats.capacity(profile), Upgrades.pickupUnits(config, profile))
             if amount == 0 then
                 Remote.feedback(player, "Cargo full: carry it up to the glowing ring on the rocket.")
                 return false
@@ -130,7 +135,8 @@ function Cargo.new(ctx)
     local function place(player)
         local rocket = ctx.Cycle.rocket
         local material = Rocket.PhaseMaterial[rocket.phase]
-        local pour = math.ceil(ctx.Stats.capacity(ctx.profiles.records[player.UserId].profile) * config.MaterialHoldSeconds / config.PourSeconds)
+        local profile = ctx.profiles.records[player.UserId].profile
+        local pour = math.ceil(ctx.Stats.capacity(profile) * config.MaterialHoldSeconds / Upgrades.pourSeconds(config, profile))
         local amount, advanced = rocket:deliver(player.UserId, math.max(1, pour))
         if amount == 0 then
             Remote.feedback(player, material == "Fuel" and "Fill up on Fuel at the OIL REFINERY first."
