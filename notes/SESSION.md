@@ -1,4 +1,16 @@
-# Latest session: 2026-10-14, wide ramps + ramp place reach
+# Latest session: 2026-10-15, planet destination UI polish
+
+- Head popups have lanes (`HudController` `lanes`): +Strength left, +Speed right,
+  "Strength Level Up!" / "Speed Level Up!" raised 50 / 100 px via `Popup.world`'s new
+  `shift` (BillboardGui.SizeOffset, pixel-stable). Meadow ticks no longer stack them.
+- Speed icon is 👟 (`Theme.icon.Speed`).
+- Progress pill: the inset is a rounded CanvasGroup and the fill is always ≥ one cap
+  wide, sliding in from the left, so early fill grows as a smooth sliver (0.35 s tween).
+- Material how-to toasts (cargo full, X placed!, pick up first, cargo cleared) show
+  once per session, filtered client-side in `HudController`.
+- Not verified in Studio (it was mid-playtest on another branch; no local compiler).
+
+# Earlier session: 2026-10-14, wide ramps + ramp place reach
 
 - Branch `claude/great-ellis-195d97` is now rebased onto `claude/place-pickup-anywhere`
   (6101de9: hold E anywhere, one place prompt that slides around a ring encircling the

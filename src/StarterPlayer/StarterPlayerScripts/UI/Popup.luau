@@ -1,7 +1,8 @@
 -- Short-lived juice text.
 -- Popup.show(props): pops in, rises and fades, then destroys itself ("+1" ticks).
 -- Popup.world(adornee, props): the same, floating in 3D above a part or model
---   (training "+2 💪" icons, "Strength Level Up!").
+--   (training "+2 💪" icons, "Strength Level Up!"); `shift` raises it that many
+--   screen pixels, so stacked popups stay apart at any camera distance.
 -- Popup.banner(props): pops in with a bounce, holds `seconds`, then fades; a newer
 --   banner with the same Name replaces it (announcements, toasts).
 -- Options: rise (px), seconds, plus any StrokedText option or TextLabel property.
@@ -49,6 +50,7 @@ function Popup.world(adornee, props)
         LightInfluence = 0,
         Size = UDim2.fromOffset(240, 140),
         StudsOffsetWorldSpace = props.offset or Vector3.new(0, 3, 0),
+        SizeOffset = Vector2.new(0, (props.shift or 0) / 140),
         MaxDistance = 120,
         Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
     })

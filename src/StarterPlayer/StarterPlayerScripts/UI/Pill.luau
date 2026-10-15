@@ -21,14 +21,19 @@ function Pill.new(props)
             Parent = track,
         })
     end
-    -- The fill sits in an inset clip so its rounded ends never poke past the rim.
-    local inset = Create.new("Frame", {
-        Name = "Inset", BackgroundTransparency = 1, ClipsDescendants = true,
+    -- The fill sits in a rounded inset clip so it never pokes past the rim. It is
+    -- always at least a full round cap wide and slides in from the left, so the
+    -- first few units grow a smooth sliver instead of a squashed blob.
+    local inset = Create.new("CanvasGroup", {
+        Name = "Inset", BackgroundTransparency = 1,
         Position = UDim2.fromOffset(3, 3), Size = UDim2.new(1, -6, 1, -6), Parent = track,
     })
+    Create.new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = inset })
+    local cap = track.Size.Y.Offset - 6
     local fill = Create.new("Frame", {
         Name = "Fill",
-        Size = UDim2.fromScale(0, 1),
+        Position = UDim2.fromOffset(-cap, 0),
+        Size = UDim2.new(0, cap, 1, 0),
         BackgroundColor3 = props.fillColor or Theme.color.Build,
         Parent = inset,
     })
@@ -44,7 +49,7 @@ function Pill.new(props)
         ZIndex = 2,
         Parent = track,
     })
-    return setmetatable({ instance = track, fill = fill, label = label, animate = props.animate, target = -1 }, Pill)
+    return setmetatable({ instance = track, fill = fill, label = label, animate = props.animate, cap = cap, target = -1 }, Pill)
 end
 
 function Pill:set(progress, color, text)
@@ -52,10 +57,14 @@ function Pill:set(progress, color, text)
     if alpha ~= self.target then
         local grew = self.target >= 0 and alpha > self.target
         self.target = alpha
-        local size = UDim2.fromScale(alpha, 1)
-        -- A zero-width rounded frame still draws a sliver of its corners.
-        self.fill.Visible = alpha > 0
-        if self.animate and grew then Tween.play(self.fill, 0.3, { Size = size }) else self.fill.Size = size end
+        -- Visible width is exactly alpha of the track; the rest of the cap hides off the left.
+        local hidden = self.cap * (1 - alpha)
+        local goal = { Size = UDim2.new(alpha, hidden, 1, 0), Position = UDim2.fromOffset(-hidden, 0) }
+        if self.animate and grew then
+            Tween.play(self.fill, Tween.info(0.35, Enum.EasingStyle.Quad), goal)
+        else
+            self.fill.Size, self.fill.Position = goal.Size, goal.Position
+        end
         if grew and self.label then Tween.bounce(self.label, 1.15, 0.3) end
     end
     if color then self.fill.BackgroundColor3 = color end

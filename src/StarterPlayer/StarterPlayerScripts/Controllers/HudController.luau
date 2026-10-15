@@ -75,10 +75,18 @@ function HudController.start()
         local character = player.Character
         return character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
     end
-    local function worldPop(text, color, size)
+    -- Strength and Speed often rise together (Meadow ticks), so each popup kind has its
+    -- own lane: gains sit left/right, level-ups stack at two heights.
+    local lanes = {
+        strengthGain = { jitter = -55, shift = 0 }, speedGain = { jitter = 55, shift = 0 },
+        strengthLevel = { jitter = 0, shift = 50 }, speedLevel = { jitter = 0, shift = 100 },
+    }
+    local function worldPop(text, color, lane, size)
         local adornee = head()
         if adornee then
-            Popup.world(adornee, { Text = text, TextColor3 = color, TextSize = size or 30, jitter = math.random(-60, 60) })
+            lane = lanes[lane]
+            Popup.world(adornee, { Text = text, TextColor3 = color, TextSize = size or 30,
+                jitter = lane.jitter + math.random(-8, 8), shift = lane.shift })
         end
     end
 
@@ -139,14 +147,14 @@ function HudController.start()
             speed:set(p.speed, "Walk Speed: " .. math.floor(p.walkSpeed))
             launches:set(p.completedLaunches, "Delivered: " .. Theme.number(p.lifetimeDeliveries))
             if before then
-                if p.strength > before.strength then worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength) end
-                if p.speed > before.speed then worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed) end
+                if p.strength > before.strength then worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength, "strengthGain") end
+                if p.speed > before.speed then worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed, "speedGain") end
                 if p.capacity > before.capacity then
-                    worldPop("Strength Level Up!", Theme.color.Go, 34)
+                    worldPop("Strength Level Up!", Theme.color.Go, "strengthLevel", 34)
                     Tween.bounce(strength.sub, 1.6, 0.5)
                 end
                 if math.floor(p.walkSpeed) > math.floor(before.walkSpeed) then
-                    worldPop("Speed Level Up!", Theme.color.Speed, 34)
+                    worldPop("Speed Level Up!", Theme.color.Speed, "speedLevel", 34)
                     Tween.bounce(speed.sub, 1.6, 0.5)
                 end
             end
@@ -155,9 +163,24 @@ function HudController.start()
         save.Text = state.persistent and ("Progress: " .. state.saveStatus) or "Studio test: progress isn't saved"
     end)
 
+    -- Material how-to hints ("Cargo full…", "Metal placed!…", "Pick up Metal…") show
+    -- once each per session; the objective line keeps saying what to do next.
+    local hinted = {}
+    local function materialHint(message)
+        for _, pattern in { "^Cargo full", "^%a+ placed!", "^Pick up %a+ at", "^Fill up on Fuel", "^Cargo cleared" } do
+            if message:match(pattern) then return pattern end
+        end
+        return nil
+    end
+
     -- Training ticks and Meadow rewards already show as stat popups.
     State.onFeedback(function(message)
         if message:match("^%+%d+ %a+!$") or message:match("^Meadows %+") then return end
+        local hint = materialHint(message)
+        if hint then
+            if hinted[hint] then return end
+            hinted[hint] = true
+        end
         feedbackUntil = os.clock() + 3
         goal.Text = message
         Tween.bounce(goal, 1.2, 0.35)
