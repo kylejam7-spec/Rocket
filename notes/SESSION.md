@@ -29,8 +29,12 @@
   coins: Carry Capacity (capacity /15), retry of the same ID not charged, Placement
   Range (prompt distance 14), unknown track ignored → 730 coins. Rank tag APPRENTICE.
   Only UIBlox warnings.
+- Phone emulator (750×323 inset): panel at 0.75 scale (18 px titles, 12 px details,
+  33 px buy buttons); its right edge clipped GRAB, so on touch it now slides left of
+  the action cluster (8 px clear; stat stack clear). A real emulated tap bought Bulk
+  Pickup (100 → 90 coins).
 - Not verified: purchases across rejoin with persistence on (published test place),
-  two clients, the panel on the phone emulator.
+  two clients.
 
 # Earlier session: 2026-10-15, Phase 3 tutorial (merged)
 
