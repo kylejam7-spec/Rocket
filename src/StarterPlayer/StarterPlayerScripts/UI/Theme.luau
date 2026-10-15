@@ -27,7 +27,7 @@ Theme.color = {
 }
 
 Theme.icon = {
-    Coin = "🪙",
+    Coin = "💰",
     Strength = "💪",
     Speed = "👟",
     Launch = "🚀",
@@ -36,6 +36,9 @@ Theme.icon = {
     Drop = "⬇",
     Leave = "✖",
     Star = "⭐",
+    Settings = "⚙️",
+    Hand = "✋",
+    Jump = "⬆",
 }
 
 Theme.font = {

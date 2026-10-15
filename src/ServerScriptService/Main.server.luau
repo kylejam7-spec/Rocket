@@ -19,15 +19,26 @@ ctx.profiles = Profiles.new(Config, function(userId)
 end)
 ctx.Launch = require(Services.LaunchService).new(ctx)
 ctx.Cargo = require(Services.CargoService).new(ctx)
+ctx.Tutorial = require(Services.TutorialService).new(ctx)
+ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,
     prompt = ctx.World.prompt, allowed = ctx.Interaction.allowed, near = ctx.Interaction.near,
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
-    phaseAllowed = function()
-        local phase = ctx.Cycle.rocket.phase
-        return phase == "Building" or phase == "Fueling" or phase == "Boarding"
+    -- Starter gym ticks finish the tutorial's bench and treadmill steps.
+    trained = function(player, station)
+        if (station.required or 0) == 0 then ctx.Tutorial.observe(player, station.stat == "strengthLevel" and "Bench" or "Treadmill") end
+    end,
+    -- Map gyms work while building, fueling and boarding; a destination's gym only
+    -- while passengers are there.
+    phaseAllowed = function(station)
+        local rocket = ctx.Cycle.rocket
+        if station and station.destination then
+            return rocket.phase == "Rewarding" and rocket.definition.ModelTier == station.destination
+        end
+        return rocket.phase == "Building" or rocket.phase == "Fueling" or rocket.phase == "Boarding"
     end,
     stations = ctx.World.stations,
 })

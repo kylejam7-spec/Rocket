@@ -2,7 +2,7 @@
     The two material pickup stations, sized for a full 50-player server.
 
     Both sit side by side right behind spawn (+Z), the first thing a new player sees
-    on turning around, with a road between them; the gym rows are off to the sides:
+    on turning around, with a road between them; the Gym District lies past them (WorldService):
         Metal  SCRAP PIT      x = -52, a dug pit with a heap of scrap in it
         Fuel   OIL REFINERY   x = +52, derrick, tanks and a fuelling canopy
 

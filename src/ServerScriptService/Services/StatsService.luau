@@ -1,4 +1,6 @@
 -- Derived character stats (walk speed, carry capacity) and the server leaderboard.
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local Stats = {}
 
 function Stats.new(ctx)
@@ -9,10 +11,11 @@ function Stats.new(ctx)
         local points = profile.speedLevel + profile.planetBonuses.speed
         return config.BaseSpeed + (config.MaxSpeed - config.BaseSpeed) * points / (points + config.SpeedHalfPoints)
     end
-    -- Strength raises carry capacity, so stronger players make fewer trips.
+    -- Strength (and the Carry Capacity upgrade) raise capacity, so stronger players make fewer trips.
     function service.capacity(profile)
         local points = profile.strengthLevel + profile.planetBonuses.strength
-        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points)))
+        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points))
+            + Upgrades.capacityBonus(config, profile))
     end
     function service.attach(player)
         local stats = Instance.new("Folder")
@@ -35,6 +38,7 @@ function Stats.new(ctx)
             stats.CompletedLaunches.Value = profile.completedLaunches
             stats.LifetimeDeliveries.Value = profile.lifetimeDeliveries
         end
+        if ctx.Upgrades then ctx.Upgrades.showRank(player, profile) end
     end
     return service
 end

@@ -40,7 +40,7 @@ return function()
     visual.update(character, {Metal = 0, Fuel = 0}, colors)
     assert(not character:FindFirstChild("CarriedMaterials"))
     character:Destroy()
-    -- Stations: right behind spawn (z = 32..40), clear of the gym rows (z = -5..20) and the
+    -- Stations: right behind spawn (z = 32..40), short of the Gym District (z >= 160) and the
     -- road between them (x = -8..8), on the ground, and never paved over.
     local stations = require(script.Parent.MaterialStationService)
     local map = require(script.Parent.MapExpansionService)

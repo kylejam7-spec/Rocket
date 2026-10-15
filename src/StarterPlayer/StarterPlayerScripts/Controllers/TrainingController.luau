@@ -1,11 +1,12 @@
--- Gym stations: the round LEAVE button, E/ButtonB to exit, and hiding the
--- station prompts while this player trains. Stat popups live in HudController.
+-- Gym stations: the round LEAVE button in the action cluster, E/ButtonB to exit,
+-- and hiding the station prompts while this player trains. Stat popups live in
+-- HudController.
 local CollectionService = game:GetService("CollectionService")
 local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
 local State = require(script.Parent.State)
+local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
-local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local Tween = require(UI.Tween)
@@ -16,15 +17,15 @@ function TrainingController.start()
     -- One explicit exit action works on keyboard, controller and touch.
     local exitButton = Button.new({
         Name = "LeaveStation",
-        AnchorPoint = Vector2.new(0.5, 1),
-        Position = UDim2.new(0.5, 0, 1, -100),
-        Size = UDim2.fromOffset(220, 54),
+        shape = "circle",
+        icon = Theme.icon.Leave,
+        caption = Actions.touch and "LEAVE" or "LEAVE [E]",
         color = Theme.color.Danger,
-        Text = "LEAVE STATION [E]",
-        TextSize = 24,
+        Size = UDim2.fromOffset(72, 72),
+        LayoutOrder = 1,
         Visible = false,
         onActivated = function() exitTraining:FireServer() end,
-        Parent = Create.screen("RocketHUD"),
+        Parent = Actions.cluster(),
     })
 
     local bound, mountedAt = false, 0

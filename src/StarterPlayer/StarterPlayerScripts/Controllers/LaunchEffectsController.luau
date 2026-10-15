@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local Settings = require(script.Parent.Settings)
 local player = Players.LocalPlayer
 local FIRE = "rbxasset://textures/particles/fire_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -105,7 +106,7 @@ local function play(vehicle)
         local distance = root and (root.Position - origin.Position).Magnitude or 0
         local fade = math.max(0, 1 - math.max(0, lift - 1) / math.max(1, duration - ignition))
         local amplitude = shake * power * fade * math.clamp(1 - distance / 500, 0.25, 1)
-        if amplitude > 0 and t < duration then
+        if amplitude > 0 and t < duration and not Settings.get("reducedEffects") then
             camera.CFrame *= CFrame.new((math.random() - 0.5) * amplitude, (math.random() - 0.5) * amplitude, 0)
                 * CFrame.Angles(0, 0, (math.random() - 0.5) * amplitude * 0.02)
         end
