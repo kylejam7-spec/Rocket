@@ -8,10 +8,10 @@ return table.freeze({
     -- Strength and speed are uncapped point totals; soft curves turn them into stats.
     MaxPlanetBonus = 1000000,
     -- Walk = BaseSpeed + (MaxSpeed - BaseSpeed) * points / (points + SpeedHalfPoints):
-    -- 24 at 0, ~34 after a minute on the starter treadmill, never above MaxSpeed
+    -- 24 at 0, ~42 after a minute on the starter treadmill, never above MaxSpeed
     -- (which MovementService also uses as its anti-teleport limit).
     BaseSpeed = 24,
-    MaxSpeed = 44,
+    MaxSpeed = 60,
     SpeedHalfPoints = 120,
     -- Carry = BaseCarryCapacity + floor(StrengthCarryScale * sqrt(strength)), capped:
     -- the first starter-bench tick (+2) already adds 2, a minute there gives 26, then
@@ -40,10 +40,10 @@ return table.freeze({
     -- rounded to 5. Tuned by UpgradeCheck's first-hour sim: first buy < 1 min, then
     -- one every 3-5 min on average.
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", base = 10, growth = 2, max = 10, step = 1 }), -- +1 unit per pickup tick
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", base = 90, growth = 2, max = 10, step = 0.25 }), -- pour speed +25%
-        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", base = 120, growth = 2, max = 8, step = 2 }), -- +2 studs reach
-        CarryCapacity = table.freeze({ name = "Carry Capacity", icon = "🎒", base = 150, growth = 2, max = 10, step = 5 }), -- +5 carry
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", base = 10, growth = 2.2, max = 10, step = 1 }), -- +1 unit per pickup tick
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", base = 90, growth = 2.2, max = 10, step = 0.25 }), -- pour speed +25%
+        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", base = 120, growth = 2.2, max = 8, step = 2 }), -- +2 studs reach
+        CarryCapacity = table.freeze({ name = "Carry Capacity", icon = "🎒", base = 120, growth = 2.2, max = 10, step = 5 }), -- +5 carry
     }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange", "CarryCapacity" }),
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
@@ -71,9 +71,9 @@ return table.freeze({
     Destinations = table.freeze({
         table.freeze({ id = "SpaceStation", reward = 1, name = "THE SPACE STATION", gravity = 196.2, color = Color3.fromRGB(120, 200, 255), position = Vector3.new(10000, 200, 10000) }),
         table.freeze({ id = "Moon", reward = 2, name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(20000, 200, 10000) }),
-        table.freeze({ id = "Mars", reward = 4, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(30000, 200, 10000) }),
-        table.freeze({ id = "Saturn", reward = 6, name = "SATURN", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
-        table.freeze({ id = "Pluto", reward = 10, name = "PLUTO", gravity = 50, color = Color3.fromRGB(180, 215, 255), position = Vector3.new(50000, 200, 10000) }),
+        table.freeze({ id = "Mars", reward = 3, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(30000, 200, 10000) }),
+        table.freeze({ id = "Saturn", reward = 4, name = "SATURN", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
+        table.freeze({ id = "Pluto", reward = 6, name = "PLUTO", gravity = 50, color = Color3.fromRGB(180, 215, 255), position = Vector3.new(50000, 200, 10000) }),
     }),
     -- The inside of the rocket: boarding players wait here for liftoff.
     CabinPosition = Vector3.new(-3000, 200, 0),

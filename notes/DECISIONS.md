@@ -171,3 +171,12 @@
 - Built before Phase 5 art so the asset list (five destinations, cabin) follows the
   gameplay.
 
+## 2026-10-15: First balance pass
+
+- Pacing is measured by `ProgressionReport` from the live tunables; numbers live in
+  `notes/BALANCE.md`, refreshed after tuning.
+- Rocket requirements don't scale with player count for now; a later overhaul makes
+  stages much longer.
+- MaxSpeed 60 (speed curve unchanged); destination rewards 3/6/9/12/18 per second;
+  upgrades grow ×2.2 per level so the first-hour pacing still holds with faster walking.
+

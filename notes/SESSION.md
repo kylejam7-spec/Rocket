@@ -1,4 +1,20 @@
-# Latest session: 2026-10-15, rocket cabin and destinations (Phase 4.5)
+# Latest session: 2026-10-15, first balance pass
+
+- Branch `claude/balance` from `master` @ 83364c4 (destinations merged).
+- New `ServerScriptService/ProgressionReport`: simulates all 15 rockets for N players
+  from the live Config/RocketCycles/Upgrades and prints per-rocket time, carry, walk,
+  stats, upgrades and the destination share of stat gains. Numbers and findings are
+  in `notes/BALANCE.md`.
+- User decisions: no player-count scaling yet (the overhaul will lengthen stages);
+  keep the speed curve shape but raise MaxSpeed 44 → 60 (also the anti-teleport
+  limit); soften destination rewards to 1/2/3/4/6 (3, 6, 9, 12, 18 per second).
+- Faster walking broke UpgradeCheck's first-hour pacing (gap 174 s). Retuned upgrades
+  with the check's own sim in Studio: growth ×2.2 on all tracks, Carry Capacity base
+  150 → 120 (others 10/90/120): first buy 23 s, mean gap 195 s training / 301 s not.
+- Studio (synced): RunChecks 7/7; report run for 1/4/8/16 players at 15% and 30%.
+- Not done: the balance overhaul itself (stage length, group scaling, speed spread).
+
+# Earlier session: 2026-10-15, rocket cabin and destinations (Phase 4.5, merged)
 
 - Branch `claude/destinations` from `master` @ e156ee3 (Phase 4 merged). Rojo on
   127.0.0.1:34874 from the `phase2-hud-ea13bf` worktree.
