@@ -50,7 +50,7 @@ function Map.build(part, label, reserved)
     -- Permanent pad sized for the scaled Tier 5 rocket (mount 83x57 + climbing ramps out to
     -- x = +/-53 on both flanks); its top surface (y = 0.58) is the origin every tier is built from.
     part("LaunchPad", Vector3.new(0, 0.33, -112), Vector3.new(112, 0.5, 88), Color3.fromRGB(96, 104, 118))
-    -- Sits between spawn and the apron, clear of the gym rows on either side.
+    -- Sits between spawn and the apron, on the lane from spawn to the rocket.
     local sign = part("ExpansionSign", Vector3.new(0, 0.1, -54), Vector3.new(12, 0.2, 4), paint)
     label(sign, "SPACEPORT")
     -- Flat markings leave the cabin entrance and future boosters unobstructed.

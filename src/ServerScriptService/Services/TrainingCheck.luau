@@ -12,7 +12,7 @@ return function()
     for _, tier in config.TrainingTiers do
         for _, stat in {"strengthLevel", "speedLevel"} do
             table.insert(stations, {part = Instance.new("Part"), name = stat,
-                stat = stat, gain = tier.gain, required = tier.cycles})
+                stat = stat, gain = config.TrainingBaseGain * tier.multiplier, required = tier.cycles})
         end
     end
     local service = Training.new({
@@ -28,7 +28,12 @@ return function()
         feedback = function() end, changed = function() end,
     })
     local ok, failure = pcall(function()
-        assert(#stations == 10)
+        assert(#stations == 14)
+        -- Tiers are in walking order: each needs more launches and pays more than the last.
+        local expected = { {1, 2}, {3, 5}, {8, 10}, {15, 25}, {25, 50}, {50, 75}, {100, 100} }
+        for index, tier in config.TrainingTiers do
+            assert(tier.cycles == expected[index][1] and tier.multiplier == expected[index][2], "Gym tier table changed")
+        end
         for _, station in stations do
             -- Use a different simulated player for each attempt to avoid exit cooldowns.
             player.UserId -= 1
@@ -76,5 +81,5 @@ return function()
     end
     local a, b, c = stats(100), stats(200), stats(300)
     assert(b - a > c - b, "Speed gains diminish")
-    return "All 10 advanced stations: locked below milestone, unlocked at milestone, correct gains, no cap, exit; stat curves passed"
+    return "All 14 tiered gym stations (2x-100x): locked below milestone, unlocked at milestone, correct gains, no cap, exit; stat curves passed"
 end

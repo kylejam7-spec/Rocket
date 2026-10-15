@@ -72,7 +72,7 @@ function World.new(ctx)
     spawn.Neutral = true
     label(spawn, "SPAWN")
     service.spawn = spawn
-    -- Scrap pit (Metal) and oil refinery (Fuel) sit right behind spawn; the gyms are off to the sides.
+    -- Scrap pit (Metal) and oil refinery (Fuel) sit right behind spawn; the Gym District is past them.
     service.materialStations = MaterialStations.build(world)
     for material, station in service.materialStations do tag(station.zone, World.Tags.MaterialSource, { Material = material }) end
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }
@@ -108,17 +108,6 @@ function World.new(ctx)
     service.boarding = boarding
     -- Rockets are built on the permanent LaunchPad (MapExpansionService); y = pad top.
     service.rocketBuild = require(script.Parent.RocketBuildService).new(world, CFrame.new(0, 0.58, -112))
-    -- Gym bays line both sides of the lane from spawn to the rocket, alternating sides and
-    -- getting stronger further from spawn: starter gym nearest, GYM 5 at the far edge
-    -- (x = -111..111). Slot 1 is the starter gym, slot n + 1 is GYM n.
-    local GYM_Z = 8
-    local function gymX(slot)
-        return (slot % 2 == 1 and -1 or 1) * (28 + 34 * math.floor((slot - 1) / 2))
-    end
-    local strengthStation = part("StrengthGym", Vector3.new(gymX(1) - 7, 1, GYM_Z), Vector3.new(7, 2, 7), Color3.fromRGB(191, 94, 109))
-    local speedStation = part("SpeedGym", Vector3.new(gymX(1) + 7, 1, GYM_Z), Vector3.new(7, 2, 7), Color3.fromRGB(110, 115, 218))
-    label(strengthStation, "BENCH")
-    label(speedStation, "TREADMILL")
     -- Well past the tilted Tier 5 rocket, which leans ~150 studs out over -Z.
     service.planet = tag(part("MeadowPlanet", Vector3.new(0, 2, -420), Vector3.new(65, 4, 65), Color3.fromRGB(113, 177, 95)), World.Tags.Planet, { PlanetId = config.Planet.Id })
     world.Parent = workspace
@@ -145,23 +134,18 @@ function World.new(ctx)
         end
         tag(base, World.Tags.Training)
     end
-    equipment(strengthStation, false)
-    equipment(speedStation, true)
-    -- TrainingService definitions; it stamps their attributes when it starts.
-    local stations = {
-        { part = strengthStation, name = "Bench press", stat = "strengthLevel", gain = 2 },
-        { part = speedStation, name = "Treadmill", stat = "speedLevel", gain = 2 },
-    }
-    local tierColors = {
-        Color3.fromRGB(225, 191, 98), Color3.fromRGB(80, 200, 160),
-        Color3.fromRGB(75, 175, 235), Color3.fromRGB(180, 110, 235), Color3.fromRGB(245, 120, 75),
-    }
-    -- Text is painted on the sign board itself so neighbouring gyms never overlap.
-    -- It faces +Z, back toward spawn.
-    local function signText(sign, lines)
+    -- Gym District: its own plaza past the material stations, reached up the road
+    -- between them (x = -8..8). Gyms run in tier order along a central walkway,
+    -- alternating sides: FREE GYM at the entrance, then 2X, 5X ... 100X deepest in.
+    -- Each bay is 30 (x) by 24 (z) with its sign on the outer edge, facing the walkway.
+    local DISTRICT_Z0, BAY_STEP, BAY_X = 176, 16, 27
+    local slots = 1 + #config.TrainingTiers
+    local districtZ1 = DISTRICT_Z0 + (slots - 1) * BAY_STEP + 22
+    local floorColor = Color3.fromRGB(58, 64, 78)
+    local function signText(sign, face, lines)
         local surface = Instance.new("SurfaceGui")
         surface.Name = "SignText"
-        surface.Face = Enum.NormalId.Back
+        surface.Face = face
         surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
         surface.PixelsPerStud = 40
         surface.Parent = sign
@@ -184,34 +168,54 @@ function World.new(ctx)
             textLabel.Parent = surface
         end
     end
-    -- Bays are 30 x 24 with the sign on the rocket-side edge, above the equipment so
-    -- nothing hides it from spawn.
-    local function gymBay(bayName, signName, x, color)
-        part(bayName, Vector3.new(x, 0.05, GYM_Z), Vector3.new(30, 0.1, 24), color)
-        return tag(part(signName, Vector3.new(x, 8, GYM_Z - 13), Vector3.new(26, 7, 0.5), color), World.Tags.GymSign)
+    -- Floor slab from the end of the ground (z = 160) to past the last bay, plus a
+    -- painted walkway and an entrance arch facing back toward spawn.
+    part("GymDistrictFloor", Vector3.new(0, -1, (160 + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - 160), floorColor)
+    part("GymWalkway", Vector3.new(0, 0.03, (152 + districtZ1) / 2), Vector3.new(16, 0.06, districtZ1 - 152), Color3.fromRGB(245, 182, 71)).CanCollide = false
+    for _, side in {-1, 1} do
+        part("GymArchPost", Vector3.new(side * 10, 7, 164), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
     end
-    signText(gymBay("StarterBay", "StarterSign", gymX(1), Color3.fromRGB(150, 155, 170)), {
-        { name = "Title", text = "STARTER GYM", height = 0.3 },
-        { name = "Gain", text = "+2 strength & speed / sec", height = 0.2 },
-        { name = "Status", text = "Open to everyone", height = 0.2 },
-    })
-    for index, tier in config.TrainingTiers do
-        local x = gymX(index + 1)
-        local color = tierColors[index]
-        local sign = gymBay("TrainingBay" .. tier.cycles, "TrainingSign" .. tier.cycles, x, color)
-        sign:SetAttribute("RequiredCycles", tier.cycles)
-        signText(sign, {
-            { name = "Title", text = "GYM " .. index, height = 0.3 },
-            { name = "Gain", text = "+" .. tier.gain .. " strength & speed / sec", height = 0.2 },
-            { name = "Status", text = "Unlocks after " .. tier.cycles .. (tier.cycles == 1 and " launch" or " launches"), height = 0.2 },
+    signText(part("GymArchSign", Vector3.new(0, 15.5, 164), Vector3.new(24, 4, 1), Color3.fromRGB(35, 40, 50)),
+        Enum.NormalId.Front, { { name = "Title", text = "GYM DISTRICT", height = 0.8 } })
+    -- Low walls on the open sides and back so nobody walks off the plaza.
+    local wallColor = Color3.fromRGB(81, 91, 107)
+    for _, side in {-1, 1} do
+        part("GymDistrictWall", Vector3.new(side * 55, 1.5, (160 + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - 160), wallColor)
+    end
+    part("GymDistrictWall", Vector3.new(0, 1.5, districtZ1), Vector3.new(111, 3, 1), wallColor)
+
+    local stations = {}
+    local tierColors = {
+        Color3.fromRGB(150, 155, 170), -- free
+        Color3.fromRGB(225, 191, 98), Color3.fromRGB(80, 200, 160), Color3.fromRGB(75, 175, 235),
+        Color3.fromRGB(180, 110, 235), Color3.fromRGB(245, 120, 75), Color3.fromRGB(235, 80, 140),
+        Color3.fromRGB(255, 225, 90),
+    }
+    -- Slot 1 is the free gym; slot n + 1 is TrainingTiers[n].
+    for slot = 1, slots do
+        local tier = config.TrainingTiers[slot - 1]
+        local multiplier = tier and tier.multiplier or 1
+        local required = tier and tier.cycles or 0
+        local gain = config.TrainingBaseGain * multiplier
+        local title = tier and multiplier .. "X GYM" or "FREE GYM"
+        local side = slot % 2 == 1 and -1 or 1
+        local x, z = side * BAY_X, DISTRICT_Z0 + (slot - 1) * BAY_STEP
+        local color = tierColors[slot] or tierColors[#tierColors]
+        part("GymBay" .. slot, Vector3.new(x, 0.05, z), Vector3.new(30, 0.1, 24), color)
+        local sign = tag(part("GymSign" .. slot, Vector3.new(side * (BAY_X + 15), 8, z), Vector3.new(0.5, 7, 22), color), World.Tags.GymSign)
+        if tier then sign:SetAttribute("RequiredCycles", required) end
+        signText(sign, side < 0 and Enum.NormalId.Right or Enum.NormalId.Left, {
+            { name = "Title", text = title, height = 0.3 },
+            { name = "Gain", text = "+" .. gain .. " strength & speed / sec", height = 0.2 },
+            { name = "Status", text = tier and "Unlocks after " .. required .. (required == 1 and " launch" or " launches") or "Open to everyone", height = 0.2 },
         })
         for _, treadmill in {false, true} do
             local kind = treadmill and "Treadmill" or "Bench"
-            local base = part("Advanced" .. kind .. tier.cycles,
-                Vector3.new(x + (treadmill and 7 or -7), 1, GYM_Z), Vector3.new(7, 2, 7), color)
+            local base = part(title:gsub(" ", "") .. kind, Vector3.new(x - side * 2, 1, z + (treadmill and 6 or -6)), Vector3.new(7, 2, 7), color)
             equipment(base, treadmill)
-            table.insert(stations, { part = base, name = tier.cycles .. "-cycle " .. kind,
-                stat = treadmill and "speedLevel" or "strengthLevel", gain = tier.gain, required = tier.cycles })
+            label(base, treadmill and "TREADMILL" or "BENCH")
+            table.insert(stations, { part = base, name = title:lower():gsub("^%l", string.upper) .. " " .. kind:lower(),
+                stat = treadmill and "speedLevel" or "strengthLevel", gain = gain, required = required })
         end
     end
     service.stations = stations

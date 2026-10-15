@@ -34,12 +34,17 @@ return table.freeze({
     FrontierReach = 12,
     -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
     CoinsPerUnit = 1,
+    -- Gym District tiers, in walking order after the free gym. Each station gains
+    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick.
+    TrainingBaseGain = 2,
     TrainingTiers = table.freeze({
-        table.freeze({ cycles = 1, gain = 4 }),
-        table.freeze({ cycles = 3, gain = 6 }),
-        table.freeze({ cycles = 5, gain = 8 }),
-        table.freeze({ cycles = 10, gain = 10 }),
-        table.freeze({ cycles = 12, gain = 12 }),
+        table.freeze({ cycles = 1, multiplier = 2 }),
+        table.freeze({ cycles = 3, multiplier = 5 }),
+        table.freeze({ cycles = 8, multiplier = 10 }),
+        table.freeze({ cycles = 15, multiplier = 25 }),
+        table.freeze({ cycles = 25, multiplier = 50 }),
+        table.freeze({ cycles = 50, multiplier = 75 }),
+        table.freeze({ cycles = 100, multiplier = 100 }),
     }),
     Planet = table.freeze({ Id = "Meadow", StrengthBonus = 3, SpeedBonus = 3 }),
     -- Persistence stays off for reproducible, non-production Studio tests.
