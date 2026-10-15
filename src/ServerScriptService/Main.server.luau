@@ -31,9 +31,14 @@ ctx.Training = require(Services.TrainingService).new({
     trained = function(player, station)
         if (station.required or 0) == 0 then ctx.Tutorial.observe(player, station.stat == "strengthLevel" and "Bench" or "Treadmill") end
     end,
-    phaseAllowed = function()
-        local phase = ctx.Cycle.rocket.phase
-        return phase == "Building" or phase == "Fueling" or phase == "Boarding"
+    -- Map gyms work while building, fueling and boarding; a destination's gym only
+    -- while passengers are there.
+    phaseAllowed = function(station)
+        local rocket = ctx.Cycle.rocket
+        if station and station.destination then
+            return rocket.phase == "Rewarding" and rocket.definition.ModelTier == station.destination
+        end
+        return rocket.phase == "Building" or rocket.phase == "Fueling" or rocket.phase == "Boarding"
     end,
     stations = ctx.World.stations,
 })

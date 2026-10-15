@@ -104,8 +104,16 @@ function Launch.new(ctx)
             task.wait(tier.LaunchSeconds)
             rocket.phase = "Rewarding"
             local rewardSeconds = definition.RewardSeconds or config.RewardSeconds
-            local multiplier = definition.RewardMultiplier
             local place = destination()
+            -- Further destinations pay more; the final mission multiplies on top.
+            local multiplier = definition.RewardMultiplier * place.reward
+            for _, station in World.stations do
+                if station.destination == definition.ModelTier then
+                    local bonus = station.stat == "speedLevel" and config.Planet.SpeedBonus or config.Planet.StrengthBonus
+                    station.gain = 2 * bonus * multiplier
+                    station.part:SetAttribute("TrainingGain", station.gain)
+                end
+            end
             Cycle.deadline = workspace:GetServerTimeNow() + rewardSeconds
             for userId in rocket.passengers do
                 local player = Players:GetPlayerByUserId(userId)
@@ -137,6 +145,7 @@ function Launch.new(ctx)
                 local player = Players:GetPlayerByUserId(userId)
                 if player then
                     player:SetAttribute("RocketPassenger", nil)
+                    ctx.Training.stop(player)
                     Movement.relocate(player, spawn.Position + Vector3.new(0, 5, 0))
                 end
             end

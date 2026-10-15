@@ -1,7 +1,8 @@
 -- Builds the rocket cabin (where boarded players wait for liftoff) and one isolated
 -- destination per rocket design (Config.Destinations, by ModelTier), far from the
 -- main map. Primitives only; Phase 5 swaps in art and sky. Each destination has a
--- walled play area and an ArrivalPad tagged DestinationArrival (attribute Tier).
+-- walled play area, an ArrivalPad tagged DestinationArrival (attribute Tier) and two
+-- gym spots (WorldService puts a bench and a treadmill there).
 local CollectionService = game:GetService("CollectionService")
 local Destinations = {}
 Destinations.ArrivalTag = "DestinationArrival"
@@ -70,12 +71,21 @@ local function arrival(parent, position, tier, color)
     CollectionService:AddTag(pad, Destinations.ArrivalTag)
     return pad
 end
--- Deterministic scatter so every server builds the same destination.
+-- Every destination keeps these clear (offsets from its centre): the gym (bench left,
+-- treadmill right of the arrival) and the arrival itself.
+Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3.new(28, 0, 24) }
+local CLEAR = { Destinations.GymOffsets.bench, Destinations.GymOffsets.treadmill, Vector3.new(0, 0, 18) }
+-- Deterministic scatter so every server builds the same destination; skips the clear spots.
 local function scatter(seed, count, radius, fn)
     local random = Random.new(seed)
     for index = 1, count do
         local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0.25, 0.9) * radius
-        fn(index, Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), random)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local blocked = false
+        for _, spot in CLEAR do
+            if (offset - spot).Magnitude < 14 then blocked = true end
+        end
+        if not blocked then fn(index, offset, random) end
     end
 end
 
@@ -169,7 +179,7 @@ builders[5] = function(folder, c)
     return ground, Vector3.new(0, 0, 20)
 end
 
--- Returns { [tier] = { name, gravity, arrival = Vector3, center } } and the cabin
+-- Returns { [tier] = { id, name, gravity, reward, arrival = Vector3, center, gym = { bench, treadmill } } } and the cabin
 -- { center, size, arrival, exit (part with the Leave prompt) }.
 function Destinations.build(world, config)
     local root = Instance.new("Folder")
@@ -187,7 +197,9 @@ function Destinations.build(world, config)
         arrival(folder, arrivalAt + Vector3.new(0, 0.2, 0), tier, spec.color)
         -- Players arrive facing -Z (the main map's view toward the rocket): sign ahead, facing them.
         sign(folder, center + Vector3.new(0, 22, arrivalOffset.Z - 40), Vector3.new(0, 0, 1), "WELCOME TO " .. spec.name .. "!", spec.color)
-        built[tier] = { name = spec.name, gravity = spec.gravity, arrival = arrivalAt + Vector3.new(0, 4, 0), center = center }
+        built[tier] = { id = spec.id, name = spec.name, gravity = spec.gravity, reward = spec.reward, folder = folder,
+            arrival = arrivalAt + Vector3.new(0, 4, 0), center = center,
+            gym = { bench = center + Destinations.GymOffsets.bench + Vector3.new(0, 1, 0), treadmill = center + Destinations.GymOffsets.treadmill + Vector3.new(0, 1, 0) } }
     end
 
     -- The cabin: the inside of the rocket, an enclosed room with seats, portholes,

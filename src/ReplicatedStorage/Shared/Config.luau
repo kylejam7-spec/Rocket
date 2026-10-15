@@ -61,17 +61,19 @@ return table.freeze({
         table.freeze({ cycles = 10, gain = 10 }),
         table.freeze({ cycles = 12, gain = 12 }),
     }),
-    -- Per-second stat reward for passengers at the destination (x the cycle's RewardMultiplier).
+    -- Per-second stat reward unit for passengers at a destination: x the destination's
+    -- reward (further out pays more) x the cycle's RewardMultiplier (final mission x2).
+    -- Each destination's own bench and treadmill give double its per-second reward.
     Planet = table.freeze({ StrengthBonus = 3, SpeedBonus = 3 }),
     -- Where each rocket design flies (by RocketCycles ModelTier): isolated areas far
     -- from the main map and 10,000 studs apart (Saturn's rings carry ~4,000) so their giant backdrops never overlap.
     -- Gravity is applied on the passenger's client while there.
     Destinations = table.freeze({
-        table.freeze({ id = "SpaceStation", name = "THE SPACE STATION", gravity = 196.2, color = Color3.fromRGB(120, 200, 255), position = Vector3.new(10000, 200, 10000) }),
-        table.freeze({ id = "Moon", name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(20000, 200, 10000) }),
-        table.freeze({ id = "Mars", name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(30000, 200, 10000) }),
-        table.freeze({ id = "Saturn", name = "SATURN", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
-        table.freeze({ id = "Pluto", name = "PLUTO", gravity = 50, color = Color3.fromRGB(180, 215, 255), position = Vector3.new(50000, 200, 10000) }),
+        table.freeze({ id = "SpaceStation", reward = 1, name = "THE SPACE STATION", gravity = 196.2, color = Color3.fromRGB(120, 200, 255), position = Vector3.new(10000, 200, 10000) }),
+        table.freeze({ id = "Moon", reward = 2, name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(20000, 200, 10000) }),
+        table.freeze({ id = "Mars", reward = 4, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(30000, 200, 10000) }),
+        table.freeze({ id = "Saturn", reward = 6, name = "SATURN", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
+        table.freeze({ id = "Pluto", reward = 10, name = "PLUTO", gravity = 50, color = Color3.fromRGB(180, 215, 255), position = Vector3.new(50000, 200, 10000) }),
     }),
     -- The inside of the rocket: boarding players wait here for liftoff.
     CabinPosition = Vector3.new(-3000, 200, 0),
