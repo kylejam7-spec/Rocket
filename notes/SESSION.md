@@ -1,4 +1,29 @@
-# Latest session: 2026-10-14, Phase 1 stat curve + delivery feedback
+# Latest session: 2026-10-14, wide ramps + ramp place reach
+
+- Branch `claude/great-ellis-195d97` is now rebased onto `claude/place-pickup-anywhere`
+  (6101de9: hold E anywhere, one place prompt that slides around a ring encircling the
+  whole rocket). One commit on top.
+- Ramps: inner edge 1 stud outside the widest segment (it used to clear the launch
+  mount), outer edge unchanged (inside the floodlights), each ramp ≥ 14 wide (T3–T5
+  16–19). Where the inner strip crosses the mount front it would meet a 1.6–2.9 stud
+  ledge (T3/T4), so the ramp plane and its arms lift just enough (T3 +2.3, T4 +1.3).
+- Reach: `Build:inPlaceReach(position, reach)` = within reach of the ring, or on a ramp
+  (across rampInner−1…rampOuter+1, up to 8 above its surface) within reach of the fill
+  line along the rocket. CargoService uses it; the ring carries `RampInner`/`RampOuter`/
+  `RampSurface` attributes so CargoController slides the prompt onto the ramp beside you.
+- New `RampCheck`: all 15 variants: hug, width, inside complex, no mount ledge, reach
+  from every ramp/hull spot ±6 studs of the fill line at 7 fill levels, and no reach far
+  up the ramp or far above it.
+- Studio (single sync verified: every script length matches the worktree): RunChecks
+  4/4 pass. Cycle 7 (T3) at 45%: walked the inner edge past the mount (no ledge), then
+  stood at x = 39 on the outer ramp, 12.6 studs outside the 52.7-stud ring: prompt slid
+  to 1.1 studs away, Delivered 0 → 10, coins 0 → 10. No game errors or warnings.
+- Studio gotchas: a Rojo patch that lands during Play is dropped and Rojo then thinks
+  it's in sync (make a real content change to resend). Two sessions syncing at once
+  mixed branches in Studio; check script lengths against the worktree before testing.
+- Not done: the 10-minute solo acceptance run, two clients, phone layout.
+
+# Earlier session: 2026-10-14, Phase 1 stat curve + delivery feedback
 
 - Same branch and Rojo port (34874) as the coins work below.
 - Stat curve: no level cap. Walk speed = 24 + 20 · p / (p + 120), so it never
@@ -16,9 +41,8 @@
   Capacity 10 → 16. Treadmill, 12 s: Walk Speed 24 → 27, Humanoid 27.1. Delivered
   Metal from the ramp: coins 0 → 15 = Delivered 15; both flash parts (segment
   and ring) appeared per batch; only Roblox UIBlox warnings.
-- Reach: as the fill line rises, (17.3, 23, -107) falls out of `FrontierReach`. Move
-  up the ramp edge to about (17.2, 26, -110) (11.2 studs). Pours still stop partway
-  as the ring moves, worth a look in Phase 3 (onboarding).
+- Reach: as the fill line rose, the ramp fell out of `FrontierReach` (fixed in the
+  session above).
 - Pit exit for MoveTo: (-72, 0, 73) → (-64, 0, 75) → (-64, 3, 90), then the ramp.
 - Not done: the 10-minute solo acceptance run, two clients, phone layout.
 - Next: that 10-minute run, then Phase 2 leftovers (settings, mobile Place/Jump,

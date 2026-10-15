@@ -102,3 +102,15 @@
 - Delivery juice is client-only and keyed on the shared totals, so every player
   sees everyone's deliveries land. Effects are local clones under the camera;
   server parts are never edited from the client.
+
+## 2026-10-14: Wide ramps and ramp place reach
+
+- Ramps hug the rocket: the inner edge sits just outside the widest segment, so
+  nothing being built is hidden under a ramp, and ramps ride over the low mount slab
+  (lifted where needed so there is no ledge). Minimum width 14 per ramp keeps room for
+  a full 50-player server climbing and standing along the fill line.
+- Placement keeps the hold-anywhere and sliding-ring-prompt model from
+  `claude/place-pickup-anywhere`. Reach adds one rule on top: standing on a ramp
+  within `FrontierReach` of the fill line along the rocket counts, because where the
+  rocket is narrow the ramps can be far outside the ring. Server and client share the
+  rule through the ring's ramp attributes.
