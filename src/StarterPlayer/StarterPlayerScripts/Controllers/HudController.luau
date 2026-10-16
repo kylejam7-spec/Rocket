@@ -1,8 +1,11 @@
 -- The reference-style HUD: left stat stack (Coins, Strength, Speed, Launches), the
 -- top-centre objective line, Feedback toasts above the pill, the save-status tag,
--- and stat-gain juice ("+2 💪" over your head, "Strength Level Up!" when capacity
--- grows, coins that fly from your head to the Coins row on delivery).
+-- and stat-gain juice ("+2 💪" over your head, "Strength Level 5!" on each new
+-- level, coins that fly from your head to the Coins row on delivery).
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Config = require(ReplicatedStorage.Shared.Config)
+local StatLevels = require(ReplicatedStorage.Shared.StatLevels)
 local State = require(script.Parent.State)
 local Settings = require(script.Parent.Settings)
 local Tutorial = require(script.Parent.TutorialController)
@@ -55,13 +58,13 @@ function HudController.start()
     local stack = Create.new("Frame", {
         Name = "StatStack", BackgroundTransparency = 1,
         -- Just under the objective line (64 + 84 design px), whatever the aspect ratio.
-        Position = UDim2.fromOffset(Theme.gutter, 160), Size = UDim2.fromOffset(260, 290), Parent = gui,
+        Position = UDim2.fromOffset(Theme.gutter, 160), Size = UDim2.fromOffset(260, 316), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
-    local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", LayoutOrder = 1, Parent = stack })
-    local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 24", LayoutOrder = 2, Parent = stack })
+    local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
+    local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 24", badge = "LV 0", progress = true, LayoutOrder = 2, Parent = stack })
     local launches = StatRow.new({ Name = "Launches", icon = icon.Launch, color = Theme.color.Launch, sub = "Delivered: 0", LayoutOrder = 3, Parent = stack })
 
     local goal = StrokedText.new({
@@ -151,16 +154,23 @@ function HudController.start()
             strength:set(p.strength, "Capacity: " .. (material and count or 0) .. "/" .. p.capacity)
             speed:set(p.speed, "Walk Speed: " .. math.floor(p.walkSpeed))
             launches:set(p.completedLaunches, "Delivered: " .. Theme.number(p.lifetimeDeliveries))
+            -- Level badge and the bar toward the next level (points into it / its cost).
+            local strengthLevel, strengthInto, strengthNeed = StatLevels.level(Config, p.strength)
+            local speedLevel, speedInto, speedNeed = StatLevels.level(Config, p.speed)
+            strength:setBadge("LV " .. strengthLevel)
+            strength:setProgress(strengthInto / strengthNeed, Theme.number(strengthInto) .. "/" .. Theme.number(strengthNeed))
+            speed:setBadge("LV " .. speedLevel)
+            speed:setProgress(speedInto / speedNeed, Theme.number(speedInto) .. "/" .. Theme.number(speedNeed))
             if before then
                 if p.strength > before.strength then worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength, "strengthGain") end
                 if p.speed > before.speed then worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed, "speedGain") end
-                if p.capacity > before.capacity then
-                    worldPop("Strength Level Up!", Theme.color.Go, "strengthLevel", 34)
-                    Tween.bounce(strength.sub, 1.6, 0.5)
+                if strengthLevel > StatLevels.level(Config, before.strength) then
+                    worldPop("Strength Level " .. strengthLevel .. "!", Theme.color.Go, "strengthLevel", 34)
+                    Tween.bounce(strength.badge, 1.6, 0.5)
                 end
-                if math.floor(p.walkSpeed) > math.floor(before.walkSpeed) then
-                    worldPop("Speed Level Up!", Theme.color.Speed, "speedLevel", 34)
-                    Tween.bounce(speed.sub, 1.6, 0.5)
+                if speedLevel > StatLevels.level(Config, before.speed) then
+                    worldPop("Speed Level " .. speedLevel .. "!", Theme.color.Speed, "speedLevel", 34)
+                    Tween.bounce(speed.badge, 1.6, 0.5)
                 end
             end
         end

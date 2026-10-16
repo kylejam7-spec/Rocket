@@ -3,7 +3,8 @@
 -- Invoke("mission", n or id) swaps in that mission while building; Invoke("misses", n) sets
 -- the wheel's pity counter; Invoke("tutorial", step?)
 -- restarts every player's tutorial (at Pickup by default) and clears seen callouts;
--- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades.
+-- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades;
+-- Invoke("stats", strength, speed) sets everyone's trained points (destination bonuses kept).
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
@@ -14,7 +15,7 @@ function Debug.new(ctx, parent)
     local Cycle = ctx.Cycle
     local debugHook = Instance.new("BindableFunction")
     debugHook.Name = "RocketDebug"
-    debugHook.OnInvoke = function(action, value)
+    debugHook.OnInvoke = function(action, value, extra)
         local rocket = Cycle.rocket
         local material = Rocket.PhaseMaterial[rocket.phase]
         if action == "fill" and material then
@@ -36,9 +37,12 @@ function Debug.new(ctx, parent)
                 record.profile.tutorialStep, record.profile.seenCallouts = value or "Pickup", {}
             end
             Cycle.broadcast()
-        elseif action == "coins" or action == "upgrades" then
+        elseif action == "coins" or action == "upgrades" or action == "stats" then
             for _, record in ctx.profiles.records do
-                if action == "coins" then record.profile.coins = value or 0 else record.profile.upgrades = {} end
+                local profile = record.profile
+                if action == "coins" then profile.coins = value or 0
+                elseif action == "stats" then profile.strengthLevel, profile.speedLevel = value or 0, extra or value or 0
+                else profile.upgrades = {} end
             end
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Stats.update(player) end
             Cycle.broadcast()

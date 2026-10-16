@@ -14,7 +14,42 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 upgrades: 10 levels, ×3 coins, Robux per level (current)
+## 2026-10-16 strength and speed levels (current)
+
+Points (training + destination rewards) now turn into **levels** (`Shared/StatLevels`).
+Level 1 costs 10 points, each level after ×1.2 (rounded to 5), capped at **450** from
+level 22 (~2,700 points in); every later level costs 450. Free gym (2/s): level 1 in
+5 s, level 10 in ~2 min, level 20 in ~15 min.
+
+| Level | 1 | 2 | 3 | 5 | 8 | 10 | 12 | 15 | 18 | 20 | 22+ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Cost | 10 | 10 | 15 | 20 | 35 | 50 | 75 | 130 | 220 | 320 | 450 |
+
+- Strength: carry = 10 + **3 per level** (cap 1,000, level 330).
+- Speed: walk = 24 + 46 · L / (L + 8), so MaxSpeed is now **70** (was 60): +5 at level 1,
+  47 at level 8, 59 at level 30, 66 at level 100. The first speed level is worth about
+  two thirds of the first strength level in delivery rate. After that the gap grows,
+  because walk speed has a ceiling and carry does not (see the open question below).
+- Gym District multipliers 2/5/10/25/50/75/100 → **2/4/6/10/15/20/30** (top gym 60/s,
+  7.5 s per capped level, which was 2.25 s at the old 200/s).
+- Destination reward 3 → **10 per second** per stat × destination reward.
+
+Report (same seed as below, 30 launches):
+
+| Players | First Moon | Level after first Moon | Late Moon | Level @ 30 | Carry @ 30 | Walk @ 30 | Stats from destinations | 30 launches |
+|---|---|---|---|---|---|---|---|---|
+| 1 | 296 min (was 287) | 23 | 29 min | 373 | 1,000 | 69 | 16–20% (was 3%) | 42 h |
+| 4 | 106 min (was 112) | 18 | 12 min | 197 | 601 | 68 | 35–39% (was 9%) | 16.5 h |
+| 16 | 41 min (was 45) | 15 | 5 min | 124 | 382 | 67 | 58–66% (was 21%) | 6.1 h |
+
+Mission pacing stays close to the agreed build-size pass. Planets now give a real share
+of stats.
+
+**Open question:** walk speed caps out and carry doesn't, so past the first few levels a
+strength level is worth more than a speed level (3× by level 10, 10× by level 30, in
+the trip model). This needs the user's call (see SESSION.md).
+
+## 2026-10-16 upgrades: 10 levels, ×3 coins, Robux per level
 
 Three tracks (Bulk Pickup, Bulk Place, Placement Range), 10 levels each, set by the user.
 Pickup and place move 1 + level units per 0.05 s tick; reach is 12 studs +10% per level

@@ -5,20 +5,22 @@ return table.freeze({
     InteractionDistance = 10,
     ActionCooldown = 0.5,
     TrainingSeconds = 1,
-    -- Strength and speed are uncapped point totals; soft curves turn them into stats.
+    -- Strength and speed are uncapped point totals turned into levels (Shared.StatLevels):
+    -- level 1 costs 10 points, each level after x1.2, never more than 450 (from level 22,
+    -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
+    StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
     MaxPlanetBonus = 1000000,
-    -- Walk = BaseSpeed + (MaxSpeed - BaseSpeed) * points / (points + SpeedHalfPoints):
-    -- 24 at 0, ~42 after a minute on the starter treadmill, never above MaxSpeed
-    -- (which MovementService also uses as its anti-teleport limit).
-    BaseSpeed = 24,
-    MaxSpeed = 60,
-    SpeedHalfPoints = 120,
-    -- Carry = BaseCarryCapacity + floor(StrengthCarryScale * sqrt(strength)), capped:
-    -- the first starter-bench tick (+2) already adds 2, a minute there gives 26, then
-    -- growth slows (1,000 strength -> 57).
+    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, capped at MaxCapacity.
     BaseCarryCapacity = 10,
-    StrengthCarryScale = 1.5,
+    CarryPerLevel = 3,
     MaxCapacity = 1000,
+    -- Walk = BaseSpeed + (MaxSpeed - BaseSpeed) * level / (level + SpeedHalfLevel): +5
+    -- at speed level 1, 47 at level 8, never above MaxSpeed (which MovementService also
+    -- uses as its anti-teleport limit). Early levels match strength's first levels in
+    -- delivery rate; later ones are worth less (see notes/BALANCE.md).
+    BaseSpeed = 24,
+    MaxSpeed = 70,
+    SpeedHalfLevel = 8,
     -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth.
     ScrapBallBaseDiameter = 2,
     ScrapBallGrowth = 0.55,
@@ -72,21 +74,24 @@ return table.freeze({
         table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
     }),
     -- Gym District tiers, in walking order after the free gym. Each station gains
-    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick.
+    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick; the top
+    -- gym (60/s) still needs 7.5 s per capped level.
     TrainingBaseGain = 2,
     TrainingTiers = table.freeze({
         table.freeze({ cycles = 1, multiplier = 2 }),
-        table.freeze({ cycles = 3, multiplier = 5 }),
-        table.freeze({ cycles = 8, multiplier = 10 }),
-        table.freeze({ cycles = 15, multiplier = 25 }),
-        table.freeze({ cycles = 25, multiplier = 50 }),
-        table.freeze({ cycles = 50, multiplier = 75 }),
-        table.freeze({ cycles = 100, multiplier = 100 }),
+        table.freeze({ cycles = 3, multiplier = 4 }),
+        table.freeze({ cycles = 8, multiplier = 6 }),
+        table.freeze({ cycles = 15, multiplier = 10 }),
+        table.freeze({ cycles = 25, multiplier = 15 }),
+        table.freeze({ cycles = 50, multiplier = 20 }),
+        table.freeze({ cycles = 100, multiplier = 30 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
     -- Each destination's own bench and treadmill give double its per-second reward.
-    Planet = table.freeze({ StrengthBonus = 3, SpeedBonus = 3 }),
+    -- Standing through a Moon stay gives 300 of each (~2/3 of a capped level); the
+    -- Black Hole pays 10x per second for 45 s.
+    Planet = table.freeze({ StrengthBonus = 10, SpeedBonus = 10 }),
     -- Mission wheel: it starts this many seconds before a reward stay ends and spins
     -- for WheelSpinSeconds; everyone sees it (WheelController).
     WheelLeadSeconds = 10,
