@@ -14,31 +14,32 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 coin upgrades: 100 levels (current)
+## 2026-10-16 coin upgrade prices (current)
 
-Three tracks, 100 levels each, one price curve: 10, 30, 120, then ×1.2 per level (rounded
-to 5). Bulk Pickup and Bulk Place move 1 + level units per 0.05 s tick (placing no
-longer pours a whole ball in ~1.5 s); Placement Range adds 10% of the 12-stud reach per
-level. Carry Capacity is gone (profile v5 drops it).
+Three tracks (Bulk Pickup, Bulk Place, Placement Range), 100 levels each, one curve set by
+the user: level 1 costs 50, then ×2.5 per level to 25, ×1.5 per level to 50, ×1.1 per
+level to 100 (3 significant figures; under 1,000 rounded to 5). Pickup and place move
+1 + level units per 0.05 s tick; reach is 12 studs +10% per level.
 
-| Level | 1 | 2 | 3 | 5 | 10 | 20 | 30 | 40 | 50 | 60 | 75 | 100 | All 100 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Coins | 10 | 30 | 120 | 175 | 430 | 2,660 | 16.5k | 102k | 632k | 3.9M | 60M | 5.75B | 34.5B |
+| Level | 1 | 2 | 3 | 4 | 5 | 8 | 10 | 12 | 15 | 20 | 25 | 30 | 50 | 75 | 100 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Coins | 50 | 125 | 315 | 780 | 1,950 | 30.5K | 191K | 1.19M | 18.6M | 1.82B | 178B | 1.35T | 4.49Qa | 48.6Qa | 527Qa |
 
-A brand-new player (carry 10, ~22 s trips) earns ~27 coins/min: level 1 after the first
-trip, level 2 after ~1 more minute, level 3 after ~4.5 more minutes (UpgradeCheck holds
-these). Levels per track reached on coins in the report's 30 launches (Pickup/Place/Range):
+A brand-new player (carry 10, ~22 s trips) earns ~27 coins/min: level 1 after ~2 min,
+level 2 ~5 min later, level 3 ~12 min after that (UpgradeCheck holds these). Levels per
+track reached on coins in the report's 30 launches (Pickup/Place/Range):
 
-| Players | After the first Moon | After 10 launches | After 30 launches |
-|---|---|---|---|
-| 1 | 23/22/22 | 36/36/36 | 43/43/42 |
-| 4 | 15/15/15 | 29/29/28 | 35/35/35 |
-| 8 | 12/12/11 | 25/25/24 | 32/31/31 |
-| 16 | 9/9/8 | 21/21/21 | 28/27/27 |
+| Players | After the first Moon | After 10 launches | After 30 launches | First Moon |
+|---|---|---|---|---|
+| 1 | 7/7/7 | 10/10/9 | 11/11/11 | 285 min |
+| 4 | 6/5/5 | 9/8/8 | 10/10/9 | 111 min |
+| 8 | 5/5/4 | 8/7/7 | 9/9/9 | 70 min |
+| 16 | 4/4/4 | 7/7/6 | 8/8/8 | 44 min |
 
-Levels above ~45 are out of reach on coins; they're meant for Robux (not built yet). The
-first Moon is slower than in the table below (4 players ~107 min vs 91) because
-placing is now tick-based and Carry Capacity is gone.
+Coins stop at about level 10; everything above is for Robux (separate session). With fewer
+upgrades, missions run a little longer than in the build-size table below.
+
+Previous curve (merged f6f2481, same day): 10 / 30 / 120 then ×1.2; coins reached 28–43.
 
 ## 2026-10-16 mission build sizes
 

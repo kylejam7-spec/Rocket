@@ -209,7 +209,8 @@
   Capacity is gone, so carry comes only from strength.
 - Pickup and place are symmetric: 1 unit per tick, +1 per level. Reach grows 10% of the
   base per level.
-- One price curve for every track: cheap first level, about a minute's work for the
-  second, a few minutes for the third, then ×1.2 per level. Coins realistically reach
-  levels ~30–45; the rest is priced for Robux sales (to be built), which is the point.
+- One price curve for every track, set by the user the same day: 50 coins for level 1,
+  ×2.5 per level to 25, ×1.5 to 50, ×1.1 to 100. Coins realistically reach about level
+  10; the rest is priced for Robux sales, which is the point. (First version: 10/30/120
+  then ×1.2, replaced.)
 

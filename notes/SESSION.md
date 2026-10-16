@@ -1,4 +1,16 @@
-# Latest session: 2026-10-16, 100-level coin upgrades
+# Latest session: 2026-10-16, upgrade price curve
+
+- Branch `claude/upgrade-price-curve` from `master` @ f6f2481. User's curve: level 1 = 50
+  coins, ×2.5 per level to 25, ×1.5 to 50, ×1.1 to 100 (`Config.UpgradePrices.base` +
+  `segments`), prices to 3 significant figures; `Theme.short` gains Qa/Qi. UpgradeCheck
+  asserts the segment factors and the new pacing (level 1 1–3 min, level 2 3–7 min,
+  level 3 7–18 min of a new player's work). Coins reach ~level 10 (notes/BALANCE.md).
+- Studio was shared with the Robux session (its scripts loaded). I overwrote its Studio
+  copies of Config/Upgrades/UpgradeCheck/Theme before noticing and told it to reload;
+  then verified without touching the place: unparented module copies in Edit mode ran
+  UpgradeCheck (PASS) and ProgressionReport. Full RunChecks in Play not run on this branch.
+
+# Earlier session: 2026-10-16, 100-level coin upgrades
 
 - Branch `claude/upgrade-levels` from `master` @ 4d18877 (build sizes merged).
 - User's spec: 100 levels per upgrade; Carry Capacity removed; Bulk Pickup and Bulk Place

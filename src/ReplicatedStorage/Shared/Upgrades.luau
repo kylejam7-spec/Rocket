@@ -6,15 +6,26 @@ function Upgrades.level(profile, track)
     return profile.upgrades and profile.upgrades[track] or 0
 end
 
+-- Unrounded price of level n (1-based) on Config.UpgradePrices.
+local function rawPrice(curve, n)
+    local price, from = curve.base, 2
+    for _, segment in curve.segments do
+        local steps = math.min(n, segment.upTo) - from + 1
+        if steps > 0 then price *= segment.factor ^ steps end
+        from = segment.upTo + 1
+    end
+    return price
+end
+
 -- Coins for the next level of `track`, or nil when it is maxed. Every track shares
--- Config.UpgradePrices: the listed first prices, then x growth per level.
+-- Config.UpgradePrices; prices are rounded to 5 under 1,000, else to 3 significant figures.
 function Upgrades.price(config, track, level)
     local spec = config.Upgrades[track]
     if not spec or level >= spec.max then return nil end
-    local curve = config.UpgradePrices
-    local listed = #curve.first
-    if level < listed then return curve.first[level + 1] end
-    return math.max(5, math.round(curve.first[listed] * curve.growth ^ (level + 1 - listed) / 5) * 5)
+    local price = rawPrice(config.UpgradePrices, level + 1)
+    if price < 1000 then return math.max(5, math.round(price / 5) * 5) end
+    local unit = 10 ^ (math.floor(math.log10(price)) - 2)
+    return math.round(price / unit) * unit
 end
 
 -- Cheapest next level across all tracks (nil when everything is maxed).

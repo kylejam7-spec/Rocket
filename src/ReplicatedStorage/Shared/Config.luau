@@ -35,16 +35,23 @@ return table.freeze({
     -- The tutorial's closing "work with everyone" step stays up this long, then ends.
     TutorialFinalSeconds = 8,
     -- Coin upgrades (Shared.Upgrades has the math), 100 levels each, all on one price
-    -- curve: the first levels cost UpgradePrices.first (cheap, ~1 min of a new player's
-    -- work, a few minutes), then each level costs `growth` x the last, rounded to 5, so
-    -- high levels are out of reach on coins alone (they're meant for Robux later).
-    -- UpgradeCheck holds these targets.
+    -- curve: level 1 costs UpgradePrices.base, and each level after costs the factor of
+    -- the first segment it falls in times the last (x2.5 up to level 25, x1.5 to 50,
+    -- x1.1 to 100). Coins realistically reach ~level 10; the rest is for Robux.
+    -- Prices show as 3 significant figures (under 1,000: rounded to 5).
     Upgrades = table.freeze({
         BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 100, step = 1 }), -- +1 unit per pickup tick
         BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 100, step = 1 }), -- +1 unit per place tick
         PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 100, step = 0.1 }), -- +10% reach
     }),
-    UpgradePrices = table.freeze({ first = table.freeze({ 10, 30, 120 }), growth = 1.2 }),
+    UpgradePrices = table.freeze({
+        base = 50,
+        segments = table.freeze({
+            table.freeze({ upTo = 25, factor = 2.5 }),
+            table.freeze({ upTo = 50, factor = 1.5 }),
+            table.freeze({ upTo = 100, factor = 1.1 }),
+        }),
+    }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({

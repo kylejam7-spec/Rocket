@@ -70,10 +70,10 @@ function Theme.number(value)
     return sign .. digits:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
 end
 
--- Compact counts for tight buttons: 9,999 as is, then 12.3K, 4.56M, 7.8B, 1.2T.
+-- Compact counts for tight buttons: 9,999 as is, then 12.3K, 4.56M, 7.8B, 1.2T, 527Qa, 5.7Qi.
 function Theme.short(value)
     if value < 10000 then return Theme.number(value) end
-    for _, unit in { { 1e12, "T" }, { 1e9, "B" }, { 1e6, "M" }, { 1e3, "K" } } do
+    for _, unit in { { 1e18, "Qi" }, { 1e15, "Qa" }, { 1e12, "T" }, { 1e9, "B" }, { 1e6, "M" }, { 1e3, "K" } } do
         if value >= unit[1] then
             -- Three significant digits, truncated (5,999,999 reads 5.99M, not 6M).
             local scaled = value / unit[1]
