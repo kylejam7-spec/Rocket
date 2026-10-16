@@ -1,24 +1,21 @@
 # Latest session: 2026-10-16, Robux upgrade levels
 
 - PR #8 (100-level upgrades) rebase-merged with the user's OK; branch `claude/robux-upgrades`
-  from `master` @ f6f2481, rebased onto 26c1683 (×2.5/×1.5/×1.1 curve), then changed by
-  the user to **10 levels per track, coins ×3 (50 … 984K), one Robux product per level at
-  53 … 143 R$** (30 products, IDs not created yet). Notes in BALANCE/DECISIONS.
-- `Config.RobuxUpgrades` (prices, `products[track][level]` IDs, empty until the user
-  creates them; `levelsPerTier` = 1), `Upgrades.robux`. `RobuxUpgradeService`: client
-  fires `BuyUpgradeRobux(track)`, the server opens the prompt (refuses at max, with no
-  product, or while a purchase is in flight). ProcessReceipt: unknown product or absent
-  player → NotProcessedYet; journal write (`RocketReceipts_v1_test`, memory in Studio);
-  grant once per PurchaseId (profile `receiptIds`, schema v6, which also caps old levels at
-  10); PurchaseGranted only after the profile save lands. At max: coins for the cheapest
-  next two levels on any track.
-- Panel 680 wide, blue "R$ 53" button left of the coin price, hidden without a product.
-- Studio: all 67 scripts loaded over HTTP (Edit mode), RunChecks 9/9 (RobuxCheck: duplicate
-  receipt, failed save then retry, failed journal, max-level payback, unknown product,
-  absent player, left mid-receipt, v5 cap); ProgressionReport numbers in BALANCE; panel
-  layout screenshot with the button forced visible; the remote ignores bad input.
-- Not verified: a real Studio test purchase (needs the 30 product IDs), real DataStore
-  journal (persistence off), receipts after a server crash.
+  from `master` @ f6f2481, rebased onto 26c1683. The user then set **10 levels per track,
+  coins ×3 (50 … 984K), Robux 53 … 143 R$ per level**, and moved Robux to **Game Passes**
+  (30, created by the user; IDs in `Config.RobuxUpgrades.passes[track][level]`, checked in
+  Studio: names and prices match). Notes in BALANCE/DECISIONS.
+- `RobuxUpgradeService`: `sync` on join raises each track to its highest owned pass;
+  `BuyUpgradeRobux(track)` → server prompts the next level's pass; a purchase raises the
+  level at once. Profile v6 caps saved levels at 10. Panel: blue "R$ 53" button, hidden
+  at max.
+- Studio: all 67 scripts loaded over HTTP, RunChecks 9/9 (RobuxCheck: pass map, next-level
+  lookup, apply never lowers, sync highest-wins / failed check / maxed, coin buys continue,
+  v5 cap). Live: the creator owns all 30 passes, so sync raised every track to 10 and the
+  Robux buttons hid; after clearing upgrades the button showed R$ 53 and the prompt opened
+  for Pickup Level 1 (finished "not purchased", since the creator already owns it).
+- Not verified: a real purchase by a non-owner (needs another account, or a Studio local
+  server test player), persistence with real saves (off).
 
 # Earlier session: 2026-10-16, upgrade price curve
 

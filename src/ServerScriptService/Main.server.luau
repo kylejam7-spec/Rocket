@@ -56,7 +56,8 @@ local function joined(player)
     end
     player.CharacterAdded:Connect(characterAdded)
     if player.Character then task.spawn(characterAdded, player.Character) end
-    ctx.profiles:load(player.UserId)
+    -- Robux upgrade passes live with Roblox; re-apply them once the profile is loaded.
+    if ctx.profiles:load(player.UserId) then ctx.Robux.sync(player) end
 end
 Players.PlayerAdded:Connect(joined)
 Players.PlayerRemoving:Connect(function(player)

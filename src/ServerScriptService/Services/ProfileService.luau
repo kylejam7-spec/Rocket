@@ -6,7 +6,7 @@ Profiles.__index = Profiles
 
 local function defaults()
     return { schemaVersion = 6, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
-        tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {}, receiptIds = {} }
+        tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {} }
 end
 
 local function copy(profile)
@@ -17,7 +17,6 @@ local function copy(profile)
     result.seenCallouts = table.clone(profile.seenCallouts)
     result.upgrades = table.clone(profile.upgrades)
     result.purchaseIds = table.clone(profile.purchaseIds)
-    result.receiptIds = table.clone(profile.receiptIds)
     return result
 end
 
@@ -46,11 +45,10 @@ local function validate(raw, config)
             raw.upgrades.CarryCapacity = nil
         end
     end
-    -- v5 -> v6 adds the Robux receipt ledger (PurchaseIds already granted) and caps levels
-    -- at the new 10-level max (no refund: persistence was never on).
+    -- v5 -> v6 caps levels at the new 10-level max (no refund: persistence was never on).
     if raw.schemaVersion == 5 then
         raw = table.clone(raw)
-        raw.schemaVersion, raw.receiptIds = 6, {}
+        raw.schemaVersion = 6
         if type(raw.upgrades) == "table" then
             raw.upgrades = table.clone(raw.upgrades)
             for track, level in raw.upgrades do
@@ -66,8 +64,6 @@ local function validate(raw, config)
         if not spec or type(level) ~= "number" or level < 0 or level % 1 ~= 0 or level > spec.max then error("Invalid upgrade " .. tostring(track)) end
     end
     for _, id in raw.purchaseIds do if type(id) ~= "string" then error("Invalid purchase ledger") end end
-    if type(raw.receiptIds) ~= "table" then error("Invalid receipt ledger") end
-    for _, id in raw.receiptIds do if type(id) ~= "string" then error("Invalid receipt ledger") end end
     if type(raw.seenCallouts) ~= "table" then error("Invalid callouts") end
     for _, name in raw.seenCallouts do if type(name) ~= "string" then error("Invalid callouts") end end
     for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins" } do
@@ -211,7 +207,6 @@ function Profiles:save(userId)
                 current.seenCallouts = snapshot.seenCallouts
                 current.upgrades = snapshot.upgrades
                 current.purchaseIds = snapshot.purchaseIds
-                current.receiptIds = snapshot.receiptIds
                 applyRewards(current)
                 current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
                 return current
@@ -231,7 +226,6 @@ function Profiles:save(userId)
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds
-            or record.profile.receiptIds[#record.profile.receiptIds] ~= snapshot.receiptIds[#snapshot.receiptIds]
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if record.leaving and not next(record.pending) and not record.dirty then
             -- Keep lease until expiry: protects a disconnected locked passenger.
@@ -247,15 +241,6 @@ function Profiles:save(userId)
     end
     self.changed(userId)
     return ok and saved ~= nil
-end
-
--- Saves now, waiting out a save already in flight (save() skips while busy, and that
--- one's snapshot may predate the caller's change). True once the change is stored.
-function Profiles:commit(userId)
-    local record = self.records[userId]
-    if not record then return false end
-    while record.busy do task.wait(0.1) end
-    return self:save(userId)
 end
 
 function Profiles:remove(userId)

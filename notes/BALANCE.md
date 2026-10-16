@@ -19,7 +19,8 @@ on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is
 Three tracks (Bulk Pickup, Bulk Place, Placement Range), 10 levels each, set by the user.
 Pickup and place move 1 + level units per 0.05 s tick; reach is 12 studs +10% per level
 (level 10: 11 units per tick, 2× reach). Coins: 50, then ×3 per level (3 significant
-figures). Each level is also its own developer product (Robux, +28 on the first ladder).
+figures). Each level is also a Robux Game Pass (owning the level-N pass keeps the track at
+level N or higher).
 
 | Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -37,8 +38,7 @@ windows. Report, 30 launches, total levels across the three tracks (max 30):
 | 8 | 12 | 19 | 23 (8/8/7) | 70 min |
 | 16 | 10 | 18 | 21 (7/7/7) | 45 min |
 
-Coins reach levels 7–9; level 10 (984K) is in practice for Robux. A Robux level that lands
-on a maxed track pays the coins for the cheapest next two levels on any track.
+Coins reach levels 7–9; level 10 (984K) is in practice for Robux. 
 
 ## History: 2026-10-16 coin upgrade prices, 100 levels (replaced the same day)
 

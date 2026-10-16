@@ -1,121 +1,84 @@
--- Robux upgrade levels: product/tier lookup, the v6 receipt ledger, and ProcessReceipt
--- against fake profiles and journal: unknown product, absent player, duplicate receipt,
--- failed save then retry, failed journal, max level, and a player leaving mid-receipt.
+-- Robux upgrade levels (Game Passes): the configured passes, the next-level lookup the panel
+-- and prompt use, raising a level from a pass (never lowering it, capped at max), the
+-- join-time ownership sync (highest pass wins, failed checks change nothing), and the v6
+-- profile cap.
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
     local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
     local Service = require(script.Parent.RobuxUpgradeService)
     local Profiles = require(script.Parent.ProfileService)
-    local Decision = Enum.ProductPurchaseDecision
 
-    -- Real config: a price per tier covering every level, IDs (once set) unique positive integers.
+    -- Real config: one price and one pass per level on every track; IDs unique positive integers.
     local robux = config.RobuxUpgrades
     local seen = {}
     for _, track in config.UpgradeOrder do
-        assert(#robux.prices * robux.levelsPerTier == config.Upgrades[track].max, track .. " tiers don't cover all levels")
-        for tier, id in robux.products[track] do
-            assert(type(id) == "number" and id > 0 and id % 1 == 0 and not seen[id], track .. " tier " .. tier .. " bad product ID")
-            assert(tier >= 1 and tier <= #robux.prices, track .. " tier out of range")
+        local max = config.Upgrades[track].max
+        assert(#robux.prices == max and #robux.passes[track] == max, track .. " needs a pass and price per level")
+        for level, id in robux.passes[track] do
+            assert(type(id) == "number" and id > 0 and id % 1 == 0 and not seen[id], track .. " level " .. level .. " bad pass ID")
             seen[id] = true
         end
     end
+    for level = 2, #robux.prices do assert(robux.prices[level] > robux.prices[level - 1], "Robux prices must rise") end
+    local map = Service.passes(config)
+    local first = robux.passes.BulkPlace[1]
+    assert(map[first].track == "BulkPlace" and map[first].level == 1)
 
-    -- Test config with fake IDs (track index * 100 + tier); one product per level.
+    -- Next level's pass and price; nil at max or for an unknown track.
     local MAX = config.Upgrades.BulkPickup.max
-    assert(robux.levelsPerTier == 1 and #robux.prices == MAX, "one Robux price per level")
-    local products = {}
-    for index, track in config.UpgradeOrder do
-        products[track] = {}
-        for tier = 1, #robux.prices do products[track][tier] = index * 100 + tier end
-    end
-    local test = table.clone(config)
-    test.RobuxUpgrades = { levelsPerTier = robux.levelsPerTier, prices = robux.prices, products = products }
-    assert(select(3, Upgrades.robux(test, "BulkPickup", 0)) == 1 and select(2, Upgrades.robux(test, "BulkPickup", 0)) == 53)
-    assert(Upgrades.robux(test, "BulkPickup", 1) == 102 and select(2, Upgrades.robux(test, "BulkPickup", 1)) == 63)
-    assert(select(2, Upgrades.robux(test, "PlacementRange", MAX - 1)) == 143 and Upgrades.robux(test, "PlacementRange", MAX - 1) == 310)
-    assert(Upgrades.robux(test, "BulkPickup", MAX) == nil, "maxed track still sells")
-    assert(Upgrades.robux(test, "Nope", 0) == nil)
-    local partial = table.clone(test)
-    partial.RobuxUpgrades = { levelsPerTier = 1, prices = robux.prices, products = { BulkPickup = { 101 } } }
-    assert(Upgrades.robux(partial, "BulkPickup", 1) == nil and Upgrades.robux(partial, "BulkPlace", 0) == nil, "missing product shows")
+    assert(Upgrades.robux(config, "BulkPickup", 0) == robux.passes.BulkPickup[1] and select(2, Upgrades.robux(config, "BulkPickup", 0)) == 53)
+    assert(Upgrades.robux(config, "PlacementRange", MAX - 1) == robux.passes.PlacementRange[MAX] and select(2, Upgrades.robux(config, "PlacementRange", MAX - 1)) == 143)
+    assert(Upgrades.robux(config, "BulkPickup", MAX) == nil, "maxed track still sells")
+    assert(Upgrades.robux(config, "Nope", 0) == nil)
+    local partial = table.clone(config)
+    partial.RobuxUpgrades = { prices = robux.prices, passes = { BulkPickup = { 101 } } }
+    assert(Upgrades.robux(partial, "BulkPickup", 1) == nil and Upgrades.robux(partial, "BulkPlace", 0) == nil, "missing pass shows")
 
-    -- Profile v6: v5 gains an empty receipt ledger and levels capped at the new max; a bad
-    -- ledger is refused.
+    -- apply: raises only, capped at max, ignores unknown tracks.
+    local profile = Profiles.validate(nil, config)
+    assert(Service.apply(config, profile, "BulkPickup", 3) and profile.upgrades.BulkPickup == 3)
+    assert(not Service.apply(config, profile, "BulkPickup", 2) and profile.upgrades.BulkPickup == 3, "pass lowered a level")
+    assert(not Service.apply(config, profile, "BulkPickup", 3), "same level counted as a change")
+    assert(Service.apply(config, profile, "BulkPlace", 99) and profile.upgrades.BulkPlace == MAX, "pass level not capped")
+    assert(not Service.apply(config, profile, "Nope", 1) and not Service.apply(config, profile, "BulkPickup", "5"))
+
+    -- Coin levels continue from a pass level.
+    profile.coins = 1e7
+    local UpgradeService = require(script.Parent.UpgradeService)
+    assert(UpgradeService.buy(config, profile, "BulkPickup", "after-pass") == Upgrades.price(config, "BulkPickup", 3) and profile.upgrades.BulkPickup == 4)
+
+    -- sync: the highest owned pass per track wins; owned passes below the level change nothing;
+    -- an ownership check that errors leaves the track alone.
+    local function owning(list)
+        local set = {}
+        for _, id in list do set[id] = true end
+        local calls = 0
+        return function(id) calls += 1; return set[id] == true end, function() return calls end
+    end
+    local fresh = Profiles.validate(nil, config)
+    local owns = owning({ robux.passes.BulkPickup[2], robux.passes.BulkPickup[5], robux.passes.PlacementRange[1] })
+    local raised = Service.sync(config, fresh, owns)
+    assert(fresh.upgrades.BulkPickup == 5 and (fresh.upgrades.BulkPlace or 0) == 0 and fresh.upgrades.PlacementRange == 1)
+    assert(#raised == 2 and table.find(raised, "BulkPickup") and table.find(raised, "PlacementRange"))
+    assert(#Service.sync(config, fresh, owns) == 0, "re-sync changed levels")
+    local coined = Profiles.validate(nil, config)
+    coined.upgrades.BulkPickup = 7
+    local owns2, calls2 = owning({ robux.passes.BulkPickup[3] })
+    assert(#Service.sync(config, coined, owns2) == 0 and coined.upgrades.BulkPickup == 7, "lower pass lowered a coin level")
+    assert(calls2() == 3 + MAX + MAX, "sync checked passes at or below the current level")
+    local failing = Profiles.validate(nil, config)
+    assert(#Service.sync(config, failing, function() error("Marketplace down") end) == 0 and next(failing.upgrades) == nil)
+    local maxed = Profiles.validate(nil, config)
+    maxed.upgrades = { BulkPickup = MAX, BulkPlace = MAX, PlacementRange = MAX }
+    local owns3, calls3 = owning({})
+    assert(#Service.sync(config, maxed, owns3) == 0 and calls3() == 0, "maxed tracks still checked")
+
+    -- Profile v6: v5 levels above the new max are capped; the caller's table is untouched.
     local v5 = Profiles.validate(nil, config)
-    assert(v5.schemaVersion == 6 and #v5.receiptIds == 0)
-    v5.schemaVersion, v5.receiptIds, v5.upgrades = 5, nil, { BulkPickup = 40, BulkPlace = 3 }
+    assert(v5.schemaVersion == 6)
+    v5.schemaVersion, v5.upgrades = 5, { BulkPickup = 40, BulkPlace = 3 }
     local migrated = Profiles.validate(v5, config)
-    assert(migrated.schemaVersion == 6 and #migrated.receiptIds == 0)
-    assert(migrated.upgrades.BulkPickup == MAX and migrated.upgrades.BulkPlace == 3 and v5.upgrades.BulkPickup == 40, "v5 levels not capped")
-    for _, bad in { "x", { 1 } } do
-        local raw = Profiles.validate(nil, config)
-        raw.receiptIds = bad
-        assert(not pcall(Profiles.validate, raw, config), "accepted a bad receipt ledger")
-    end
-
-    -- ProcessReceipt against fakes.
-    local USER = 7
-    local function setup()
-        local profiles = { records = { [USER] = { profile = Profiles.validate(nil, config) } }, saves = 0, failSave = false }
-        function profiles:ready(id) local r = self.records[id]; return r ~= nil and not r.leaving end
-        function profiles:dirty() end
-        function profiles:commit(id)
-            self.saves += 1
-            if self.failSave then return false end
-            self.stored = table.clone(self.records[id].profile.upgrades)
-            return true
-        end
-        local journal = Service.journal(test) -- persistence off: in memory
-        local deps = { config = test, products = Service.products(test), profiles = profiles, journal = journal, here = true, grants = 0 }
-        deps.present = function() return deps.here end
-        deps.granted = function() deps.grants += 1 end
-        return deps, profiles.records[USER].profile, profiles
-    end
-    local function receipt(id, product) return { PurchaseId = id, PlayerId = USER, ProductId = product or 101 } end
-
-    local deps, profile, profiles = setup()
-    assert(Service.process(deps, receipt("u", 999)) == Decision.NotProcessedYet and deps.journal.entries.u == nil, "unknown product")
-    deps.here = false
-    assert(Service.process(deps, receipt("a")) == Decision.NotProcessedYet and (profile.upgrades.BulkPickup or 0) == 0, "absent player granted")
-    deps.here = true
-    assert(Service.process(deps, receipt("a")) == Decision.PurchaseGranted and profile.upgrades.BulkPickup == 1)
-    assert(profiles.stored.BulkPickup == 1 and deps.journal.entries.a.state == "granted" and deps.journal.entries.a.outcome == "level")
-    assert(Service.process(deps, receipt("a")) == Decision.PurchaseGranted and profile.upgrades.BulkPickup == 1 and deps.grants == 1, "duplicate receipt granted twice")
-    assert(Service.process(deps, receipt("b", 201)) == Decision.PurchaseGranted and profile.upgrades.BulkPlace == 1, "wrong track")
-
-    -- Save fails: not granted to Roblox yet, level applied once; the retry saves without a second level.
-    profiles.failSave = true
-    assert(Service.process(deps, receipt("c")) == Decision.NotProcessedYet and profile.upgrades.BulkPickup == 2)
-    assert(deps.journal.entries.c.state == "pending")
-    profiles.failSave = false
-    assert(Service.process(deps, receipt("c")) == Decision.PurchaseGranted and profile.upgrades.BulkPickup == 2 and profiles.stored.BulkPickup == 2, "retry granted twice")
-
-    -- Journal write fails: nothing granted.
-    local open = deps.journal.open
-    deps.journal.open = function() error("DataStore down") end
-    assert(Service.process(deps, receipt("d")) == Decision.NotProcessedYet and profile.upgrades.BulkPickup == 2, "granted without a journal entry")
-    deps.journal.open = open
-
-    -- Player leaves during the journal write: the grant still lands and saves.
-    deps.journal.open = function(info) open(info); profiles.records[USER].leaving = true; deps.here = false end
-    assert(Service.process(deps, receipt("e")) == Decision.PurchaseGranted and profile.upgrades.BulkPickup == 3 and profiles.stored.BulkPickup == 3, "left mid-receipt")
-    deps.journal.open = open
-    profiles.records[USER].leaving, deps.here = nil, true
-
-    -- At max: coins instead of a level (the cheapest next two levels on any track), once.
-    -- Here BulkPickup 3, BulkPlace 1: next are BulkPlace 2 (150) then BulkPlace 3 (450).
-    profile.upgrades.PlacementRange = MAX
-    local before = profile.coins
-    local paid = Upgrades.price(test, "BulkPlace", 1) + Upgrades.price(test, "BulkPlace", 2)
-    assert(Service.payback(test, profile, 2) == paid and paid == 600)
-    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.upgrades.PlacementRange == MAX)
-    assert(profile.coins == before + paid and deps.journal.entries.f.outcome == "coins", "max-level payback")
-    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.coins == before + paid, "payback twice")
-    assert(Service.payback(test, { upgrades = { BulkPickup = MAX, BulkPlace = MAX - 1, PlacementRange = MAX } }, 2) == Upgrades.price(test, "BulkPlace", MAX - 1))
-    assert(Service.payback(test, { upgrades = { BulkPickup = MAX, BulkPlace = MAX, PlacementRange = MAX } }, 2) == 0)
-
-    -- Ledger stays bounded.
-    for i = 1, 100 do Service.grant(test, profile, "BulkPickup", "bulk" .. i) end
-    assert(#profile.receiptIds == Service.LedgerSize and profile.upgrades.BulkPickup == MAX)
+    assert(migrated.schemaVersion == 6 and migrated.upgrades.BulkPickup == MAX and migrated.upgrades.BulkPlace == 3)
+    assert(v5.upgrades.BulkPickup == 40, "migration changed the caller's table")
 end

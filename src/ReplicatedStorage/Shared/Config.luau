@@ -37,7 +37,7 @@ return table.freeze({
     -- Coin upgrades (Shared.Upgrades has the math), 10 levels each, all on one price
     -- curve: level 1 costs UpgradePrices.base, and each level after costs the factor of
     -- the first segment it falls in times the last (x3 per level: 50 ... 984K). Each level
-    -- can also be bought with Robux (RobuxUpgrades). Prices show as 3 significant figures
+    -- is also a Robux Game Pass (RobuxUpgrades). Prices show as 3 significant figures
     -- (under 1,000: rounded to 5).
     Upgrades = table.freeze({
         BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- +1 unit per pickup tick
@@ -51,21 +51,18 @@ return table.freeze({
         }),
     }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
-    -- Robux upgrades (RobuxUpgradeService): one developer product per track per level
-    -- (levelsPerTier levels share a product), each granting +1 level. `prices` mirror the
-    -- Creator Dashboard (the panel shows them); `products[track][tier]` holds the dashboard
-    -- IDs, tier 1 = level 1. A track with no ID for its next level hides its Robux button.
-    -- Never invent IDs: copy them from the dashboard.
+    -- Robux upgrades (RobuxUpgradeService): one Game Pass per track per level; owning the
+    -- level-N pass keeps that track at level N or higher, re-checked on every join.
+    -- `prices[level]` mirror the Creator Dashboard (the panel shows them); `passes[track][level]`
+    -- are the dashboard pass IDs. Never invent IDs: copy them from the dashboard.
     RobuxUpgrades = table.freeze({
-        levelsPerTier = 1,
         prices = table.freeze({ 53, 63, 73, 83, 93, 103, 113, 123, 133, 143 }),
-        products = table.freeze({
-            BulkPickup = table.freeze({}),
-            BulkPlace = table.freeze({}),
-            PlacementRange = table.freeze({}),
+        passes = table.freeze({
+            BulkPickup = table.freeze({ 2040698288, 2040812274, 2036912792, 2036780773, 2040140377, 2039792557, 2037242818, 2040440308, 2040044519, 2038148781 }),
+            BulkPlace = table.freeze({ 2036864764, 2037932794, 2038226786, 2036618761, 2037752757, 2036804805, 2037332787, 2036612743, 2037698751, 2037980759 }),
+            PlacementRange = table.freeze({ 2039762544, 2036090762, 2039702563, 2036288776, 2037332789, 2037314800, 2036072766, 2040734288, 2038064735, 2036804806 }),
         }),
     }),
-    ReceiptJournalName = "RocketReceipts_v1_test",
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({
         table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),

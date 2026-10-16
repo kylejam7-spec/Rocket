@@ -218,15 +218,14 @@
 
 - Upgrades have 10 levels per track (100 made the coin prices absurd): coins 50, then ×3
   per level (984K for level 10); per-level effects unchanged (+1 unit per tick, +10% reach).
-- Robux sells +1 level, one developer product per track per level: 53, 63, … 143 R$
-  (+10 per level). 30 products, so every receipt names its track and level price and no
-  saved "intent" is needed.
-- The server opens the purchase prompt; buttons hide at max. A purchase that still lands
-  at max (a race, or a product prompted directly) pays the coin price of the cheapest next
-  two levels on any track (0 when everything is maxed).
-- A receipt for a cheaper level's product than the player's next level (only possible by
-  prompting the product directly) still grants +1 level: Robux can't be refused after
-  purchase.
-- ProcessReceipt: journal first, grant once per PurchaseId (saved in the profile with the
-  level), PurchaseGranted only after the profile save.
+- Robux levels are **Game Passes**, one per track per level: 53, 63, … 143 R$ (30 passes).
+  Each is bought once, and Roblox keeps the ownership, so a Robux level survives any loss
+  of our save data. The track's level is at least the highest owned pass, re-applied on
+  every join; coin levels continue from there.
+- The server opens the prompt and offers only the next level's pass; the level is raised
+  when PromptGamePassPurchaseFinished says purchased (it fires on the server). A pass
+  bought out of order (prompted directly) just gives that level.
+- The developer-product version (receipt journal, per-PurchaseId ledger, coin payback at
+  max) was built first and dropped the same day; repeatable products (Phase 7 "+N units")
+  still need that pattern (see the playbook's Persistence Patterns).
 - Profile v6 caps saved levels above 10 at 10 (no refund: persistence was never on).
