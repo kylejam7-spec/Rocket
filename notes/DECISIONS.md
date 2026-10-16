@@ -214,3 +214,15 @@
   10; the rest is priced for Robux sales, which is the point. (First version: 10/30/120
   then ×1.2, replaced.)
 
+## 2026-10-16: Robux upgrade levels
+
+- Robux sells +1 level only, per track, priced by the 10-level tier of the next level
+  (25 → 115 R$). 30 developer products, one per track per tier, so every receipt names
+  its track and no saved "intent" is needed.
+- The server opens the purchase prompt; buttons hide at max. A purchase that still
+  lands at max (a race) pays the top level's coin price instead of a level.
+- A receipt for a cheaper tier than the player's current level (only possible by
+  prompting the product directly) still grants +1 level: Robux can't be refused after
+  purchase, and it's no worse than a race.
+- ProcessReceipt: journal first, grant once per PurchaseId (saved in the profile with the
+  level), PurchaseGranted only after the profile save.

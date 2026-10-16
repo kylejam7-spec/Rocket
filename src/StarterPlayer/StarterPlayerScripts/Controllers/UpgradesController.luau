@@ -1,5 +1,6 @@
 -- The UPGRADES panel (reference frame 7): one row per Config.Upgrades track with its
--- level, what the next level does and a coin price button. The hut's "Open Upgrades"
+-- level, what the next level does, a coin price button and, when that level's tier has a
+-- developer product, a Robux +1 level button. The hut's "Open Upgrades"
 -- prompt opens it; walking away or ✖ closes it. Buying sends BuyUpgrade with a fresh
 -- request ID; the server validates, charges once per ID and replies with state.
 local CollectionService = game:GetService("CollectionService")
@@ -22,7 +23,7 @@ local Tween = require(UI.Tween)
 local UpgradesController = {}
 
 local ROW = 66
-local WIDTH, HEIGHT = 580, 70 + #Config.UpgradeOrder * ROW + 26
+local WIDTH, HEIGHT = 680, 70 + #Config.UpgradeOrder * ROW + 26
 local CLOSE_DISTANCE = 22
 local CANT_AFFORD = Color3.fromRGB(120, 112, 140)
 
@@ -124,7 +125,14 @@ function UpgradesController.start()
                 task.delay(1, function() pending[track] = nil end)
             end,
         })
-        rows[track] = { title = title, detail = detail, buy = buy }
+        -- Robux: the server opens the purchase prompt (and refuses at max or mid-purchase).
+        local robux = Button.new({
+            Name = "Robux", Text = "", TextSize = 22, color = Theme.color.Speed,
+            AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -156, 0.5, 0), Size = UDim2.fromOffset(100, 44),
+            Visible = false, Parent = row,
+            onActivated = function() State.remote("BuyUpgradeRobux"):FireServer(track) end,
+        })
+        rows[track] = { title = title, detail = detail, buy = buy, robux = robux }
     end
 
     local function render(state)
@@ -138,6 +146,9 @@ function UpgradesController.start()
             row.detail.Text = effect(track, level)
             row.buy.Label.Text = price and (Theme.icon.Coin .. " " .. Theme.short(price)) or "MAX"
             row.buy.BackgroundColor3 = (price and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
+            local product, robux = Upgrades.robux(Config, track, level)
+            row.robux.Visible = product ~= nil
+            if robux then row.robux.Label.Text = "R$ " .. robux end
         end
     end
     State.subscribe(function(state, previous)

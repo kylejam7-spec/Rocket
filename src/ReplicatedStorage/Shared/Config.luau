@@ -53,6 +53,20 @@ return table.freeze({
         }),
     }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
+    -- Robux upgrades (RobuxUpgradeService): one developer product per track per 10-level
+    -- tier, each granting +1 level. `prices` mirror the Creator Dashboard (the panel shows
+    -- them); `products[track][tier]` holds the dashboard IDs. A track with no ID for the
+    -- current tier hides its Robux button. Never invent IDs: copy them from the dashboard.
+    RobuxUpgrades = table.freeze({
+        levelsPerTier = 10,
+        prices = table.freeze({ 25, 35, 45, 55, 65, 75, 85, 95, 105, 115 }),
+        products = table.freeze({
+            BulkPickup = table.freeze({}),
+            BulkPlace = table.freeze({}),
+            PlacementRange = table.freeze({}),
+        }),
+    }),
+    ReceiptJournalName = "RocketReceipts_v1_test",
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({
         table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),

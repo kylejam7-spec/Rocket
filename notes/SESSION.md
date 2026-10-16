@@ -1,4 +1,26 @@
-# Latest session: 2026-10-16, upgrade price curve
+# Latest session: 2026-10-16, Robux upgrade levels
+
+- PR #8 (100-level upgrades) rebase-merged with the user's OK; branch `claude/robux-upgrades`
+  from `master` @ f6f2481, rebased onto 26c1683 (new coin curve).
+- User's choices: +1 level products only, price rising per 10-level tier: 25, 35, 45, 55, 65,
+  75, 85, 95, 105, 115 R$ (one track 0 → 100 = 7,000 R$); 30 products (one per track per
+  tier); hide the button at max; a race past max pays coins instead.
+- `Config.RobuxUpgrades` (prices, `products[track][tier]` IDs, empty until the user creates
+  them), `Upgrades.robux` (ID/price/tier for the next level). `RobuxUpgradeService`: client
+  fires `BuyUpgradeRobux(track)`, the server opens the prompt (refuses at max, with no
+  product, or while a purchase is in flight). ProcessReceipt: unknown product or absent
+  player → NotProcessedYet; journal write (`RocketReceipts_v1_test`, memory in Studio);
+  grant once per PurchaseId (profile `receiptIds`, schema v6); PurchaseGranted only after the
+  profile save lands. At max: the top level's coin price instead.
+- Panel 680 wide, blue "R$ 25" button left of the coin price, hidden without a product.
+- Studio: all 67 scripts loaded over HTTP (Edit mode), RunChecks 9/9 (new RobuxCheck:
+  duplicate receipt, failed save then retry, failed journal, max level, unknown product,
+  absent player, left mid-receipt); layout screenshot with the button forced visible;
+  the remote ignores bad input.
+- Not verified: a real Studio test purchase (needs the 30 product IDs), real DataStore
+  journal (persistence off), receipts after a server crash.
+
+# Earlier session: 2026-10-16, upgrade price curve
 
 - Branch `claude/upgrade-price-curve` from `master` @ f6f2481. User's curve: level 1 = 50
   coins, ×2.5 per level to 25, ×1.5 to 50, ×1.1 to 100 (`Config.UpgradePrices.base` +
