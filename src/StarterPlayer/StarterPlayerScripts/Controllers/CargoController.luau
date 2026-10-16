@@ -1,6 +1,6 @@
--- Carried materials: the round DROP button (and GRAB/PLACE on touch) in the action
--- cluster, and the held E / ButtonX / prompt-card input
--- that streams pickups and placements while in range.
+-- Carried materials: Q drops them (touch: the round DROP and GRAB/PLACE buttons in the
+-- action cluster), and the held E / ButtonX / prompt-card input streams pickups and
+-- placements while in range.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -19,8 +19,12 @@ local CargoController = {}
 
 function CargoController.start()
     local discardCargo = State.remote("DiscardCargo")
-    -- Round action button in the bottom-right cluster, like the reference's drop button.
-    local discardButton = Button.new({
+    local carrying = false
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and carrying and input.KeyCode == Enum.KeyCode.Q then discardCargo:FireServer() end
+    end)
+    -- Touch has no Q: a round DROP button in the action cluster instead.
+    local discardButton = Actions.touch and Button.new({
         Name = "DiscardCargo",
         shape = "circle",
         icon = Theme.icon.Drop,
@@ -33,9 +37,11 @@ function CargoController.start()
         Parent = Actions.cluster(),
     })
     State.subscribe(function(state)
-        local show = state.cargo ~= nil
-        if show and not discardButton.Visible then Tween.bounce(discardButton, 1.3, 0.4) end
-        discardButton.Visible = show
+        carrying = state.cargo ~= nil
+        if discardButton then
+            if carrying and not discardButton.Visible then Tween.bounce(discardButton, 1.3, 0.4) end
+            discardButton.Visible = carrying
+        end
         -- The place prompt shows from this player's (upgraded) reach, like the server's check.
         local ring = CollectionService:GetTagged("BuildFrontier")[1]
         local prompt = ring and ring:FindFirstChild("PlacePoint") and ring.PlacePoint:FindFirstChildOfClass("ProximityPrompt")

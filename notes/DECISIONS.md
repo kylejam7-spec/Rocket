@@ -229,3 +229,9 @@
   max) was built first and dropped the same day; repeatable products (Phase 7 "+N units")
   still need that pattern (see the playbook's Persistence Patterns).
 - Profile v6 caps saved levels above 10 at 10 (no refund: persistence was never on).
+
+## 2026-10-16: Free mouse, right-click look, Q to drop
+
+- Desktop players keep a normal cursor and hold right-click to look around (the usual
+  Roblox feel), instead of a locked mouse-look with a V toggle.
+- Dropping cargo is the Q key on desktop; touch keeps the round DROP button.
