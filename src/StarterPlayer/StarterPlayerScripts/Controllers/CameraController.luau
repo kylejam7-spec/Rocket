@@ -8,7 +8,7 @@ local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
 local CameraController = {}
-local MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM = 8, 24, 12
+local MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM = 8, 48, 12
 local SENSITIVITY = 0.003
 
 function CameraController.start()
