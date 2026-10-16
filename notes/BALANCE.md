@@ -14,15 +14,33 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 Robux upgrade prices
+## 2026-10-16 upgrades: 10 levels, ×3 coins, Robux per level (current)
 
-| Levels | 1–10 | 11–20 | 21–30 | 31–40 | 41–50 | 51–60 | 61–70 | 71–80 | 81–90 | 91–100 |
+Three tracks (Bulk Pickup, Bulk Place, Placement Range), 10 levels each, set by the user.
+Pickup and place move 1 + level units per 0.05 s tick; reach is 12 studs +10% per level
+(level 10: 11 units per tick, 2× reach). Coins: 50, then ×3 per level (3 significant
+figures). Each level is also its own developer product (Robux, +28 on the first ladder).
+
+| Level | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|---|---|---|---|---|
-| R$ per level | 25 | 35 | 45 | 55 | 65 | 75 | 85 | 95 | 105 | 115 |
+| Coins | 50 | 150 | 450 | 1,350 | 4,050 | 12.2K | 36.5K | 109K | 328K | 984K |
+| R$ | 53 | 63 | 73 | 83 | 93 | 103 | 113 | 123 | 133 | 143 |
 
-One track 0 → 100: 7,000 R$; all three: 21,000 R$. Coins reach ~level 10 on their own (new curve).
+One track 0 → 10 on Robux: 980 R$; all three: 2,940 R$. A new player (~27 coins/min)
+gets level 1 after ~2 min; levels 2 and 3 stay inside UpgradeCheck's 3–7 and 7–18 min
+windows. Report, 30 launches, total levels across the three tracks (max 30):
 
-## 2026-10-16 coin upgrade prices (current)
+| Players | After the first Moon | After 10 launches | After 30 launches (per track) | First Moon |
+|---|---|---|---|---|
+| 1 | 18 | 25 | 28 (10/9/9) | 287 min |
+| 4 | 15 | 21 | 24 (8/8/8) | 112 min |
+| 8 | 12 | 19 | 23 (8/8/7) | 70 min |
+| 16 | 10 | 18 | 21 (7/7/7) | 45 min |
+
+Coins reach levels 7–9; level 10 (984K) is in practice for Robux. A Robux level that lands
+on a maxed track pays the coins for the cheapest next two levels on any track.
+
+## History: 2026-10-16 coin upgrade prices, 100 levels (replaced the same day)
 
 Three tracks (Bulk Pickup, Bulk Place, Placement Range), 100 levels each, one curve set by
 the user: level 1 costs 50, then ×2.5 per level to 25, ×1.5 per level to 50, ×1.1 per

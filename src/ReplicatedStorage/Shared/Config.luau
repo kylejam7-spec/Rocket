@@ -34,32 +34,31 @@ return table.freeze({
     CoinsPerUnit = 1,
     -- The tutorial's closing "work with everyone" step stays up this long, then ends.
     TutorialFinalSeconds = 8,
-    -- Coin upgrades (Shared.Upgrades has the math), 100 levels each, all on one price
+    -- Coin upgrades (Shared.Upgrades has the math), 10 levels each, all on one price
     -- curve: level 1 costs UpgradePrices.base, and each level after costs the factor of
-    -- the first segment it falls in times the last (x2.5 up to level 25, x1.5 to 50,
-    -- x1.1 to 100). Coins realistically reach ~level 10; the rest is for Robux.
-    -- Prices show as 3 significant figures (under 1,000: rounded to 5).
+    -- the first segment it falls in times the last (x3 per level: 50 ... 984K). Each level
+    -- can also be bought with Robux (RobuxUpgrades). Prices show as 3 significant figures
+    -- (under 1,000: rounded to 5).
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 100, step = 1 }), -- +1 unit per pickup tick
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 100, step = 1 }), -- +1 unit per place tick
-        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 100, step = 0.1 }), -- +10% reach
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- +1 unit per pickup tick
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- +1 unit per place tick
+        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, step = 0.1 }), -- +10% reach
     }),
     UpgradePrices = table.freeze({
         base = 50,
         segments = table.freeze({
-            table.freeze({ upTo = 25, factor = 2.5 }),
-            table.freeze({ upTo = 50, factor = 1.5 }),
-            table.freeze({ upTo = 100, factor = 1.1 }),
+            table.freeze({ upTo = 10, factor = 3 }),
         }),
     }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
-    -- Robux upgrades (RobuxUpgradeService): one developer product per track per 10-level
-    -- tier, each granting +1 level. `prices` mirror the Creator Dashboard (the panel shows
-    -- them); `products[track][tier]` holds the dashboard IDs. A track with no ID for the
-    -- current tier hides its Robux button. Never invent IDs: copy them from the dashboard.
+    -- Robux upgrades (RobuxUpgradeService): one developer product per track per level
+    -- (levelsPerTier levels share a product), each granting +1 level. `prices` mirror the
+    -- Creator Dashboard (the panel shows them); `products[track][tier]` holds the dashboard
+    -- IDs, tier 1 = level 1. A track with no ID for its next level hides its Robux button.
+    -- Never invent IDs: copy them from the dashboard.
     RobuxUpgrades = table.freeze({
-        levelsPerTier = 10,
-        prices = table.freeze({ 25, 35, 45, 55, 65, 75, 85, 95, 105, 115 }),
+        levelsPerTier = 1,
+        prices = table.freeze({ 53, 63, 73, 83, 93, 103, 113, 123, 133, 143 }),
         products = table.freeze({
             BulkPickup = table.freeze({}),
             BulkPlace = table.freeze({}),

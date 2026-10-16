@@ -171,7 +171,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 ### Phase 7: Monetization (after the journal in Phase 8 exists)
 
-**Status (2026-10-16):** Robux upgrade levels built on `claude/robux-upgrades` (receipt journal, per-PurchaseId grant, RobuxCheck); waiting on product IDs for a live test purchase. Gamepasses and "+N units" products not started.
+**Status (2026-10-16):** Robux upgrade levels built on `claude/robux-upgrades` (10 levels per track, one product per level; receipt journal, per-PurchaseId grant, RobuxCheck); waiting on product IDs for a live test purchase. Gamepasses and "+N units" products not started.
 
 - **Gamepasses:** 2x Strength, 1.5x Speed, Quick Pickup, Quick Place and VIP.
 - **Developer products:** "+N units" instant contributions and Robux upgrade prices.
