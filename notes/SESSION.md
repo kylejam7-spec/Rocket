@@ -1,4 +1,20 @@
-# Latest session: 2026-10-16, mission wheel (Phase 4.6)
+# Latest session: 2026-10-16, mission build-size balance
+
+- Branch `claude/mechanic-balancing` from `master` @ 51bc175 (mission wheel merged).
+- Ran ProgressionReport (1/4/8/16 players, 30 launches) and walked the user through mission
+  time, scaling, walk curve, rewards vs Gym District and upgrades. Their choices: build
+  totals 73k / 98k / 137k / 182k / 215k (Moon → Black Hole, ~120× before), old Metal:Fuel
+  ratios, no lobby scaling, let missions shrink as players grow, keep the 73k opening Moon,
+  keep upgrades and ranks; strength and walk get their own pass later.
+- Only `Shared/Missions` build sizes changed (plus a stale Config comment). New numbers
+  and findings in `notes/BALANCE.md`: first Moon ~91 min for 4 players (3.7 h solo),
+  later Moons ~11 min; everyone maxes all upgrades; Gym District now gives most stats.
+- Studio: scripts loaded over a local HTTP server (Edit mode), all 65 lengths match the
+  worktree; RunChecks 8/8 in Play; HUD pill shows "🔩 0 / 48,500" on the Moon.
+- Not done: strength/walk balance (half-point 120 saturates by launch 5), destination vs
+  Gym District stat share, rank thresholds, upgrade sinks for late game.
+
+# Earlier session: 2026-10-16, mission wheel (Phase 4.6)
 
 - Branch `claude/mission-wheel` from `master` @ 77826d8 (Gym District + UI polish merged).
 - The linear 15-cycle program is gone. `Shared/Missions` (replaces RocketCycles): five

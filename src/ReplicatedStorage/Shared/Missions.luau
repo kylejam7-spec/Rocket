@@ -28,14 +28,15 @@ local Tiers = {
     { Name = "Event Horizon Explorer", BoardingSeconds = 30, LaunchSeconds = 12, IgnitionSeconds = 4, ExhaustScale = 3.6, SmokeScale = 6, Shake = 0.7 },
 }
 
--- Build sizes reuse the old program's curve per design (to be retuned in the balance
--- overhaul); rarer missions are bigger builds that pay much more at the destination.
+-- Build sizes (2026-10-16 balance pass): 73k / 98k / 137k / 182k / 215k units in all,
+-- the same for every lobby size so the whole server has to work together; the fuel
+-- share rises with rarity. Rarer missions are bigger builds that pay more at the destination.
 local List = {
-    { Id = "Moon", Rarity = "Common", Weight = 40, PityWeight = 0, ConstructionRequired = 400, FuelRequired = 200, RewardMultiplier = 1 },
-    { Id = "Mars", Rarity = "Uncommon", Weight = 28, PityWeight = 0, ConstructionRequired = 750, FuelRequired = 400, RewardMultiplier = 1 },
-    { Id = "Europa", Rarity = "Rare", Weight = 19, PityWeight = 34, ConstructionRequired = 1300, FuelRequired = 800, RewardMultiplier = 1 },
-    { Id = "Saturn", Rarity = "Epic", Weight = 10, PityWeight = 33, ConstructionRequired = 2200, FuelRequired = 1500, RewardMultiplier = 1 },
-    { Id = "BlackHole", Rarity = "Legendary", Weight = 3, PityWeight = 33, ConstructionRequired = 3475, FuelRequired = 2625, RewardMultiplier = 1, RewardSeconds = 45 },
+    { Id = "Moon", Rarity = "Common", Weight = 40, PityWeight = 0, ConstructionRequired = 48500, FuelRequired = 24500, RewardMultiplier = 1 },
+    { Id = "Mars", Rarity = "Uncommon", Weight = 28, PityWeight = 0, ConstructionRequired = 64000, FuelRequired = 34000, RewardMultiplier = 1 },
+    { Id = "Europa", Rarity = "Rare", Weight = 19, PityWeight = 34, ConstructionRequired = 85000, FuelRequired = 52000, RewardMultiplier = 1 },
+    { Id = "Saturn", Rarity = "Epic", Weight = 10, PityWeight = 33, ConstructionRequired = 108000, FuelRequired = 74000, RewardMultiplier = 1 },
+    { Id = "BlackHole", Rarity = "Legendary", Weight = 3, PityWeight = 33, ConstructionRequired = 122500, FuelRequired = 92500, RewardMultiplier = 1, RewardSeconds = 45 },
 }
 
 local Missions = { Count = #List, First = 1, PityAfter = 4, Tiers = table.freeze(Tiers) }

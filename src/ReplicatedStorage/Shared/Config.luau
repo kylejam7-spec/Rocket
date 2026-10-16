@@ -16,7 +16,6 @@ return table.freeze({
     -- Carry = BaseCarryCapacity + floor(StrengthCarryScale * sqrt(strength)), capped:
     -- the first starter-bench tick (+2) already adds 2, a minute there gives 26, then
     -- growth slows (1,000 strength -> 57).
-    -- Base 10 per ~10 s depot round trip gives a new solo player ~10 min on Cycle 1.
     BaseCarryCapacity = 10,
     StrengthCarryScale = 1.5,
     MaxCapacity = 1000,

@@ -192,3 +192,14 @@
   shared clock, so everyone sees the same wheel stop.
 - Destination mechanics come in a follow-up so the wheel can ship first.
 
+## 2026-10-16: Mission build sizes
+
+- Missions are long co-op builds: 73k / 98k / 137k / 182k / 215k units in all (Moon →
+  Black Hole), split Metal:Fuel at the old ratios (fuel share 34% → 43% with rarity).
+- No scaling by player count: a full server finishes faster, a small one grinds; the
+  point is that everyone has to work together.
+- Missions are allowed to get shorter as players grow stronger (~3× over 30 launches);
+  that's the payoff for training. A new server's first Moon is the full 73k too.
+- Walk curve, destination rewards, Gym District gains, upgrade prices and rank
+  thresholds stay as they were; strength and walk get a separate balance pass.
+

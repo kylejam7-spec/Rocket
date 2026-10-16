@@ -1,45 +1,62 @@
 # Balance numbers
 
-Source: `ServerScriptService/ProgressionReport` (reads the live Config, RocketCycles and
-Upgrades). Re-run after any tuning:
+Source: `ServerScriptService/ProgressionReport` (reads the live Config, Shared.Missions and
+Upgrades; simulates a seeded mission wheel). Re-run after any tuning:
 
 ```lua
-print(require(game.ServerScriptService.ProgressionReport)({ players = { 1, 4, 8, 16 }, train = 0.15 }))
+print(require(game.ServerScriptService.ProgressionReport)({ players = { 1, 4, 8, 16 }, launches = 30 }))
 ```
 
-Model: identical players; trip = 230 studs each way to the ramp foot plus the climb
-along the tilted rocket to the fill line, at walk speed, plus pickup, pour and 2 s;
-`train` share of time on the best unlocked map gym; cheapest-first upgrades; at each
-destination the passive bonus plus two thirds of the stay on its 2× gym.
+Model: identical players who stay for the whole run; trip = 230 studs each way to the ramp
+foot plus the climb along the tilted rocket to the fill line, at walk speed, plus pickup,
+pour and 2 s; `train` (default 15%) of time on the best unlocked Gym District tier;
+cheapest-first upgrades; at each destination the passive bonus plus two thirds of the stay
+on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
+(Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-15 first pass (after: MaxSpeed 60, destination rewards 3/6/9/12/18 per second, upgrade growth ×2.2)
+## 2026-10-16 mission build sizes (current)
 
-| Players | Train | Full program | Rocket 1 | Mid rockets (4–12) | Walk @ rocket 4 → 15 | Carry @ 15 | Strength @ 15 | Upgrades @ 15 | Stats from destinations |
+Agreed with the user: totals 73k / 98k / 137k / 182k / 215k units (Moon → Black Hole),
+Metal:Fuel at the old ratios (48.5k/24.5k, 64k/34k, 85k/52k, 108k/74k, 122.5k/92.5k). No
+lobby-size scaling (the whole server has to cooperate), missions may shrink as players get
+stronger, and walk curve, destination rewards, Gym District, upgrade prices and rank
+thresholds are unchanged (strength and walk get their own pass later).
+
+Default seed, 30 launches (12 Moon, 10 Mars, 5 Europa, 3 Saturn, no Black Hole).
+Minutes per mission, mean of launches 1–10 → 21–30:
+
+| Players | First Moon (new server) | Moon | Mars | Europa | Saturn (12–30) | 30 launches | Carry @ 30 | Upgrades @ 30 | Stats from destinations |
 |---|---|---|---|---|---|---|---|---|---|
-| 1 | 15% | 132 min | 12.4 min | 5.7–10.2 min | 56.6 → 59.7 | 212 | 13,286 | 27 | 59–67% |
-| 1 | 30% | 138 min | 11.6 min | 6.1–11.0 min | 57.5 → 59.8 | 242 | 18,157 | 27 | 43–49% |
-| 4 | 15% | 56 min | 5.3 min | 2.6–4.0 min | 55.7 → 59.6 | 182 | 10,374 | 20 | 80–86% |
-| 8 | 15% | 41 min | 3.7 min | 2.4–3.0 min | 55.5 → 59.6 | 173 | 9,813 | 17 | 86–91% |
-| 8 | 30% | 44 min | 4.0 min | 2.3–3.5 min | 56.0 → 59.6 | 181 | 10,906 | 17 | 73–82% |
-| 16 | 15% | 32 min | 2.9 min | 1.8–2.2 min | 55.4 → 59.5 | 166 | 9,475 | 14 | 90–95% |
+| 1 | 225 min | 91 → 29 | 107 → 39 | 176 → 61 | 69–126 | 36 h | 853 | 38 (all) | 3% |
+| 4 | 91 min | 35 → 11 | 40 → 15 | 66 → 22 | 26–46 | 13.7 h | 550 | 38 (all) | 9% |
+| 8 | 59 min | 22 → 7 | 24 → 9 | 41 → 14 | 16–28 | 8.5 h | 446 | 36 | 14% |
+| 16 | 39 min | 14 → 5 | 15 → 6 | 25 → 9 | 10–18 | 5.4 h | 367 | 34 | 21% |
 
-First hour of upgrades (UpgradeCheck): first buy at 23 s; mean gap 195 s with gym
-time (20 buys), 301 s without (12 buys).
+Black Hole (fixed 30-launch sequence at long-run odds, same sim): ~31 min late with 4
+players, ~12 min with 16, ~83 min solo.
 
-## Findings for the full overhaul
+First hour of upgrades (UpgradeCheck, unchanged): first buy at 23 s; mean gap 195 s with
+gym time, 301 s without.
 
-- **Group size isn't scaled.** Rocket requirements are fixed, so 8 players clear all
-  15 rockets in ~40 min (a launch every ~2.5 min, ~1 of which is boarding, launch and
-  the stay). Decided 2026-10-15: leave as is; the overhaul will lengthen the stages.
-  The sim tried +60% material per extra player: ~7 min rockets and a ~2 h program
-  at any lobby size.
-- **Walk speed saturates early.** With half-point 120, walk is ~94% of max by
-  rocket 4 whatever MaxSpeed is; speed training stops being visible after the first
-  half hour. (Kept on purpose 2026-10-15; MaxSpeed raised 44 → 60 instead.) A half
-  point of ~800 spreads it across the whole program.
-- **Destinations dominate stats in groups** (80–95%): launches come fast and each
-  stay pays more than minutes of map-gym training (map gyms give 2–12 per second).
-  More training time or slower launches lower the share.
-- **Capacity grows steadily** (sqrt strength + Carry Capacity upgrade): 38 → ~210 solo.
-- **Coin upgrades run out of reach late:** at ×2.2 growth the 8th+ levels cost tens
-  of thousands of coins; solo players buy ~27 in a full program.
+## Findings
+
+- **The opening Moon is the longest mission.** Every server starts on the Moon with
+  everyone at carry 10: ~1.5 h for 4 players, ~3.7 h solo. Kept on purpose (2026-10-16).
+- **Missions shrink 3× over 30 launches** as carry grows (√strength, Gym District tiers
+  up to 100/s). Kept on purpose: getting stronger is the reward.
+- **Walk speed saturates early** (half-point 120: ~59 of 60 by launch 5). Deferred to the
+  strength/walk pass.
+- **Gym District now dominates stats** (destinations give 3–21%): longer missions mean much
+  more gym time between stays. Deferred to the strength/walk pass.
+- **Coin upgrades all max out** (38 levels) within the first few missions solo; coins per
+  hour don't depend on build size, so the first hour is unchanged. Kept for now.
+- **Ranks:** COMMANDER (20k deliveries, 8 launches) is gated by launches only now. Kept.
+
+## History
+
+- 2026-10-15 first pass (linear 15-rocket program, since replaced by the wheel): MaxSpeed
+  44 → 60, destination rewards softened, upgrades ×2.2 growth (Carry Capacity base 120).
+  8 players cleared all 15 rockets in ~41 min; that drove this pass.
+- 2026-10-16 before this pass (wheel, builds 600–6,100 units): 4 players took 2.5 → 1.5 min
+  per Moon and 30 launches in 71 min; groups of 8+ spent most of each mission in the fixed
+  ~1.5 min overhead.

@@ -135,6 +135,7 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 - The fixed 15-rocket program is replaced by a wheel: during each stay, with 10 s left, the server spins for the next mission. Moon 40%, Mars 28%, Europa 19%, Saturn's Rings 10%, Black Hole 3%; pity makes the next spin Rare+ (34/33/33) after 4 misses. New servers start on the Moon.
 - Each mission has its own rocket; rarer missions are bigger builds that pay more.
+- **Balance (2026-10-16, `claude/mechanic-balancing`):** builds are 73k / 98k / 137k / 182k / 215k units with no lobby scaling (a 4-player Moon takes ~35 min early and ~11 min late; numbers in `notes/BALANCE.md`). Still to balance: strength and walk curves, destination vs Gym District gains.
 - Next: each destination's mechanic — Mars dust storm, Europa geysers, drifting Saturn ring chunks, Black Hole slow motion with an exit cutscene.
 
 ### Phase 5: Art, world and audio (your assets and Blender)
