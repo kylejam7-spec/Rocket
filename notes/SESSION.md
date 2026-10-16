@@ -1,4 +1,18 @@
-# Latest session: 2026-10-16, Robux upgrade levels
+# Latest session: 2026-10-16, free mouse and Q to drop
+
+- Branch `claude/mouse-and-q-drop` from `master` @ 4a267a9 (Robux passes merged).
+- Desktop camera: the cursor is free by default; holding right-click turns the camera
+  (MouseBehavior LockCurrentPosition while held). The V toggle and centre dot are gone.
+  Hint: "Hold right-click: look • Scroll: zoom • Q: drop".
+- Q drops carried material on desktop; the round DROP button now shows on touch only
+  (phones have no Q). Controllers have no drop input (none before either, beyond GUI
+  selection).
+- Studio (user OK'd stopping their Play session): mouse Default with icon on, no DROP button
+  on desktop; a simulated right-drag locked the cursor, turned the camera 27° and released
+  it after; picked up 10 Metal at the Scrap Pit with E, Q dropped it (Capacity 10/10 → 0/10).
+  No script errors.
+
+# Earlier session: 2026-10-16, Robux upgrade levels
 
 - PR #8 (100-level upgrades) rebase-merged with the user's OK; branch `claude/robux-upgrades`
   from `master` @ f6f2481, rebased onto 26c1683. The user then set **10 levels per track,

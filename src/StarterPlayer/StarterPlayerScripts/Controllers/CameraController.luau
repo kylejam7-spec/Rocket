@@ -1,4 +1,5 @@
--- Desktop mouse-look; Roblox retains its native touch/controller camera.
+-- Desktop camera: the cursor is free, and holding right-click looks around (the mouse
+-- stays put while it turns the camera). Roblox keeps its native touch/controller camera.
 local Players = game:GetService("Players")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
@@ -17,7 +18,7 @@ function CameraController.start()
     player.CameraMaxZoomDistance = MAX_ZOOM
     local zoom, distance = DEFAULT_ZOOM, DEFAULT_ZOOM
     local yaw, pitch = 0, math.rad(-15)
-    local active, cursorFree, focused = false, false, true
+    local active, looking, focused = false, false, true
     local previousType
     local gui = Create.screen("CameraControls")
     local hint = StrokedText.new({
@@ -32,29 +33,25 @@ function CameraController.start()
         stroke = 1.5,
         Parent = gui,
     })
-    local dot = Create.new("Frame", {
-        AnchorPoint = Vector2.new(0.5, 0.5),
-        Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(4, 4),
-        BackgroundColor3 = Theme.color.White,
-        BorderSizePixel = 0,
-        Parent = gui,
-    })
     local function desktop()
         return Input.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
     end
     local function released()
-        return cursorFree or not focused or GuiService.MenuIsOpen or Input:GetFocusedTextBox() ~= nil
+        return not looking or not focused or GuiService.MenuIsOpen or Input:GetFocusedTextBox() ~= nil
     end
+    -- A right-click that starts on a button (processed) doesn't turn the camera.
     Input.InputBegan:Connect(function(input, processed)
-        if not processed and desktop() and input.KeyCode == Enum.KeyCode.V then cursorFree = not cursorFree end
+        if not processed and desktop() and input.UserInputType == Enum.UserInputType.MouseButton2 then looking = true end
+    end)
+    Input.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton2 then looking = false end
     end)
     Input.InputChanged:Connect(function(input, processed)
-        if active and not released() and not processed and input.UserInputType == Enum.UserInputType.MouseWheel then
+        if active and focused and not processed and input.UserInputType == Enum.UserInputType.MouseWheel then
             zoom = math.clamp(zoom - input.Position.Z * 2, MIN_ZOOM, MAX_ZOOM)
         end
     end)
-    Input.WindowFocusReleased:Connect(function() focused = false end)
+    Input.WindowFocusReleased:Connect(function() focused, looking = false, false end)
     Input.WindowFocused:Connect(function() focused = true end)
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
@@ -77,7 +74,7 @@ function CameraController.start()
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         if not desktop() or not root or not humanoid or humanoid.Health <= 0 then
             restore(camera)
-            hint.Visible, dot.Visible = false, false
+            hint.Visible = false
             return
         end
         if not active then
@@ -89,10 +86,10 @@ function CameraController.start()
         end
         camera.CameraType = Enum.CameraType.Scriptable
         local free = released()
-        Input.MouseBehavior = free and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter
+        Input.MouseBehavior = free and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCurrentPosition
         Input.MouseIconEnabled = free
-        hint.Visible, dot.Visible = true, not free
-        hint.Text = cursorFree and "V: resume mouse-look" or "Mouse: look  •  Scroll: zoom  •  V: cursor"
+        hint.Visible = true
+        hint.Text = "Hold right-click: look  •  Scroll: zoom  •  Q: drop"
         if not free then
             local delta = Input:GetMouseDelta()
             yaw -= delta.X * SENSITIVITY
