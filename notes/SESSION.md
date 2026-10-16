@@ -7,13 +7,16 @@
   +3 carry per level; speed 24 → 70 on a level curve; gym tiers 2–30×; destinations
   10/s. HUD: badge "LV n" under the icon, a bar and "into/cost" toward the next level,
   "Strength Level n!" pops on real level-ups. Numbers in BALANCE.md.
+- Tutorial Bench/Treadmill steps now finish at LV 1 of that stat (5 starter-gym ticks)
+  and say "Lift to Strength LV 1!" / "Run to Speed LV 1!" while on it. Fixed: the
+  on-station line never showed on map gyms (station names are lowercase "Free gym bench").
+  Verified in Play: bench 0 → LV 1 advanced to Treadmill, treadmill LV 1 → Together.
+- User (2026-10-16): keep the speed vs strength late-game gap as is for now.
 - Debug hook: `RocketDebug:Invoke("stats", strength, speed)`.
 - Studio (Rojo on 34873 synced the branch): RunChecks 9/9 in Play (TrainingCheck now
   covers level costs, cap 400–500, carry/walk curves); 300/75 points showed LV 10
   (45/60, capacity 40) and LV 5 (5/25, walk 41.7 on the server); tutorial shows no dim.
   Only engine warnings.
-- Open for the user: the speed vs strength late-game gap (walk speed has a ceiling), and
-  whether to keep the raised MaxSpeed 70.
 
 # Earlier session: 2026-10-16, free mouse and Q to drop
 

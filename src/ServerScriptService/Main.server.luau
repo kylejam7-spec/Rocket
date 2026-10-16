@@ -28,9 +28,13 @@ ctx.Training = require(Services.TrainingService).new({
     prompt = ctx.World.prompt, allowed = ctx.Interaction.allowed, near = ctx.Interaction.near,
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
-    -- Starter gym ticks finish the tutorial's bench and treadmill steps.
+    -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
+    -- treadmill steps (5 ticks for a new player).
     trained = function(player, station)
-        if (station.required or 0) == 0 then ctx.Tutorial.observe(player, station.stat == "strengthLevel" and "Bench" or "Treadmill") end
+        if (station.required or 0) > 0 then return end
+        local strength, speed = ctx.Stats.levels(ctx.profiles.records[player.UserId].profile)
+        local bench = station.stat == "strengthLevel"
+        if (bench and strength or speed) >= 1 then ctx.Tutorial.observe(player, bench and "Bench" or "Treadmill") end
     end,
     -- Map gyms work while building, fueling and boarding; a destination's gym only
     -- while passengers are there.

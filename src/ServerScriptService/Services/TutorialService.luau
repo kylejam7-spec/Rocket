@@ -1,7 +1,7 @@
 -- Server-confirmed onboarding. A player's step lives in their profile
 -- (tutorialStep) and only server observations advance it: cargo picked up, standing
--- in place reach with it, an accepted delivery, a training tick on the starter bench
--- and treadmill, a bought upgrade. The client can only ask to skip, which grants nothing.
+-- in place reach with it, an accepted delivery, level 1 of strength and of speed on
+-- the starter bench and treadmill, a bought upgrade. The client can only ask to skip, which grants nothing.
 -- Entering "Upgrade" tops coins up to the cheapest upgrade, so the step can't stall.
 -- One-time callouts (first Fuel phase, first boarding) are shown by the client and
 -- marked seen here, only while that phase is on.
