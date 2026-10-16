@@ -1,18 +1,23 @@
 -- Derived character stats (walk speed, carry capacity) and the server leaderboard.
+local StatLevels = require(game:GetService("ReplicatedStorage").Shared.StatLevels)
 local Stats = {}
 
 function Stats.new(ctx)
     local config = ctx.config
     local service = {}
-    -- Soft curves (see Config): fast early gains, diminishing later, no level cap.
+    -- Points (training plus destination rewards) become levels (Shared.StatLevels);
+    -- each level adds a fixed carry or a shrinking walk-speed step.
+    function service.levels(profile)
+        return StatLevels.level(config, profile.strengthLevel + profile.planetBonuses.strength),
+            StatLevels.level(config, profile.speedLevel + profile.planetBonuses.speed)
+    end
     function service.speed(profile)
-        local points = profile.speedLevel + profile.planetBonuses.speed
-        return config.BaseSpeed + (config.MaxSpeed - config.BaseSpeed) * points / (points + config.SpeedHalfPoints)
+        local _, speed = service.levels(profile)
+        return StatLevels.walk(config, speed)
     end
     -- Strength raises capacity, so stronger players make fewer trips.
     function service.capacity(profile)
-        local points = profile.strengthLevel + profile.planetBonuses.strength
-        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points)))
+        return StatLevels.capacity(config, (service.levels(profile)))
     end
     function service.attach(player)
         local stats = Instance.new("Folder")

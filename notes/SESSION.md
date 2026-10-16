@@ -1,4 +1,21 @@
-# Latest session: 2026-10-16, free mouse and Q to drop
+# Latest session: 2026-10-16, tutorial dim off, strength/speed levels
+
+- Branch `claude/tutorial-and-stat-levels` from `master` @ 4e144cf.
+- Tutorial: the darkened screen with a hole around ground targets is gone (no
+  `TutorialDim`); the beam, bouncing arrow and off-screen edge arrow stay (`TutorialGuide`).
+- Stats: points become levels via `Shared/StatLevels` (cost 10 ×1.2, cap 450). Strength
+  +3 carry per level; speed 24 → 70 on a level curve; gym tiers 2–30×; destinations
+  10/s. HUD: badge "LV n" under the icon, a bar and "into/cost" toward the next level,
+  "Strength Level n!" pops on real level-ups. Numbers in BALANCE.md.
+- Debug hook: `RocketDebug:Invoke("stats", strength, speed)`.
+- Studio (Rojo on 34873 synced the branch): RunChecks 9/9 in Play (TrainingCheck now
+  covers level costs, cap 400–500, carry/walk curves); 300/75 points showed LV 10
+  (45/60, capacity 40) and LV 5 (5/25, walk 41.7 on the server); tutorial shows no dim.
+  Only engine warnings.
+- Open for the user: the speed vs strength late-game gap (walk speed has a ceiling), and
+  whether to keep the raised MaxSpeed 70.
+
+# Earlier session: 2026-10-16, free mouse and Q to drop
 
 - Branch `claude/mouse-and-q-drop` from `master` @ 4a267a9 (Robux passes merged).
 - Desktop camera: the cursor is free by default; holding right-click turns the camera

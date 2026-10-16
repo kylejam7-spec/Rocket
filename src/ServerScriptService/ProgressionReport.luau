@@ -17,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local config = require(ReplicatedStorage.Shared.Config)
 local Missions = require(ReplicatedStorage.Shared.Missions)
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
+local StatLevels = require(ReplicatedStorage.Shared.StatLevels)
 
 -- Rocket lengths per design (RocketModels header comments), for the ramp climb.
 local HEIGHT = { 53, 78, 109, 143, 194 }
@@ -27,12 +28,10 @@ local function simulate(players, train, gymShare, sequence)
     local launches, buys, t, fromDestinations, fromGyms = 0, 0, 0, 0, 0
     local rows = {}
     local function capacity()
-        local points = profile.strengthLevel
-        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points)))
+        return StatLevels.capacity(config, (StatLevels.level(config, profile.strengthLevel)))
     end
     local function walk()
-        local points = profile.speedLevel
-        return config.BaseSpeed + (config.MaxSpeed - config.BaseSpeed) * points / (points + config.SpeedHalfPoints)
+        return StatLevels.walk(config, (StatLevels.level(config, profile.speedLevel)))
     end
     local function gymGain()
         local best = config.TrainingBaseGain -- free gym
@@ -90,6 +89,7 @@ local function simulate(players, train, gymShare, sequence)
         table.insert(rows, {
             cycle = number, design = tier, id = cycle.Id, minutes = (t - started) / 60, total = t / 60, capacity = capacity(), walk = walk(),
             strength = profile.strengthLevel, speed = profile.speedLevel, upgrades = buys,
+            level = (StatLevels.level(config, profile.strengthLevel)),
             destinationShare = fromDestinations / math.max(1, fromDestinations + fromGyms), coins = profile.coins,
             levels = table.clone(profile.upgrades),
         })
@@ -117,10 +117,10 @@ return function(options)
         local rows = simulate(players, train, gymShare, sequence)
         results[players] = rows
         table.insert(lines, ("%d player(s), %d%% of time training — %d launches in %.0f min"):format(players, train * 100, #rows, rows[#rows].total))
-        table.insert(lines, " #   mission     min  total   cap  walk  strength   speed  upg  from-destinations")
+        table.insert(lines, " #   mission     min  total   cap  walk  level  strength   speed  upg  from-destinations")
         for _, r in rows do
-            table.insert(lines, (" %2d  %-9s %5.1f %6.1f  %4d  %4.1f  %8.0f  %6.0f  %3d  %3.0f%%"):format(
-                r.cycle, r.id, r.minutes, r.total, r.capacity, r.walk, r.strength, r.speed, r.upgrades, r.destinationShare * 100))
+            table.insert(lines, (" %2d  %-9s %5.1f %6.1f  %4d  %4.1f  %5d  %8.0f  %6.0f  %3d  %3.0f%%"):format(
+                r.cycle, r.id, r.minutes, r.total, r.capacity, r.walk, r.level, r.strength, r.speed, r.upgrades, r.destinationShare * 100))
         end
         local levels = {}
         for _, track in config.UpgradeOrder do table.insert(levels, track .. " " .. (rows[#rows].levels[track] or 0)) end

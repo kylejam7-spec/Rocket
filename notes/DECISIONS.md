@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-10-16: Strength and speed are levels
+
+- Profiles still store point totals (`strengthLevel`/`speedLevel` are points despite the
+  names; renaming them would need a schema migration). `Shared/StatLevels` turns points
+  into levels on both server and client, so no schema change.
+- Each level costs at most `Config.StatLevels.max` (user: 400–500 per level).
+- The tutorial doesn't dim the screen (user request).
+
 ## 2026-10-14: Roadmap toward Build a Pyramid parity
 
 - The plan lives in `ROADMAP.md`; *Build a Pyramid* is the reference for feel and UI.

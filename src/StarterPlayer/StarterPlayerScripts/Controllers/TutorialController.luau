@@ -1,8 +1,8 @@
 -- First-session tutorial, shown from the server's step (state.profile.tutorialStep;
 -- TutorialService advances it): the objective line (HudController asks
 -- TutorialController.objective first), a glowing beam and bouncing arrow to the
--- target, a dimmed screen around ground targets up close, a SKIP TUTORIAL button,
--- and one-time callouts for the first Fuel phase and the first boarding.
+-- target (an edge arrow when it's off screen), a SKIP TUTORIAL button, and
+-- one-time callouts for the first Fuel phase and the first boarding.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -57,8 +57,8 @@ function TutorialController.objective(state)
     return nil
 end
 
--- Where the current step wants you: a world position, plus the part to dim around
--- (ground targets only).
+-- Where the current step wants you: a world position, plus the target part when
+-- it's on the ground (its edge, not its centre, counts as arrived).
 local function target(state)
     local current = step(state)
     if not current or state.training then return nil end
@@ -129,26 +129,16 @@ function TutorialController.start()
         Segments = 24, CurveSize0 = 0, CurveSize1 = -6, Enabled = false, Parent = anchor,
     })
 
-    -- Focus: four dark frames around a hole over a nearby ground target (the
-    -- reference's tutorial dims everything but the prompt). Under the HUD.
-    local dim = Create.new("ScreenGui", {
-        Name = "TutorialDim", IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = -1, Parent = player:WaitForChild("PlayerGui"),
+    -- Under the HUD; no dimming, the world stays fully visible.
+    local guide = Create.new("ScreenGui", {
+        Name = "TutorialGuide", IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = -1, Parent = player:WaitForChild("PlayerGui"),
     })
     -- Off-screen targets (the Scrap Pit is behind you at spawn): an arrow on a ring
     -- around your character pointing the way, clear of the HUD at the edges.
     local edgeArrow = StrokedText.new({
         Name = "EdgeArrow", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(110, 110), Text = "⬆",
-        Font = Theme.font.Display, TextScaled = true, TextColor3 = Theme.color.Ready, stroke = 4, Visible = false, ZIndex = 2, Parent = dim,
+        Font = Theme.font.Display, TextScaled = true, TextColor3 = Theme.color.Ready, stroke = 4, Visible = false, Parent = guide,
     })
-    local shades = {}
-    for index = 1, 4 do
-        shades[index] = Create.new("Frame", {
-            BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 1, BorderSizePixel = 0, Parent = dim,
-        })
-    end
-    -- Fully clear at 1; keeps the last hole while fading out so the frames don't jump.
-    local shade, lastHole = 1, nil
-
     local current
     State.subscribe(function(state)
         current = state
@@ -212,27 +202,6 @@ function TutorialController.start()
             edgeArrow.Size = UDim2.fromOffset(arrowSize, arrowSize)
             edgeArrow.Position = UDim2.fromOffset(at.X, at.Y)
             edgeArrow.Rotation = math.deg(math.atan2(direction.Y, direction.X)) + 90
-        end
-        -- Dim within 40 studs of a ground target that's on screen.
-        local hole
-        if focus and distance < 40 then
-            local point, visible = camera:WorldToViewportPoint(position)
-            if visible then hole = Vector2.new(point.X, point.Y) end
-        end
-        shade = math.clamp(shade + (hole and -dt or dt) * 3, 0.45, 1)
-        lastHole = hole or lastHole
-        local radius = size.Y * 0.22
-        local center = lastHole or size / 2
-        local top, bottom = math.max(0, center.Y - radius), math.min(size.Y, center.Y + radius)
-        local left, right = math.max(0, center.X - radius), math.min(size.X, center.X + radius)
-        local rects = {
-            { 0, 0, size.X, top }, { 0, bottom, size.X, size.Y - bottom },
-            { 0, top, left, bottom - top }, { right, top, size.X - right, bottom - top },
-        }
-        for index, frame in shades do
-            local r = rects[index]
-            frame.Position, frame.Size = UDim2.fromOffset(r[1], r[2]), UDim2.fromOffset(r[3], r[4])
-            frame.BackgroundTransparency = shade
         end
     end)
 
