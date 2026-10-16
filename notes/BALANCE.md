@@ -14,6 +14,14 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
+## 2026-10-16 Robux upgrade prices
+
+| Levels | 1–10 | 11–20 | 21–30 | 31–40 | 41–50 | 51–60 | 61–70 | 71–80 | 81–90 | 91–100 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| R$ per level | 25 | 35 | 45 | 55 | 65 | 75 | 85 | 95 | 105 | 115 |
+
+One track 0 → 100: 7,000 R$; all three: 21,000 R$. Coins reach ~level 10 on their own (new curve).
+
 ## 2026-10-16 coin upgrade prices (current)
 
 Three tracks (Bulk Pickup, Bulk Place, Placement Range), 100 levels each, one curve set by

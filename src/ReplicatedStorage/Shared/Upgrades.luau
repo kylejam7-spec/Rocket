@@ -28,6 +28,17 @@ function Upgrades.price(config, track, level)
     return math.round(price / unit) * unit
 end
 
+-- Robux product ID and price for the next level of `track` (tier = which block of
+-- levelsPerTier the next level falls in), or nil when maxed or that product isn't set up.
+function Upgrades.robux(config, track, level)
+    local spec, robux = config.Upgrades[track], config.RobuxUpgrades
+    if not spec or level >= spec.max then return nil end
+    local tier = level // robux.levelsPerTier + 1
+    local id = robux.products[track] and robux.products[track][tier]
+    if not id then return nil end
+    return id, robux.prices[tier], tier
+end
+
 -- Cheapest next level across all tracks (nil when everything is maxed).
 function Upgrades.cheapest(config, profile)
     local best
