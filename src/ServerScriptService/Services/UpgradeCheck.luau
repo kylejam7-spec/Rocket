@@ -1,7 +1,7 @@
 -- Upgrade prices, the purchase rule (validation, idempotency), effects, ranks, the
--- v4/v5 profile migrations, and the price curve against the agreed pacing: level 1 is
--- cheap, level 2 about a minute of a new player's work, level 3 a few minutes, then
--- ever pricier up to 100 levels that coins alone can't realistically reach.
+-- v4/v5 profile migrations, and the agreed price curve: level 1 costs 50, then x2.5 per
+-- level to 25, x1.5 to 50, x1.1 to 100 (3 significant figures), so coins alone reach
+-- only the first ~10 levels and the rest is priced for Robux.
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
@@ -9,37 +9,41 @@ return function()
     local Service = require(script.Parent.UpgradeService)
     local Profiles = require(script.Parent.ProfileService)
 
-    -- Prices: rounded to 5, rising, at least 10% per level from level 3 on (so the steps
-    -- keep growing in coins), nil at max; every track in the order list, 100 levels each.
+    -- Prices: whole numbers, rising by each level's segment factor (within rounding),
+    -- nil at max; every track in the order list, 100 levels each.
     assert(#config.UpgradeOrder == 3 and config.Upgrades.CarryCapacity == nil)
+    local function factor(level) return level <= 25 and 2.5 or level <= 50 and 1.5 or 1.1 end
     for _, track in config.UpgradeOrder do
         local spec = config.Upgrades[track]
         assert(spec and spec.max == 100, track)
         local last = 0
-        for level = 0, spec.max - 1 do
-            local price = Upgrades.price(config, track, level)
-            assert(price and price % 5 == 0 and price > last, track .. " price curve")
-            assert(level < 3 or price >= last * 1.1, track .. " flattens at level " .. level + 1)
+        for level = 1, spec.max do
+            local price = Upgrades.price(config, track, level - 1)
+            assert(price and price % 1 == 0 and price > last, track .. " price curve at " .. level)
+            if level > 1 then
+                local ratio = price / last
+                assert(math.abs(ratio - factor(level)) <= factor(level) * 0.03, ("%s level %d is x%.3f"):format(track, level, ratio))
+            end
             last = price
         end
-        assert(last >= 1e9, track .. " top level is too cheap: " .. last)
         assert(Upgrades.price(config, track, spec.max) == nil, track .. " must max out")
     end
-    assert(Upgrades.price(config, "BulkPickup", 0) == 10 and Upgrades.price(config, "Nope", 0) == nil)
+    assert(Upgrades.price(config, "BulkPickup", 0) == 50 and Upgrades.price(config, "BulkPickup", 1) == 125)
+    assert(Upgrades.price(config, "BulkPickup", 9) == 191000 and Upgrades.price(config, "Nope", 0) == nil)
 
     -- Purchases: validated, charged once per request ID, ledger bounded.
     local profile = Profiles.validate(nil, config)
     assert(profile.schemaVersion == 5 and next(profile.upgrades) == nil and #profile.purchaseIds == 0)
-    assert(Upgrades.cheapest(config, profile) == 10)
+    assert(Upgrades.cheapest(config, profile) == 50)
     assert(Service.buy(config, profile, "BulkPickup", "a") == nil, "bought without coins")
-    profile.coins = 100
+    profile.coins = 200
     assert(Service.buy(config, profile, "Nope", "a") == nil and Service.buy(config, profile, "BulkPickup", "") == nil)
     assert(Service.buy(config, profile, "CarryCapacity", "a") == nil, "retired track still sells")
     assert(Service.buy(config, profile, "BulkPickup", 7) == nil and Service.buy(config, profile, "BulkPickup", string.rep("x", 65)) == nil)
-    assert(Service.buy(config, profile, "BulkPickup", "a") == 10 and profile.coins == 90 and profile.upgrades.BulkPickup == 1)
-    assert(Service.buy(config, profile, "BulkPickup", "a") == 0 and profile.coins == 90 and profile.upgrades.BulkPickup == 1, "retry charged twice")
-    assert(Service.buy(config, profile, "BulkPickup", "b") == 30 and profile.coins == 60 and profile.upgrades.BulkPickup == 2)
-    profile.coins = 1e15
+    assert(Service.buy(config, profile, "BulkPickup", "a") == 50 and profile.coins == 150 and profile.upgrades.BulkPickup == 1)
+    assert(Service.buy(config, profile, "BulkPickup", "a") == 0 and profile.coins == 150 and profile.upgrades.BulkPickup == 1, "retry charged twice")
+    assert(Service.buy(config, profile, "BulkPickup", "b") == 125 and profile.coins == 25 and profile.upgrades.BulkPickup == 2)
+    profile.coins = 1e19
     for i = 1, 120 do Service.buy(config, profile, "BulkPickup", "id" .. i) end
     assert(profile.upgrades.BulkPickup == config.Upgrades.BulkPickup.max)
     assert(select(2, Service.buy(config, profile, "BulkPickup", "late")) == "maxed")
@@ -91,9 +95,10 @@ return function()
             fresh.coins += capacity * config.CoinsPerUnit
             if Service.buy(config, fresh, track, "pace" .. #bought) then table.insert(bought, t) end
         end
-        assert(bought[1] < 60, ("%s level 1 after %.0f s"):format(track, bought[1]))
+        -- At ~27 coins a minute: level 1 ~2 min, level 2 ~5 min more, level 3 ~11 min more.
         local second, third = bought[2] - bought[1], bought[3] - bought[2]
-        assert(second >= 30 and second <= 120, ("%s level 2 took %.0f s of work"):format(track, second))
-        assert(third >= 120 and third <= 480, ("%s level 3 took %.0f s of work"):format(track, third))
+        assert(bought[1] >= 60 and bought[1] <= 180, ("%s level 1 after %.0f s"):format(track, bought[1]))
+        assert(second >= 180 and second <= 420, ("%s level 2 took %.0f s of work"):format(track, second))
+        assert(third >= 420 and third <= 1080, ("%s level 3 took %.0f s of work"):format(track, third))
     end
 end
