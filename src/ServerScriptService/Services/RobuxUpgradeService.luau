@@ -3,8 +3,9 @@
 -- so a maxed track or a missing product never prompts, and only one purchase per player is in
 -- flight. ProcessReceipt writes the receipt journal first, then grants once per PurchaseId
 -- (the ID is saved in the profile's receipt ledger in the same write as the level), and says
--- PurchaseGranted only after that write lands. A level bought past max (a race) pays the top
--- level's coin price instead. RobuxCheck runs `process` against fakes.
+-- PurchaseGranted only after that write lands. A level bought past max (a race) pays the coin
+-- price of the cheapest next two levels on any track instead. RobuxCheck runs `process`
+-- against fakes.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local RobuxUpgradeService = {}
@@ -25,6 +26,23 @@ function RobuxUpgradeService.products(config)
     return map
 end
 
+-- Coins for the cheapest next `count` levels across all tracks (0 once all are maxed).
+function RobuxUpgradeService.payback(config, profile, count)
+    local trial = { upgrades = table.clone(profile.upgrades) }
+    local coins = 0
+    for _ = 1, count do
+        local best, bestTrack
+        for _, track in config.UpgradeOrder do
+            local price = Upgrades.price(config, track, Upgrades.level(trial, track))
+            if price and (not best or price < best) then best, bestTrack = price, track end
+        end
+        if not best then break end
+        coins += best
+        trial.upgrades[bestTrack] = Upgrades.level(trial, bestTrack) + 1
+    end
+    return coins
+end
+
 -- Pure grant (no yields). Returns "duplicate", "level", or "coins" plus the coins paid back.
 function RobuxUpgradeService.grant(config, profile, track, purchaseId)
     if table.find(profile.receiptIds, purchaseId) then return "duplicate", 0 end
@@ -34,7 +52,7 @@ function RobuxUpgradeService.grant(config, profile, track, purchaseId)
     if level < spec.max then
         profile.upgrades[track] = level + 1
     else
-        outcome, coins = "coins", Upgrades.price(config, track, spec.max - 1)
+        outcome, coins = "coins", RobuxUpgradeService.payback(config, profile, 2)
         profile.coins += coins
     end
     table.insert(profile.receiptIds, purchaseId)

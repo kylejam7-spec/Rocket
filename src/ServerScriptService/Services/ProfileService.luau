@@ -46,8 +46,19 @@ local function validate(raw, config)
             raw.upgrades.CarryCapacity = nil
         end
     end
-    -- v5 -> v6 adds the Robux receipt ledger (PurchaseIds already granted).
-    if raw.schemaVersion == 5 then raw = table.clone(raw); raw.schemaVersion, raw.receiptIds = 6, {} end
+    -- v5 -> v6 adds the Robux receipt ledger (PurchaseIds already granted) and caps levels
+    -- at the new 10-level max (no refund: persistence was never on).
+    if raw.schemaVersion == 5 then
+        raw = table.clone(raw)
+        raw.schemaVersion, raw.receiptIds = 6, {}
+        if type(raw.upgrades) == "table" then
+            raw.upgrades = table.clone(raw.upgrades)
+            for track, level in raw.upgrades do
+                local spec = config.Upgrades[track]
+                if spec and type(level) == "number" and level > spec.max then raw.upgrades[track] = spec.max end
+            end
+        end
+    end
     if not Tutorial.valid(raw.tutorialStep) then error("Invalid tutorial step") end
     if type(raw.upgrades) ~= "table" or type(raw.purchaseIds) ~= "table" then error("Invalid upgrades") end
     for track, level in raw.upgrades do

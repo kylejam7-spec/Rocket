@@ -21,7 +21,9 @@ return function()
         end
     end
 
-    -- Test config with fake IDs (track index * 100 + tier); tier = 10-level block of the next level.
+    -- Test config with fake IDs (track index * 100 + tier); one product per level.
+    local MAX = config.Upgrades.BulkPickup.max
+    assert(robux.levelsPerTier == 1 and #robux.prices == MAX, "one Robux price per level")
     local products = {}
     for index, track in config.UpgradeOrder do
         products[track] = {}
@@ -29,21 +31,23 @@ return function()
     end
     local test = table.clone(config)
     test.RobuxUpgrades = { levelsPerTier = robux.levelsPerTier, prices = robux.prices, products = products }
-    assert(select(3, Upgrades.robux(test, "BulkPickup", 0)) == 1 and select(2, Upgrades.robux(test, "BulkPickup", 0)) == 25)
-    assert(Upgrades.robux(test, "BulkPickup", 9) == 101 and Upgrades.robux(test, "BulkPickup", 10) == 102)
-    assert(select(2, Upgrades.robux(test, "PlacementRange", 99)) == 115 and Upgrades.robux(test, "PlacementRange", 99) == 310)
-    assert(Upgrades.robux(test, "BulkPickup", 100) == nil, "maxed track still sells")
+    assert(select(3, Upgrades.robux(test, "BulkPickup", 0)) == 1 and select(2, Upgrades.robux(test, "BulkPickup", 0)) == 53)
+    assert(Upgrades.robux(test, "BulkPickup", 1) == 102 and select(2, Upgrades.robux(test, "BulkPickup", 1)) == 63)
+    assert(select(2, Upgrades.robux(test, "PlacementRange", MAX - 1)) == 143 and Upgrades.robux(test, "PlacementRange", MAX - 1) == 310)
+    assert(Upgrades.robux(test, "BulkPickup", MAX) == nil, "maxed track still sells")
     assert(Upgrades.robux(test, "Nope", 0) == nil)
     local partial = table.clone(test)
-    partial.RobuxUpgrades = { levelsPerTier = 10, prices = robux.prices, products = { BulkPickup = { 101 } } }
-    assert(Upgrades.robux(partial, "BulkPickup", 10) == nil and Upgrades.robux(partial, "BulkPlace", 0) == nil, "missing product shows")
+    partial.RobuxUpgrades = { levelsPerTier = 1, prices = robux.prices, products = { BulkPickup = { 101 } } }
+    assert(Upgrades.robux(partial, "BulkPickup", 1) == nil and Upgrades.robux(partial, "BulkPlace", 0) == nil, "missing product shows")
 
-    -- Profile v6: v5 gains an empty receipt ledger; a bad ledger is refused.
+    -- Profile v6: v5 gains an empty receipt ledger and levels capped at the new max; a bad
+    -- ledger is refused.
     local v5 = Profiles.validate(nil, config)
     assert(v5.schemaVersion == 6 and #v5.receiptIds == 0)
-    v5.schemaVersion, v5.receiptIds = 5, nil
+    v5.schemaVersion, v5.receiptIds, v5.upgrades = 5, nil, { BulkPickup = 40, BulkPlace = 3 }
     local migrated = Profiles.validate(v5, config)
     assert(migrated.schemaVersion == 6 and #migrated.receiptIds == 0)
+    assert(migrated.upgrades.BulkPickup == MAX and migrated.upgrades.BulkPlace == 3 and v5.upgrades.BulkPickup == 40, "v5 levels not capped")
     for _, bad in { "x", { 1 } } do
         local raw = Profiles.validate(nil, config)
         raw.receiptIds = bad
@@ -99,14 +103,19 @@ return function()
     deps.journal.open = open
     profiles.records[USER].leaving, deps.here = nil, true
 
-    -- At max: coins instead of a level (the top level's coin price), once.
-    profile.upgrades.PlacementRange = 100
-    local before, top = profile.coins, Upgrades.price(test, "PlacementRange", 99)
-    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.upgrades.PlacementRange == 100)
-    assert(profile.coins == before + top and deps.journal.entries.f.outcome == "coins", "max-level payback")
-    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.coins == before + top, "payback twice")
+    -- At max: coins instead of a level (the cheapest next two levels on any track), once.
+    -- Here BulkPickup 3, BulkPlace 1: next are BulkPlace 2 (150) then BulkPlace 3 (450).
+    profile.upgrades.PlacementRange = MAX
+    local before = profile.coins
+    local paid = Upgrades.price(test, "BulkPlace", 1) + Upgrades.price(test, "BulkPlace", 2)
+    assert(Service.payback(test, profile, 2) == paid and paid == 600)
+    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.upgrades.PlacementRange == MAX)
+    assert(profile.coins == before + paid and deps.journal.entries.f.outcome == "coins", "max-level payback")
+    assert(Service.process(deps, receipt("f", 310)) == Decision.PurchaseGranted and profile.coins == before + paid, "payback twice")
+    assert(Service.payback(test, { upgrades = { BulkPickup = MAX, BulkPlace = MAX - 1, PlacementRange = MAX } }, 2) == Upgrades.price(test, "BulkPlace", MAX - 1))
+    assert(Service.payback(test, { upgrades = { BulkPickup = MAX, BulkPlace = MAX, PlacementRange = MAX } }, 2) == 0)
 
     -- Ledger stays bounded.
     for i = 1, 100 do Service.grant(test, profile, "BulkPickup", "bulk" .. i) end
-    assert(#profile.receiptIds == Service.LedgerSize and profile.upgrades.BulkPickup == 100)
+    assert(#profile.receiptIds == Service.LedgerSize and profile.upgrades.BulkPickup == MAX)
 end

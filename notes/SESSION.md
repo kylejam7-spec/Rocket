@@ -1,22 +1,22 @@
 # Latest session: 2026-10-16, Robux upgrade levels
 
 - PR #8 (100-level upgrades) rebase-merged with the user's OK; branch `claude/robux-upgrades`
-  from `master` @ f6f2481, rebased onto 26c1683 (new coin curve).
-- User's choices: +1 level products only, price rising per 10-level tier: 25, 35, 45, 55, 65,
-  75, 85, 95, 105, 115 R$ (one track 0 → 100 = 7,000 R$); 30 products (one per track per
-  tier); hide the button at max; a race past max pays coins instead.
-- `Config.RobuxUpgrades` (prices, `products[track][tier]` IDs, empty until the user creates
-  them), `Upgrades.robux` (ID/price/tier for the next level). `RobuxUpgradeService`: client
+  from `master` @ f6f2481, rebased onto 26c1683 (×2.5/×1.5/×1.1 curve), then changed by
+  the user to **10 levels per track, coins ×3 (50 … 984K), one Robux product per level at
+  53 … 143 R$** (30 products, IDs not created yet). Notes in BALANCE/DECISIONS.
+- `Config.RobuxUpgrades` (prices, `products[track][level]` IDs, empty until the user
+  creates them; `levelsPerTier` = 1), `Upgrades.robux`. `RobuxUpgradeService`: client
   fires `BuyUpgradeRobux(track)`, the server opens the prompt (refuses at max, with no
   product, or while a purchase is in flight). ProcessReceipt: unknown product or absent
   player → NotProcessedYet; journal write (`RocketReceipts_v1_test`, memory in Studio);
-  grant once per PurchaseId (profile `receiptIds`, schema v6); PurchaseGranted only after the
-  profile save lands. At max: the top level's coin price instead.
-- Panel 680 wide, blue "R$ 25" button left of the coin price, hidden without a product.
-- Studio: all 67 scripts loaded over HTTP (Edit mode), RunChecks 9/9 (new RobuxCheck:
-  duplicate receipt, failed save then retry, failed journal, max level, unknown product,
-  absent player, left mid-receipt); layout screenshot with the button forced visible;
-  the remote ignores bad input.
+  grant once per PurchaseId (profile `receiptIds`, schema v6, which also caps old levels at
+  10); PurchaseGranted only after the profile save lands. At max: coins for the cheapest
+  next two levels on any track.
+- Panel 680 wide, blue "R$ 53" button left of the coin price, hidden without a product.
+- Studio: all 67 scripts loaded over HTTP (Edit mode), RunChecks 9/9 (RobuxCheck: duplicate
+  receipt, failed save then retry, failed journal, max-level payback, unknown product,
+  absent player, left mid-receipt, v5 cap); ProgressionReport numbers in BALANCE; panel
+  layout screenshot with the button forced visible; the remote ignores bad input.
 - Not verified: a real Studio test purchase (needs the 30 product IDs), real DataStore
   journal (persistence off), receipts after a server crash.
 
