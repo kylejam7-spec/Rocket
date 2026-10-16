@@ -130,14 +130,12 @@ function Cargo.new(ctx)
             ctx.Launch.beginBoarding()
         end
     end
-    -- Pouring scales with carry capacity so any full ball empties in ~PourSeconds;
-    -- a base 10-unit ball still moves one unit per tick.
+    -- Like pickup: 1 unit per tick, +1 per Bulk Place level.
     local function place(player)
         local rocket = ctx.Cycle.rocket
         local material = Rocket.PhaseMaterial[rocket.phase]
         local profile = ctx.profiles.records[player.UserId].profile
-        local pour = math.ceil(ctx.Stats.capacity(profile) * config.MaterialHoldSeconds / Upgrades.pourSeconds(config, profile))
-        local amount, advanced = rocket:deliver(player.UserId, math.max(1, pour))
+        local amount, advanced = rocket:deliver(player.UserId, Upgrades.placeUnits(config, profile))
         if amount == 0 then
             Remote.feedback(player, material == "Fuel" and "Fill up on Fuel at the OIL REFINERY first."
                 or "Pick up Metal at the SCRAP PIT first.")

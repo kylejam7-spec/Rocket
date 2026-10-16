@@ -70,6 +70,22 @@ function Theme.number(value)
     return sign .. digits:reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
 end
 
+-- Compact counts for tight buttons: 9,999 as is, then 12.3K, 4.56M, 7.8B, 1.2T.
+function Theme.short(value)
+    if value < 10000 then return Theme.number(value) end
+    for _, unit in { { 1e12, "T" }, { 1e9, "B" }, { 1e6, "M" }, { 1e3, "K" } } do
+        if value >= unit[1] then
+            -- Three significant digits, truncated (5,999,999 reads 5.99M, not 6M).
+            local scaled = value / unit[1]
+            local decimals = scaled >= 100 and 0 or scaled >= 10 and 1 or 2
+            local text = ("%." .. decimals .. "f"):format(math.floor(scaled * 10 ^ decimals) / 10 ^ decimals)
+            if decimals > 0 then text = text:gsub("0+$", ""):gsub("%.$", "") end
+            return text .. unit[2]
+        end
+    end
+    return Theme.number(value)
+end
+
 -- A lighter top edge on any filled GuiObject, so flat colours read as glossy candy.
 function Theme.shine(gui)
     local gradient = Instance.new("UIGradient")

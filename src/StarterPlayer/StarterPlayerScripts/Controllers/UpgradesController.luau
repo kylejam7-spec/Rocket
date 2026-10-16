@@ -21,7 +21,8 @@ local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
 local UpgradesController = {}
 
-local WIDTH, HEIGHT, ROW = 580, 360, 66
+local ROW = 66
+local WIDTH, HEIGHT = 580, 70 + #Config.UpgradeOrder * ROW + 26
 local CLOSE_DISTANCE = 22
 local CANT_AFFORD = Color3.fromRGB(120, 112, 140)
 
@@ -31,9 +32,8 @@ local function effect(track, level)
     local function at(n)
         local bonus = n * spec.step
         if track == "BulkPickup" then return "Grab " .. (1 + bonus) .. " per tick" end
-        if track == "BulkPlace" then return "Pour speed +" .. math.round(bonus * 100) .. "%" end
-        if track == "PlacementRange" then return "Reach " .. (Config.FrontierReach + bonus) .. " studs" end
-        return "Carry +" .. bonus
+        if track == "BulkPlace" then return "Place " .. (1 + bonus) .. " per tick" end
+        return "Reach +" .. math.round(bonus * 100) .. "%"
     end
     if level >= spec.max then return at(level) .. "  (MAX)" end
     return at(level) .. "  →  " .. at(level + 1)
@@ -136,7 +136,7 @@ function UpgradesController.start()
             local price = Upgrades.price(Config, track, level)
             row.title.Text = Config.Upgrades[track].name .. "  Lv " .. level
             row.detail.Text = effect(track, level)
-            row.buy.Label.Text = price and (Theme.icon.Coin .. " " .. Theme.number(price)) or "MAX"
+            row.buy.Label.Text = price and (Theme.icon.Coin .. " " .. Theme.short(price)) or "MAX"
             row.buy.BackgroundColor3 = (price and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
         end
     end

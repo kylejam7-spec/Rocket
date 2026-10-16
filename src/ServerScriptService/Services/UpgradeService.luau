@@ -1,6 +1,6 @@
 -- Coin upgrades and rank titles. BuyUpgrade(track, requestId) is validated here and
 -- idempotent per request ID (a retried click never charges twice); effects are read
--- through Shared.Upgrades by Stats (capacity), Cargo (pickup, pour, reach) and the
+-- through Shared.Upgrades by Cargo (pickup, place, reach) and the
 -- tutorial. The rank tag over each character comes from lifetime deliveries and
 -- completed launches.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

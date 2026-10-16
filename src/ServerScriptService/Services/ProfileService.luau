@@ -5,7 +5,7 @@ local Profiles = {}
 Profiles.__index = Profiles
 
 local function defaults()
-    return { schemaVersion = 4, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
+    return { schemaVersion = 5, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
         tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {} }
 end
 
@@ -22,7 +22,7 @@ end
 
 local function validate(raw, config)
     if raw == nil then return defaults() end
-    if type(raw) ~= "table" or (type(raw.schemaVersion) ~= "number" or raw.schemaVersion < 1 or raw.schemaVersion > 4) then error("Unsupported profile schema; refusing overwrite") end
+    if type(raw) ~= "table" or (type(raw.schemaVersion) ~= "number" or raw.schemaVersion < 1 or raw.schemaVersion > 5) then error("Unsupported profile schema; refusing overwrite") end
     -- v1 -> v2 adds coins.
     if raw.schemaVersion == 1 then raw = table.clone(raw); raw.schemaVersion, raw.coins = 2, 0 end
     -- v2 -> v3 adds the tutorial; anyone who already delivered has played, so skip it.
@@ -35,6 +35,15 @@ local function validate(raw, config)
     if raw.schemaVersion == 3 then
         raw = table.clone(raw)
         raw.schemaVersion, raw.upgrades, raw.purchaseIds = 4, {}, {}
+    end
+    -- v4 -> v5 drops the retired Carry Capacity upgrade (no refund: persistence was never on).
+    if raw.schemaVersion == 4 then
+        raw = table.clone(raw)
+        raw.schemaVersion = 5
+        if type(raw.upgrades) == "table" then
+            raw.upgrades = table.clone(raw.upgrades)
+            raw.upgrades.CarryCapacity = nil
+        end
     end
     if not Tutorial.valid(raw.tutorialStep) then error("Invalid tutorial step") end
     if type(raw.upgrades) ~= "table" or type(raw.purchaseIds) ~= "table" then error("Invalid upgrades") end
