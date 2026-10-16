@@ -1,16 +1,20 @@
 -- Upgrade and rank math shared by the server (effects, purchases) and the client
--- (panel prices). Tunables live in Config.Upgrades / Config.Ranks.
+-- (panel prices). Tunables live in Config.Upgrades / Config.UpgradePrices / Config.Ranks.
 local Upgrades = {}
 
 function Upgrades.level(profile, track)
     return profile.upgrades and profile.upgrades[track] or 0
 end
 
--- Coins for the next level of `track`, or nil when it is maxed.
+-- Coins for the next level of `track`, or nil when it is maxed. Every track shares
+-- Config.UpgradePrices: the listed first prices, then x growth per level.
 function Upgrades.price(config, track, level)
     local spec = config.Upgrades[track]
     if not spec or level >= spec.max then return nil end
-    return math.max(5, math.round(spec.base * spec.growth ^ level / 5) * 5)
+    local curve = config.UpgradePrices
+    local listed = #curve.first
+    if level < listed then return curve.first[level + 1] end
+    return math.max(5, math.round(curve.first[listed] * curve.growth ^ (level + 1 - listed) / 5) * 5)
 end
 
 -- Cheapest next level across all tracks (nil when everything is maxed).
@@ -30,16 +34,13 @@ end
 function Upgrades.pickupUnits(config, profile)
     return 1 + bonus(config, profile, "BulkPickup")
 end
--- Seconds to pour a whole ball.
-function Upgrades.pourSeconds(config, profile)
-    return config.PourSeconds / (1 + bonus(config, profile, "BulkPlace"))
+-- Units poured into the rocket per place tick.
+function Upgrades.placeUnits(config, profile)
+    return 1 + bonus(config, profile, "BulkPlace")
 end
 -- Place reach in studs.
 function Upgrades.reach(config, profile)
-    return config.FrontierReach + bonus(config, profile, "PlacementRange")
-end
-function Upgrades.capacityBonus(config, profile)
-    return bonus(config, profile, "CarryCapacity")
+    return config.FrontierReach * (1 + bonus(config, profile, "PlacementRange"))
 end
 
 -- Rank index and name from lifetime deliveries and completed launches.

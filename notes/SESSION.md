@@ -1,4 +1,24 @@
-# Latest session: 2026-10-16, mission build-size balance
+# Latest session: 2026-10-16, 100-level coin upgrades
+
+- Branch `claude/upgrade-levels` from `master` @ 4d18877 (build sizes merged).
+- User's spec: 100 levels per upgrade; Carry Capacity removed; Bulk Pickup and Bulk Place
+  +1 unit per tick per level; Placement Range +10% per level; level 1 cheap, level 2 a
+  minute of work, level 3 a few minutes, then very expensive, so Robux can sell levels.
+- Prices 10 / 30 / 120 then ×1.2 (`Config.UpgradePrices`, shared by all tracks): level
+  100 costs 5.75B. Placing is tick-based like pickup (`Upgrades.placeUnits`;
+  `PourSeconds` gone). Profile schema v5 drops `CarryCapacity`. Panel: three rows, prices
+  in short form (`Theme.short`: 16.4K, 3.91M, 5.75B), "Place N per tick", "Reach +N%".
+- UpgradeCheck's first-hour pacing replaced by the user's targets (new player, one track:
+  level 1 < 60 s, level 2 30–120 s of work, level 3 2–8 min; ≥ 10% per level after; top
+  ≥ 1e9). ProgressionReport prints per-track levels; numbers in `notes/BALANCE.md`.
+- Studio (with the user's OK, stopped their Play session): all 65 scripts match;
+  RunChecks 8/8. Live: bought Bulk Pickup 10 then 30, panel "Grab 3 → 4 per tick, 💰 120";
+  Placement Range Lv 2 = place prompt 14.4 studs; a CarryCapacity buy is refused;
+  short prices checked. Only UIBlox warnings.
+- Not verified live: a pour at Bulk Place > 0 (one-line change, covered by the effect
+  check). Not built: Robux purchases (Phase 7 needs the receipt journal and product IDs).
+
+# Earlier session: 2026-10-16, mission build-size balance
 
 - Branch `claude/mechanic-balancing` from `master` @ 51bc175 (mission wheel merged).
 - Ran ProgressionReport (1/4/8/16 players, 30 launches) and walked the user through mission

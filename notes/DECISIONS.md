@@ -203,3 +203,13 @@
 - Walk curve, destination rewards, Gym District gains, upgrade prices and rank
   thresholds stay as they were; strength and walk get a separate balance pass.
 
+## 2026-10-16: 100-level coin upgrades
+
+- Three tracks with 100 levels each (Bulk Pickup, Bulk Place, Placement Range); Carry
+  Capacity is gone, so carry comes only from strength.
+- Pickup and place are symmetric: 1 unit per tick, +1 per level. Reach grows 10% of the
+  base per level.
+- One price curve for every track: cheap first level, about a minute's work for the
+  second, a few minutes for the third, then ×1.2 per level. Coins realistically reach
+  levels ~30–45; the rest is priced for Robux sales (to be built), which is the point.
+

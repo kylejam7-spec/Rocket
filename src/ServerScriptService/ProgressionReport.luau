@@ -9,7 +9,7 @@
 --
 -- Model (timings measured in Studio, 2026-10-15): a trip is 230 studs from the pit or
 -- refinery to the ramp foot and back, plus the climb along the tilted rocket to the
--- fill line (rocket length x fill), at walk speed; plus pickup, pour and 2 s handling.
+-- fill line (rocket length x fill), at walk speed; plus pickup and place ticks and 2 s handling.
 -- Players spend `train` of their time on the best unlocked map gym (half bench, half
 -- treadmill), buy the cheapest affordable upgrade, and at each destination stand for
 -- the passive bonus and spend `gymShare` of the stay on its 2x gym.
@@ -28,8 +28,7 @@ local function simulate(players, train, gymShare, sequence)
     local rows = {}
     local function capacity()
         local points = profile.strengthLevel
-        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points))
-            + Upgrades.capacityBonus(config, profile))
+        return math.min(config.MaxCapacity, config.BaseCarryCapacity + math.floor(config.StrengthCarryScale * math.sqrt(points)))
     end
     local function walk()
         local points = profile.speedLevel
@@ -66,7 +65,7 @@ local function simulate(players, train, gymShare, sequence)
                 local fill = done / need
                 local distance = 2 * (TRIP_BASE + HEIGHT[tier] * fill) - 2 * (Upgrades.reach(config, profile) - config.FrontierReach)
                 local trip = distance / walk() + math.ceil(carry / Upgrades.pickupUnits(config, profile)) * config.MaterialHoldSeconds
-                    + Upgrades.pourSeconds(config, profile) + HANDLING
+                    + math.ceil(carry / Upgrades.placeUnits(config, profile)) * config.MaterialHoldSeconds + HANDLING
                 local gained = gymGain() * trip * train / (1 - train)
                 profile.strengthLevel += gained / 2
                 profile.speedLevel += gained / 2
@@ -91,7 +90,8 @@ local function simulate(players, train, gymShare, sequence)
         table.insert(rows, {
             cycle = number, design = tier, id = cycle.Id, minutes = (t - started) / 60, total = t / 60, capacity = capacity(), walk = walk(),
             strength = profile.strengthLevel, speed = profile.speedLevel, upgrades = buys,
-            destinationShare = fromDestinations / math.max(1, fromDestinations + fromGyms),
+            destinationShare = fromDestinations / math.max(1, fromDestinations + fromGyms), coins = profile.coins,
+            levels = table.clone(profile.upgrades),
         })
     end
     return rows
@@ -122,6 +122,9 @@ return function(options)
             table.insert(lines, (" %2d  %-9s %5.1f %6.1f  %4d  %4.1f  %8.0f  %6.0f  %3d  %3.0f%%"):format(
                 r.cycle, r.id, r.minutes, r.total, r.capacity, r.walk, r.strength, r.speed, r.upgrades, r.destinationShare * 100))
         end
+        local levels = {}
+        for _, track in config.UpgradeOrder do table.insert(levels, track .. " " .. (rows[#rows].levels[track] or 0)) end
+        table.insert(lines, "Upgrade levels at the end: " .. table.concat(levels, ", ") .. ("; %d coins unspent"):format(rows[#rows].coins))
         table.insert(lines, "")
     end
     return table.concat(lines, "\n"), results

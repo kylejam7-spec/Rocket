@@ -26,25 +26,26 @@ return table.freeze({
     -- The rocket is built tilted against its ramp, then erected upright for boarding.
     RocketTiltDegrees = 45,
     ErectSeconds = 5,
-    -- Holding E at the build frontier pours a full ball in about this long, whatever its size.
-    PourSeconds = 1.5,
     -- Place reach: from the glowing frontier ring, or along the rocket from the fill line
     -- while standing on a ramp (Build:inPlaceReach); also the place prompt's range.
+    -- Placement Range adds 10% of it per level.
     FrontierReach = 12,
     -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
     CoinsPerUnit = 1,
     -- The tutorial's closing "work with everyone" step stays up this long, then ends.
     TutorialFinalSeconds = 8,
-    -- Coin upgrades (Shared.Upgrades has the math). Price of level n+1 = base * growth^n,
-    -- rounded to 5. Tuned by UpgradeCheck's first-hour sim: first buy < 1 min, then
-    -- one every 3-5 min on average.
+    -- Coin upgrades (Shared.Upgrades has the math), 100 levels each, all on one price
+    -- curve: the first levels cost UpgradePrices.first (cheap, ~1 min of a new player's
+    -- work, a few minutes), then each level costs `growth` x the last, rounded to 5, so
+    -- high levels are out of reach on coins alone (they're meant for Robux later).
+    -- UpgradeCheck holds these targets.
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", base = 10, growth = 2.2, max = 10, step = 1 }), -- +1 unit per pickup tick
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", base = 90, growth = 2.2, max = 10, step = 0.25 }), -- pour speed +25%
-        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", base = 120, growth = 2.2, max = 8, step = 2 }), -- +2 studs reach
-        CarryCapacity = table.freeze({ name = "Carry Capacity", icon = "🎒", base = 120, growth = 2.2, max = 10, step = 5 }), -- +5 carry
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 100, step = 1 }), -- +1 unit per pickup tick
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 100, step = 1 }), -- +1 unit per place tick
+        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 100, step = 0.1 }), -- +10% reach
     }),
-    UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange", "CarryCapacity" }),
+    UpgradePrices = table.freeze({ first = table.freeze({ 10, 30, 120 }), growth = 1.2 }),
+    UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({
         table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),
