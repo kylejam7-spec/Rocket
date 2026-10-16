@@ -45,10 +45,13 @@ function TutorialController.objective(state)
     elseif current == "Upgrade" and not state.training then
         return "Spend your coins! Buy an upgrade at the UPGRADES hut."
     elseif current == "Bench" or current == "Treadmill" then
-        -- state.training is the station name ("Bench press", "Treadmill", "1-cycle Bench"…).
+        -- state.training is the station name ("Free gym bench", "2x gym treadmill", "Bench press"…).
         local bench = current == "Bench"
-        local onIt = state.training and state.training:find(bench and "Bench" or "Treadmill") ~= nil
-        if onIt then return bench and "Lifting! More strength = more carried per trip." or "Running! More speed = faster trips." end
+        local onIt = state.training and state.training:lower():find(bench and "bench" or "treadmill") ~= nil
+        if onIt then
+            return bench and "Lift to Strength LV 1! More strength = more carried per trip."
+                or "Run to Speed LV 1! More speed = faster trips."
+        end
         if state.training then return "Nice! Press E to leave, then hop on the " .. (bench and "BENCH PRESS!" or "TREADMILL!") end
         return bench and "Get stronger! Use the bench press at the FREE GYM in the GYM DISTRICT!" or "Now the TREADMILL: more speed = faster trips!"
     elseif current == "Together" then

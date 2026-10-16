@@ -45,9 +45,10 @@ Report (same seed as below, 30 launches):
 Mission pacing stays close to the agreed build-size pass. Planets now give a real share
 of stats.
 
-**Open question:** walk speed caps out and carry doesn't, so past the first few levels a
-strength level is worth more than a speed level (3× by level 10, 10× by level 30, in
-the trip model). This needs the user's call (see SESSION.md).
+**Known gap, kept for now (user, 2026-10-16):** walk speed caps out and carry doesn't,
+so past the first few levels a strength level is worth more than a speed level (3× by
+level 10, 10× by level 30, in the trip model). If it's revisited, the suggested fix is
+for speed to also make pickup and place faster.
 
 ## 2026-10-16 upgrades: 10 levels, ×3 coins, Robux per level
 
