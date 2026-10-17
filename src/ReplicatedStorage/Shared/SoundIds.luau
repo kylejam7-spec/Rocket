@@ -2,4 +2,25 @@
 -- (assets/sounds/<cue>.ogg). Cues missing here play only in Studio, from the copy
 -- tools/sounds/build.py --studio puts in Studio's content folder (see UI/Sfx).
 return table.freeze({
+    ["game/coin"] = "rbxassetid://130766560947720",
+    ["game/countdown"] = "rbxassetid://76324808899374",
+    ["game/drop"] = "rbxassetid://125085476661253",
+    ["game/engine"] = "rbxassetid://114396825988205",
+    ["game/full"] = "rbxassetid://78256364324064",
+    ["game/gain"] = "rbxassetid://88064840737307",
+    ["game/ignition"] = "rbxassetid://121289061270335",
+    ["game/levelup"] = "rbxassetid://135633844572827",
+    ["game/liftoff"] = "rbxassetid://110297361406713",
+    ["game/pickup"] = "rbxassetid://135700555663023",
+    ["game/place"] = "rbxassetid://75890059397165",
+    ["ui/click"] = "rbxassetid://118256580196638",
+    ["ui/close"] = "rbxassetid://133361107086161",
+    ["ui/confirm"] = "rbxassetid://78536848143118",
+    ["ui/error"] = "rbxassetid://136869443495267",
+    ["ui/hover"] = "rbxassetid://134928199523134",
+    ["ui/jingle"] = "rbxassetid://131407721539776",
+    ["ui/notify"] = "rbxassetid://140421271896091",
+    ["ui/open"] = "rbxassetid://118947197943894",
+    ["ui/tick"] = "rbxassetid://132910340493615",
+    ["ui/toggle"] = "rbxassetid://109078494393085",
 })
