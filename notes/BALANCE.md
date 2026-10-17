@@ -14,7 +14,31 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 strength and speed levels (current)
+## 2026-10-16 planet rewards: 5/s, even steps by rarity (current)
+
+User: 5 per second, rising steadily with rarity. Each stat gets Planet bonus 5 ×
+destination reward 1–5 per second of the stay, and each destination's own bench and
+treadmill give double that.
+
+| Destination | Moon | Mars | Europa | Saturn | Black Hole |
+|---|---|---|---|---|---|
+| Per second, each stat (was) | 5 (10) | 10 (20) | 15 (30) | 20 (50) | 25 (100) |
+| Stay | 30 s | 30 s | 30 s | 30 s | 45 s |
+| Standing through the stay | 150 | 300 | 450 | 600 | 1,125 |
+| On its 2× gym (that stat) | 10/s | 20/s | 30/s | 40/s | 50/s |
+
+Report, 30 launches (before → after):
+
+| Players | 30 launches | Level @ 30 | Carry @ 30 | Stats from destinations |
+|---|---|---|---|---|
+| 1 | 2,540 → 2,619 min | 373 → 347 | 1,000 | 19% → 10% |
+| 4 | 991 → 1,061 min | 197 → 171 | 601 → 523 | 38% → 21% |
+| 16 | 368 → 415 min | 124 → 95 | 382 → 295 | 63% → 41% |
+
+The first Moon is unchanged (no stay before it). The top Gym District tier (60/s) now
+out-earns every destination per second; a stay is a bonus on top of the trip.
+
+## 2026-10-16 strength and speed levels
 
 Points (training + destination rewards) now turn into **levels** (`Shared/StatLevels`).
 Level 1 costs 10 points, each level after ×1.2 (rounded to 5), capped at **450** from

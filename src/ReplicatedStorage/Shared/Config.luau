@@ -89,9 +89,10 @@ return table.freeze({
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
     -- Each destination's own bench and treadmill give double its per-second reward.
-    -- Standing through a Moon stay gives 300 of each (~2/3 of a capped level); the
-    -- Black Hole pays 10x per second for 45 s.
-    Planet = table.freeze({ StrengthBonus = 10, SpeedBonus = 10 }),
+    -- Rewards step up evenly by rarity: 5 / 10 / 15 / 20 / 25 of each stat per second
+    -- (Moon → Black Hole, reward 1-5). Standing through a Moon stay gives 150 of each;
+    -- the Black Hole pays 25/s for its 45 s stay (1,125).
+    Planet = table.freeze({ StrengthBonus = 5, SpeedBonus = 5 }),
     -- Mission wheel: it starts this many seconds before a reward stay ends and spins
     -- for WheelSpinSeconds; everyone sees it (WheelController).
     WheelLeadSeconds = 10,
@@ -104,8 +105,8 @@ return table.freeze({
         table.freeze({ id = "Moon", reward = 1, name = "THE MOON", gravity = 60, color = Color3.fromRGB(200, 200, 210), position = Vector3.new(10000, 200, 10000) }),
         table.freeze({ id = "Mars", reward = 2, name = "MARS", gravity = 110, color = Color3.fromRGB(235, 110, 60), position = Vector3.new(20000, 200, 10000) }),
         table.freeze({ id = "Europa", reward = 3, name = "EUROPA", gravity = 50, color = Color3.fromRGB(150, 225, 255), position = Vector3.new(30000, 200, 10000) }),
-        table.freeze({ id = "Saturn", reward = 5, name = "SATURN'S RINGS", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
-        table.freeze({ id = "BlackHole", reward = 10, name = "THE BLACK HOLE", gravity = 80, color = Color3.fromRGB(190, 110, 255), position = Vector3.new(50000, 200, 10000) }),
+        table.freeze({ id = "Saturn", reward = 4, name = "SATURN'S RINGS", gravity = 90, color = Color3.fromRGB(230, 200, 130), position = Vector3.new(40000, 200, 10000) }),
+        table.freeze({ id = "BlackHole", reward = 5, name = "THE BLACK HOLE", gravity = 80, color = Color3.fromRGB(190, 110, 255), position = Vector3.new(50000, 200, 10000) }),
     }),
     -- The inside of the rocket: boarding players wait here for liftoff.
     CabinPosition = Vector3.new(-3000, 200, 0),

@@ -1,4 +1,15 @@
-# Latest session: 2026-10-16, tutorial dim off, strength/speed levels
+# Latest session: 2026-10-16, planet rewards
+
+- PR #13 (levels, tutorial) rebase-merged with the user's OK. Branch
+  `claude/planet-rewards` from `master` @ 88b0369.
+- User: planet rewards are 5 per second, rising steadily with rarity → Planet bonus 5,
+  destination reward 1/2/3/4/5 (was 10 × 1/2/3/5/10). DestinationCheck asserts Moon =
+  5/s and even steps. Numbers in BALANCE.md.
+- Studio Play: RunChecks 9/9; ProgressionReport run (Edit-mode report reused a cached
+  Config; run it in Play). Not flown to a destination live (the feedback text and gym
+  gains read the same Config values).
+
+# Earlier session: 2026-10-16, tutorial dim off, strength/speed levels
 
 - Branch `claude/tutorial-and-stat-levels` from `master` @ 4e144cf.
 - Tutorial: the darkened screen with a hole around ground targets is gone (no
