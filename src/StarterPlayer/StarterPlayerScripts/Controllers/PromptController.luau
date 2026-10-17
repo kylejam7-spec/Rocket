@@ -22,9 +22,11 @@ local function keyText(prompt, inputType)
 end
 
 local function build(prompt, inputType)
+    -- No object name (gym stations): a narrower card, the action word centred beside the key.
+    local named = prompt.ObjectText ~= ""
     local billboard = Create.new("BillboardGui", {
         Name = "Prompt", Adornee = prompt.Parent, AlwaysOnTop = true, Active = true,
-        LightInfluence = 0, Size = UDim2.fromOffset(250, 76), StudsOffsetWorldSpace = Vector3.new(0, 2.5, 0), Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
+        LightInfluence = 0, Size = UDim2.fromOffset(named and 250 or 170, 76), StudsOffsetWorldSpace = Vector3.new(0, 2.5, 0), Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
     })
     local card = Create.new("TextButton", {
         Name = "Card", Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1),
@@ -50,13 +52,15 @@ local function build(prompt, inputType)
         Size = UDim2.fromScale(1, 0), BackgroundColor3 = Theme.color.White, BackgroundTransparency = 0.4, Parent = chip,
     })
     Create.new("UICorner", { CornerRadius = UDim.new(0, 10), Parent = hold })
-    StrokedText.new({
-        Name = "Object", Position = UDim2.fromOffset(68, 8), Size = UDim2.new(1, -78, 0, 20),
-        Text = prompt.ObjectText, Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted,
-        TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, Parent = card,
-    })
+    if named then
+        StrokedText.new({
+            Name = "Object", Position = UDim2.fromOffset(68, 8), Size = UDim2.new(1, -78, 0, 20),
+            Text = prompt.ObjectText, Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted,
+            TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, Parent = card,
+        })
+    end
     local action = StrokedText.new({
-        Name = "Action", Position = UDim2.fromOffset(68, 28), Size = UDim2.new(1, -78, 0, 36),
+        Name = "Action", Position = UDim2.fromOffset(68, named and 28 or 20), Size = UDim2.new(1, -78, 0, 36),
         Text = prompt.ActionText, Font = Theme.font.Display, TextSize = 28, TextScaled = true,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 2.5, Parent = card,
     })

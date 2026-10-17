@@ -2,7 +2,8 @@
 -- goes when the stack is full, and a repeat of the newest message just re-bounces it.
 -- Toast.stack(props) makes the stack (a Frame; Capitalized props apply, `max` caps
 -- the count); stack:push(text, color?, seconds?) adds a card at the bottom with a
--- soft pluck.
+-- soft pluck. Text too wide for one line wraps inside the card.
+local TextService = game:GetService("TextService")
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
@@ -10,6 +11,7 @@ local Tween = require(script.Parent.Tween)
 local Sfx = require(script.Parent.Sfx)
 local Toast = {}
 Toast.__index = Toast
+local MAX_WIDTH, PADDING, TEXT_SIZE = 520, 16, 22
 
 function Toast.stack(props)
     local frame = Create.new("Frame", { BackgroundTransparency = 1, Size = UDim2.fromOffset(520, 200) }, props)
@@ -38,18 +40,22 @@ function Toast:push(text, color, seconds)
         return newest.card
     end
     self.order += 1
+    local wraps = TextService:GetTextSize(text, TEXT_SIZE, Theme.font.Display, Vector2.new(10000, 100)).X > MAX_WIDTH - 2 * PADDING
+    -- One line hugs its text; a wrapped message takes the full width and grows down.
     local card = Create.new("Frame", {
-        Name = "Toast", AutomaticSize = Enum.AutomaticSize.XY, Size = UDim2.fromOffset(0, 36),
+        Name = "Toast", AutomaticSize = wraps and Enum.AutomaticSize.Y or Enum.AutomaticSize.XY,
+        Size = UDim2.fromOffset(wraps and MAX_WIDTH or 0, 36),
         BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.15, LayoutOrder = self.order,
         Parent = self.instance,
     })
-    Create.new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = card })
+    Create.new("UICorner", { CornerRadius = wraps and UDim.new(0, 18) or UDim.new(1, 0), Parent = card })
     Create.new("UIStroke", { Thickness = 2.5, Color = color or Theme.color.Gold, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = card })
-    Create.new("UIPadding", { PaddingLeft = UDim.new(0, 16), PaddingRight = UDim.new(0, 16), Parent = card })
-    Create.new("UISizeConstraint", { MaxSize = Vector2.new(520, 120), Parent = card })
+    Create.new("UIPadding", { PaddingLeft = UDim.new(0, PADDING), PaddingRight = UDim.new(0, PADDING),
+        PaddingTop = UDim.new(0, wraps and 4 or 0), PaddingBottom = UDim.new(0, wraps and 4 or 0), Parent = card })
     StrokedText.new({
-        Name = "Text", Text = text, AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 36),
-        Font = Theme.font.Display, TextSize = 22, TextWrapped = false, stroke = 2, Parent = card,
+        Name = "Text", Text = text, Font = Theme.font.Display, TextSize = TEXT_SIZE, stroke = 2, Parent = card,
+        AutomaticSize = wraps and Enum.AutomaticSize.Y or Enum.AutomaticSize.X,
+        Size = wraps and UDim2.new(1, 0, 0, 28) or UDim2.fromOffset(0, 36), TextWrapped = wraps,
     })
     Tween.bounce(card, 1.15, 0.3)
     Sfx.play("notify")

@@ -54,7 +54,10 @@ function Training.new(context)
         station.part:SetAttribute("RequiredCycles", station.required or 0)
         station.part:SetAttribute("TrainingGain", station.gain)
         station.part:SetAttribute("TrainingStat", station.stat)
-        context.prompt(station.part, "Train " .. station.name).Triggered:Connect(function(player)
+        -- Just the key and "Use": the station's tag above it already says what it is.
+        local prompt = context.prompt(station.part, "Use")
+        prompt.ObjectText = ""
+        prompt.Triggered:Connect(function(player)
             if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
             if not context.phaseAllowed(station) then return end
@@ -76,7 +79,7 @@ function Training.new(context)
             -- Lying on the bench: no standing up, and Animate stops its idle.
             humanoid.PlatformStand = station.stat == "strengthLevel"
             station.part:SetAttribute("Occupant_" .. player.UserId, workspace:GetServerTimeNow())
-            context.feedback(player, station.name .. ": training! Press E or Leave station to exit.")
+            context.feedback(player, "Training! Press E or LEAVE to get off.")
             context.changed(player)
         end)
     end

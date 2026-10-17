@@ -1,4 +1,25 @@
-# Latest session: 2026-10-17, longer launch cutscene with a landing
+# Latest session: 2026-10-17, prompt, toast and hint polish
+
+- Branch `claude/prompt-and-hint-polish` from master.
+- Gym station prompts read just "[E] Use": no ObjectText (it was the part name, e.g.
+  FREEGYMTreadmill) and no station name in the action. PromptController draws a narrower
+  card with the action centred when a prompt has no object name.
+- Toasts wrap: a message wider than the card (TextService measure) takes the full 520 width
+  and grows down, so text no longer spills past the pill ("...to exit." did). The mount
+  message is now "Training! Press E or LEAVE to get off."
+- Objective-line how-to hints hide once the player has done the thing, persistently:
+  first pickup / place of Metal and of Fuel, boarding, leaving a station. The client
+  notices from state changes and fires `HintLearned`; TutorialService whitelists the name
+  and stores "Hint:<name>" in `seenCallouts` (already saved and sent). With nothing to
+  say the banner hides. Phase news (liftoff, arrival, "You're aboard!") still shows, and
+  the training mount toast is skipped once LeaveStation is learned. The tutorial's own
+  steps are unchanged.
+- Studio: pickup stored Hint:PickupMetal and hid "Grab scrap metal..."; after leaving
+  the treadmill a remount showed no banner or toast; toasts fit at one and two lines.
+  Cross-session persistence not testable in Studio (profiles aren't saved there).
+  RunChecks 9/9.
+
+# Earlier session: 2026-10-17, longer launch cutscene with a landing
 
 - Branch `claude/launch-landing` from master (separate from the gym PR #22).
 - Flights are longer: `LaunchSeconds` (ignition and ascent) 7/8/9/10/12 -> 11/12/13/14/16

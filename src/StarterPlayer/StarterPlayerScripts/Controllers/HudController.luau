@@ -30,22 +30,26 @@ local function carrying(state)
 end
 
 -- One short, punchy instruction for what to do right now (the tutorial's, while on).
-local function objective(state)
+-- How-to lines go once the player has done that thing (`learned`, see HintLearned);
+-- an empty line hides the banner. Phase news (liftoff, arrival) always shows.
+local function objective(state, learned)
     local tip = Tutorial.objective(state)
     if tip then return tip end
-    if state.training then return "Training on the " .. state.training .. "! Press E to leave." end
+    if state.training then return learned.LeaveStation and "" or "Training on the " .. state.training .. "! Press E to leave." end
     local material, count = carrying(state)
     local full = material and state.profile and count >= state.profile.capacity
     if state.phase == "Building" then
         if material == "Metal" then
+            if learned.PlaceMetal then return "" end
             return full and "Full! Carry the scrap up the ramp to the glowing ring!" or "Grab more, or carry it up the ramp to the glowing ring!"
         end
-        return "Grab scrap metal at the SCRAP PIT to build the rocket!"
+        return learned.PickupMetal and "" or "Grab scrap metal at the SCRAP PIT to build the rocket!"
     elseif state.phase == "Fueling" then
-        if material == "Fuel" then return "Pour the fuel into the rocket at the glowing ring!" end
-        return "Rocket built! Fill your jerry can at the OIL REFINERY!"
+        if material == "Fuel" then return learned.PlaceFuel and "" or "Pour the fuel into the rocket at the glowing ring!" end
+        return learned.PickupFuel and "" or "Rocket built! Fill your jerry can at the OIL REFINERY!"
     elseif state.phase == "Boarding" then
-        return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
+        if state.boarded then return "You're aboard! Next stop: " .. state.destination .. "!" end
+        return learned.Board and "" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
     elseif state.phase == "Launching" then
         return state.passenger and "LIFTOFF! Off to " .. state.destination .. "!" or "You missed this one. Next build starts soon!"
     elseif state.phase == "Rewarding" then
@@ -187,7 +191,34 @@ function HudController.start()
         end
     end
 
+    -- Hints already acted on, from the profile ("Hint:<name>" in seenCallouts, kept by
+    -- TutorialService) plus any reported this session.
+    local hintLearned = State.remote("HintLearned")
+    local reported, learned = {}, {}
+    local function learn(name)
+        if reported[name] then return end
+        reported[name] = true
+        learned[name] = true
+        hintLearned:FireServer(name)
+    end
+    local function noticeLearning(state, previous)
+        for _, name in state.profile and state.profile.seenCallouts or {} do
+            local hint = name:match("^Hint:(.+)$")
+            if hint then learned[hint] = true end
+        end
+        if not previous then return end
+        local material, count = carrying(state)
+        local _, before = carrying(previous)
+        if material and count > (before or 0) then learn("Pickup" .. material) end
+        if state.cycle == previous.cycle and state.contribution > previous.contribution then
+            learn(previous.phase == "Fueling" and "PlaceFuel" or "PlaceMetal")
+        end
+        if state.boarded then learn("Board") end
+        if previous.training and not state.training then learn("LeaveStation") end
+    end
+
     State.subscribe(function(state, previous)
+        noticeLearning(state, previous)
         local p = state.profile
         if p then
             local before = previous and previous.profile
@@ -235,7 +266,7 @@ function HudController.start()
                 if levelled then Sfx.play("levelup") end
             end
         end
-        goal.Text = objective(state)
+        goal.Text = objective(state, learned)
         save.Text = state.persistent and ("Progress: " .. state.saveStatus) or "Studio test: progress isn't saved"
     end)
 
@@ -273,6 +304,7 @@ function HudController.start()
 
     State.onFeedback(function(message)
         if message:match("^%+%d+ %a+!$") or message:match("%+%d+ strength / %+%d+ speed %(") then return end
+        if message:match("^Training!") and learned.LeaveStation then return end
         local hint = materialHint(message)
         if hint then
             if hinted[hint] then return end
