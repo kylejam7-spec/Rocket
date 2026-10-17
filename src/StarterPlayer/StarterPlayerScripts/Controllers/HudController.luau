@@ -9,6 +9,7 @@ local StatLevels = require(ReplicatedStorage.Shared.StatLevels)
 local State = require(script.Parent.State)
 local Settings = require(script.Parent.Settings)
 local Tutorial = require(script.Parent.TutorialController)
+local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -61,6 +62,8 @@ function HudController.start()
         Position = UDim2.fromOffset(Theme.gutter, 150), Size = UDim2.fromOffset(220, 276), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
+    -- Phones shrink the whole HUD to fit; keep the stats readable there.
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.35, Parent = stack }) end
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
     local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
@@ -82,12 +85,15 @@ function HudController.start()
     Create.new("UIGradient", {
         Rotation = 90, Color = ColorSequence.new(Theme.lighten(Theme.color.Panel, 0.15), Theme.color.Panel), Parent = goalBack,
     })
+    -- TextBounds is in screen pixels; divide by the screen scale to get layout units.
     local function fitGoal()
         local bounds = goal.TextBounds
-        goalBack.Visible = goal.Text ~= "" and bounds.X > 0
-        goalBack.Size = UDim2.fromOffset(bounds.X + 36, bounds.Y + 12)
+        local scale = goal.AbsoluteSize.Y / goal.Size.Y.Offset
+        goalBack.Visible = goal.Text ~= "" and bounds.X > 0 and scale > 0
+        if scale > 0 then goalBack.Size = UDim2.fromOffset(bounds.X / scale + 36, bounds.Y / scale + 12) end
     end
     goal:GetPropertyChangedSignal("TextBounds"):Connect(fitGoal)
+    goal:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitGoal)
     goal:GetPropertyChangedSignal("Text"):Connect(function()
         Tween.bounce(goalBack, 1.06, 0.3)
         Tween.bounce(goal, 1.06, 0.3)
@@ -212,7 +218,7 @@ function HudController.start()
     -- Training ticks and destination rewards already show as stat popups; everything else
     -- is a toast above the progress pill, so the objective line always stays up.
     local toasts = Toast.stack({
-        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -96),
+        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.touch and -118 or -96),
         Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
     })
     State.onFeedback(function(message)

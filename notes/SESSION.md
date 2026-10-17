@@ -1,4 +1,15 @@
-# Latest session: 2026-10-16, sign panels only, gyms +1
+# Latest session: 2026-10-16, HUD on a phone (iPhone 14 emulator)
+
+- PR #17 rebase-merged. Branch `claude/hud-phone-fixes`.
+- iPhone 14 landscape (749x388, HUD scale 0.46): the objective and mission-tag backings
+  were sized from TextBounds (screen pixels) as if they were layout units, so they came
+  out tiny on phones and oversized on desktop. Now divided by the label's scale.
+- Touch: stat stack and the progress group (pill + mission tag, now one frame) get a
+  1.35 UIScale; toasts sit higher to clear it. The desktop camera hint showed in the
+  emulator only before the touch thumbstick appeared (PreferredInput); not changed.
+- Studio emulator: RunChecks 9/9; screenshots before/after.
+
+# Earlier session: 2026-10-16, sign panels only, gyms +1
 
 - PR #16 (HUD) rebase-merged with the user's OK. Branch `claude/gym-sign-oval-and-gains`.
 - Gym sign parts are invisible (Transparency 1, no shadow); only the rounded panel the
