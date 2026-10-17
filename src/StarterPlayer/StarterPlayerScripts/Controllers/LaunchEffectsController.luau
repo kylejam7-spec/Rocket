@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Settings = require(script.Parent.Settings)
+local Sfx = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("Sfx"))
 local player = Players.LocalPlayer
 local FIRE = "rbxasset://textures/particles/fire_main.dds"
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
@@ -35,13 +36,14 @@ local function play(vehicle)
     local climb = 900 + height * 4
     local accel = 2 * climb / math.max(1, duration - ignition) ^ 2
 
-    local emitters = {}
+    local emitters, nozzle = {}, nil
     for _, part in vehicle:GetDescendants() do
         if part:IsA("BasePart") and part:GetAttribute("Engine") then
             -- Cylinders are rotated upright: local -X points down out of the nozzle.
             local attachment = Instance.new("Attachment")
             attachment.Position = Vector3.new(-part.Size.X / 2, 0, 0)
             attachment.Parent = part
+            nozzle = nozzle or attachment
             local d = part.Size.Y
             table.insert(emitters, emitter(attachment, {
                 Texture = FIRE, EmissionDirection = Enum.NormalId.Left, LightEmission = 1, Rate = 0,
@@ -80,6 +82,23 @@ local function play(vehicle)
         }))
     end
 
+    -- Ignition bursts on the pad; the engine roar rides the rocket and swells with the
+    -- exhaust through ignition, bigger rockets deeper, and turns duller as it climbs
+    -- away (air soaks up the highs). Liftoff booms on the pad on the frame the rocket
+    -- starts to rise. Not when joining mid-launch, long after those moments.
+    if workspace:GetServerTimeNow() - launchAt < 0.5 then Sfx.playAt("ignition", pad, { volume = math.min(1.5, exhaust) }) end
+    local engine = Sfx.attach("engine", nozzle or pad)
+    local roar, air = engine and engine.Volume, nil
+    if engine then
+        engine.Volume = 0
+        engine.PlaybackSpeed = 1 / math.sqrt(math.max(1, exhaust))
+        air = Instance.new("EqualizerSoundEffect")
+        air.LowGain, air.MidGain, air.HighGain = 0, 0, 0
+        air.Parent = engine
+        engine:Play()
+    end
+    local lifted = false
+
     local camera = workspace.CurrentCamera
     launches += 1
     local shakeName = "RocketLaunchShake" .. launches
@@ -93,8 +112,18 @@ local function play(vehicle)
             if item:IsA("ParticleEmitter") then item.Rate = 60 * power else item.Brightness = 4 * power end
         end
         for _, item in smoke do item.Rate = (t < duration * 0.8 and 8 or 0) * power * smokeScale end
+        if engine then engine.Volume = roar * power end
+        if not lifted and lift > 0 then
+            lifted = true
+            if lift < 0.5 then Sfx.playAt("liftoff", pad, { volume = math.min(1.5, exhaust) }) end
+        end
         vehicle:PivotTo(origin + Vector3.new(0, rise, 0))
         local rocketMid = origin.Position + Vector3.new(0, rise + height * 0.5, 0)
+        if air then
+            local distance = (camera.CFrame.Position - rocketMid).Magnitude
+            air.HighGain = -math.clamp(distance / 25, 0, 40)
+            air.MidGain = -math.clamp(distance / 100, 0, 12)
+        end
         -- Read live: attribute replication order is not guaranteed relative to LaunchAt.
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
@@ -113,6 +142,10 @@ local function play(vehicle)
     end)
     task.delay(math.max(0, launchAt + duration - workspace:GetServerTimeNow()), function()
         RunService:UnbindFromRenderStep(shakeName)
+        if engine then
+            TweenService:Create(engine, TweenInfo.new(0.6), { Volume = 0 }):Play()
+            task.delay(0.6, engine.Destroy, engine)
+        end
         if camera:GetAttribute("Cinematic") then
             camera:SetAttribute("Cinematic", nil)
             camera.CameraType = Enum.CameraType.Custom

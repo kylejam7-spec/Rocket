@@ -3,8 +3,12 @@
 -- so the settings slider sets their volume) and preloaded, so Play() has nothing to
 -- fetch; tools/sounds/build.py trims each file so it's audible from its first sample.
 -- A cue keeps a few voices so quick repeats overlap instead of cutting each other
--- off, and `gap` drops repeats closer together than that (hover, ticks).
+-- off, and `gap` drops repeats closer together than that (hover, ticks); play()
+-- returns whether it played.
 -- Options: pitch (PlaybackSpeed multiplier), volume (multiplier).
+-- `world` cues sound from a place in the world instead: Sfx.attach(cue, parent) gives
+-- a new Sound under a part or attachment (Looped if the cue loops) for the caller to
+-- play, fade and destroy; Sfx.playAt(cue, parent) plays one there once.
 -- Files come from Shared/SoundIds once uploaded; until then Studio plays the copies
 -- `build.py --studio` puts in its content folder, and live servers stay silent.
 local ContentProvider = game:GetService("ContentProvider")
@@ -27,6 +31,21 @@ local CUES = {
     confirm = { file = "ui/confirm", volume = 0.44 },
     notify = { file = "ui/notify", volume = 0.32, gap = 0.1 },
     jingle = { file = "ui/jingle", volume = 0.48 },
+    -- Cargo streams up to 20 transfers a second, so these are short and quiet.
+    pickup = { file = "game/pickup", volume = 0.4, voices = 4, vary = 0.04 },
+    place = { file = "game/place", volume = 0.5, voices = 4, vary = 0.04 },
+    full = { file = "game/full", volume = 0.45, gap = 0.3 },
+    drop = { file = "game/drop", volume = 0.5 },
+    -- Up to 5 coins land 60 ms apart and the jingle runs 0.3 s, so they overlap: quiet.
+    coin = { file = "game/coin", volume = 0.14, voices = 6, gap = 0.03 },
+    gain = { file = "game/gain", volume = 0.4 },
+    -- Destination rewards can level a stat every few seconds: kept light.
+    levelup = { file = "game/levelup", volume = 0.2, gap = 1 },
+    countdown = { file = "game/countdown", volume = 0.45 },
+    -- near/far: the roll-off distances in studs.
+    engine = { file = "game/engine", volume = 1.2, world = true, loop = true, near = 60, far = 2500 },
+    ignition = { file = "game/ignition", volume = 0.9, world = true, near = 80, far = 2500 },
+    liftoff = { file = "game/liftoff", volume = 1, world = true, near = 80, far = 2500 },
 }
 
 local function source(file)
@@ -39,11 +58,25 @@ local folder = Instance.new("Folder")
 folder.Name = "Sfx"
 folder.Parent = SoundService
 local group = Settings.group("SFX")
-local voices, nextVoice, lastPlayed = {}, {}, {}
+local voices, nextVoice, lastPlayed, templates = {}, {}, {}, {}
 local preload = {}
 for name, cue in CUES do
     local id = source(cue.file)
-    if id then
+    if id and cue.world then
+        -- Never played itself: preloads the file and is cloned by attach().
+        local sound = Instance.new("Sound")
+        sound.Name = name
+        sound.SoundId = id
+        sound.Volume = cue.volume
+        sound.Looped = cue.loop == true
+        sound.SoundGroup = group
+        sound.RollOffMode = Enum.RollOffMode.InverseTapered
+        sound.RollOffMinDistance = cue.near or 10
+        sound.RollOffMaxDistance = cue.far or 1000
+        sound.Parent = folder
+        templates[name] = sound
+        table.insert(preload, sound)
+    elseif id then
         voices[name] = {}
         for index = 1, cue.voices or 2 do
             local sound = Instance.new("Sound")
@@ -62,9 +95,9 @@ task.spawn(ContentProvider.PreloadAsync, ContentProvider, preload)
 
 function Sfx.play(name, options)
     local cue, pool = CUES[name], voices[name]
-    if not pool then return end
+    if not pool then return false end
     local now = os.clock()
-    if cue.gap and lastPlayed[name] and now - lastPlayed[name] < cue.gap then return end
+    if cue.gap and lastPlayed[name] and now - lastPlayed[name] < cue.gap then return false end
     lastPlayed[name] = now
     local sound = pool[nextVoice[name]]
     nextVoice[name] = nextVoice[name] % #pool + 1
@@ -73,6 +106,24 @@ function Sfx.play(name, options)
     sound.Volume = cue.volume * (options and options.volume or 1)
     sound.TimePosition = 0
     sound:Play()
+    return true
+end
+
+function Sfx.attach(name, parent)
+    local template = templates[name]
+    if not template then return nil end
+    local sound = template:Clone()
+    sound.Parent = parent
+    return sound
+end
+
+function Sfx.playAt(name, parent, options)
+    local sound = Sfx.attach(name, parent)
+    if not sound then return end
+    sound.PlaybackSpeed = options and options.pitch or 1
+    sound.Volume *= options and options.volume or 1
+    sound:Play()
+    sound.Ended:Once(function() sound:Destroy() end)
 end
 
 return Sfx

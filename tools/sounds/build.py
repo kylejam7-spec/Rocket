@@ -10,6 +10,7 @@ encoders pad the start with up to ~50 ms of silence.
     python tools/sounds/build.py --studio   # also copy them into Studio's content
                                             # folder for local playtests (see Sfx.luau)
 
+Built files whose cue is no longer in MANIFEST are deleted.
 Needs ffmpeg on PATH and numpy.
 """
 import argparse
@@ -24,11 +25,20 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 SOURCE = os.path.join(ROOT, "Sounds")
 OUTPUT = os.path.join(ROOT, "assets", "sounds")
 RATE = 48000
+NASA = "590189main_ringtone_131_launchNats.mp3"
 
-# group/name -> source file under Sounds/, or (file, "reverse"): played backwards, so a
-# rising sweep falls, but keeping the original's loudness over time so it still hits
-# at once and fades out (a plain reverse would swell in late). Volume, pitch and
-# voices live in Sfx.luau.
+# group/name -> one of
+#   "file under Sounds/"
+#   ("file", "reverse"): played backwards, so a rising sweep falls, but keeping the
+#       original's loudness over time so it still hits at once and fades out (a plain
+#       reverse would swell in late);
+#   {"layers": [...], "mode": "loop"?}: layers mixed together. A layer is {"file": ...}
+#       with optional clip ([start, end] seconds of the file), fadein / fadeout
+#       (seconds), gain (its peak), delay (seconds after the first layer starts), pitch
+#       (a speed-up, like PlaybackSpeed), lowpass / highpass (Hz). Each layer is first
+#       cut to its own first audible sample, so delays are exact. "loop" keeps the mix
+#       whole with its end crossfaded into its start, so it repeats without a click.
+# Volume, voices and in-game pitch live in Sfx.luau.
 MANIFEST = {
     "ui/click": "kenney_interface-sounds/Audio/drop_002.ogg",
     "ui/hover": "kenney_ui-audio/Audio/rollover5.ogg",
@@ -40,12 +50,42 @@ MANIFEST = {
     "ui/confirm": "kenney_interface-sounds/Audio/confirmation_001.ogg",
     "ui/notify": "kenney_interface-sounds/Audio/pluck_001.ogg",
     "ui/jingle": "kenney_music-jingles/Audio/Hit jingles/jingles_HIT04.ogg",
+    # Short wooden knocks (~20 ms decay, 200-450 Hz): a soft thock, no metallic ring.
+    # Fuel plays them lower in Sfx.
+    "game/pickup": {"layers": [{"file": "kenney_impact-sounds/Audio/impactWood_light_000.ogg", "lowpass": 2500}]},
+    "game/place": {"layers": [{"file": "kenney_impact-sounds/Audio/impactWood_medium_000.ogg", "lowpass": 2000}]},
+    "game/full": "kenney_interface-sounds/Audio/bong_001.ogg",
+    "game/drop": "kenney_impact-sounds/Audio/impactSoft_heavy_000.ogg",
+    # Mixkit's coin jingle builds for ~200 ms; start at its first strong clink (90 ms)
+    # so it lands with the coin.
+    "game/coin": {"layers": [{"file": "mixkit-coins-sound-2003.wav", "clip": [0.085, 0.6], "fadein": 0.003}]},
+    "game/gain": "kenney_interface-sounds/Audio/select_001.ogg",
+    # A 0.31 s arpeggio that stops dead; the fade softens its end.
+    "game/levelup": {"layers": [{"file": "609335__kenneth_cooney__levelup.wav", "fadeout": 0.03}]},
+    "game/countdown": "kenney_digital-audio/Audio/tone1.ogg",
+    # NASA's liftoff recording (public domain): 19 s of steady roar, nearly all under
+    # 400 Hz. A steady 10 s of it loops, with a high-passed copy of itself on top so
+    # its crackle carries on small speakers. Ignition is its first seconds swelling in
+    # over a low thump.
+    "game/engine": {"layers": [
+        {"file": NASA, "clip": [5, 15], "highpass": 30},
+        {"file": NASA, "clip": [5, 15], "highpass": 700, "gain": 0.35},
+    ], "mode": "loop"},
+    "game/ignition": {"layers": [
+        {"file": NASA, "clip": [0, 2.4], "fadein": 0.05, "fadeout": 1.2, "highpass": 30},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_001.ogg", "gain": 0.7},
+    ]},
+    "game/liftoff": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg"},
+        {"file": "kenney_sci-fi-sounds/Audio/explosionCrunch_000.ogg", "pitch": 0.55, "lowpass": 900, "gain": 0.6},
+    ]},
 }
 
 ONSET_DB = -40  # first sample this far under the peak counts as the start
 TAIL_DB = -60   # the end is where the 5 ms envelope stays this far under the peak
 LEAD = 24       # samples kept before the onset (0.5 ms), faded in
 FADE_OUT = 0.02
+CROSSFADE = 0.3  # seconds of a loop's end blended into its start
 
 
 def decode(path):
@@ -54,6 +94,63 @@ def decode(path):
         capture_output=True, check=True,
     ).stdout
     return np.frombuffer(raw, dtype=np.float32).copy()
+
+
+def normalize(x, peak=1.0):
+    return x * (peak / np.abs(x).max())
+
+
+def filtered(x, lowpass=None, highpass=None, order=2):
+    """Zero-phase Butterworth-shaped low/high pass (applied in the frequency domain)."""
+    if not lowpass and not highpass:
+        return x
+    n = len(x) + 8192  # padding, so the filter's tails don't wrap around
+    spectrum = np.fft.rfft(x, n)
+    f = np.fft.rfftfreq(n, 1 / RATE)
+    gain = np.ones_like(f)
+    if lowpass:
+        gain /= np.sqrt(1 + (f / lowpass) ** (2 * order))
+    if highpass:
+        gain /= np.sqrt(1 + (highpass / np.maximum(f, 1e-3)) ** (2 * order))
+    return np.fft.irfft(spectrum * gain, n)[: len(x)]
+
+
+def onset(x):
+    return x[int(np.argmax(np.abs(x) >= np.abs(x).max() * 10 ** (ONSET_DB / 20))):]
+
+
+def layered(layers):
+    """The layers mixed."""
+    parts = []
+    for layer in layers:
+        x = decode(os.path.join(SOURCE, layer["file"])).astype(np.float64)
+        if layer.get("clip"):
+            x = x[int(layer["clip"][0] * RATE): int(layer["clip"][1] * RATE)]
+        x = onset(x)
+        if layer.get("fadein"):
+            n = min(len(x), int(layer["fadein"] * RATE))
+            x[:n] *= np.linspace(0, 1, n)
+        if layer.get("fadeout"):
+            n = min(len(x), int(layer["fadeout"] * RATE))
+            x[len(x) - n:] *= np.linspace(1, 0, n)
+        if layer.get("pitch"):
+            x = np.interp(np.arange(0, len(x) - 1, layer["pitch"]), np.arange(len(x)), x)
+        x = filtered(x, layer.get("lowpass"), layer.get("highpass"))
+        parts.append((int(layer.get("delay", 0) * RATE), normalize(x, layer.get("gain", 1.0))))
+    y = np.zeros(max(at + len(x) for at, x in parts))
+    for at, x in parts:
+        y[at: at + len(x)] += x
+    return y.astype(np.float32)
+
+
+def loop(x):
+    """x shortened by CROSSFADE, its last CROSSFADE blended over its start (equal power,
+    for uncorrelated noise like an engine), so the end runs straight into the start."""
+    n = int(CROSSFADE * RATE)
+    t = np.linspace(0, np.pi / 2, n, endpoint=False)
+    y = x[: len(x) - n].copy()
+    y[:n] = x[:n] * np.sin(t) + x[len(x) - n:] * np.cos(t)
+    return y * (10 ** (-1 / 20) / np.abs(y).max())
 
 
 def reverse(x):
@@ -88,9 +185,11 @@ def process(x):
 
 def encode(y, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
+    # bitexact: a fixed stream serial and no encoder version, so an unchanged sound
+    # rebuilds byte for byte and upload.py doesn't send it again.
     subprocess.run(
         ["ffmpeg", "-v", "error", "-y", "-f", "f32le", "-ar", str(RATE), "-ac", "1", "-i", "-",
-         "-c:a", "libvorbis", "-q:a", "6", path],
+         "-c:a", "libvorbis", "-q:a", "6", "-fflags", "+bitexact", "-flags:a", "+bitexact", path],
         input=y.astype(np.float32).tobytes(), check=True,
     )
 
@@ -105,16 +204,38 @@ def studio_content():
     return os.path.join(max(installs, key=os.path.getmtime), "content", "sounds")
 
 
+def build(cue, source):
+    """The finished samples for one cue and a line describing them."""
+    if isinstance(source, dict):
+        layers = source["layers"]
+        name = " + ".join(os.path.basename(layer["file"]) for layer in layers)
+        x = layered(layers)
+        if source.get("mode") == "loop":
+            y = loop(x)
+            return y, f"{name} loop, {len(y) / RATE:.2f}s"
+        y, _, _, after = process(x)
+        return y, f"{name}, {after:.2f}s"
+    source, mode = source if isinstance(source, tuple) else (source, None)
+    x = decode(os.path.join(SOURCE, source))
+    y, cut, before, after = process(reverse(x) if mode == "reverse" else x)
+    name = os.path.basename(source) + (" reversed" if mode else "")
+    return y, f"{name}, cut {cut * 1000:.1f} ms of lead-in, {before:.2f}s -> {after:.2f}s"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--studio", action="store_true", help="copy the built files into Studio's content folder")
     args = parser.parse_args()
     for cue, source in MANIFEST.items():
-        source, mode = source if isinstance(source, tuple) else (source, None)
-        x = decode(os.path.join(SOURCE, source))
-        y, cut, before, after = process(reverse(x) if mode == "reverse" else x)
+        y, line = build(cue, source)
         encode(y, os.path.join(OUTPUT, cue + ".ogg"))
-        print(f"{cue:12s} {os.path.basename(source) + (' reversed' if mode else ''):24s} cut {cut * 1000:5.1f} ms of lead-in, {before:.2f}s -> {after:.2f}s")
+        print(f"{cue:16s} {line}")
+    for folder, _, files in os.walk(OUTPUT):
+        for name in files:
+            cue = os.path.relpath(os.path.join(folder, name), OUTPUT)[:-4].replace(os.sep, "/")
+            if name.endswith(".ogg") and cue not in MANIFEST:
+                os.remove(os.path.join(folder, name))
+                print("removed", cue)
     if args.studio:
         content = studio_content()
         if not content:

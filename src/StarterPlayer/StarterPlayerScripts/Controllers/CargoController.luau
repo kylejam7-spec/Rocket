@@ -15,13 +15,18 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local Tween = require(UI.Tween)
+local Sfx = require(UI.Sfx)
 local CargoController = {}
 
 function CargoController.start()
     local discardCargo = State.remote("DiscardCargo")
-    local carrying = false
+    local carrying, discardedAt = false, -math.huge
+    local function discard()
+        discardedAt = os.clock()
+        discardCargo:FireServer()
+    end
     UserInputService.InputBegan:Connect(function(input, processed)
-        if not processed and carrying and input.KeyCode == Enum.KeyCode.Q then discardCargo:FireServer() end
+        if not processed and carrying and input.KeyCode == Enum.KeyCode.Q then discard() end
     end)
     -- Touch has no Q: a round DROP button in the action cluster instead.
     local discardButton = Actions.touch and Button.new({
@@ -33,7 +38,7 @@ function CargoController.start()
         Size = UDim2.fromOffset(72, 72),
         LayoutOrder = 2,
         Visible = false,
-        onActivated = function() discardCargo:FireServer() end,
+        onActivated = discard,
         Parent = Actions.cluster(),
     })
     State.subscribe(function(state)
@@ -100,6 +105,53 @@ function CargoController.start()
     end
     UserInputService.WindowFocusReleased:Connect(function() setHolding(false) end)
     Players.LocalPlayer.CharacterRemoving:Connect(function() setHolding(false) end)
+
+    -- Sounds for this player's own load, on the frame each transfer shows: the server
+    -- stamps the unit count on CarriedMaterials together with its new size. Pickups
+    -- rise in pitch as the load fills; placements play their deep knock well raised,
+    -- falling only slightly as the load empties, so big loads don't sink low. Fuel's
+    -- knocks sit lower than scrap's. Losing the load is a placement while the button
+    -- is held, a drop right after Q/DROP, and silent otherwise (a phase change clears it).
+    local function watchLoad(character)
+        local count, kind = 0, nil
+        local function update(new, newKind)
+            local state = State.get()
+            local capacity = math.max(1, state and state.profile and state.profile.capacity or new)
+            local fill = math.min(1, new / capacity)
+            if new > count then
+                if new >= capacity then
+                    Sfx.play("full")
+                else
+                    Sfx.play("pickup", { pitch = (newKind == "Fuel" and 0.85 or 1) * (0.9 + 0.3 * fill) })
+                end
+            elseif new < count then
+                if new == 0 and os.clock() - discardedAt < 1 then
+                    Sfx.play("drop")
+                elseif new > 0 or holding then
+                    Sfx.play("place", { pitch = (kind == "Fuel" and 0.85 or 1) * (1.5 + 0.15 * fill) })
+                end
+            end
+            count, kind = new, newKind or kind
+        end
+        local function track(model, quiet)
+            if model.Name ~= "CarriedMaterials" then return end
+            local function read() update(model:GetAttribute("Count") or 0, model:GetAttribute("Kind")) end
+            model:GetAttributeChangedSignal("Count"):Connect(read)
+            if quiet then
+                count, kind = model:GetAttribute("Count") or 0, model:GetAttribute("Kind")
+            else
+                read()
+            end
+        end
+        character.ChildAdded:Connect(track)
+        character.ChildRemoved:Connect(function(child)
+            if child.Name == "CarriedMaterials" then update(0, nil) end
+        end)
+        local existing = character:FindFirstChild("CarriedMaterials")
+        if existing then track(existing, true) end
+    end
+    if Players.LocalPlayer.Character then watchLoad(Players.LocalPlayer.Character) end
+    Players.LocalPlayer.CharacterAdded:Connect(watchLoad)
 
     -- The rocket has one place prompt; keep it (locally) at the ring point nearest this
     -- character, so material can be dropped from anywhere around the lowest level.

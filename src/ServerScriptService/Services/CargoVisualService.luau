@@ -101,10 +101,11 @@ function CargoVisual.update(character, materials, colors)
         model:Destroy()
         model = nil
     end
-    if not model then
-        model = build(root, kind, colors[kind])
-        model.Parent = character
-    end
+    local fresh = not model
+    if fresh then model = build(root, kind, colors[kind]) end
+    -- The owner's client plays its pickup and place sounds off this count, which
+    -- arrives with the size change (CargoController).
+    model:SetAttribute("Count", metal + fuel)
     local size = CargoVisual.diameter(metal + fuel)
     local main = model:FindFirstChild("JerryCan") or model.ScrapBall
     main.Size = kind == "Fuel" and CAN_BODY * size or Vector3.one * size
@@ -121,6 +122,7 @@ function CargoVisual.update(character, materials, colors)
                 or CFrame.new(spec[1].Unit * size * 0.42) * CFrame.Angles(index, index * 2.4, index * 0.7)
         end
     end
+    if fresh then model.Parent = character end
 end
 
 return CargoVisual

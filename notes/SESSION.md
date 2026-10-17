@@ -1,4 +1,57 @@
-# Latest session: 2026-10-17, UI sounds (Kenney packs)
+# Latest session: 2026-10-17, gameplay sounds
+
+- Branch `claude/gameplay-sounds` from `claude/ui-sounds` (PR #19, not merged yet).
+  Uploads deferred by the user; Studio plays the `--studio` copies meanwhile.
+- 12 new files in `assets/sounds/game/`. `build.py` can now mix files and build
+  seamless loops (end crossfaded into start), and encodes bitexact (fixed Ogg serial),
+  so unchanged sounds rebuild byte for byte and never re-upload. That changed the
+  bytes of the 10 UI files once.
+- Cargo: the server stamps `Count` on CarriedMaterials with each resize, and the
+  owner's client plays pickup and place sounds off it: metal clink or can clank going
+  up in pitch as the load fills, "full" at capacity, metal clunk or soft thud as it
+  empties, a drop thud after Q/DROP, and silence when a phase change clears it.
+- Coins clink as each flying coin lands, each a step higher. Stat gains pop (strength
+  lower, speed higher); level-ups play powerUp1 instead. Boarding countdown beeps at
+  10..1 (1.5x pitch from 3). Launch: a looped engine roar on the nozzle swells with
+  ignition (deeper for bigger exhaust) and a low boom on the pad as it lifts.
+- Review round 1 (user): cargo too twangy, wanted a ka-ching, a sweeter shorter
+  level-up and a truer launch. Now: pickup/place are Kenney wood knocks (~20 ms decay,
+  200-450 Hz, low-passed), one pair for both materials with fuel at 0.85 pitch. The
+  first coin of a burst plays a ka-ching built in `build.py` (chip clack, two synth
+  bells, handleCoins2), at most every 0.5 s (Sfx.play now returns whether it played),
+  and later coins clink. Level-up is the steel-drum STEEL10 (D E F# G) at 1.12x. The
+  launch roar is synthesised (rumble, 90-900 Hz roar, crackle pops, slow sway, tanh),
+  balanced for small speakers (~75% above 100 Hz). An ignition burst plays on the pad
+  at t=0, and an EqualizerSoundEffect cuts the roar's highs with camera distance.
+  `build.py` manifest entries can now be layered dicts (file or synth, gain, delay,
+  pitch, lowpass/highpass), and stale built files are deleted. Seeded, so rebuilds
+  stay byte-identical. Offered the user: a real (e.g. NASA public-domain) launch
+  recording would beat the synth.
+- Review round 2 (user): ka-ching's bell dropped. `game/cash` is now the chip clack plus
+  handleCoins2 only. Level-up is now a light two-note pluck (PIZZI16 at 1.19x:
+  F#4 -> C#5, 0.38 s, volume 0.35, gap 1 s), since destination rewards level stats often.
+  The user added NASA's launch recording (`Sounds/590189main_ringtone_131_launchNats.mp3`,
+  19 s of steady post-ignition roar, ~90% under 400 Hz, effectively mono). The engine
+  loop is its 5-15 s (high-passed at 30 Hz) plus a 700 Hz high-passed copy at 0.35 for
+  crackle on small speakers, 9.7 s. Ignition is its first 2.4 s swelling in over
+  lowFrequency_explosion_001. The synthesised roar and bells were removed from build.py.
+- Review round 3 (user-supplied files in `Sounds/`): coins use
+  `mixkit-coins-sound-2003.wav`, clipped from 85 ms (it swells for ~200 ms) to a
+  0.33 s jingle, volume 0.14. Every landing coin plays it, each a step higher (+4%,
+  up to +40%) across bursts, and the climb resets after 1 s without coins.
+  `game/cash` is gone. Level-up is `609335__kenneth_cooney__levelup.wav` (0.31 s chiptune
+  A-D-E-A that stops dead, given a 30 ms fade), volume 0.3. A level-up no longer
+  silences the stat-gain pops: both play on the same frame.
+- Final tweaks (user): level-up volume 0.2. Place pitch is 1.5-1.65x (falling only
+  slightly as the load empties; with big loads the old 0.9-1.2x sank too deep). Fuel
+  is x0.85 on both.
+- Studio (Rojo wasn't connected to this Studio session, so the scripts were pushed
+  with HttpService from a local file server; all 70 scripts then matched the repo):
+  every sound played on the frame its count, coin, digit or lift change showed. The
+  `Played` event drops some rapid replays, so timing was measured by polling
+  IsPlaying and TimePosition. RunChecks 9/9.
+
+# Earlier session: 2026-10-17, UI sounds (Kenney packs)
 
 - Branch `claude/ui-sounds` from master.
 - User: use the Kenney packs in `Sounds/` (untracked, ~650 files), UI first; sounds must
