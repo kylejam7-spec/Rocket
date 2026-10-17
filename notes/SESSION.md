@@ -2,9 +2,10 @@
 
 - PR #13 (levels, tutorial) rebase-merged with the user's OK. Branch
   `claude/planet-rewards` from `master` @ 88b0369.
-- User: planet rewards are 5 per second, rising steadily with rarity → Planet bonus 5,
-  destination reward 1/2/3/4/5 (was 10 × 1/2/3/5/10). DestinationCheck asserts Moon =
-  5/s and even steps. Numbers in BALANCE.md.
+- User: training too fast, stays ~2 min, Moon ~+3/s rising by rarity → TrainingBaseGain 1,
+  tiers 2/3/4/6/8/10/12×, RewardSeconds 120 (Black Hole override gone), Planet bonus 3 ×
+  reward 1–5. DestinationCheck: Moon = 3/s, even steps, stays 90–150 s; TrainingCheck:
+  top gym ≥ 30 s per capped level. Numbers in BALANCE.md.
 - Studio Play: RunChecks 9/9; ProgressionReport run (Edit-mode report reused a cached
   Config; run it in Play). Not flown to a destination live (the feedback text and gym
   gains read the same Config values).

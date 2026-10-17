@@ -14,29 +14,31 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 planet rewards: 5/s, even steps by rarity (current)
+## 2026-10-16 slower training, 2-minute stays, planets 3/s by rarity (current)
 
-User: 5 per second, rising steadily with rarity. Each stat gets Planet bonus 5 ×
-destination reward 1–5 per second of the stay, and each destination's own bench and
-treadmill give double that.
+User: gym leveling was too fast and should be a boost, not game-breaking. Planet stays
+should last about 2 minutes, with the Moon around +3/s, rising steadily by rarity.
+(An intermediate 5/s step was never merged.)
 
-| Destination | Moon | Mars | Europa | Saturn | Black Hole |
-|---|---|---|---|---|---|
-| Per second, each stat (was) | 5 (10) | 10 (20) | 15 (30) | 20 (50) | 25 (100) |
-| Stay | 30 s | 30 s | 30 s | 30 s | 45 s |
-| Standing through the stay | 150 | 300 | 450 | 600 | 1,125 |
-| On its 2× gym (that stat) | 10/s | 20/s | 30/s | 40/s | 50/s |
+- Gym District: TrainingBaseGain 2 → **1**, tiers 2/4/6/10/15/20/30× → **2/3/4/6/8/10/12×**.
+  Free gym 1/s (level 1 in 10 s, level 10 in ~4 min); top gym 12/s (37.5 s per capped
+  level, was 7.5 s).
+- Stays: **120 s** everywhere (were 30 s, Black Hole 45 s).
+- Destinations, each stat per second: **3 / 6 / 9 / 12 / 15** (Moon → Black Hole), was
+  10 / 20 / 30 / 50 / 100. Standing through a stay gives 360 / 720 / 1,080 / 1,440 / 1,800;
+  each destination's own bench/treadmill gives 6–30/s, the best training anywhere.
 
-Report, 30 launches (before → after):
+Report, 30 launches (before → after; "before" is the merged levels pass):
 
-| Players | 30 launches | Level @ 30 | Carry @ 30 | Stats from destinations |
-|---|---|---|---|---|
-| 1 | 2,540 → 2,619 min | 373 → 347 | 1,000 | 19% → 10% |
-| 4 | 991 → 1,061 min | 197 → 171 | 601 → 523 | 38% → 21% |
-| 16 | 368 → 415 min | 124 → 95 | 382 → 295 | 63% → 41% |
+| Players | First Moon | Late Moon | 30 launches | Level @ 30 | Carry @ 30 | Stats from destinations |
+|---|---|---|---|---|---|---|
+| 1 | 296 → 349 min | 56 → 75 min (#10) | 2,540 → 3,288 min | 373 → 218 | 1,000 → 664 | 19% → 39% |
+| 4 | 106 → 129 min | 23 → 29 min (#10) | 991 → 1,217 min | 197 → 138 | 601 → 424 | 38% → 64% |
+| 8 | — → 81 min | — → 18 min (#10) | — → 727 min | — → 119 | — → 367 | — → 76% |
+| 16 | 41 → 52 min | 9 → 11 min (#10) | 368 → 440 min | 124 → 108 | 382 → 334 | 63% → 85% |
 
-The first Moon is unchanged (no stay before it). The top Gym District tier (60/s) now
-out-earns every destination per second; a stay is a bonus on top of the trip.
+About 45 of the added minutes over 30 launches are the longer stays (1.5 min × 30); the
+rest is slower carry growth. The first Moon is ~22% longer because the gym is slower.
 
 ## 2026-10-16 strength and speed levels
 
