@@ -15,6 +15,7 @@ local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
 local StatRow = require(UI.StatRow)
+local WorldScale = require(UI.WorldScale)
 local Popup = require(UI.Popup)
 local Tween = require(UI.Tween)
 local Toast = require(UI.Toast)
@@ -56,14 +57,16 @@ function HudController.start()
     local gui = Create.screen("RocketHUD")
     local player = Players.LocalPlayer
 
+    -- Desktop: just under the objective line (64 + 84 design px). Phones shrink the whole
+    -- HUD to fit, so there the stack is enlarged and centred on the left edge, clear of
+    -- the objective above and the thumbstick below.
     local stack = Create.new("Frame", {
-        Name = "StatStack", BackgroundTransparency = 1,
-        -- Just under the objective line (64 + 84 design px), whatever the aspect ratio.
-        Position = UDim2.fromOffset(Theme.gutter, 150), Size = UDim2.fromOffset(220, 276), Parent = gui,
+        Name = "StatStack", BackgroundTransparency = 1, Size = UDim2.fromOffset(220, 276),
+        AnchorPoint = Actions.touch and Vector2.new(0, 0.5) or Vector2.zero,
+        Position = Actions.touch and UDim2.new(0, Theme.gutter, 0.5, -30) or UDim2.fromOffset(Theme.gutter, 150), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
-    -- Phones shrink the whole HUD to fit; keep the stats readable there.
-    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.35, Parent = stack }) end
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.25, Parent = stack }) end
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
     local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
@@ -72,7 +75,7 @@ function HudController.start()
 
     local goal = StrokedText.new({
         Name = "Objective", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 64),
-        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = 26, TextWrapped = true,
+        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = Actions.touch and 34 or 26, TextWrapped = true,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 3, Text = "Connecting…", ZIndex = 2, Parent = gui,
     })
     -- A dark gold-rimmed banner hugging the objective text; it bounces on each new line.
@@ -221,6 +224,22 @@ function HudController.start()
         Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.touch and -118 or -96),
         Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
     })
+    -- Rank tags over every player's head are server-made pixel billboards; shrink them
+    -- with the screen like the rest of the world labels.
+    local function watchCharacter(character)
+        local function check(item)
+            if item:IsA("BillboardGui") and item.Name == "RankTag" then WorldScale.apply(item) end
+        end
+        for _, item in character:GetDescendants() do check(item) end
+        character.DescendantAdded:Connect(check)
+    end
+    local function watchPlayer(other)
+        if other.Character then watchCharacter(other.Character) end
+        other.CharacterAdded:Connect(watchCharacter)
+    end
+    for _, other in Players:GetPlayers() do watchPlayer(other) end
+    Players.PlayerAdded:Connect(watchPlayer)
+
     State.onFeedback(function(message)
         if message:match("^%+%d+ %a+!$") or message:match("%+%d+ strength / %+%d+ speed %(") then return end
         local hint = materialHint(message)

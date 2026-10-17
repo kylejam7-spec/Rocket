@@ -92,6 +92,7 @@ end
 function TutorialController.start()
     local player = Players.LocalPlayer
     local gui = Create.screen("RocketHUD")
+    local function statStack() return gui:FindFirstChild("StatStack") end
     -- The holder carries the touch scale (the button's own UIScale is its hover grow).
     local holder = Create.new("Frame", {
         Name = "SkipTutorialHolder", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 160),
@@ -200,8 +201,18 @@ function TutorialController.start()
             if relative.Z > 0 then direction = Vector2.new(relative.X, math.abs(relative.Y) + 1) end
             direction = direction.Magnitude > 1e-3 and direction.Unit or Vector2.new(0, 1)
             local at = size / 2 + direction * size * 0.3
-            -- Sized to the screen so it stays clear of the stat stack on a phone.
+            -- Sized to the screen; pushed right of the stat stack if it would land on it.
             local arrowSize = math.clamp(size.Y * 0.12, 48, 110)
+            local stack = statStack()
+            if stack then
+                -- The HUD sits inside the safe-area inset; this guide ignores it.
+                local inset = gui.AbsolutePosition
+                local min, max = stack.AbsolutePosition + inset, stack.AbsolutePosition + inset + stack.AbsoluteSize
+                local half = arrowSize / 2
+                if at.X - half < max.X and at.X + half > min.X and at.Y - half < max.Y and at.Y + half > min.Y then
+                    at = Vector2.new(max.X + half + 8, at.Y)
+                end
+            end
             edgeArrow.Size = UDim2.fromOffset(arrowSize, arrowSize)
             edgeArrow.Position = UDim2.fromOffset(at.X, at.Y)
             edgeArrow.Rotation = math.deg(math.atan2(direction.Y, direction.X)) + 90
