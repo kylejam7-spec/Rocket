@@ -1,11 +1,10 @@
--- One entry of the reference's left stat stack: a dark rounded card edged in the
--- stat's colour, the icon in a coloured disc over its left end, a big outlined
--- number and a small sub-label ("Walk Speed: 32").
+-- One entry of the reference's left stat stack: the icon in a glossy coloured disc,
+-- a big outlined number and a small sub-label ("Walk Speed: 32").
 -- Options: icon (asset id "rbxassetid://…" or a glyph), value, sub, badge, color
--- (the stat's colour: card edge, disc, badge, bar and "+N" pops), progress (true: a
+-- (the stat's colour: disc, badge, bar and "+N" pops), progress (true: a
 -- level bar under the sub-label).
--- row:set(value, sub?) counts the number up, bounces the icon and pops "+N" past the
--- card's right edge when it grows; row:setBadge(text?) shows or hides the "LV 10"
+-- row:set(value, sub?) counts the number up, bounces the icon and pops "+N" to the
+-- right of the row when it grows; row:setBadge(text?) shows or hides the "LV 10"
 -- chip under the disc; row:setProgress(fraction, text) fills the bar and labels it.
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
@@ -15,23 +14,12 @@ local Popup = require(script.Parent.Popup)
 local StatRow = {}
 StatRow.__index = StatRow
 
-local WIDTH, DISC, CARD_X = 250, 60, 30
+local WIDTH, DISC = 220, 52
 
 function StatRow.new(props)
     local color = props.color or Theme.color.Gold
-    local height = props.progress and 82 or 64
+    local height = props.progress and 74 or 58
     local row = Create.new("Frame", { Size = UDim2.fromOffset(WIDTH, height), BackgroundTransparency = 1 }, props)
-    -- The card starts under the disc's middle so the disc overlaps its rounded end.
-    local card = Create.new("Frame", {
-        Name = "Card", Position = UDim2.fromOffset(CARD_X, 4), Size = UDim2.fromOffset(WIDTH - CARD_X, height - 8),
-        BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.18, Parent = row,
-    })
-    Create.new("UICorner", { CornerRadius = UDim.new(0, 16), Parent = card })
-    Create.new("UIStroke", { Thickness = 2.5, Color = color, Transparency = 0.15, Parent = card })
-    Create.new("UIGradient", {
-        Rotation = 90, Parent = card,
-        Color = ColorSequence.new(Theme.lighten(Theme.color.Panel, 0.12), Theme.color.Panel),
-    })
     local disc = Create.new("Frame", {
         Name = "Disc", Position = UDim2.fromOffset(0, 2), Size = UDim2.fromOffset(DISC, DISC),
         BackgroundColor3 = color, ZIndex = 2, Parent = row,
@@ -41,38 +29,38 @@ function StatRow.new(props)
     Theme.shine(disc)
     local iconProps = {
         Name = "Icon", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(46, 46), BackgroundTransparency = 1, ZIndex = 3, Parent = disc,
+        Size = UDim2.fromOffset(40, 40), BackgroundTransparency = 1, ZIndex = 3, Parent = disc,
     }
     local icon = props.icon or ""
     if icon:match("^rbx") then
         iconProps.Image = icon
         icon = Create.new("ImageLabel", iconProps)
     else
-        icon = StrokedText.new(Create.merge(iconProps, { Text = icon, Font = Theme.font.Display, TextSize = 38, stroke = 2 }))
+        icon = StrokedText.new(Create.merge(iconProps, { Text = icon, Font = Theme.font.Display, TextSize = 32, stroke = 2 }))
     end
     local value = StrokedText.new({
-        Name = "Value", Size = UDim2.new(1, -DISC - 14, 0, 38), Position = UDim2.fromOffset(DISC + 10, 4),
-        Font = Theme.font.Display, TextSize = 38, TextXAlignment = Enum.TextXAlignment.Left, stroke = 3, ZIndex = 2, Parent = row,
+        Name = "Value", Size = UDim2.new(1, -DISC - 14, 0, 34), Position = UDim2.fromOffset(DISC + 8, 2),
+        Font = Theme.font.Display, TextSize = 34, TextXAlignment = Enum.TextXAlignment.Left, stroke = 3, ZIndex = 2, Parent = row,
     })
     local sub = StrokedText.new({
-        Name = "Sub", Size = UDim2.new(1, -DISC - 14, 0, 18), Position = UDim2.fromOffset(DISC + 11, 39),
-        Font = Theme.font.Display, TextSize = 17, TextColor3 = Theme.color.Muted,
+        Name = "Sub", Size = UDim2.new(1, -DISC - 14, 0, 16), Position = UDim2.fromOffset(DISC + 9, 34),
+        Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, ZIndex = 2, Parent = row,
     })
     -- "LV 10" chip in the stat's colour, hanging off the bottom of the disc.
     local badge = Create.new("Frame", {
         Name = "Badge", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromOffset(DISC / 2, DISC - 6),
-        Size = UDim2.fromOffset(54, 20), BackgroundColor3 = Theme.lighten(color, 0.1), Visible = false, ZIndex = 4, Parent = row,
+        Size = UDim2.fromOffset(48, 18), BackgroundColor3 = Theme.lighten(color, 0.1), Visible = false, ZIndex = 4, Parent = row,
     })
     Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = badge })
     Create.new("UIStroke", { Thickness = 2, Color = Theme.color.Stroke, Parent = badge })
     local badgeText = StrokedText.new({
-        Name = "Text", Size = UDim2.fromScale(1, 1), Font = Theme.font.Display, TextSize = 15, stroke = 1.5, ZIndex = 5, Parent = badge,
+        Name = "Text", Size = UDim2.fromScale(1, 1), Font = Theme.font.Display, TextSize = 13, stroke = 1.5, ZIndex = 5, Parent = badge,
     })
     local fill, barText
     if props.progress then
         local bar = Create.new("Frame", {
-            Name = "LevelBar", Position = UDim2.fromOffset(DISC + 10, 60), Size = UDim2.new(1, -DISC - 22, 0, 14),
+            Name = "LevelBar", Position = UDim2.fromOffset(DISC + 9, 54), Size = UDim2.new(1, -DISC - 20, 0, 12),
             BackgroundColor3 = Theme.color.Track, ZIndex = 2, Parent = row,
         })
         Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = bar })
@@ -81,7 +69,7 @@ function StatRow.new(props)
         Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = fill })
         Theme.shine(fill)
         barText = StrokedText.new({
-            Name = "LevelText", Size = UDim2.fromScale(1, 1), Font = Theme.font.Display, TextSize = 12,
+            Name = "LevelText", Size = UDim2.fromScale(1, 1), Font = Theme.font.Display, TextSize = 11,
             stroke = 1.5, ZIndex = 3, Parent = bar,
         })
     end
@@ -99,8 +87,8 @@ function StatRow:set(amount, sub)
         if gain > 0 then
             Tween.bounce(self.disc, 1.2, 0.35)
             Popup.show({
-                Text = "+" .. Theme.number(gain), TextColor3 = self.color, TextSize = 28,
-                Position = UDim2.fromOffset(WIDTH + 44, 22),
+                Text = "+" .. Theme.number(gain), TextColor3 = self.color, TextSize = 24,
+                Position = UDim2.fromOffset(WIDTH + 20, 18),
                 Size = UDim2.fromOffset(90, 30), rise = 26, seconds = 0.7, Parent = self.instance,
             })
         end

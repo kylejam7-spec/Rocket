@@ -9,8 +9,13 @@
 - Objective line on a dark gold-rimmed banner sized to its text (bounces on a new line);
   mission tag on a dark chip with the rarity word in its rarity colour (RichText);
   progress pill 400x48 with a 4 px rim.
-- Studio: RunChecks 9/9; screenshots at 12,345 coins / LV 10 / LV 5 and after a gain.
-  Not checked on a phone-sized screen.
+- User follow-up: HUD too large and in the way; remove the coloured card outlines
+  around the stats, keep the rest. Cards removed; stat rows 220 wide (disc 52, value 34,
+  rows 58/74 tall), objective text 26 on a slimmer banner, progress pill 340x40, mission
+  tag 17.
+- Studio: RunChecks 9/9; screenshots before and after shrinking. Not checked on a
+  phone-sized screen. Note: Play started right after an edit can miss Rojo's sync;
+  check the Edit copy before starting Play.
 
 # Earlier session: 2026-10-16, gym sign and map label polish
 

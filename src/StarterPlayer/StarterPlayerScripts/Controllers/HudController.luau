@@ -58,7 +58,7 @@ function HudController.start()
     local stack = Create.new("Frame", {
         Name = "StatStack", BackgroundTransparency = 1,
         -- Just under the objective line (64 + 84 design px), whatever the aspect ratio.
-        Position = UDim2.fromOffset(Theme.gutter, 160), Size = UDim2.fromOffset(250, 316), Parent = gui,
+        Position = UDim2.fromOffset(Theme.gutter, 150), Size = UDim2.fromOffset(220, 276), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
@@ -69,23 +69,23 @@ function HudController.start()
 
     local goal = StrokedText.new({
         Name = "Objective", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 64),
-        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = 34, TextWrapped = true,
+        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = 26, TextWrapped = true,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 3, Text = "Connecting…", ZIndex = 2, Parent = gui,
     })
     -- A dark gold-rimmed banner hugging the objective text; it bounces on each new line.
     local goalBack = Create.new("Frame", {
-        Name = "ObjectiveBack", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 56),
+        Name = "ObjectiveBack", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 58),
         BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.2, Parent = gui,
     })
-    Create.new("UICorner", { CornerRadius = UDim.new(0, 18), Parent = goalBack })
-    Create.new("UIStroke", { Thickness = 3, Color = Theme.color.Gold, Parent = goalBack })
+    Create.new("UICorner", { CornerRadius = UDim.new(0, 14), Parent = goalBack })
+    Create.new("UIStroke", { Thickness = 2.5, Color = Theme.color.Gold, Parent = goalBack })
     Create.new("UIGradient", {
         Rotation = 90, Color = ColorSequence.new(Theme.lighten(Theme.color.Panel, 0.15), Theme.color.Panel), Parent = goalBack,
     })
     local function fitGoal()
         local bounds = goal.TextBounds
         goalBack.Visible = goal.Text ~= "" and bounds.X > 0
-        goalBack.Size = UDim2.fromOffset(bounds.X + 44, bounds.Y + 16)
+        goalBack.Size = UDim2.fromOffset(bounds.X + 36, bounds.Y + 12)
     end
     goal:GetPropertyChangedSignal("TextBounds"):Connect(fitGoal)
     goal:GetPropertyChangedSignal("Text"):Connect(function()
