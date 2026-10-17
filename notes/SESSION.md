@@ -8,10 +8,12 @@
   and grows down, so text no longer spills past the pill ("...to exit." did). The mount
   message is now "Training! Press E or LEAVE to get off."
 - Objective-line how-to hints hide once the player has done the thing, persistently:
-  first pickup / place of Metal and of Fuel, boarding, leaving a station. The client
+  first pickup / place of Metal and of Fuel, leaving a station. The client
   notices from state changes and fires `HintLearned`; TutorialService whitelists the name
   and stores "Hint:<name>" in `seenCallouts` (already saved and sent). With nothing to
   say the banner hides. Phase news (liftoff, arrival, "You're aboard!") still shows, and
+  "BOARD NOW!" shows to everyone every time a rocket is finished (user: keep it server
+  wide), and
   the training mount toast is skipped once LeaveStation is learned. The tutorial's own
   steps are unchanged.
 - Studio: pickup stored Hint:PickupMetal and hid "Grab scrap metal..."; after leaving

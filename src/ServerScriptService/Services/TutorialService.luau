@@ -14,7 +14,7 @@ local Tutorial = {}
 Tutorial.Steps = table.freeze({ "Pickup", "Carry", "Place", "Upgrade", "Bench", "Treadmill", "Together" })
 Tutorial.Done = "Done"
 Tutorial.Callouts = table.freeze({ Fuel = "Fueling", Boarding = "Boarding" })
-Tutorial.Hints = table.freeze({ PickupMetal = true, PlaceMetal = true, PickupFuel = true, PlaceFuel = true, Board = true, LeaveStation = true })
+Tutorial.Hints = table.freeze({ PickupMetal = true, PlaceMetal = true, PickupFuel = true, PlaceFuel = true, LeaveStation = true })
 
 function Tutorial.valid(step)
     return step == Tutorial.Done or table.find(Tutorial.Steps, step) ~= nil

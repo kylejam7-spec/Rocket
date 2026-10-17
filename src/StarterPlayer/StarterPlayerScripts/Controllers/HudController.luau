@@ -31,7 +31,8 @@ end
 
 -- One short, punchy instruction for what to do right now (the tutorial's, while on).
 -- How-to lines go once the player has done that thing (`learned`, see HintLearned);
--- an empty line hides the banner. Phase news (liftoff, arrival) always shows.
+-- an empty line hides the banner. Phase news (liftoff, arrival) and the call to board,
+-- which goes to the whole server every time a rocket is finished, always show.
 local function objective(state, learned)
     local tip = Tutorial.objective(state)
     if tip then return tip end
@@ -48,8 +49,7 @@ local function objective(state, learned)
         if material == "Fuel" then return learned.PlaceFuel and "" or "Pour the fuel into the rocket at the glowing ring!" end
         return learned.PickupFuel and "" or "Rocket built! Fill your jerry can at the OIL REFINERY!"
     elseif state.phase == "Boarding" then
-        if state.boarded then return "You're aboard! Next stop: " .. state.destination .. "!" end
-        return learned.Board and "" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
+        return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
     elseif state.phase == "Launching" then
         return state.passenger and "LIFTOFF! Off to " .. state.destination .. "!" or "You missed this one. Next build starts soon!"
     elseif state.phase == "Rewarding" then
@@ -213,7 +213,6 @@ function HudController.start()
         if state.cycle == previous.cycle and state.contribution > previous.contribution then
             learn(previous.phase == "Fueling" and "PlaceFuel" or "PlaceMetal")
         end
-        if state.boarded then learn("Board") end
         if previous.training and not state.training then learn("LeaveStation") end
     end
 
