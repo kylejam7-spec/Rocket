@@ -19,9 +19,12 @@ return function()
             assert(built[mission.ModelTier], "mission " .. mission.Id .. " has no destination")
             assert(config.Destinations[mission.ModelTier].id == mission.Id, "mission " .. mission.Id .. " flies to the wrong destination")
         end
-        -- Rarer destinations pay more per second.
-        for tier = 2, #config.Destinations do
-            assert(config.Destinations[tier].reward > config.Destinations[tier - 1].reward, "destination rewards must grow with the design")
+        -- Rarer destinations pay more per second, in even steps from 5/s on the Moon.
+        local destinations = config.Destinations
+        assert(config.Planet.StrengthBonus * destinations[1].reward == 5 and config.Planet.SpeedBonus * destinations[1].reward == 5, "Moon pays 5 of each stat per second")
+        local step = destinations[2].reward - destinations[1].reward
+        for tier = 2, #destinations do
+            assert(step > 0 and destinations[tier].reward - destinations[tier - 1].reward == step, "destination rewards must grow evenly with rarity")
         end
         local ids = {}
         for tier, place in built do
