@@ -56,15 +56,21 @@ function Create.screen(name)
     return screen
 end
 
--- Centres `item` vertically in the Roblox top bar row (above the screen's safe-area
--- inset, right of Roblox's own buttons), keeping its X position. For phones, where
--- that row is the only free space up top. `screen` is the item's Create.screen.
-function Create.inTopBar(item, screen)
+-- Puts `item` in the Roblox top bar row (above the screen's safe-area inset, right of
+-- Roblox's own buttons): centred on the row and scaled (a "TopBarScale" UIScale, so
+-- give it a holder if it has its own) to `fraction` of the row's height, the same on
+-- desktop and phones. `screen` is the item's Create.screen; `x(rowHeight)` returns
+-- the item's X offset from the right, given the scaled row height in layout units.
+function Create.inTopBar(item, screen, fraction, x)
     local scale = screen:FindFirstChild("ScreenScale")
+    local fit = Create.new("UIScale", { Name = "TopBarScale", Parent = item })
     local function place()
-        local half = GuiService.TopbarInset.Height / 2 / (scale and scale.Scale or 1)
-        item.AnchorPoint = Vector2.new(item.AnchorPoint.X, 0.5)
-        item.Position = UDim2.new(item.Position.X.Scale, item.Position.X.Offset, 0, -half)
+        local screenScale = scale and scale.Scale or 1
+        local inset = GuiService.TopbarInset.Height / screenScale
+        local rowHeight = inset * fraction
+        fit.Scale = rowHeight / item.Size.Y.Offset
+        item.AnchorPoint = Vector2.new(1, 0.5)
+        item.Position = UDim2.new(1, -x(rowHeight), 0, -inset / 2)
     end
     GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(place)
     if scale then scale:GetPropertyChangedSignal("Scale"):Connect(place) end

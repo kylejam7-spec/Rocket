@@ -93,29 +93,18 @@ function TutorialController.start()
     local player = Players.LocalPlayer
     local gui = Create.screen("RocketHUD")
     local function statStack() return gui:FindFirstChild("StatStack") end
-    -- The holder carries the touch scale (the button's own UIScale is its hover grow).
+    -- In the Roblox top bar row, just left of the round ⚙ button (SettingsController
+    -- puts it at the gutter, as wide as the row is tall). The holder takes the row's
+    -- scale; the button's own UIScale is its hover grow.
     local holder = Create.new("Frame", {
-        Name = "SkipTutorialHolder", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 160),
-        Size = UDim2.fromOffset(170, 44), BackgroundTransparency = 1, Parent = gui,
+        Name = "SkipTutorialHolder", Size = UDim2.fromOffset(170, 44), BackgroundTransparency = 1, Parent = gui,
     })
-    -- Phones: in the top bar row, just left of the ⚙ button (78 wide there, SettingsController).
-    if Actions.touch then
-        holder.Position = UDim2.new(1, -Theme.gutter - 78 - 10, 0, 0)
-        Create.inTopBar(holder, gui)
-    end
+    Create.inTopBar(holder, gui, 0.66, function(rowHeight) return Theme.gutter + rowHeight + 10 end)
     local skip = Button.new({
         Name = "SkipTutorial", Text = "SKIP TUTORIAL", TextSize = 18, color = Theme.color.Purple,
         Size = UDim2.fromScale(1, 1), Visible = false, Parent = holder,
         onActivated = function() State.remote("TutorialSkip"):FireServer() end,
     })
-    -- On a phone the HUD scales to ~0.45; keep SKIP a thumb-sized target (≥ 36 px tall).
-    if Actions.touch then
-        local screenScale = gui:FindFirstChildOfClass("UIScale")
-        local scale = Create.new("UIScale", { Name = "TouchScale", Parent = holder })
-        local function fit() scale.Scale = math.max(1, 36 / (44 * (screenScale and screenScale.Scale or 1))) end
-        if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
-        fit()
-    end
 
     -- Waypoint: a local anchor at the target with a bouncing arrow, and a beam to it.
     local anchor = Create.new("Part", {
