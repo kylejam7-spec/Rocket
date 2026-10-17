@@ -10,6 +10,7 @@ local Pill = require(UI.Pill)
 local Popup = require(UI.Popup)
 local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
+local Sfx = require(UI.Sfx)
 local Actions = require(script.Parent.ActionController)
 local ProgressController = {}
 local color, icon = Theme.color, Theme.icon
@@ -114,7 +115,11 @@ function ProgressController.start()
             local count = math.ceil(remaining)
             countdown.Text = tostring(count)
             countdown.TextColor3 = remaining <= 3 and color.Danger or color.White
-            if count ~= lastCount then Tween.bounce(countdown, 1.5, 0.4) end
+            -- A beep with each new number, higher for the red last three.
+            if count ~= lastCount then
+                Tween.bounce(countdown, 1.5, 0.4)
+                Sfx.play("countdown", { pitch = remaining <= 3 and 1.5 or 1 })
+            end
             lastCount = count
         end
     end)

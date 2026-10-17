@@ -19,6 +19,7 @@ local WorldScale = require(UI.WorldScale)
 local Popup = require(UI.Popup)
 local Tween = require(UI.Tween)
 local Toast = require(UI.Toast)
+local Sfx = require(UI.Sfx)
 local HudController = {}
 local icon = Theme.icon
 
@@ -131,6 +132,16 @@ function HudController.start()
     -- row counts up when the first lands. Bursts overlap freely while you hold E, but
     -- the row always ends on the newest server total.
     local coinTarget, inFlight = 0, 0
+    -- Each coin that lands clinks a step higher than the last, so a run of deliveries
+    -- climbs (up to +40%); the climb starts over after a second without coins.
+    local streak, lastClink = 0, 0
+    local function clink()
+        local now = os.clock()
+        if now - lastClink > 1 then streak = 0 end
+        lastClink = now
+        Sfx.play("coin", { pitch = 1 + 0.04 * math.min(streak, 10) })
+        streak += 1
+    end
     local function burst(gain)
         local camera = workspace.CurrentCamera
         local adornee = head()
@@ -156,6 +167,7 @@ function HudController.start()
             Tween.play(coin, Tween.info(0.18, Enum.EasingStyle.Back), { Position = UDim2.fromOffset(origin.X + spread.X, origin.Y + spread.Y) })
             task.delay(0.18 + index * 0.06, function()
                 Tween.flyTo(coin, coins.icon, 0.45, function()
+                    clink()
                     if not landed then
                         landed = true
                         coins:set(coinTarget)
@@ -169,7 +181,10 @@ function HudController.start()
             end)
         end
         -- Too many coins in the air already: just count the row up.
-        if spawned == 0 then coins:set(coinTarget) end
+        if spawned == 0 then
+            coins:set(coinTarget)
+            clink()
+        end
     end
 
     State.subscribe(function(state, previous)
@@ -178,7 +193,12 @@ function HudController.start()
             local before = previous and previous.profile
             coinTarget = p.coins or 0
             local gain = before and coinTarget - (before.coins or 0) or 0
-            if gain > 0 and not Settings.get("reducedEffects") then burst(gain) elseif coinTarget ~= coins.current then coins:set(coinTarget) end
+            if gain > 0 and not Settings.get("reducedEffects") then
+                burst(gain)
+            elseif coinTarget ~= coins.current then
+                coins:set(coinTarget)
+                if gain > 0 then clink() end
+            end
             local material, count = carrying(state)
             strength:set(p.strength, "Capacity: " .. (material and count or 0) .. "/" .. p.capacity)
             speed:set(p.speed, "Walk Speed: " .. math.floor(p.walkSpeed))
@@ -191,16 +211,28 @@ function HudController.start()
             speed:setBadge("LV " .. speedLevel)
             speed:setProgress(speedInto / speedNeed, Theme.number(speedInto) .. "/" .. Theme.number(speedNeed))
             if before then
-                if p.strength > before.strength then worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength, "strengthGain") end
-                if p.speed > before.speed then worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed, "speedGain") end
+                -- A pop with each gain popup (strength lower, speed higher), and the
+                -- level-up sound on top of it when a stat levels (once if both do).
+                local levelled = false
+                if p.strength > before.strength then
+                    worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength, "strengthGain")
+                    Sfx.play("gain", { pitch = 0.9 })
+                end
+                if p.speed > before.speed then
+                    worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed, "speedGain")
+                    Sfx.play("gain", { pitch = 1.25 })
+                end
                 if strengthLevel > StatLevels.level(Config, before.strength) then
                     worldPop("Strength Level " .. strengthLevel .. "!", Theme.color.Go, "strengthLevel", 34)
                     Tween.bounce(strength.badge, 1.6, 0.5)
+                    levelled = true
                 end
                 if speedLevel > StatLevels.level(Config, before.speed) then
                     worldPop("Speed Level " .. speedLevel .. "!", Theme.color.Speed, "speedLevel", 34)
                     Tween.bounce(speed.badge, 1.6, 0.5)
+                    levelled = true
                 end
+                if levelled then Sfx.play("levelup") end
             end
         end
         goal.Text = objective(state)

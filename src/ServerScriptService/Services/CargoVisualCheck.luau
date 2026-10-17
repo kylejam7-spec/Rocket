@@ -10,6 +10,7 @@ return function()
         visual.update(character, {Metal = count}, colors)
         local model = assert(character:FindFirstChild("CarriedMaterials"))
         local ball = assert(model:FindFirstChild("ScrapBall"))
+        assert(model:GetAttribute("Count") == count, "The load carries its unit count (client sounds)")
         assert(ball.Shape == Enum.PartType.Ball and ball.Size.X == ball.Size.Y)
         assert(ball.Size.X > previous and ball.Size.X <= config.ScrapBallMaxDiameter, "Ball grows with cargo, up to the cap")
         previous = ball.Size.X
