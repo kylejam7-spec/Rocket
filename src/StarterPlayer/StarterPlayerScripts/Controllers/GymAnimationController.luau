@@ -1,8 +1,10 @@
--- Treadmill runs and bench presses. The server poses the anchored body and stamps
--- OccupantId and TrainingSince on the station (TrainingService); every client then
--- animates its own copy of the equipment: the belt's slats scroll, and the barbell
--- leaves the rack and goes up and down in the lifter's hands (two-bone IK), feet up
--- on the bench. One rep per gain tick, locking out as it pays.
+-- Treadmill runs and bench presses. The server poses the anchored body and stamps an
+-- Occupant_<UserId> attribute (mount time) on the station per user (TrainingService);
+-- every client then animates its own copy of the equipment: the belt's slats scroll,
+-- and the barbell leaves the rack and goes up and down in the lifter's hands (two-bone
+-- IK), feet up on the bench. One rep per gain tick, locking out as it pays.
+-- Several users can share a bench: each client shows one of them (itself if it's on
+-- the bench, else whoever got on first) and hides the rest locally.
 -- On the treadmill the runner's own client also plays its avatar's run, which the
 -- Animator replicates to everyone else.
 local CollectionService = game:GetService("CollectionService")
@@ -130,7 +132,7 @@ local function armSolver(character, side, torso)
     end, longest
 end
 
-local function bench(station, character)
+local function bench(station, character, _, since)
     local bar = station:FindFirstChild("Barbell")
     local torso = character:FindFirstChild("UpperTorso")
     local rightShoulder = torso and torso:FindFirstChild("RightShoulderRigAttachment")
@@ -161,7 +163,6 @@ local function bench(station, character)
     end
     local grip = (rightShoulder.Position - leftShoulder.Position).Magnitude / 2 + 0.35
 
-    local since = station:GetAttribute("TrainingSince") or workspace:GetServerTimeNow()
     local beat = math.max(0.5, Config.TrainingSeconds)
     return {
         animate = function()
@@ -195,29 +196,87 @@ local function bench(station, character)
     }
 end
 
+-- Everyone on a station with their mount time, earliest first.
+local function occupants(station)
+    local list = {}
+    for name, since in station:GetAttributes() do
+        local id = tonumber(name:match("^Occupant_(%-?%d+)$"))
+        local player = id and Players:GetPlayerByUserId(id)
+        if player and player.Character then table.insert(list, { player = player, since = since }) end
+    end
+    table.sort(list, function(a, b)
+        if a.since ~= b.since then return a.since < b.since end
+        return a.player.UserId < b.player.UserId
+    end)
+    return list
+end
+
+-- Hides another user's body on this client only; returns the function that shows it again.
+local function conceal(character)
+    local saved = {}
+    local function apply(item)
+        if item:IsA("BasePart") or item:IsA("Decal") then
+            saved[item] = saved[item] or item.LocalTransparencyModifier
+            item.LocalTransparencyModifier = 1
+        elseif item:IsA("BillboardGui") and item.Enabled then
+            saved[item] = true
+            item.Enabled = false
+        end
+    end
+    for _, item in character:GetDescendants() do apply(item) end
+    local added = character.DescendantAdded:Connect(apply)
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    local display = humanoid and humanoid.DisplayDistanceType
+    if humanoid then humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
+    return function()
+        added:Disconnect()
+        for item, value in saved do
+            if item:IsA("BillboardGui") then item.Enabled = true else item.LocalTransparencyModifier = value end
+        end
+        if humanoid then humanoid.DisplayDistanceType = display end
+    end
+end
+
 function GymAnimationController.start()
-    local active = {}
+    local active, hidden = {}, {}
     local function sync()
+        local shown, hide = {}, {}
+        for _, station in CollectionService:GetTagged("TrainingStation") do
+            local list = occupants(station)
+            local pick = list[1]
+            for _, entry in list do
+                if entry.player == Players.LocalPlayer then pick = entry end
+            end
+            shown[station] = pick
+            for _, entry in list do
+                if entry ~= pick then hide[entry.player.Character] = true end
+            end
+        end
         for station, session in active do
-            local id = station:GetAttribute("OccupantId")
-            local player = id and Players:GetPlayerByUserId(id)
-            if not station.Parent or not player or player.Character ~= session.character then
+            local pick = shown[station]
+            if not station.Parent or not pick or pick.player.Character ~= session.character then
                 session.finish()
                 active[station] = nil
             end
         end
-        for _, station in CollectionService:GetTagged("TrainingStation") do
-            local id = station:GetAttribute("OccupantId")
-            local player = id and Players:GetPlayerByUserId(id)
-            local character = player and player.Character
-            if character and not active[station] then
+        for station, pick in shown do
+            if not active[station] then
                 local build = station:GetAttribute("TrainingStat") == "speedLevel" and treadmill or bench
-                local session = build(station, character, player)
+                local session = build(station, pick.player.Character, pick.player, pick.since)
                 if session then
-                    session.character = character
+                    session.character = pick.player.Character
                     active[station] = session
                 end
             end
+        end
+        for character, restore in hidden do
+            if not hide[character] then
+                restore()
+                hidden[character] = nil
+            end
+        end
+        for character in hide do
+            if not hidden[character] then hidden[character] = conceal(character) end
         end
     end
     -- After the Animator has stepped, so these poses win over anything it wrote.

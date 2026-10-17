@@ -1,6 +1,8 @@
 -- Server-owned mounting and timed gains. Clients can only request an exit.
--- The station carries OccupantId and TrainingSince while in use; each client
--- animates from those (GymAnimationController), reps in step with the gain ticks.
+-- The station carries an Occupant_<UserId> attribute (the mount's server time) per
+-- user; each client animates from those (GymAnimationController), reps in step with
+-- the gain ticks. A bench takes any number of users at once and each sees only
+-- themselves on it; a treadmill takes one.
 local Training = {}
 
 -- Where the anchored body goes: upright on the belt facing the console, or flat on
@@ -28,9 +30,8 @@ function Training.new(context)
         if not session then return end
         sessions[player.UserId] = nil
         lastExit[player.UserId] = os.clock()
-        session.station.occupant = nil
-        session.station.part:SetAttribute("OccupantId", nil)
-        session.station.part:SetAttribute("TrainingSince", nil)
+        session.station.occupants[player.UserId] = nil
+        session.station.part:SetAttribute("Occupant_" .. player.UserId, nil)
         if session.root.Parent then
             session.root.Anchored = session.anchored
             session.humanoid.AutoRotate = session.autoRotate
@@ -48,6 +49,7 @@ function Training.new(context)
     exit.OnServerEvent:Connect(function(player) stop(player) end)
     local stations = context.stations
     for _, station in stations do
+        station.occupants = {}
         station.part:SetAttribute("TrainingStation", true)
         station.part:SetAttribute("RequiredCycles", station.required or 0)
         station.part:SetAttribute("TrainingGain", station.gain)
@@ -56,7 +58,7 @@ function Training.new(context)
             if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
             if not context.phaseAllowed(station) then return end
-            if station.occupant then context.feedback(player, "Station occupied."); return end
+            if station.stat == "speedLevel" and next(station.occupants) then context.feedback(player, "Station occupied."); return end
             local profile = context.profiles.records[player.UserId].profile
             if profile.completedLaunches < (station.required or 0) then
                 context.feedback(player, "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")
@@ -64,7 +66,7 @@ function Training.new(context)
             end
             local root, humanoid = context.body(player)
             if not root then return end
-            station.occupant = player
+            station.occupants[player.UserId] = true
             sessions[player.UserId] = { station = station, root = root, humanoid = humanoid, character = player.Character,
                 anchored = root.Anchored, autoRotate = humanoid.AutoRotate, platformStand = humanoid.PlatformStand,
                 nextTick = os.clock() + context.config.TrainingSeconds }
@@ -74,8 +76,7 @@ function Training.new(context)
             humanoid.Sit = false
             -- Lying on the bench: no standing up, and Animate stops its idle.
             humanoid.PlatformStand = station.stat == "strengthLevel"
-            station.part:SetAttribute("OccupantId", player.UserId)
-            station.part:SetAttribute("TrainingSince", workspace:GetServerTimeNow())
+            station.part:SetAttribute("Occupant_" .. player.UserId, workspace:GetServerTimeNow())
             context.feedback(player, station.name .. ": training! Press E or Leave station to exit.")
             context.changed(player)
         end)

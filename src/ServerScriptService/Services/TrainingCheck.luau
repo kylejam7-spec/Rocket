@@ -47,7 +47,7 @@ return function()
             local session = assert(service.sessions[player.UserId], "Exact milestone failed to unlock")
             assert(root.Anchored and not humanoid.AutoRotate)
             assert(humanoid.PlatformStand == (station.stat == "strengthLevel"), "Bench lies down, treadmill stands")
-            assert(station.part:GetAttribute("OccupantId") == player.UserId and station.part:GetAttribute("TrainingSince"))
+            assert(station.part:GetAttribute("Occupant_" .. player.UserId), "Occupant stamped with the mount time")
             service.tick(session.nextTick)
             assert(profile[station.stat] == station.gain, "Incorrect tier gain")
             -- No level cap: training well past the old playtest cap of 50 keeps going.
@@ -55,9 +55,30 @@ return function()
             service.tick(session.nextTick)
             assert(profile[station.stat] == 10000 + station.gain and service.sessions[player.UserId], "Training stopped at a cap")
             service.stop(player)
-            assert(not service.sessions[player.UserId] and not station.occupant)
+            assert(not service.sessions[player.UserId] and not next(station.occupants))
             assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand)
-            assert(station.part:GetAttribute("OccupantId") == nil, "Occupant cleared on exit")
+            assert(station.part:GetAttribute("Occupant_" .. player.UserId) == nil, "Occupant cleared on exit")
+        end
+        -- A bench takes several users at once (each sees only themselves); a treadmill one.
+        local bench, treadmill
+        for _, station in stations do
+            if station.required == stations[1].required then
+                if station.stat == "strengthLevel" then bench = station else treadmill = station end
+            end
+        end
+        profile.completedLaunches = math.huge
+        for _, station in { bench, treadmill } do
+            local first = { UserId = player.UserId - 1, Character = player.Character }
+            local second = { UserId = player.UserId - 2, Character = player.Character }
+            player.UserId -= 2
+            profiles.records[first.UserId], profiles.records[second.UserId] = { profile = profile }, { profile = profile }
+            callbacks[station.part](first)
+            callbacks[station.part](second)
+            assert(service.sessions[first.UserId], "First user mounts")
+            assert((service.sessions[second.UserId] ~= nil) == (station == bench), "Bench shared, treadmill exclusive")
+            service.stop(first)
+            service.stop(second)
+            assert(not next(station.occupants))
         end
     end)
     for _, station in stations do station.part:Destroy() end
@@ -98,5 +119,5 @@ return function()
     -- A boost, not game-breaking: even the top gym needs over 30 s per capped level.
     local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier
     assert(curve.max / top >= 30, "Top gym levels too fast")
-    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit; level costs, carry and walk curves passed"
+    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches; level costs, carry and walk curves passed"
 end

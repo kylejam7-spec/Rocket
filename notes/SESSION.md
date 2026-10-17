@@ -22,6 +22,13 @@
   grips measured 0.000 off the bar axis through the rep, bar travel ~1 stud, bar back
   on the rack and body upright after LEAVE. RunChecks 9/9. Not tested with a second
   player (no multi-client run through MCP).
+- Shared benches (user): any number of users can train on one bench at once, each
+  seeing only themselves on it. The station carries `Occupant_<UserId>` = mount time per
+  user (replacing OccupantId/TrainingSince). Each client shows one occupant per bench
+  (itself if on it, else the earliest) and hides the rest locally (LocalTransparency-
+  Modifier, their BillboardGuis such as RankTag, Humanoid name). Treadmills stay one
+  user. TrainingCheck covers shared bench / exclusive treadmill. Verified solo plus the
+  hide/restore on a cloned dummy; no real second player tested.
 
 # Earlier session: 2026-10-17, gameplay sounds
 
