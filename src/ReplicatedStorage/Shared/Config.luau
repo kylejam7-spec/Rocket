@@ -1,13 +1,14 @@
 return table.freeze({
     -- Mission build sizes, wheel odds, countdown and launch timings live in Shared.Missions.
     MaterialHoldSeconds = 0.05,
-    RewardSeconds = 30,
+    -- Every destination stay lasts two minutes.
+    RewardSeconds = 120,
     InteractionDistance = 10,
     ActionCooldown = 0.5,
     TrainingSeconds = 1,
     -- Strength and speed are uncapped point totals turned into levels (Shared.StatLevels):
     -- level 1 costs 10 points, each level after x1.2, never more than 450 (from level 22,
-    -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
+    -- ~2,700 points in). Free gym (1/s): level 1 in 10 s, level 10 in ~4 min.
     StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
     MaxPlanetBonus = 1000000,
     -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, capped at MaxCapacity.
@@ -74,25 +75,25 @@ return table.freeze({
         table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
     }),
     -- Gym District tiers, in walking order after the free gym. Each station gains
-    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick; the top
-    -- gym (60/s) still needs 7.5 s per capped level.
-    TrainingBaseGain = 2,
+    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick: a boost,
+    -- not the main source (the top gym, 12/s, needs 37.5 s per capped level).
+    TrainingBaseGain = 1,
     TrainingTiers = table.freeze({
         table.freeze({ cycles = 1, multiplier = 2 }),
-        table.freeze({ cycles = 3, multiplier = 4 }),
-        table.freeze({ cycles = 8, multiplier = 6 }),
-        table.freeze({ cycles = 15, multiplier = 10 }),
-        table.freeze({ cycles = 25, multiplier = 15 }),
-        table.freeze({ cycles = 50, multiplier = 20 }),
-        table.freeze({ cycles = 100, multiplier = 30 }),
+        table.freeze({ cycles = 3, multiplier = 3 }),
+        table.freeze({ cycles = 8, multiplier = 4 }),
+        table.freeze({ cycles = 15, multiplier = 6 }),
+        table.freeze({ cycles = 25, multiplier = 8 }),
+        table.freeze({ cycles = 50, multiplier = 10 }),
+        table.freeze({ cycles = 100, multiplier = 12 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
     -- Each destination's own bench and treadmill give double its per-second reward.
-    -- Rewards step up evenly by rarity: 5 / 10 / 15 / 20 / 25 of each stat per second
-    -- (Moon → Black Hole, reward 1-5). Standing through a Moon stay gives 150 of each;
-    -- the Black Hole pays 25/s for its 45 s stay (1,125).
-    Planet = table.freeze({ StrengthBonus = 5, SpeedBonus = 5 }),
+    -- Rewards step up evenly by rarity: 3 / 6 / 9 / 12 / 15 of each stat per second
+    -- (Moon → Black Hole, reward 1-5). Standing through a Moon stay gives 360 of each,
+    -- the Black Hole 1,800; their 2x gyms (6-30/s) are the best training in the game.
+    Planet = table.freeze({ StrengthBonus = 3, SpeedBonus = 3 }),
     -- Mission wheel: it starts this many seconds before a reward stay ends and spins
     -- for WheelSpinSeconds; everyone sees it (WheelController).
     WheelLeadSeconds = 10,

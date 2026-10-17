@@ -36,7 +36,7 @@ local List = {
     { Id = "Mars", Rarity = "Uncommon", Weight = 28, PityWeight = 0, ConstructionRequired = 64000, FuelRequired = 34000, RewardMultiplier = 1 },
     { Id = "Europa", Rarity = "Rare", Weight = 19, PityWeight = 34, ConstructionRequired = 85000, FuelRequired = 52000, RewardMultiplier = 1 },
     { Id = "Saturn", Rarity = "Epic", Weight = 10, PityWeight = 33, ConstructionRequired = 108000, FuelRequired = 74000, RewardMultiplier = 1 },
-    { Id = "BlackHole", Rarity = "Legendary", Weight = 3, PityWeight = 33, ConstructionRequired = 122500, FuelRequired = 92500, RewardMultiplier = 1, RewardSeconds = 45 },
+    { Id = "BlackHole", Rarity = "Legendary", Weight = 3, PityWeight = 33, ConstructionRequired = 122500, FuelRequired = 92500, RewardMultiplier = 1 },
 }
 
 local Missions = { Count = #List, First = 1, PityAfter = 4, Tiers = table.freeze(Tiers) }
