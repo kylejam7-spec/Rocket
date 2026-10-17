@@ -1,4 +1,13 @@
-# Latest session: 2026-10-16, HUD polish
+# Latest session: 2026-10-16, sign panels only, gyms +1
+
+- PR #16 (HUD) rebase-merged with the user's OK. Branch `claude/gym-sign-oval-and-gains`.
+- Gym sign parts are invisible (Transparency 1, no shadow); only the rounded panel the
+  client draws shows.
+- Gyms +1 each (user): FreeGymMultiplier 2, tiers 3/4/5/7/9/11/13. Tutorial gym steps now
+  ~5 s. Numbers in BALANCE.md.
+- Studio Play: RunChecks 9/9; screenshot of the district at 10 launches; report run.
+
+# Earlier session: 2026-10-16, HUD polish
 
 - PRs #14 and #15 rebase-merged with the user's OK. Branch `claude/hud-polish` from master.
 - User: make the HUD pop like the gym signs.

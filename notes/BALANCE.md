@@ -14,7 +14,19 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 slower training, 2-minute stays, planets 3/s by rarity (current)
+## 2026-10-16 gyms +1 each (current)
+
+User: every gym one point higher, free gym +2. Free gym 2/s (FreeGymMultiplier), tiers
+3/4/5/7/9/11/13× (were 2/3/4/6/8/10/12, free 1). The sign badge "xN" equals the gain per
+second. Planets and stays unchanged.
+
+| Players | First Moon | 30 launches | Level @ 30 | Carry @ 30 | Stats from destinations |
+|---|---|---|---|---|---|
+| 1 | 349 → 297 min | 3,288 → 2,971 min | 218 → 237 | 664 → 721 | 39% → 35% |
+| 4 | 129 → 107 min | 1,217 → 1,134 min | 138 → 146 | 424 → 448 | 64% → 60% |
+| 16 | 52 → 42 min | 440 → 421 min | 108 → 111 | 334 → 343 | 85% → 82% |
+
+## 2026-10-16 slower training, 2-minute stays, planets 3/s by rarity
 
 User: gym leveling was too fast and should be a boost, not game-breaking. Planet stays
 should last about 2 minutes, with the Moon around +3/s, rising steadily by rarity.

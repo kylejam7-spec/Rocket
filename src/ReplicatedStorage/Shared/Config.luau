@@ -8,7 +8,7 @@ return table.freeze({
     TrainingSeconds = 1,
     -- Strength and speed are uncapped point totals turned into levels (Shared.StatLevels):
     -- level 1 costs 10 points, each level after x1.2, never more than 450 (from level 22,
-    -- ~2,700 points in). Free gym (1/s): level 1 in 10 s, level 10 in ~4 min.
+    -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
     StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
     MaxPlanetBonus = 1000000,
     -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, capped at MaxCapacity.
@@ -75,17 +75,19 @@ return table.freeze({
         table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
     }),
     -- Gym District tiers, in walking order after the free gym. Each station gains
-    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick: a boost,
-    -- not the main source (the top gym, 12/s, needs 37.5 s per capped level).
+    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick (the free
+    -- gym uses FreeGymMultiplier), and its sign's "xN" badge is that multiplier: a boost,
+    -- not the main source (the top gym, 13/s, needs ~35 s per capped level).
     TrainingBaseGain = 1,
+    FreeGymMultiplier = 2,
     TrainingTiers = table.freeze({
-        table.freeze({ cycles = 1, multiplier = 2 }),
-        table.freeze({ cycles = 3, multiplier = 3 }),
-        table.freeze({ cycles = 8, multiplier = 4 }),
-        table.freeze({ cycles = 15, multiplier = 6 }),
-        table.freeze({ cycles = 25, multiplier = 8 }),
-        table.freeze({ cycles = 50, multiplier = 10 }),
-        table.freeze({ cycles = 100, multiplier = 12 }),
+        table.freeze({ cycles = 1, multiplier = 3 }),
+        table.freeze({ cycles = 3, multiplier = 4 }),
+        table.freeze({ cycles = 8, multiplier = 5 }),
+        table.freeze({ cycles = 15, multiplier = 7 }),
+        table.freeze({ cycles = 25, multiplier = 9 }),
+        table.freeze({ cycles = 50, multiplier = 11 }),
+        table.freeze({ cycles = 100, multiplier = 13 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).

@@ -30,7 +30,7 @@ return function()
     local ok, failure = pcall(function()
         assert(#stations == 14)
         -- Tiers are in walking order: each needs more launches and pays more than the last.
-        local expected = { {1, 2}, {3, 3}, {8, 4}, {15, 6}, {25, 8}, {50, 10}, {100, 12} }
+        local expected = { {1, 3}, {3, 4}, {8, 5}, {15, 7}, {25, 9}, {50, 11}, {100, 13} }
         for index, tier in config.TrainingTiers do
             assert(tier.cycles == expected[index][1] and tier.multiplier == expected[index][2], "Gym tier table changed")
         end
@@ -82,7 +82,7 @@ return function()
         lastCost, lastCarry, lastStep, lastWalk = cost, carry, walk - lastWalk, walk
     end
     assert(StatLevels.cost(config, 2000) == curve.max, "Late levels cost the cap")
-    -- The starter gym (+1/s) gives level 1 within 10 s, and the profile path matches.
+    -- The starter gym (+2/s) gives level 1 within 5 s, and the profile path matches.
     local function stats(points)
         local p = { strengthLevel = points, speedLevel = points, planetBonuses = { strength = 0, speed = 0 } }
         return Stats.speed(p), Stats.capacity(p)
@@ -90,10 +90,10 @@ return function()
     local speed0, carry0 = stats(0)
     assert(speed0 == config.BaseSpeed and carry0 == config.BaseCarryCapacity)
     assert(config.BaseSpeed >= 24 and config.BaseSpeed <= 32, "Base walk speed in the reference range")
-    local speed1, carry1 = stats(config.TrainingBaseGain * 10)
-    assert(carry1 > carry0 and speed1 > speed0, "Ten starter-gym ticks reach level 1")
+    local speed1, carry1 = stats(config.TrainingBaseGain * config.FreeGymMultiplier * 5)
+    assert(carry1 > carry0 and speed1 > speed0, "Five starter-gym ticks reach level 1")
     -- A boost, not game-breaking: even the top gym needs over 30 s per capped level.
     local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier
     assert(curve.max / top >= 30, "Top gym levels too fast")
-    return "All 14 tiered gym stations (2x-12x): locked below milestone, unlocked at milestone, correct gains, no cap, exit; level costs, carry and walk curves passed"
+    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit; level costs, carry and walk curves passed"
 end
