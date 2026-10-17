@@ -4,8 +4,8 @@ return function()
     local config = require(game.ReplicatedStorage.Shared.Config)
     local remotes = Instance.new("Folder")
     local player = { UserId = -1, Character = {} }
-    local root = { Parent = true, Position = Vector3.zero, Anchored = false }
-    local humanoid = { Health = 100, AutoRotate = true, Sit = false }
+    local root = { Parent = true, Position = Vector3.zero, Anchored = false, Size = Vector3.new(2, 2, 1) }
+    local humanoid = { Health = 100, AutoRotate = true, Sit = false, PlatformStand = false, HipHeight = 2 }
     local profile = { completedLaunches = 0, strengthLevel = 0, speedLevel = 0 }
     local callbacks, stations = {}, {}
     local profiles = { records = {}, ready = function() return true end, dirty = function() end }
@@ -24,7 +24,7 @@ return function()
         end,
         allowed = function() return true end, near = function() return true end,
         phaseAllowed = function() return true end, body = function() return root, humanoid end,
-        relocate = function(_, position) root.Position = position end,
+        relocate = function(_, target) root.Position = typeof(target) == "CFrame" and target.Position or target end,
         feedback = function() end, changed = function() end,
     })
     local ok, failure = pcall(function()
@@ -46,6 +46,8 @@ return function()
             callbacks[station.part](player)
             local session = assert(service.sessions[player.UserId], "Exact milestone failed to unlock")
             assert(root.Anchored and not humanoid.AutoRotate)
+            assert(humanoid.PlatformStand == (station.stat == "strengthLevel"), "Bench lies down, treadmill stands")
+            assert(station.part:GetAttribute("Occupant_" .. player.UserId), "Occupant stamped with the mount time")
             service.tick(session.nextTick)
             assert(profile[station.stat] == station.gain, "Incorrect tier gain")
             -- No level cap: training well past the old playtest cap of 50 keeps going.
@@ -53,8 +55,30 @@ return function()
             service.tick(session.nextTick)
             assert(profile[station.stat] == 10000 + station.gain and service.sessions[player.UserId], "Training stopped at a cap")
             service.stop(player)
-            assert(not service.sessions[player.UserId] and not station.occupant)
-            assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit)
+            assert(not service.sessions[player.UserId] and not next(station.occupants))
+            assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand)
+            assert(station.part:GetAttribute("Occupant_" .. player.UserId) == nil, "Occupant cleared on exit")
+        end
+        -- Benches and treadmills both take several users at once (each sees only themselves).
+        local bench, treadmill
+        for _, station in stations do
+            if station.required == stations[1].required then
+                if station.stat == "strengthLevel" then bench = station else treadmill = station end
+            end
+        end
+        profile.completedLaunches = math.huge
+        for _, station in { bench, treadmill } do
+            local first = { UserId = player.UserId - 1, Character = player.Character }
+            local second = { UserId = player.UserId - 2, Character = player.Character }
+            player.UserId -= 2
+            profiles.records[first.UserId], profiles.records[second.UserId] = { profile = profile }, { profile = profile }
+            callbacks[station.part](first)
+            callbacks[station.part](second)
+            assert(service.sessions[first.UserId], "First user mounts")
+            assert(service.sessions[second.UserId], "Second user shares the station")
+            service.stop(first)
+            service.stop(second)
+            assert(not next(station.occupants))
         end
     end)
     for _, station in stations do station.part:Destroy() end
@@ -95,5 +119,5 @@ return function()
     -- A boost, not game-breaking: even the top gym needs over 30 s per capped level.
     local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier
     assert(curve.max / top >= 30, "Top gym levels too fast")
-    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit; level costs, carry and walk curves passed"
+    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches and treadmills; level costs, carry and walk curves passed"
 end

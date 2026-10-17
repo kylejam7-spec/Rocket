@@ -142,25 +142,45 @@ function World.new(ctx)
     service.destinations, service.cabin = require(script.Parent.DestinationService).build(world, config)
     world.Parent = workspace
 
+    -- The pieces are children of the base so GymAnimationController can find them:
+    -- it scrolls the belt's slats and lifts the barbell (plates are its children).
+    -- The user faces -Z on the treadmill and lies head to -Z on the bench.
     local function equipment(base, treadmill)
         local p = base.Position
         base.Size = Vector3.new(8, 0.4, 10)
         base.Position = Vector3.new(p.X, p.Y - 0.8, p.Z)
         local dark, steel = Color3.fromRGB(35, 40, 50), Color3.fromRGB(165, 175, 190)
+        local function piece(parent, ...)
+            local object = part(...)
+            object.Parent = parent
+            return object
+        end
         if treadmill then
-            part("TreadmillBelt", p, Vector3.new(4, 0.5, 7), dark)
-            for _, x in {-2.5, 2.5} do
-                part("TreadmillRail", p + Vector3.new(x, 0.5, 0), Vector3.new(0.4, 1, 8), steel)
-                part("TreadmillPost", p + Vector3.new(x, 2, -3), Vector3.new(0.4, 4, 0.4), steel)
+            local belt = piece(base, "TreadmillBelt", p, Vector3.new(4, 0.5, 7), dark)
+            for index = 0, 6 do
+                local slat = piece(belt, "TreadmillSlat", p + Vector3.new(0, 0.27, index - 3), Vector3.new(3.8, 0.05, 0.3), Color3.fromRGB(70, 78, 92))
+                slat.CanCollide, slat.CanQuery, slat.CastShadow = false, false, false
             end
-            part("TreadmillConsole", p + Vector3.new(0, 3.5, -3), Vector3.new(5, 1, 0.7), base.Color)
+            -- Rollers hide the slats wrapping round at each end.
+            for _, z in {-3.5, 3.5} do
+                piece(base, "TreadmillRoller", p + Vector3.new(0, 0, z), Vector3.new(4, 0.7, 0.7), steel).Shape = Enum.PartType.Cylinder
+            end
+            for _, x in {-2.5, 2.5} do
+                piece(base, "TreadmillRail", p + Vector3.new(x, 0.5, 0), Vector3.new(0.4, 1, 8), steel)
+                piece(base, "TreadmillPost", p + Vector3.new(x, 2, -3), Vector3.new(0.4, 4, 0.4), steel)
+            end
+            piece(base, "TreadmillConsole", p + Vector3.new(0, 3.5, -3), Vector3.new(5, 1, 0.7), base.Color)
         else
-            part("BenchCushion", p + Vector3.new(0, 1, 0), Vector3.new(2.5, 0.6, 6), dark)
+            piece(base, "BenchCushion", p + Vector3.new(0, 1, 0), Vector3.new(2.5, 0.6, 6), dark)
             for _, x in {-2.5, 2.5} do
-                part("BenchRack", p + Vector3.new(x, 1.5, -2), Vector3.new(0.4, 4, 0.4), steel)
-                part("WeightPlate", p + Vector3.new(x, 3, -2), Vector3.new(0.7, 2.2, 2.2), dark)
+                piece(base, "BenchRack", p + Vector3.new(x, 1.5, -2), Vector3.new(0.4, 4, 0.4), steel)
             end
-            part("Barbell", p + Vector3.new(0, 3, -2), Vector3.new(7, 0.25, 0.25), steel)
+            local bar = piece(base, "Barbell", p + Vector3.new(0, 3, -2), Vector3.new(7.4, 0.25, 0.25), steel)
+            bar.Shape, bar.CanCollide = Enum.PartType.Cylinder, false
+            for _, x in {-3.1, 3.1} do
+                local plate = piece(bar, "WeightPlate", p + Vector3.new(x, 3, -2), Vector3.new(0.5, 2.2, 2.2), dark)
+                plate.Shape, plate.CanCollide = Enum.PartType.Cylinder, false
+            end
         end
         tag(base, World.Tags.Training)
     end
