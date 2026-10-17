@@ -29,7 +29,7 @@ ctx.Training = require(Services.TrainingService).new({
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
     -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
-    -- treadmill steps (10 s for a new player).
+    -- treadmill steps (5 s for a new player).
     trained = function(player, station)
         if (station.required or 0) > 0 then return end
         local strength, speed = ctx.Stats.levels(ctx.profiles.records[player.UserId].profile)

@@ -34,7 +34,7 @@ local function simulate(players, train, gymShare, sequence)
         return StatLevels.walk(config, (StatLevels.level(config, profile.speedLevel)))
     end
     local function gymGain()
-        local best = config.TrainingBaseGain -- free gym
+        local best = config.TrainingBaseGain * config.FreeGymMultiplier -- free gym
         for _, tier in config.TrainingTiers do
             if launches >= tier.cycles then best = math.max(best, config.TrainingBaseGain * tier.multiplier) end
         end

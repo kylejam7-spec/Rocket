@@ -228,7 +228,7 @@ function World.new(ctx)
     -- Slot 1 is the free gym; slot n + 1 is TrainingTiers[n].
     for slot = 1, slots do
         local tier = config.TrainingTiers[slot - 1]
-        local multiplier = tier and tier.multiplier or 1
+        local multiplier = tier and tier.multiplier or config.FreeGymMultiplier
         local required = tier and tier.cycles or 0
         local gain = config.TrainingBaseGain * multiplier
         local title = tier and multiplier .. "X GYM" or "FREE GYM"
@@ -236,10 +236,12 @@ function World.new(ctx)
         local x, z = side * BAY_X, DISTRICT_Z0 + (slot - 1) * BAY_STEP
         local color = tierColors[slot] or tierColors[#tierColors]
         part("GymBay" .. slot, Vector3.new(x, 0.05, z), Vector3.new(30, 0.1, 24), color)
-        -- The sign's face is drawn per player (GymSignController: lock status).
+        -- The sign's face is drawn per player (GymSignController: lock status); the part
+        -- itself is invisible, so only the rounded panel shows.
         local sign = tag(part("GymSign" .. slot, Vector3.new(side * (BAY_X + 15), 8, z), Vector3.new(0.5, 7, 22), Color3.fromRGB(35, 40, 50)),
             World.Tags.GymSign, { Title = title, Multiplier = multiplier, Gain = gain, TierColor = color,
                 Face = (side < 0 and Enum.NormalId.Right or Enum.NormalId.Left).Name })
+        sign.Transparency, sign.CastShadow = 1, false
         if tier then sign:SetAttribute("RequiredCycles", required) end
         for _, treadmill in {false, true} do
             local kind = treadmill and "Treadmill" or "Bench"
