@@ -2,13 +2,17 @@
 -- next cycle. During boarding, stepping on the rocket's BOARD hatch takes you into the
 -- cabin (the inside of the rocket, DestinationService); its exit hatch lets you out
 -- until liftoff. Everyone in the cabin when the countdown ends flies to the design's
--- destination (Config.Destinations by ModelTier), gets the per-second bonus there,
--- then returns to spawn. WheelLeadSeconds before the stay ends the server spins the
+-- destination (Config.Destinations by ModelTier): the ascent, then a copy of the
+-- rocket descends onto the destination's landing spot (both client-animated, with
+-- the passengers watching), and stays there for the reward stay. Passengers get the
+-- per-second bonus there, then return to spawn. WheelLeadSeconds before the stay ends the server spins the
 -- mission wheel (Shared.Missions) for everyone; the next rocket is the result.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Missions = require(ReplicatedStorage.Shared.Missions)
 local Launch = {}
+-- The landed rocket stands this long, dust settling, before passengers step out.
+local TOUCHDOWN_HOLD = 1.5
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
@@ -116,13 +120,22 @@ function Launch.new(ctx)
                 end
             end
             local launchAt = workspace:GetServerTimeNow()
-            Cycle.deadline = launchAt + tier.LaunchSeconds
+            local flight = tier.LaunchSeconds + tier.LandingSeconds
+            Cycle.deadline = launchAt + flight
             rocketBuild:launch(launchAt, tier, definition.IsLegendary)
+            local place = destination()
+            for _, other in World.destinations do
+                local old = other.folder:FindFirstChild("LandedRocket")
+                if old then old:Destroy() end
+            end
+            local landed = rocketBuild:landedCopy(place.landing, place.folder, {
+                DescentAt = launchAt + tier.LaunchSeconds, DescentSeconds = tier.LandingSeconds - TOUCHDOWN_HOLD,
+                CutsceneEnd = launchAt + flight, ExhaustScale = tier.ExhaustScale * (definition.IsLegendary and 1.3 or 1),
+            })
             Cycle.broadcast()
-            task.wait(tier.LaunchSeconds)
+            task.wait(flight)
             rocket.phase = "Rewarding"
             local rewardSeconds = definition.RewardSeconds or config.RewardSeconds
-            local place = destination()
             -- Rarer destinations pay more (Config.Destinations reward x the mission's multiplier).
             local multiplier = definition.RewardMultiplier * place.reward
             for _, station in World.stations do
@@ -157,6 +170,7 @@ function Launch.new(ctx)
             rocket.phase = "Resetting"
             Cycle.deadline = 0
             Cycle.broadcast()
+            landed:Destroy()
             for userId in rocket.passengers do
                 local player = Players:GetPlayerByUserId(userId)
                 if player then

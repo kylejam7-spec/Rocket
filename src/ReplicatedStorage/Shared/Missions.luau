@@ -16,16 +16,17 @@
         RewardMultiplier     extra multiplier on the destination's per-second reward
         RewardSeconds        optional override of Config.RewardSeconds
     Tiers[n]  rocket presentation (geometry lives in ServerScriptService RocketModels):
-        Name, BoardingSeconds (countdown), LaunchSeconds, IgnitionSeconds,
-        ExhaustScale, SmokeScale, Shake (camera shake amplitude, studs)
+        Name, BoardingSeconds (countdown), LaunchSeconds (ignition and ascent),
+        LandingSeconds (the descent onto the destination, after the ascent),
+        IgnitionSeconds, ExhaustScale, SmokeScale, Shake (camera shake amplitude, studs)
 ]]
 
 local Tiers = {
-    { Name = "Lunar Rocket", BoardingSeconds = 20, LaunchSeconds = 7, IgnitionSeconds = 1.5, ExhaustScale = 1, SmokeScale = 1, Shake = 0 },
-    { Name = "Mars Rocket", BoardingSeconds = 20, LaunchSeconds = 8, IgnitionSeconds = 2, ExhaustScale = 1.3, SmokeScale = 1.5, Shake = 0.05 },
-    { Name = "Europa Heavy-Lift", BoardingSeconds = 22, LaunchSeconds = 9, IgnitionSeconds = 2.5, ExhaustScale = 1.7, SmokeScale = 2.2, Shake = 0.15 },
-    { Name = "Saturn Super Heavy", BoardingSeconds = 25, LaunchSeconds = 10, IgnitionSeconds = 3, ExhaustScale = 2.2, SmokeScale = 3, Shake = 0.3 },
-    { Name = "Event Horizon Explorer", BoardingSeconds = 30, LaunchSeconds = 12, IgnitionSeconds = 4, ExhaustScale = 3.6, SmokeScale = 6, Shake = 0.7 },
+    { Name = "Lunar Rocket", BoardingSeconds = 20, LaunchSeconds = 11, LandingSeconds = 8, IgnitionSeconds = 1.5, ExhaustScale = 1, SmokeScale = 1, Shake = 0 },
+    { Name = "Mars Rocket", BoardingSeconds = 20, LaunchSeconds = 12, LandingSeconds = 8, IgnitionSeconds = 2, ExhaustScale = 1.3, SmokeScale = 1.5, Shake = 0.05 },
+    { Name = "Europa Heavy-Lift", BoardingSeconds = 22, LaunchSeconds = 13, LandingSeconds = 9, IgnitionSeconds = 2.5, ExhaustScale = 1.7, SmokeScale = 2.2, Shake = 0.15 },
+    { Name = "Saturn Super Heavy", BoardingSeconds = 25, LaunchSeconds = 14, LandingSeconds = 9, IgnitionSeconds = 3, ExhaustScale = 2.2, SmokeScale = 3, Shake = 0.3 },
+    { Name = "Event Horizon Explorer", BoardingSeconds = 30, LaunchSeconds = 16, LandingSeconds = 10, IgnitionSeconds = 4, ExhaustScale = 3.6, SmokeScale = 6, Shake = 0.7 },
 }
 
 -- Build sizes (2026-10-16 balance pass): 73k / 98k / 137k / 182k / 215k units in all,

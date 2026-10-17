@@ -1,8 +1,9 @@
 -- Builds the rocket cabin (where boarded players wait for liftoff) and one isolated
 -- destination per rocket design (Config.Destinations, by ModelTier), far from the
 -- main map. Primitives only; Phase 5 swaps in art and sky. Each destination has a
--- walled play area, an ArrivalPad tagged DestinationArrival (attribute Tier) and two
--- gym spots (WorldService puts a bench and a treadmill there).
+-- walled play area, an ArrivalPad tagged DestinationArrival (attribute Tier), two
+-- gym spots (WorldService puts a bench and a treadmill there) and a landing spot
+-- behind the welcome sign, where the rocket touches down (LaunchService).
 local CollectionService = game:GetService("CollectionService")
 local Destinations = {}
 Destinations.ArrivalTag = "DestinationArrival"
@@ -71,10 +72,14 @@ local function arrival(parent, position, tier, color)
     CollectionService:AddTag(pad, Destinations.ArrivalTag)
     return pad
 end
--- Every destination keeps these clear (offsets from its centre): the gym (bench left,
--- treadmill right of the arrival) and the arrival itself.
+-- Every destination keeps these clear (offsets from its centre, with a radius): the
+-- gym (bench left, treadmill right of the arrival), the arrival itself and the landing
+-- spot. The widest rocket (tier 5) spans 68 x 32 studs, and every rocket fits its own
+-- destination's ground there.
 Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3.new(28, 0, 24) }
-local CLEAR = { Destinations.GymOffsets.bench, Destinations.GymOffsets.treadmill, Vector3.new(0, 0, 18) }
+Destinations.LandingOffset = Vector3.new(0, 0, -42)
+local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
+    { Destinations.LandingOffset, 30 } }
 -- A coloured band around a planet ball: a thin disc through it at `height`, just wider
 -- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
 local function band(parent, name, center, radius, height, thickness, color)
@@ -90,7 +95,7 @@ local function scatter(seed, count, radius, fn)
         local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
         local blocked = false
         for _, spot in CLEAR do
-            if (offset - spot).Magnitude < 14 then blocked = true end
+            if (offset - spot[1]).Magnitude < spot[2] then blocked = true end
         end
         if not blocked then fn(index, offset, random) end
     end
@@ -125,8 +130,8 @@ builders[2] = function(folder, c)
     for _, x in { -40, 40 } do
         make(folder, "Dune", { ClassName = "WedgePart", Size = Vector3.new(30, 6, 16), CFrame = CFrame.new(c + Vector3.new(x, 3, 40)), Color = Color3.fromRGB(205, 110, 65), Material = Enum.Material.Sand })
     end
-    decor(folder, "HabitatDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 26, CFrame = CFrame.new(c + Vector3.new(-26, 0, -30)), Color = Color3.fromRGB(200, 230, 255), Transparency = 0.5, Material = Enum.Material.Glass })
-    make(folder, "HabitatBase", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 26, 26), CFrame = CFrame.new(c + Vector3.new(-26, 0.5, -30)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(220, 220, 225) })
+    decor(folder, "HabitatDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 26, CFrame = CFrame.new(c + Vector3.new(-38, 0, -20)), Color = Color3.fromRGB(200, 230, 255), Transparency = 0.5, Material = Enum.Material.Glass })
+    make(folder, "HabitatBase", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 26, 26), CFrame = CFrame.new(c + Vector3.new(-38, 0.5, -20)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(220, 220, 225) })
     make(folder, "RoverBody", { Size = Vector3.new(8, 2.5, 5), CFrame = CFrame.new(c + Vector3.new(24, 2.6, -18)), Color = Color3.fromRGB(235, 235, 240) })
     for _, w in { Vector3.new(3, 0, 3), Vector3.new(-3, 0, 3), Vector3.new(3, 0, -3), Vector3.new(-3, 0, -3) } do
         make(folder, "RoverWheel", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 2.4, 2.4), CFrame = CFrame.new(c + Vector3.new(24, 1.2, -18) + w) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(50, 50, 55) })
@@ -215,7 +220,8 @@ builders[5] = function(folder, c)
     return ground, Vector3.new(0, 0, 20)
 end
 
--- Returns { [tier] = { id, name, gravity, reward, arrival = Vector3, center, gym = { bench, treadmill } } } and the cabin
+-- Returns { [tier] = { id, name, gravity, reward, arrival = Vector3, center, landing = Vector3 (on the ground),
+-- gym = { bench, treadmill } } } and the cabin
 -- { center, size, arrival, exit (part with the Leave prompt) }.
 function Destinations.build(world, config)
     local root = Instance.new("Folder")
@@ -234,7 +240,7 @@ function Destinations.build(world, config)
         -- Players arrive facing -Z (the main map's view toward the rocket): sign ahead, facing them.
         sign(folder, center + Vector3.new(0, 22, arrivalOffset.Z - 40), Vector3.new(0, 0, 1), "WELCOME TO " .. spec.name .. "!", spec.color)
         built[tier] = { id = spec.id, name = spec.name, gravity = spec.gravity, reward = spec.reward, folder = folder,
-            arrival = arrivalAt + Vector3.new(0, 4, 0), center = center,
+            arrival = arrivalAt + Vector3.new(0, 4, 0), center = center, landing = center + Destinations.LandingOffset,
             gym = { bench = center + Destinations.GymOffsets.bench + Vector3.new(0, 1, 0), treadmill = center + Destinations.GymOffsets.treadmill + Vector3.new(0, 1, 0) } }
     end
 

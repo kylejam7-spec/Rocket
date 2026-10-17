@@ -84,7 +84,7 @@ local function simulate(players, train, gymShare, sequence)
         profile.strengthLevel += passive + gym / 2
         profile.speedLevel += passive + gym / 2
         fromDestinations += 2 * passive + gym
-        t += tierInfo.BoardingSeconds + tierInfo.LaunchSeconds + stay + RESET_SECONDS
+        t += tierInfo.BoardingSeconds + tierInfo.LaunchSeconds + tierInfo.LandingSeconds + stay + RESET_SECONDS
         launches += 1
         table.insert(rows, {
             cycle = number, design = tier, id = cycle.Id, minutes = (t - started) / 60, total = t / 60, capacity = capacity(), walk = walk(),
