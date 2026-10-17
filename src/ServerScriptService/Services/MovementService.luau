@@ -30,10 +30,11 @@ function Movement.new(ctx)
     function service.track(player, root, grace)
         motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(), blockedUntil = os.clock() + grace }
     end
+    -- Takes a position (stands upright) or a full CFrame (gym poses).
     function service.relocate(player, position)
         local root = service.body(player)
         if not root then return end
-        player.Character:PivotTo(CFrame.new(position))
+        player.Character:PivotTo(typeof(position) == "CFrame" and position or CFrame.new(position))
         root.AssemblyLinearVelocity = Vector3.zero
         service.track(player, root, 0.5)
     end

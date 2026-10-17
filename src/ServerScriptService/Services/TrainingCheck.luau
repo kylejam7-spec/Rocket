@@ -4,8 +4,8 @@ return function()
     local config = require(game.ReplicatedStorage.Shared.Config)
     local remotes = Instance.new("Folder")
     local player = { UserId = -1, Character = {} }
-    local root = { Parent = true, Position = Vector3.zero, Anchored = false }
-    local humanoid = { Health = 100, AutoRotate = true, Sit = false }
+    local root = { Parent = true, Position = Vector3.zero, Anchored = false, Size = Vector3.new(2, 2, 1) }
+    local humanoid = { Health = 100, AutoRotate = true, Sit = false, PlatformStand = false, HipHeight = 2 }
     local profile = { completedLaunches = 0, strengthLevel = 0, speedLevel = 0 }
     local callbacks, stations = {}, {}
     local profiles = { records = {}, ready = function() return true end, dirty = function() end }
@@ -24,7 +24,7 @@ return function()
         end,
         allowed = function() return true end, near = function() return true end,
         phaseAllowed = function() return true end, body = function() return root, humanoid end,
-        relocate = function(_, position) root.Position = position end,
+        relocate = function(_, target) root.Position = typeof(target) == "CFrame" and target.Position or target end,
         feedback = function() end, changed = function() end,
     })
     local ok, failure = pcall(function()
@@ -46,6 +46,8 @@ return function()
             callbacks[station.part](player)
             local session = assert(service.sessions[player.UserId], "Exact milestone failed to unlock")
             assert(root.Anchored and not humanoid.AutoRotate)
+            assert(humanoid.PlatformStand == (station.stat == "strengthLevel"), "Bench lies down, treadmill stands")
+            assert(station.part:GetAttribute("OccupantId") == player.UserId and station.part:GetAttribute("TrainingSince"))
             service.tick(session.nextTick)
             assert(profile[station.stat] == station.gain, "Incorrect tier gain")
             -- No level cap: training well past the old playtest cap of 50 keeps going.
@@ -54,7 +56,8 @@ return function()
             assert(profile[station.stat] == 10000 + station.gain and service.sessions[player.UserId], "Training stopped at a cap")
             service.stop(player)
             assert(not service.sessions[player.UserId] and not station.occupant)
-            assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit)
+            assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand)
+            assert(station.part:GetAttribute("OccupantId") == nil, "Occupant cleared on exit")
         end
     end)
     for _, station in stations do station.part:Destroy() end

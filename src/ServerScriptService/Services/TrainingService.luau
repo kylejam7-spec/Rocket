@@ -1,5 +1,26 @@
 -- Server-owned mounting and timed gains. Clients can only request an exit.
+-- The station carries OccupantId and TrainingSince while in use; each client
+-- animates from those (GymAnimationController), reps in step with the gain ticks.
 local Training = {}
+
+-- Where the anchored body goes: upright on the belt facing the console, or flat on
+-- the bench with the head under the rack (both pieces are -Z of the base).
+local function pose(station, root, humanoid)
+    local base = station.part
+    local forward = base.CFrame.LookVector
+    if station.stat == "speedLevel" then
+        local belt = base:FindFirstChild("TreadmillBelt")
+        local top = belt and belt.Position.Y + belt.Size.Y / 2 or base.Position.Y + 1
+        local position = Vector3.new(base.Position.X, top + humanoid.HipHeight + root.Size.Y / 2, base.Position.Z)
+        return CFrame.lookAt(position, position + forward)
+    end
+    local cushion = base:FindFirstChild("BenchCushion")
+    local top = cushion and cushion.Position.Y + cushion.Size.Y / 2 or base.Position.Y + 1.5
+    local position = Vector3.new(base.Position.X, top + root.Size.Z / 2, base.Position.Z) + forward * 0.3
+    -- Face up, head toward the rack.
+    return CFrame.fromMatrix(position, Vector3.yAxis:Cross(forward), forward)
+end
+
 function Training.new(context)
     local sessions, lastExit = {}, {}
     local function stop(player)
@@ -8,10 +29,13 @@ function Training.new(context)
         sessions[player.UserId] = nil
         lastExit[player.UserId] = os.clock()
         session.station.occupant = nil
+        session.station.part:SetAttribute("OccupantId", nil)
+        session.station.part:SetAttribute("TrainingSince", nil)
         if session.root.Parent then
             session.root.Anchored = session.anchored
             session.humanoid.AutoRotate = session.autoRotate
             session.humanoid.Sit = false
+            session.humanoid.PlatformStand = session.platformStand
             if player.Character == session.character then
                 context.relocate(player, session.station.part.Position + Vector3.new(5, 4, 0))
             end
@@ -42,11 +66,16 @@ function Training.new(context)
             if not root then return end
             station.occupant = player
             sessions[player.UserId] = { station = station, root = root, humanoid = humanoid, character = player.Character,
-                anchored = root.Anchored, autoRotate = humanoid.AutoRotate, nextTick = os.clock() + context.config.TrainingSeconds }
-            context.relocate(player, station.part.Position + Vector3.new(0, station.stat == "speedLevel" and 4 or 3, 0))
+                anchored = root.Anchored, autoRotate = humanoid.AutoRotate, platformStand = humanoid.PlatformStand,
+                nextTick = os.clock() + context.config.TrainingSeconds }
+            context.relocate(player, pose(station, root, humanoid))
             root.Anchored = true
             humanoid.AutoRotate = false
-            humanoid.Sit = station.stat == "strengthLevel"
+            humanoid.Sit = false
+            -- Lying on the bench: no standing up, and Animate stops its idle.
+            humanoid.PlatformStand = station.stat == "strengthLevel"
+            station.part:SetAttribute("OccupantId", player.UserId)
+            station.part:SetAttribute("TrainingSince", workspace:GetServerTimeNow())
             context.feedback(player, station.name .. ": training! Press E or Leave station to exit.")
             context.changed(player)
         end)
@@ -61,7 +90,10 @@ function Training.new(context)
                     or (session.root.Position - session.station.part.Position).Magnitude > 7 then
                     stop(player)
                 elseif now >= session.nextTick then
-                    session.nextTick = now + context.config.TrainingSeconds
+                    -- Keep to the mount's beat (the client times reps to it), but don't
+                    -- pay out a backlog after a stall.
+                    session.nextTick += context.config.TrainingSeconds
+                    if session.nextTick <= now then session.nextTick = now + context.config.TrainingSeconds end
                     local profile = context.profiles.records[userId].profile
                     local stat = session.station.stat
                     local gain = session.station.gain

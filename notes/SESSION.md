@@ -1,4 +1,29 @@
-# Latest session: 2026-10-17, gameplay sounds
+# Latest session: 2026-10-17, gym animations (treadmill and bench)
+
+- Branch `claude/gym-animations` from master.
+- Server (TrainingService): poses the anchored body with a full CFrame (`relocate` now
+  takes one). Treadmill: upright on the belt facing the console. Bench: flat on the
+  cushion, face up, head under the rack, `PlatformStand` instead of `Sit` (Animate
+  stops its idle). The station carries `OccupantId` and `TrainingSince` while in use.
+  Gain ticks now keep to the mount's beat (`nextTick += TrainingSeconds`) so the client
+  can time reps to them.
+- World: gym pieces are now children of the station base. The treadmill belt has 7
+  slats and an end roller each side; the barbell is a cylinder with the plates as its
+  children, moved outside the rack posts.
+- Client `GymAnimationController` (every client, every occupied station, PreSimulation
+  so it wins over the Animator): slats scroll back at 5 x HipHeight studs/s (the run's
+  measured stance-foot speed); the runner's own client plays its avatar's run (Action
+  priority, replicates). Bench: the bar lifts off the rack in 0.35 s, then one rep per
+  gain tick (hold, lower slowly, press, locking out as the gain pays), feet up on the
+  bench. Arms use a two-bone IK written to the joint Transforms (works for Motor6D and
+  AnimationConstraint rigs; the test avatar uses AnimationConstraints). IKControl was
+  tried first and left the hands 0.2-0.4 studs off the bar.
+- Studio (Rojo not connected, pushed over HTTP again; all scripts matched the repo):
+  grips measured 0.000 off the bar axis through the rep, bar travel ~1 stud, bar back
+  on the rack and body upright after LEAVE. RunChecks 9/9. Not tested with a second
+  player (no multi-client run through MCP).
+
+# Earlier session: 2026-10-17, gameplay sounds
 
 - Branch `claude/gameplay-sounds` from `claude/ui-sounds` (PR #19, not merged yet).
   Uploads deferred by the user; Studio plays the `--studio` copies meanwhile.
