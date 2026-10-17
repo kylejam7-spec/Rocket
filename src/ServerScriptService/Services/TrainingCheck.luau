@@ -59,7 +59,7 @@ return function()
             assert(not root.Anchored and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand)
             assert(station.part:GetAttribute("Occupant_" .. player.UserId) == nil, "Occupant cleared on exit")
         end
-        -- A bench takes several users at once (each sees only themselves); a treadmill one.
+        -- Benches and treadmills both take several users at once (each sees only themselves).
         local bench, treadmill
         for _, station in stations do
             if station.required == stations[1].required then
@@ -75,7 +75,7 @@ return function()
             callbacks[station.part](first)
             callbacks[station.part](second)
             assert(service.sessions[first.UserId], "First user mounts")
-            assert((service.sessions[second.UserId] ~= nil) == (station == bench), "Bench shared, treadmill exclusive")
+            assert(service.sessions[second.UserId], "Second user shares the station")
             service.stop(first)
             service.stop(second)
             assert(not next(station.occupants))
@@ -119,5 +119,5 @@ return function()
     -- A boost, not game-breaking: even the top gym needs over 30 s per capped level.
     local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier
     assert(curve.max / top >= 30, "Top gym levels too fast")
-    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches; level costs, carry and walk curves passed"
+    return "All 14 tiered gym stations (3x-13x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches and treadmills; level costs, carry and walk curves passed"
 end

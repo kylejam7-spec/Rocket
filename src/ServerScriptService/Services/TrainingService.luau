@@ -1,8 +1,8 @@
 -- Server-owned mounting and timed gains. Clients can only request an exit.
 -- The station carries an Occupant_<UserId> attribute (the mount's server time) per
 -- user; each client animates from those (GymAnimationController), reps in step with
--- the gain ticks. A bench takes any number of users at once and each sees only
--- themselves on it; a treadmill takes one.
+-- the gain ticks. Any number of users can share a bench or treadmill, and each sees
+-- only themselves on it.
 local Training = {}
 
 -- Where the anchored body goes: upright on the belt facing the console, or flat on
@@ -58,7 +58,6 @@ function Training.new(context)
             if os.clock() - (lastExit[player.UserId] or -math.huge) < 1 then return end
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
             if not context.phaseAllowed(station) then return end
-            if station.stat == "speedLevel" and next(station.occupants) then context.feedback(player, "Station occupied."); return end
             local profile = context.profiles.records[player.UserId].profile
             if profile.completedLaunches < (station.required or 0) then
                 context.feedback(player, "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")

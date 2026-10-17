@@ -26,9 +26,11 @@
   seeing only themselves on it. The station carries `Occupant_<UserId>` = mount time per
   user (replacing OccupantId/TrainingSince). Each client shows one occupant per bench
   (itself if on it, else the earliest) and hides the rest locally (LocalTransparency-
-  Modifier, their BillboardGuis such as RankTag, Humanoid name). Treadmills stay one
-  user. TrainingCheck covers shared bench / exclusive treadmill. Verified solo plus the
-  hide/restore on a cloned dummy; no real second player tested.
+  Modifier, their BillboardGuis such as RankTag, Humanoid name). Treadmills now work the
+  same way (user asked; "Station occupied." is gone). Each runner's own client plays its
+  run animation, so whichever runner a client shows is running. TrainingCheck covers two
+  users on each. Verified solo plus the hide/restore on a cloned dummy; no real second
+  player tested.
 
 # Earlier session: 2026-10-17, gameplay sounds
 

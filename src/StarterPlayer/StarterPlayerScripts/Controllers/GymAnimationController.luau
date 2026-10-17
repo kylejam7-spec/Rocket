@@ -3,8 +3,8 @@
 -- every client then animates its own copy of the equipment: the belt's slats scroll,
 -- and the barbell leaves the rack and goes up and down in the lifter's hands (two-bone
 -- IK), feet up on the bench. One rep per gain tick, locking out as it pays.
--- Several users can share a bench: each client shows one of them (itself if it's on
--- the bench, else whoever got on first) and hides the rest locally.
+-- Several users can share a bench or treadmill: each client shows one of them (itself
+-- if it's on it, else whoever got on first) and hides the rest locally.
 -- On the treadmill the runner's own client also plays its avatar's run, which the
 -- Animator replicates to everyone else.
 local CollectionService = game:GetService("CollectionService")
