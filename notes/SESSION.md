@@ -1,4 +1,29 @@
-# Latest session: 2026-10-16, HUD on a phone (iPhone 14 emulator)
+# Latest session: 2026-10-17, UI sounds (Kenney packs)
+
+- Branch `claude/ui-sounds` from master.
+- User: use the Kenney packs in `Sounds/` (untracked, ~650 files), UI first; sounds must
+  start the moment they're triggered.
+- `tools/sounds/build.py` turns the 10 picked files into `assets/sounds/ui/*.ogg`: cut
+  to the first audible sample, tail trimmed, -1 dBFS peak, mono Vorbis (not MP3, which
+  pads the start). Many Kenney files open with silence (digital pack ~100 ms, ui-audio
+  switches 35-140 ms); the UI picks mostly start at 0 already. `--studio` copies them
+  into Studio's content folder so Studio plays them before upload.
+- `tools/sounds/upload.py` (Open Cloud, ROBLOX_API_KEY) uploads and writes
+  `Shared/SoundIds.luau`. Not run yet: needs a key for the experience owner.
+- `UI/Sfx`: preloaded pooled Sounds in the SFX group, cue table with volume, voices,
+  gap and pitch spread. Hooked into Button (click and hover; `sound` prop), Toggle,
+  Slider ticks, Toast, settings and upgrades open/close, buy (error / click, then
+  confirm on the server's level-up), wheel ticks on slice edges, wheel result and
+  tutorial-complete jingle. JUMP and GRAB mute the click.
+- Studio Play: all 26 voices load; Play() is at position 0 on the same frame. Clicks
+  logged on the same frame as the visual change; buy confirm 66 ms after the click
+  (round trip). Wheel simulation: every tick within one frame of its edge. RunChecks 9/9.
+- User review: all picks kept except close (was minimize_001, heard as a laser). Close
+  is now the open sweep reversed (1.78 -> 1.19 kHz) with the open's loudness curve, so
+  it still hits at once; Kenney's own reverse (minimize_009) fades in over ~60 ms.
+  Every cue's volume down ~20%.
+
+# Earlier session: 2026-10-16, HUD on a phone (iPhone 14 emulator)
 
 - PR #17 rebase-merged. Branch `claude/hud-phone-fixes`.
 - iPhone 14 landscape (749x388, HUD scale 0.46): the objective and mission-tag backings

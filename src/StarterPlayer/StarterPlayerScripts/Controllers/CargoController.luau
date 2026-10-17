@@ -83,7 +83,7 @@ function CargoController.start()
     if Actions.touch then
         local material = Button.new({
             Name = "MaterialButton", shape = "circle", icon = Theme.icon.Hand, caption = "GRAB",
-            color = Theme.color.Go, Size = UDim2.fromOffset(84, 84), LayoutOrder = 3, Visible = false,
+            color = Theme.color.Go, Size = UDim2.fromOffset(84, 84), LayoutOrder = 3, Visible = false, sound = false,
             Parent = Actions.cluster(),
         })
         material.InputBegan:Connect(function(input)

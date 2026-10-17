@@ -3,6 +3,7 @@
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local Tween = require(script.Parent.Tween)
+local Sfx = require(script.Parent.Sfx)
 local Toggle = {}
 Toggle.__index = Toggle
 
@@ -22,6 +23,7 @@ function Toggle.new(props)
     self:set(props.value == true, true)
     pill.Activated:Connect(function()
         self:set(not self.value)
+        Sfx.play("toggle", { pitch = self.value and 1.12 or 0.9 })
         if self.onChanged then self.onChanged(self.value) end
     end)
     return self

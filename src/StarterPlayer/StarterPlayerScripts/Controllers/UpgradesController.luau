@@ -2,7 +2,9 @@
 -- level, what the next level does, a coin price button and, when that level's tier has a
 -- developer product, a Robux +1 level button. The hut's "Open Upgrades"
 -- prompt opens it; walking away or ✖ closes it. Buying sends BuyUpgrade with a fresh
--- request ID; the server validates, charges once per ID and replies with state.
+-- request ID; the server validates, charges once per ID and replies with state. The
+-- press clicks (or buzzes when you can't afford it); the cha-ching waits for that
+-- reply, so it lands with the new level.
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -18,6 +20,7 @@ local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local Panel = require(UI.Panel)
+local Sfx = require(UI.Sfx)
 local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
 local UpgradesController = {}
@@ -78,11 +81,14 @@ function UpgradesController.start()
         Font = Theme.font.Display, TextSize = 26, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
         stroke = 2, Parent = panel,
     })
-    local function close() panel.Visible = false end
+    local function close()
+        if panel.Visible then Sfx.play("close") end
+        panel.Visible = false
+    end
     Button.new({
         Name = "Close", shape = "circle", icon = Theme.icon.Leave, color = Theme.color.Danger,
         AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.fromOffset(46, 46),
-        onActivated = close, Parent = panel,
+        sound = false, onActivated = close, Parent = panel,
     })
 
     local current
@@ -112,13 +118,14 @@ function UpgradesController.start()
         local buy = Button.new({
             Name = "Buy", Text = "", TextSize = 22, color = Theme.color.Go,
             AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(140, 44),
-            Parent = row,
+            Parent = row, sound = false,
             onActivated = function()
                 local state = current and current.profile
                 if not state or pending[track] then return end
                 local level = state.upgrades and state.upgrades[track] or 0
                 local price = Upgrades.price(Config, track, level)
-                if not price or state.coins < price then return end
+                if not price or state.coins < price then return Sfx.play("error") end
+                Sfx.play("click")
                 pending[track] = true
                 State.remote("BuyUpgrade"):FireServer(track, HttpService:GenerateGUID(false))
                 -- The reply is a state update; give up waiting after a second.
@@ -159,6 +166,7 @@ function UpgradesController.start()
                 if (state.profile.upgrades[track] or 0) > (before[track] or 0) then
                     pending[track] = nil
                     Tween.bounce(row.title, 1.3, 0.35)
+                    Sfx.play("confirm")
                 end
             end
         end
@@ -170,6 +178,7 @@ function UpgradesController.start()
         local part = hut()
         if part and prompt.Parent == part then
             fit()
+            if not panel.Visible then Sfx.play("open") end
             panel.Visible = true
             if current then render(current) end
             Tween.bounce(panel, 1.08, 0.3)
