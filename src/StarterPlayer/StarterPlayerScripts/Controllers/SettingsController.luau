@@ -10,6 +10,7 @@ local StrokedText = require(UI.StrokedText)
 local Slider = require(UI.Slider)
 local Toggle = require(UI.Toggle)
 local Tween = require(UI.Tween)
+local Actions = require(script.Parent.ActionController)
 local SettingsController = {}
 
 local function rowLabel(text, y, parent)
@@ -61,17 +62,20 @@ function SettingsController.start()
         if reduced.value ~= values.reducedEffects then reduced:set(values.reducedEffects) end
     end)
 
-    Button.new({
+    local button = Button.new({
         -- Gold: the grey ⚙️ emoji disappears on the purple used elsewhere.
         Name = "SettingsButton", shape = "circle", icon = Theme.icon.Settings, color = Theme.color.Gold,
         AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, Theme.gutter),
-        Size = UDim2.fromOffset(56, 56),
+        -- Phones scale the HUD to ~0.46: 78 keeps it a ~36 px thumb target there.
+        Size = Actions.touch and UDim2.fromOffset(78, 78) or UDim2.fromOffset(56, 56),
         onActivated = function()
             panel.Visible = not panel.Visible
             if panel.Visible then Tween.bounce(panel, 1.12, 0.3) end
         end,
         Parent = gui,
     })
+    -- Phones: up in the free right side of the Roblox top bar row.
+    if Actions.touch then Create.inTopBar(button, gui) end
 end
 
 return SettingsController

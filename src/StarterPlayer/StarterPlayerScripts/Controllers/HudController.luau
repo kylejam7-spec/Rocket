@@ -58,12 +58,11 @@ function HudController.start()
     local player = Players.LocalPlayer
 
     -- Desktop: just under the objective line (64 + 84 design px). Phones shrink the whole
-    -- HUD to fit, so there the stack is enlarged and centred on the left edge, clear of
-    -- the objective above and the thumbstick below.
+    -- HUD to fit, so there the stack is enlarged and sits at the top left, under the
+    -- Roblox button and well clear of the thumbstick.
     local stack = Create.new("Frame", {
         Name = "StatStack", BackgroundTransparency = 1, Size = UDim2.fromOffset(220, 276),
-        AnchorPoint = Actions.touch and Vector2.new(0, 0.5) or Vector2.zero,
-        Position = Actions.touch and UDim2.new(0, Theme.gutter, 0.5, -30) or UDim2.fromOffset(Theme.gutter, 150), Parent = gui,
+        Position = UDim2.fromOffset(Theme.gutter, Actions.touch and 8 or 150), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
     if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.25, Parent = stack }) end
