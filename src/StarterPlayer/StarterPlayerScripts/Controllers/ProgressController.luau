@@ -10,6 +10,7 @@ local Pill = require(UI.Pill)
 local Popup = require(UI.Popup)
 local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
+local Actions = require(script.Parent.ActionController)
 local ProgressController = {}
 local color, icon = Theme.color, Theme.icon
 -- Rarity colours shared with the mission wheel (WheelController).
@@ -17,24 +18,35 @@ local function rarityColor(rarity) return Theme.rarity[rarity] or color.Ready en
 
 function ProgressController.start()
     local gui = Create.screen("RocketProgress")
+    -- The pill and the mission tag above it share one group, so touch screens can
+    -- enlarge both together from the bottom edge.
+    local group = Create.new("Frame", {
+        Name = "ProgressGroup", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
+        Size = UDim2.fromOffset(520, 70), BackgroundTransparency = 1, Parent = gui,
+    })
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.35, Parent = group }) end
     local bar = Pill.new({
-        Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
-        Size = UDim2.fromOffset(340, 40), label = true, animate = true, textSize = 25, rim = 3, Parent = gui,
+        Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.fromScale(0.5, 1),
+        Size = UDim2.fromOffset(340, 40), label = true, animate = true, textSize = 25, rim = 3, Parent = group,
     })
     local tag = StrokedText.new({
-        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -59),
+        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -45),
         Size = UDim2.fromOffset(520, 22), Font = Theme.font.Display, TextSize = 17, stroke = 2, RichText = true,
-        ZIndex = 2, Parent = gui,
+        ZIndex = 2, Parent = group,
     })
-    -- A dark chip behind the tag, sized to its text.
+    -- A dark chip behind the tag, sized to its text (TextBounds is in screen pixels,
+    -- so undo the screen and touch scales to get layout units).
     local tagBack = Create.new("Frame", {
-        Name = "CycleTagBack", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -57),
-        BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.25, Parent = gui,
+        Name = "CycleTagBack", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -43),
+        BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.25, Parent = group,
     })
     Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = tagBack })
-    tag:GetPropertyChangedSignal("TextBounds"):Connect(function()
-        tagBack.Size = UDim2.fromOffset(tag.TextBounds.X + 24, 26)
-    end)
+    local function fitTag()
+        local scale = tag.AbsoluteSize.X / tag.Size.X.Offset
+        if scale > 0 then tagBack.Size = UDim2.fromOffset(tag.TextBounds.X / scale + 24, 26) end
+    end
+    tag:GetPropertyChangedSignal("TextBounds"):Connect(fitTag)
+    tag:GetPropertyChangedSignal("AbsoluteSize"):Connect(fitTag)
     local countdown = StrokedText.new({
         Name = "Countdown", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36),
         Size = UDim2.fromOffset(300, 120), Font = Theme.font.Display, TextSize = 110, stroke = 5,
