@@ -7,8 +7,11 @@ World.Tags = table.freeze({
     MaterialSource = "MaterialSource", -- attribute Material
     Frontier = "BuildFrontier",
     Boarding = "BoardingZone",
-    Training = "TrainingStation", -- attributes TrainingGain, RequiredCycles (TrainingService)
-    GymSign = "GymSign", -- attribute RequiredCycles on tiered gyms
+    -- Training stations and gym signs carry Multiplier and TierColor; stations also
+    -- TrainingGain, TrainingStat, RequiredCycles (TrainingService), signs Title, Gain and
+    -- RequiredCycles (tiered gyms). GymSignController draws both from these.
+    Training = "TrainingStation",
+    GymSign = "GymSign",
     Upgrades = "UpgradesHut", -- its "Open Upgrades" prompt opens the client panel
 })
 
@@ -34,23 +37,46 @@ function World.new(ctx)
         object.Parent = world
         return object
     end
-    local function label(object, text)
-        local gui = Instance.new("BillboardGui")
-        gui.Size = UDim2.fromOffset(160, 24)
-        gui.StudsOffset = Vector3.new(0, 5, 0)
-        gui.AlwaysOnTop = true
-        -- Hide distant labels so far-off signs don't stack on top of nearby ones.
-        gui.MaxDistance = 70
-        gui.Parent = object
+    -- Chunky outlined text (the HUD's look), on a dark rounded tag.
+    local function styledText(parent, text, color)
         local textLabel = Instance.new("TextLabel")
         textLabel.Size = UDim2.fromScale(1, 1)
         textLabel.BackgroundTransparency = 1
         textLabel.Text = text
-        textLabel.TextColor3 = Color3.new(1, 1, 1)
-        textLabel.TextStrokeTransparency = 0.3
-        textLabel.TextSize = 13
-        textLabel.Font = Enum.Font.GothamBold
-        textLabel.Parent = gui
+        textLabel.TextColor3 = color or Color3.new(1, 1, 1)
+        textLabel.TextScaled = true
+        textLabel.Font = Enum.Font.FredokaOne
+        textLabel.Parent = parent
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = 2.5
+        stroke.Color = Color3.fromRGB(22, 14, 32)
+        stroke.LineJoinMode = Enum.LineJoinMode.Round
+        stroke.Parent = textLabel
+        return textLabel
+    end
+    local function label(object, text)
+        local gui = Instance.new("BillboardGui")
+        gui.Size = UDim2.fromOffset(150, 34)
+        gui.StudsOffset = Vector3.new(0, 5, 0)
+        gui.AlwaysOnTop = true
+        gui.LightInfluence = 0
+        -- Hide distant labels so far-off signs don't stack on top of nearby ones.
+        gui.MaxDistance = 70
+        gui.Parent = object
+        local pill = Instance.new("Frame")
+        pill.AnchorPoint = Vector2.new(0.5, 0.5)
+        pill.Position = UDim2.fromScale(0.5, 0.5)
+        pill.Size = UDim2.fromScale(1, 1)
+        pill.BackgroundColor3 = Color3.fromRGB(34, 26, 52)
+        pill.BackgroundTransparency = 0.25
+        pill.Parent = gui
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0.5, 0)
+        corner.Parent = pill
+        local padding = Instance.new("UIPadding")
+        padding.PaddingTop, padding.PaddingBottom = UDim.new(0.12, 0), UDim.new(0.12, 0)
+        padding.Parent = pill
+        styledText(pill, text)
     end
     function service.prompt(object, action, hold)
         local result = Instance.new("ProximityPrompt")
@@ -84,7 +110,7 @@ function World.new(ctx)
     frontier.Transparency = 0.55
     frontier.CanCollide, frontier.CanQuery, frontier.CanTouch, frontier.CastShadow = false, false, false, false
     local frontierSign = Instance.new("BillboardGui")
-    frontierSign.Size = UDim2.fromOffset(170, 26)
+    frontierSign.Size = UDim2.fromOffset(220, 34)
     frontierSign.StudsOffsetWorldSpace = Vector3.new(0, 4, 0)
     frontierSign.AlwaysOnTop = true
     frontierSign.MaxDistance = 400
@@ -94,9 +120,13 @@ function World.new(ctx)
     frontierText.Size = UDim2.fromScale(1, 1)
     frontierText.BackgroundTransparency = 1
     frontierText.TextColor3 = Color3.new(1, 1, 1)
-    frontierText.TextStrokeTransparency = 0.2
-    frontierText.TextSize = 15
-    frontierText.Font = Enum.Font.GothamBold
+    frontierText.TextStrokeTransparency = 1
+    frontierText.TextSize = 22
+    frontierText.Font = Enum.Font.FredokaOne
+    local frontierStroke = Instance.new("UIStroke")
+    frontierStroke.Thickness = 2.5
+    frontierStroke.Color = Color3.fromRGB(22, 14, 32)
+    frontierStroke.Parent = frontierText
     frontierText.Text = "▼ BUILD HERE ▼"
     frontierText.Parent = frontierSign
     service.frontier, service.frontierSign = frontier, frontierSign
@@ -163,9 +193,13 @@ function World.new(ctx)
             textLabel.Text = line.text
             textLabel.TextScaled = true
             textLabel.TextColor3 = Color3.new(1, 1, 1)
-            textLabel.TextStrokeTransparency = 0.4
-            textLabel.Font = Enum.Font.GothamBold
+            textLabel.Font = Enum.Font.FredokaOne
             textLabel.Parent = surface
+            local stroke = Instance.new("UIStroke")
+            stroke.Thickness = 6
+            stroke.Color = Color3.fromRGB(22, 14, 32)
+            stroke.LineJoinMode = Enum.LineJoinMode.Round
+            stroke.Parent = textLabel
         end
     end
     -- Floor slab from the end of the ground (z = 160) to past the last bay, plus a
@@ -202,18 +236,17 @@ function World.new(ctx)
         local x, z = side * BAY_X, DISTRICT_Z0 + (slot - 1) * BAY_STEP
         local color = tierColors[slot] or tierColors[#tierColors]
         part("GymBay" .. slot, Vector3.new(x, 0.05, z), Vector3.new(30, 0.1, 24), color)
-        local sign = tag(part("GymSign" .. slot, Vector3.new(side * (BAY_X + 15), 8, z), Vector3.new(0.5, 7, 22), color), World.Tags.GymSign)
+        -- The sign's face is drawn per player (GymSignController: lock status).
+        local sign = tag(part("GymSign" .. slot, Vector3.new(side * (BAY_X + 15), 8, z), Vector3.new(0.5, 7, 22), Color3.fromRGB(35, 40, 50)),
+            World.Tags.GymSign, { Title = title, Multiplier = multiplier, Gain = gain, TierColor = color,
+                Face = (side < 0 and Enum.NormalId.Right or Enum.NormalId.Left).Name })
         if tier then sign:SetAttribute("RequiredCycles", required) end
-        signText(sign, side < 0 and Enum.NormalId.Right or Enum.NormalId.Left, {
-            { name = "Title", text = title, height = 0.3 },
-            { name = "Gain", text = "+" .. gain .. " strength & speed / sec", height = 0.2 },
-            { name = "Status", text = tier and "Unlocks after " .. required .. (required == 1 and " launch" or " launches") or "Open to everyone", height = 0.2 },
-        })
         for _, treadmill in {false, true} do
             local kind = treadmill and "Treadmill" or "Bench"
             local base = part(title:gsub(" ", "") .. kind, Vector3.new(x - side * 2, 1, z + (treadmill and 6 or -6)), Vector3.new(7, 2, 7), color)
             equipment(base, treadmill)
-            label(base, treadmill and "TREADMILL" or "BENCH")
+            base:SetAttribute("Multiplier", multiplier)
+            base:SetAttribute("TierColor", color)
             table.insert(stations, { part = base, name = title:lower():gsub("^%l", string.upper) .. " " .. kind:lower(),
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = gain, required = required })
         end
@@ -226,7 +259,8 @@ function World.new(ctx)
             local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(255, 190, 40))
             equipment(base, treadmill)
             base:SetAttribute("Destination", place.id)
-            label(base, (treadmill and "TREADMILL" or "BENCH") .. " • 2× BONUS")
+            base:SetAttribute("Multiplier", 2)
+            base:SetAttribute("TierColor", Color3.fromRGB(255, 190, 40))
             local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
             table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = 2 * bonus * place.reward, required = 0 })

@@ -1,4 +1,22 @@
-# Latest session: 2026-10-16, planet rewards
+# Latest session: 2026-10-16, gym sign and map label polish
+
+- Branch `claude/gym-sign-polish` stacked on `claude/planet-rewards` (PR #14, not merged).
+- User: make the gym/map GUI pop, less flat text, eye-catching "x5" tier multipliers;
+  real art comes later, so no reskin.
+- GymSignController now draws every gym sign and bench/treadmill tag on the client from
+  attributes WorldService sets (Title, Multiplier, Gain, TierColor, Face; stations also
+  TrainingStat, TrainingGain, RequiredCycles). Signs: framed panel in the tier colour, a
+  pulsing, swaying gold "x3" badge, "💪 +3/s 👟 +3/s", green "✔ UNLOCKED" / red
+  "🔒 3/8 LAUNCHES" pill. Equipment: "💪 BENCH" / "+3 STRENGTH / SEC" pill plus a small x3
+  badge; locked ones grey out. Destination gyms show "x2" and follow their live gain.
+- Server labels (SPAWN, BOARD, SPACEPORT, EXPANSION, BUILD HERE, station banners,
+  arch/hut signs): FredokaOne with a UIStroke outline; generic labels sit on a dark pill.
+- Debug hook: `RocketDebug:Invoke("launches", n)`.
+- Studio: RunChecks 9/9; screenshots of the district at 0 and 10 launches. Note: the MCP
+  screen capture leaves out AlwaysOnTop billboards (they render in game); turn
+  AlwaysOnTop off locally to preview them.
+
+# Earlier session: 2026-10-16, planet rewards
 
 - PR #13 (levels, tutorial) rebase-merged with the user's OK. Branch
   `claude/planet-rewards` from `master` @ 88b0369.
