@@ -19,12 +19,22 @@ function ProgressController.start()
     local gui = Create.screen("RocketProgress")
     local bar = Pill.new({
         Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
-        Size = UDim2.fromOffset(380, 46), label = true, animate = true, Parent = gui,
+        Size = UDim2.fromOffset(400, 48), label = true, animate = true, rim = 4, Parent = gui,
     })
     local tag = StrokedText.new({
-        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -64),
-        Size = UDim2.fromOffset(520, 26), Font = Theme.font.Display, TextSize = 22, stroke = 2, Parent = gui,
+        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -68),
+        Size = UDim2.fromOffset(560, 26), Font = Theme.font.Display, TextSize = 20, stroke = 2, RichText = true,
+        ZIndex = 2, Parent = gui,
     })
+    -- A dark chip behind the tag, sized to its text.
+    local tagBack = Create.new("Frame", {
+        Name = "CycleTagBack", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -66),
+        BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.25, Parent = gui,
+    })
+    Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = tagBack })
+    tag:GetPropertyChangedSignal("TextBounds"):Connect(function()
+        tagBack.Size = UDim2.fromOffset(tag.TextBounds.X + 28, 30)
+    end)
     local countdown = StrokedText.new({
         Name = "Countdown", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36),
         Size = UDim2.fromOffset(300, 120), Font = Theme.font.Display, TextSize = 110, stroke = 5,
@@ -80,7 +90,9 @@ function ProgressController.start()
         else
             bar:set(1, color.Purple, "NEXT ROCKET…")
         end
-        tag.Text = (state.destination or "?"):gsub("^THE ", "") .. " MISSION  •  " .. (state.rarity or ""):upper()
+        local rarity = state.rarity or ""
+        tag.Text = (state.destination or "?"):gsub("^THE ", "") .. " MISSION  •  "
+            .. ('<font color="#%s">%s</font>'):format(rarityColor(rarity):ToHex(), rarity:upper())
             .. "  •  You: " .. Theme.number(state.contribution)
             .. (state.pityIn == 0 and "  •  NEXT SPIN: RARE+ GUARANTEED"
                 or state.pityIn and state.pityIn <= 2 and ("  •  Rare+ in " .. state.pityIn .. (state.pityIn == 1 and " spin" or " spins")) or "")
