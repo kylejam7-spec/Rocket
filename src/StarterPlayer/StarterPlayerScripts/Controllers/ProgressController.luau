@@ -19,21 +19,21 @@ function ProgressController.start()
     local gui = Create.screen("RocketProgress")
     local bar = Pill.new({
         Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
-        Size = UDim2.fromOffset(400, 48), label = true, animate = true, rim = 4, Parent = gui,
+        Size = UDim2.fromOffset(340, 40), label = true, animate = true, textSize = 25, rim = 3, Parent = gui,
     })
     local tag = StrokedText.new({
-        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -68),
-        Size = UDim2.fromOffset(560, 26), Font = Theme.font.Display, TextSize = 20, stroke = 2, RichText = true,
+        Name = "CycleTag", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -59),
+        Size = UDim2.fromOffset(520, 22), Font = Theme.font.Display, TextSize = 17, stroke = 2, RichText = true,
         ZIndex = 2, Parent = gui,
     })
     -- A dark chip behind the tag, sized to its text.
     local tagBack = Create.new("Frame", {
-        Name = "CycleTagBack", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -66),
+        Name = "CycleTagBack", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -57),
         BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.25, Parent = gui,
     })
     Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = tagBack })
     tag:GetPropertyChangedSignal("TextBounds"):Connect(function()
-        tagBack.Size = UDim2.fromOffset(tag.TextBounds.X + 28, 30)
+        tagBack.Size = UDim2.fromOffset(tag.TextBounds.X + 24, 26)
     end)
     local countdown = StrokedText.new({
         Name = "Countdown", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.36),
