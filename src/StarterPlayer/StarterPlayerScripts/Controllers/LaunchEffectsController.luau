@@ -2,6 +2,9 @@
 -- RocketVehicle (LaunchAt, LaunchSeconds, ExhaustScale, ...); every client moves
 -- its own local copy, so a 150-part ascent costs no replication bandwidth.
 -- Passengers get a cinematic follow camera; everyone nearby gets tier-scaled shake.
+-- Then the landing: the server stands a LandedRocket copy on the destination
+-- (DescentAt, DescentSeconds, CutsceneEnd) and each client flies it down from the
+-- sky onto that spot, engines braking, while passengers watch from the ground.
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -19,25 +22,10 @@ local function emitter(parent, props)
     return item
 end
 
-local playing, launches = {}, 0
-local function play(vehicle)
-    local launchAt = vehicle:GetAttribute("LaunchAt")
-    if not launchAt or playing[vehicle] then return end
-    playing[vehicle] = true
-    local duration = vehicle:GetAttribute("LaunchSeconds")
-    local ignition = vehicle:GetAttribute("IgnitionSeconds")
-    local exhaust = vehicle:GetAttribute("ExhaustScale")
-    local smokeScale = vehicle:GetAttribute("SmokeScale")
-    local shake = vehicle:GetAttribute("Shake")
-    local final = vehicle:GetAttribute("Final")
-    local height = vehicle:GetAttribute("Height") or 60
-    local origin = vehicle:GetPivot()
-    -- Climb far enough that every tier leaves the sky before the reward phase.
-    local climb = 900 + height * 4
-    local accel = 2 * climb / math.max(1, duration - ignition) ^ 2
-
+-- Fire, and a light, out of every engine nozzle of a rocket model.
+local function engineFire(model, exhaust)
     local emitters, nozzle = {}, nil
-    for _, part in vehicle:GetDescendants() do
+    for _, part in model:GetDescendants() do
         if part:IsA("BasePart") and part:GetAttribute("Engine") then
             -- Cylinders are rotated upright: local -X points down out of the nozzle.
             local attachment = Instance.new("Attachment")
@@ -60,11 +48,15 @@ local function play(vehicle)
             table.insert(emitters, light)
         end
     end
-    -- Smoke stays on the pad while the rocket climbs away.
+    return emitters, nozzle
+end
+
+-- A ring of smoke emitters on an invisible part at `cframe` (launch pad or landing spot).
+local function smokeRing(name, cframe, smokeScale)
     local pad = Instance.new("Part")
-    pad.Name = "LaunchSmoke"
+    pad.Name = name
     pad.Anchored, pad.CanCollide, pad.CanQuery, pad.CanTouch, pad.Transparency = true, false, false, false, 1
-    pad.Size, pad.CFrame = Vector3.one, origin
+    pad.Size, pad.CFrame = Vector3.one, cframe
     pad.Parent = workspace
     local smoke = {}
     for index = 1, math.clamp(math.round(3 * smokeScale), 3, 12) do
@@ -81,6 +73,29 @@ local function play(vehicle)
             Drag = 1, RotSpeed = NumberRange.new(-30, 30),
         }))
     end
+    return pad, smoke
+end
+
+local playing, launches = {}, 0
+local function play(vehicle)
+    local launchAt = vehicle:GetAttribute("LaunchAt")
+    if not launchAt or playing[vehicle] then return end
+    playing[vehicle] = true
+    local duration = vehicle:GetAttribute("LaunchSeconds")
+    local ignition = vehicle:GetAttribute("IgnitionSeconds")
+    local exhaust = vehicle:GetAttribute("ExhaustScale")
+    local smokeScale = vehicle:GetAttribute("SmokeScale")
+    local shake = vehicle:GetAttribute("Shake")
+    local final = vehicle:GetAttribute("Final")
+    local height = vehicle:GetAttribute("Height") or 60
+    local origin = vehicle:GetPivot()
+    -- Climb far enough that every tier leaves the sky before the reward phase.
+    local climb = 900 + height * 4
+    local accel = 2 * climb / math.max(1, duration - ignition) ^ 2
+
+    local emitters, nozzle = engineFire(vehicle, exhaust)
+    -- Smoke stays on the pad while the rocket climbs away.
+    local pad, smoke = smokeRing("LaunchSmoke", origin, smokeScale)
 
     -- Ignition bursts on the pad; the engine roar rides the rocket and swells with the
     -- exhaust through ignition, bigger rockets deeper, and turns duller as it climbs
@@ -125,10 +140,15 @@ local function play(vehicle)
             air.MidGain = -math.clamp(distance / 100, 0, 12)
         end
         -- Read live: attribute replication order is not guaranteed relative to LaunchAt.
+        -- Two shots: alongside as it clears the tower, then from the pad looking up as
+        -- it shrinks into the sky.
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
             local view = origin.Position + Vector3.new(height * 0.9, 12 + rise * 0.85, height * 1.2)
+            if lift > (duration - ignition) * 0.45 then
+                view = origin.Position + Vector3.new(height * 0.3, 6, height * 0.8)
+            end
             camera.CFrame = CFrame.lookAt(view, rocketMid)
         end
         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
@@ -191,8 +211,109 @@ local function watch(site)
     for _, child in site:GetChildren() do track(child) end
 end
 
+-- Black over the screen, 0..1, for the passengers' cuts between shots.
+local function fader()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "CutsceneFade"
+    gui.IgnoreGuiInset, gui.ResetOnSpawn, gui.DisplayOrder = true, false, 100
+    local frame = Instance.new("Frame")
+    frame.Size, frame.BackgroundColor3, frame.BackgroundTransparency, frame.BorderSizePixel = UDim2.fromScale(1, 1), Color3.new(0, 0, 0), 1, 0
+    frame.Parent = gui
+    gui.Parent = player:WaitForChild("PlayerGui")
+    return function(alpha) frame.BackgroundTransparency = 1 - alpha end, gui
+end
+-- 1 at `at`, ramping up over `before` and back down over `after`.
+local function bump(t, at, before, after)
+    if t < at then return math.clamp(1 - (at - t) / before, 0, 1) end
+    return math.clamp(1 - (t - at) / after, 0, 1)
+end
+
+-- The descent onto the destination. Before DescentAt the copy waits out of sight;
+-- it then drops from high above, slowing to a stop on the landing spot with the
+-- engines braking and dust blowing out as it nears the ground. Passengers' screens
+-- fade from the ascent into a shot from the ground, then fade out as they step out.
+local landing = {}
+local function land(rocket)
+    local descentAt, seconds, finish = rocket:GetAttribute("DescentAt"), rocket:GetAttribute("DescentSeconds"), rocket:GetAttribute("CutsceneEnd")
+    if not descentAt or not seconds or not finish or landing[rocket] then return end
+    -- Joining long after: it's simply standing there.
+    if workspace:GetServerTimeNow() > finish + 1 then return end
+    landing[rocket] = true
+    local rest = rocket:GetPivot()
+    local ground = rocket:GetAttribute("Ground") or rest.Position
+    local height = rocket:GetAttribute("Height") or 60
+    local exhaust = rocket:GetAttribute("ExhaustScale") or 1
+    local drop = 120 + height * 1.2
+    -- Braking burns hard: bigger flames than the ascent.
+    local emitters, nozzle = engineFire(rocket, exhaust * 1.4)
+    local dust, plumes = smokeRing("LandingDust", CFrame.new(ground), 1 + exhaust)
+    local engine = Sfx.attach("engine", nozzle or dust)
+    local roar = engine and engine.Volume
+    if engine then
+        engine.Volume = 0
+        engine.PlaybackSpeed = 1 / math.sqrt(math.max(1, exhaust))
+        engine:Play()
+    end
+    local camera = workspace.CurrentCamera
+    local fade, fadeGui
+    local touched, cinematic = false, false
+    -- Far enough back to keep both the falling rocket and the ground in frame.
+    local shot = Vector3.new(0.45, 0, 1).Unit * (height * 2.4 + 80)
+    launches += 1
+    local name = "RocketLanding" .. launches
+    local function cleanup()
+        RunService:UnbindFromRenderStep(name)
+        if fadeGui then fadeGui:Destroy() end
+        if engine then engine:Destroy() end
+        for _, item in emitters do if item:IsA("ParticleEmitter") then item.Enabled = false end end
+        task.delay(6, dust.Destroy, dust)
+        landing[rocket] = nil
+    end
+    RunService:BindToRenderStep(name, Enum.RenderPriority.Camera.Value + 2, function()
+        local now = workspace:GetServerTimeNow()
+        if not rocket.Parent or now > finish + 0.7 then cleanup() return end
+        local t = now - descentAt
+        local progress = math.clamp(t / seconds, 0, 1)
+        local h = drop * (1 - progress) ^ 2.2
+        rocket:PivotTo(t < 0 and rest + Vector3.new(0, 20000, 0) or rest + Vector3.new(0, h, 0))
+        local burning = t >= 0 and progress < 1
+        for _, item in emitters do
+            if item:IsA("ParticleEmitter") then item.Rate = burning and 60 or 0 else item.Brightness = burning and 4 or 0 end
+        end
+        for _, item in plumes do item.Rate = (burning and h < 40 + height * 0.3) and 12 * (1 + exhaust) or 0 end
+        if engine then engine.Volume = roar * (burning and math.min(1, t / 0.5) or 0) end
+        if progress >= 1 and not touched then
+            touched = true
+            for _, item in plumes do item:Emit(10) end
+            Sfx.playAt("liftoff", dust, { volume = math.min(1.5, exhaust) })
+        end
+        local passenger = player:GetAttribute("RocketPassenger")
+        if passenger and not fade then fade, fadeGui = fader() end
+        if fade then fade(math.max(bump(now, descentAt, 0.5, 0.6), bump(now, finish, 0.4, 0.6))) end
+        if passenger and t >= 0 and now < finish then
+            cinematic = true
+            camera:SetAttribute("Cinematic", true)
+            camera.CameraType = Enum.CameraType.Scriptable
+            local view = ground + shot + Vector3.new(0, 20 + h * 0.3, 0)
+            camera.CFrame = CFrame.lookAt(view, ground + Vector3.new(0, (h + height * 0.45) * 0.45, 0))
+        elseif cinematic and now >= finish then
+            -- Under the black: hand the camera back as the server moves us out.
+            cinematic = false
+            camera:SetAttribute("Cinematic", nil)
+            camera.CameraType = Enum.CameraType.Custom
+        end
+    end)
+end
+
 function LaunchEffectsController.start()
-    watch(workspace:WaitForChild("RocketWorld"):WaitForChild("RocketSite"))
+    local world = workspace:WaitForChild("RocketWorld")
+    watch(world:WaitForChild("RocketSite"))
+    local destinations = world:WaitForChild("Destinations")
+    local function track(item)
+        if item.Name == "LandedRocket" and item:IsA("Model") then task.defer(land, item) end
+    end
+    destinations.DescendantAdded:Connect(track)
+    for _, item in destinations:GetDescendants() do track(item) end
 end
 
 return LaunchEffectsController

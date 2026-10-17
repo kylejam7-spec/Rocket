@@ -354,4 +354,19 @@ function Build:launch(serverTime, tierDefinition, isFinal)
     vehicle:SetAttribute("LaunchAt", serverTime)
 end
 
+-- A finished copy of the launched rocket standing upright with its base on `ground`
+-- (no launch mount under it there). Clients fly it down from the sky (LaunchEffects)
+-- from the attributes given.
+function Build:landedCopy(ground, parent, attributes)
+    local copy = self.vehicle:Clone()
+    for name in copy:GetAttributes() do copy:SetAttribute(name, nil) end
+    copy.Name = "LandedRocket"
+    copy:PivotTo(self.origin.Rotation + ground - Vector3.new(0, self.bounds.low.Y, 0))
+    copy:SetAttribute("Height", self.data.height - self.bounds.low.Y)
+    copy:SetAttribute("Ground", ground)
+    for name, value in attributes do copy:SetAttribute(name, value) end
+    copy.Parent = parent
+    return copy
+end
+
 return Build

@@ -1,4 +1,29 @@
-# Latest session: 2026-10-17, gym animations (treadmill and bench)
+# Latest session: 2026-10-17, longer launch cutscene with a landing
+
+- Branch `claude/launch-landing` from master (separate from the gym PR #22).
+- Flights are longer: `LaunchSeconds` (ignition and ascent) 7/8/9/10/12 -> 11/12/13/14/16
+  and a new `LandingSeconds` 8/8/9/9/10 per tier (Shared.Missions), so the Moon trip is
+  19 s instead of 7. The ascent has a second shot: from the pad looking up as the rocket
+  shrinks into the sky.
+- At liftoff the server stands a finished copy of the rocket (`Build:landedCopy`,
+  "LandedRocket", engine bells on the ground) on the destination's landing spot, 42 studs
+  behind its centre past the welcome sign. It carries DescentAt, DescentSeconds,
+  CutsceneEnd, Ground, Height, ExhaustScale; it stays for the reward stay and is removed
+  at reset (and any older one at the next launch).
+- Each client hides that copy until DescentAt, then drops it from 120 + 1.2 x height
+  studs, slowing to a stop ((1 - t)^2.2) with big braking flames, landing dust and the
+  engine roar, then a touchdown boom. Passengers fade to black at the end of the ascent,
+  watch from far enough back to keep the ground and the rocket in frame, hold 1.5 s on
+  the landed rocket, and fade out as the server moves them to the arrival pad.
+- DestinationService: scatter keeps a 30-stud radius clear around the landing spot;
+  Mars' habitat dome moved to (-38, -20) to clear the Mars rocket. Every tier's rocket
+  bounds fit its own destination's ground at that spot (checked numerically, only the
+  Moon seen in Studio).
+- Studio: full passenger run on the Moon: ascent shots, fade, descent 437 -> 196 (bells
+  exactly on the ground at y 200), fade, arrival beside the rocket; the copy was gone
+  after reset. RunChecks 9/9.
+
+# Earlier session: 2026-10-17, gym animations (treadmill and bench)
 
 - Branch `claude/gym-animations` from master.
 - Server (TrainingService): poses the anchored body with a full CFrame (`relocate` now
