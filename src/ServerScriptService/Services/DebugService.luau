@@ -4,7 +4,8 @@
 -- the wheel's pity counter; Invoke("tutorial", step?)
 -- restarts every player's tutorial (at Pickup by default) and clears seen callouts;
 -- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades;
--- Invoke("stats", strength, speed) sets everyone's trained points (destination bonuses kept).
+-- Invoke("stats", strength, speed) sets everyone's trained points (destination bonuses kept);
+-- Invoke("launches", n) sets everyone's completed launches (gym tier unlocks).
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
@@ -37,11 +38,12 @@ function Debug.new(ctx, parent)
                 record.profile.tutorialStep, record.profile.seenCallouts = value or "Pickup", {}
             end
             Cycle.broadcast()
-        elseif action == "coins" or action == "upgrades" or action == "stats" then
+        elseif action == "coins" or action == "upgrades" or action == "stats" or action == "launches" then
             for _, record in ctx.profiles.records do
                 local profile = record.profile
                 if action == "coins" then profile.coins = value or 0
                 elseif action == "stats" then profile.strengthLevel, profile.speedLevel = value or 0, extra or value or 0
+                elseif action == "launches" then profile.completedLaunches = value or 0
                 else profile.upgrades = {} end
             end
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Stats.update(player) end

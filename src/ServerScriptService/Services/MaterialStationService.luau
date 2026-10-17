@@ -70,21 +70,25 @@ end
 local function banner(adornee, offset, title, subtitle, color)
     local gui = Instance.new("BillboardGui")
     gui.Name = "StationBanner"
-    gui.Size = UDim2.fromOffset(260, 64)
+    gui.Size = UDim2.fromOffset(300, 72)
     gui.StudsOffsetWorldSpace = offset
     gui.AlwaysOnTop = true
     gui.MaxDistance = 900
     gui.LightInfluence = 0
     gui.Parent = adornee
-    for index, line in { { title, 30, color }, { subtitle, 18, Color3.new(1, 1, 1) } } do
+    for index, line in { { title, 34, color }, { subtitle, 20, Color3.new(1, 1, 1) } } do
         local text = Instance.new("TextLabel")
         text.Size = UDim2.fromScale(1, index == 1 and 0.6 or 0.4)
         text.Position = UDim2.fromScale(0, index == 1 and 0 or 0.6)
         text.BackgroundTransparency = 1
         text.Text, text.TextSize, text.TextColor3 = line[1], line[2], line[3]
-        text.TextStrokeTransparency = 0.2
-        text.Font = Enum.Font.GothamBlack
+        text.Font = Enum.Font.FredokaOne
         text.Parent = gui
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = index == 1 and 3 or 2
+        stroke.Color = Color3.fromRGB(22, 14, 32)
+        stroke.LineJoinMode = Enum.LineJoinMode.Round
+        stroke.Parent = text
     end
 end
 
