@@ -11,6 +11,7 @@ local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
+local WorldScale = require(script.Parent.WorldScale)
 local Popup = {}
 
 local function label(props)
@@ -54,6 +55,7 @@ function Popup.world(adornee, props)
         MaxDistance = 120,
         Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
     })
+    WorldScale.apply(billboard)
     Popup.show(Create.merge({ Position = UDim2.new(0.5, props.jitter or 0, 1, -24), rise = 90, seconds = seconds, Parent = billboard }, props))
     task.delay(seconds + 0.1, billboard.Destroy, billboard)
     return billboard

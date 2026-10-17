@@ -11,6 +11,7 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
+local WorldScale = require(UI.WorldScale)
 local GymSignController = {}
 
 local LOCKED = Color3.fromRGB(110, 110, 125)
@@ -125,6 +126,7 @@ local function buildStation(station, playerGui)
         Name = "StationTag_" .. station.Name, Adornee = station, Size = UDim2.fromOffset(280, 72),
         StudsOffset = Vector3.new(0, 6, 0), LightInfluence = 0, MaxDistance = 45, ResetOnSpawn = false, Parent = playerGui,
     })
+    WorldScale.apply(gui)
     local pill = Create.new("Frame", {
         Name = "Pill", Position = UDim2.fromOffset(0, 8), Size = UDim2.fromOffset(214, 56),
         BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.1, Parent = gui,

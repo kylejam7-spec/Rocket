@@ -7,7 +7,15 @@
 - Touch: stat stack and the progress group (pill + mission tag, now one frame) get a
   1.35 UIScale; toasts sit higher to clear it. The desktop camera hint showed in the
   emulator only before the touch thumbstick appeared (PreferredInput); not changed.
-- Studio emulator: RunChecks 9/9; screenshots before/after.
+- Follow-up (user OK'd 1-3): `UI/WorldScale` shrinks pixel-sized world billboards by
+  viewport height / 720 (floor 0.5, never above 1, follows resizes): rank tags (watched
+  on every character), gym equipment tags, Popup.world pops. Tutorial edge arrow is
+  pushed right of the stat stack when it would overlap. Touch: objective text 34
+  (desktop 26); stat stack 1.25x, vertically centred on the left edge (-30), clear of the
+  thumbstick.
+- Studio iPhone 14 emulator: RunChecks 9/9; screenshots before/after; rank tag
+  200x28 → 108x15, equipment tag 280x72 → 140x36. The rank tag appears only after the
+  first stats update after spawning (existing behaviour).
 
 # Earlier session: 2026-10-16, sign panels only, gyms +1
 
