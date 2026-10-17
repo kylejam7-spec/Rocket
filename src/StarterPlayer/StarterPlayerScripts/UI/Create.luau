@@ -1,6 +1,7 @@
 -- Instance construction shared by the components. Component props tables mix
 -- Instance properties (Capitalized keys, applied as-is) with component options
 -- (lowercase keys, read by the component and skipped here).
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local Theme = require(script.Parent.Theme)
 local Create = {}
@@ -53,6 +54,21 @@ function Create.screen(name)
     screen.Parent = playerGui
     fit()
     return screen
+end
+
+-- Centres `item` vertically in the Roblox top bar row (above the screen's safe-area
+-- inset, right of Roblox's own buttons), keeping its X position. For phones, where
+-- that row is the only free space up top. `screen` is the item's Create.screen.
+function Create.inTopBar(item, screen)
+    local scale = screen:FindFirstChild("ScreenScale")
+    local function place()
+        local half = GuiService.TopbarInset.Height / 2 / (scale and scale.Scale or 1)
+        item.AnchorPoint = Vector2.new(item.AnchorPoint.X, 0.5)
+        item.Position = UDim2.new(item.Position.X.Scale, item.Position.X.Offset, 0, -half)
+    end
+    GuiService:GetPropertyChangedSignal("TopbarInset"):Connect(place)
+    if scale then scale:GetPropertyChangedSignal("Scale"):Connect(place) end
+    place()
 end
 
 return Create

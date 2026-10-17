@@ -13,6 +13,10 @@
   pushed right of the stat stack when it would overlap. Touch: objective text 34
   (desktop 26); stat stack 1.25x, vertically centred on the left edge (-30), clear of the
   thumbstick.
+- Phone layout (user): stat stack at the top left under the Roblox button (y 8, 1.25x);
+  ⚙ (78 design = ~36 px on touch) and SKIP TUTORIAL sit in the free right side of the
+  Roblox top bar row via `Create.inTopBar` (centres on GuiService.TopbarInset, follows
+  scale and inset changes). Desktop layout unchanged.
 - Studio iPhone 14 emulator: RunChecks 9/9; screenshots before/after; rank tag
   200x28 → 108x15, equipment tag 280x72 → 140x36. The rank tag appears only after the
   first stats update after spawning (existing behaviour).

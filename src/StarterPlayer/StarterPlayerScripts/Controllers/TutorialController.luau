@@ -98,6 +98,11 @@ function TutorialController.start()
         Name = "SkipTutorialHolder", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 160),
         Size = UDim2.fromOffset(170, 44), BackgroundTransparency = 1, Parent = gui,
     })
+    -- Phones: in the top bar row, just left of the ⚙ button (78 wide there, SettingsController).
+    if Actions.touch then
+        holder.Position = UDim2.new(1, -Theme.gutter - 78 - 10, 0, 0)
+        Create.inTopBar(holder, gui)
+    end
     local skip = Button.new({
         Name = "SkipTutorial", Text = "SKIP TUTORIAL", TextSize = 18, color = Theme.color.Purple,
         Size = UDim2.fromScale(1, 1), Visible = false, Parent = holder,
