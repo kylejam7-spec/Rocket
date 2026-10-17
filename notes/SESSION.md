@@ -1,4 +1,18 @@
-# Latest session: 2026-10-16, gym sign and map label polish
+# Latest session: 2026-10-16, HUD polish
+
+- PRs #14 and #15 rebase-merged with the user's OK. Branch `claude/hud-polish` from master.
+- User: make the HUD pop like the gym signs.
+- StatRow: a dark rounded card edged in the stat's colour, the icon in a glossy coloured
+  disc over its left end, an "LV n" chip in the stat colour under the disc, a thicker
+  glossy level bar with "into/cost" inside it; "+N" pops land past the card's right
+  edge instead of over the digits.
+- Objective line on a dark gold-rimmed banner sized to its text (bounces on a new line);
+  mission tag on a dark chip with the rarity word in its rarity colour (RichText);
+  progress pill 400x48 with a 4 px rim.
+- Studio: RunChecks 9/9; screenshots at 12,345 coins / LV 10 / LV 5 and after a gain.
+  Not checked on a phone-sized screen.
+
+# Earlier session: 2026-10-16, gym sign and map label polish
 
 - Branch `claude/gym-sign-polish` stacked on `claude/planet-rewards` (PR #14, not merged).
 - User: make the gym/map GUI pop, less flat text, eye-catching "x5" tier multipliers;
