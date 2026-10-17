@@ -74,7 +74,7 @@ function ActionController.start()
     local held
     local jump = Button.new({
         Name = "Jump", shape = "circle", icon = Theme.icon.Jump, caption = "JUMP", color = Theme.color.Speed,
-        Size = UDim2.fromOffset(84, 84), LayoutOrder = 4, Parent = row,
+        Size = UDim2.fromOffset(84, 84), LayoutOrder = 4, sound = false, Parent = row,
     })
     jump.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then held = input end

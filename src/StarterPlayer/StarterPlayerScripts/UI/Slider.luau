@@ -1,9 +1,11 @@
 -- Chunky horizontal slider: dark track with a gold rim, glossy fill and a round
 -- knob. Drag or click anywhere on it (mouse or touch).
 -- Options: value (0..1), color (fill), onChanged(value). slider:set(value).
+-- Each 5% step it moves to ticks, higher the further right.
 local UserInputService = game:GetService("UserInputService")
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
+local Sfx = require(script.Parent.Sfx)
 local Slider = {}
 Slider.__index = Slider
 
@@ -33,6 +35,8 @@ function Slider.new(props)
         if value ~= self.value then
             self:set(value)
             if self.onChanged then self.onChanged(value) end
+            -- After onChanged, so the SFX slider's tick already plays at its new volume.
+            Sfx.play("tick", { pitch = 0.8 + 0.6 * value })
         end
     end
     track.InputBegan:Connect(function(input)

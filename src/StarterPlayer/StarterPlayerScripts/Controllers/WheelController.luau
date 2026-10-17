@@ -2,6 +2,8 @@
 -- the result (state.wheel: result, weights, offset, startAt, seconds, pity); every
 -- client draws the same pie from the weights and eases it to the same stopping
 -- angle from the shared server clock, then shows the result in its rarity colour.
+-- Sound follows the drawn wheel: a tick each time a slice edge passes the pointer
+-- (slowing with the wheel), then a chime as it stops, a jingle for Rare or better.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -10,6 +12,7 @@ local State = require(script.Parent.State)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
+local Sfx = require(UI.Sfx)
 local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
 local WheelController = {}
@@ -105,12 +108,20 @@ function WheelController.start()
 
     -- The objective line sits where the wheel's title goes; hide it while spinning.
     local hud = Create.screen("RocketHUD")
-    local spin, slices, shownFor, revealed
+    local spin, slices, shownFor, revealed, underPointer
+    -- The slice under the pointer at a wheel rotation (slices run clockwise from the top).
+    local function sliceAt(rotation)
+        local at = -rotation % 360
+        for index, slice in slices do
+            if at >= slice.from and at < slice.from + slice.size then return index end
+        end
+        return nil
+    end
     State.subscribe(function(state)
         spin = state.wheel
         if not spin then return end
         if shownFor ~= spin.startAt then
-            shownFor, revealed = spin.startAt, false
+            shownFor, revealed, underPointer = spin.startAt, false, nil
             slices = build(spin.weights)
             title.Text = spin.pity and "PITY SPIN! RARE OR BETTER!" or "SPINNING FOR THE NEXT MISSION"
             title.TextColor3 = spin.pity and Theme.rarity.Rare or Theme.color.White
@@ -130,6 +141,9 @@ function WheelController.start()
         local progress = math.clamp((now - spin.startAt) / spin.seconds, 0, 1)
         local eased = 1 - (1 - progress) ^ 3
         wheel.Rotation = final * eased
+        local under = sliceAt(wheel.Rotation)
+        if progress < 1 and underPointer and under ~= underPointer then Sfx.play("tick") end
+        underPointer = under
         if progress >= 1 and not revealed then
             revealed = true
             local mission = Missions.get(spin.result)
@@ -137,6 +151,7 @@ function WheelController.start()
             result.TextColor3 = Theme.rarity[mission.Rarity]
             Tween.bounce(result, mission.Rank >= 4 and 1.8 or 1.4, 0.5)
             Tween.bounce(root, 1.06, 0.3)
+            Sfx.play(mission.Rank >= Missions.PityRank and "jingle" or "confirm")
         end
     end)
 end

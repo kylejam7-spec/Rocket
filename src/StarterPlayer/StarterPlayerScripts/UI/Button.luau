@@ -2,11 +2,14 @@
 -- label, grows on hover and bounces on press.
 -- Options: onActivated, color, shape ("pill" default, or "circle"), icon (big
 -- glyph for circle buttons), caption (small stroked label under a circle),
--- radius (px), stroke (outline thickness).
+-- radius (px), stroke (outline thickness), sound (the Sfx cue on press, "click"
+-- by default; false for none, when the handler plays its own).
+local UserInputService = game:GetService("UserInputService")
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
+local Sfx = require(script.Parent.Sfx)
 local Button = {}
 
 function Button.new(props)
@@ -59,10 +62,15 @@ function Button.new(props)
         })
     end
     local scale = Create.new("UIScale", { Name = "HoverScale", Parent = button })
-    button.MouseEnter:Connect(function() Tween.play(scale, 0.12, { Scale = 1.08 }) end)
+    button.MouseEnter:Connect(function()
+        Tween.play(scale, 0.12, { Scale = 1.08 })
+        -- Taps fire MouseEnter too; only a real pointer hovers.
+        if UserInputService:GetLastInputType() ~= Enum.UserInputType.Touch then Sfx.play("hover") end
+    end)
     button.MouseLeave:Connect(function() Tween.play(scale, 0.12, { Scale = 1 }) end)
     button.Activated:Connect(function(...)
         Tween.bounce(label, 1.3, 0.3)
+        if props.sound ~= false then Sfx.play(props.sound or "click") end
         if props.onActivated then props.onActivated(...) end
     end)
     return button

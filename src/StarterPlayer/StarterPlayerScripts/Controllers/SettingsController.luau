@@ -7,6 +7,7 @@ local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local Panel = require(UI.Panel)
 local StrokedText = require(UI.StrokedText)
+local Sfx = require(UI.Sfx)
 local Slider = require(UI.Slider)
 local Toggle = require(UI.Toggle)
 local Tween = require(UI.Tween)
@@ -33,12 +34,13 @@ function SettingsController.start()
         Size = UDim2.fromOffset(300, 40), Font = Theme.font.Display, TextSize = 36, stroke = 3, Parent = panel,
     })
     local function close()
+        if panel.Visible then Sfx.play("close") end
         panel.Visible = false
     end
     Button.new({
         Name = "Close", shape = "circle", icon = Theme.icon.Leave, color = Theme.color.Danger,
         AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -6, 0, 6), Size = UDim2.fromOffset(46, 46),
-        onActivated = close, Parent = panel,
+        sound = false, onActivated = close, Parent = panel,
     })
     rowLabel("🎵 Music", 74, panel)
     local music = Slider.new({
@@ -68,10 +70,12 @@ function SettingsController.start()
     Button.new({
         -- Gold: the grey ⚙️ emoji disappears on the purple used elsewhere.
         Name = "SettingsButton", shape = "circle", icon = Theme.icon.Settings, color = Theme.color.Gold,
-        Size = UDim2.fromScale(1, 1),
+        Size = UDim2.fromScale(1, 1), sound = false,
         onActivated = function()
-            panel.Visible = not panel.Visible
-            if panel.Visible then Tween.bounce(panel, 1.12, 0.3) end
+            if panel.Visible then return close() end
+            panel.Visible = true
+            Sfx.play("open")
+            Tween.bounce(panel, 1.12, 0.3)
         end,
         Parent = holder,
     })

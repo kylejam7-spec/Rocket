@@ -1,11 +1,13 @@
 -- Short-lived message cards in a stack: each pops in, holds, then fades; the oldest
 -- goes when the stack is full, and a repeat of the newest message just re-bounces it.
 -- Toast.stack(props) makes the stack (a Frame; Capitalized props apply, `max` caps
--- the count); stack:push(text, color?, seconds?) adds a card at the bottom.
+-- the count); stack:push(text, color?, seconds?) adds a card at the bottom with a
+-- soft pluck.
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
+local Sfx = require(script.Parent.Sfx)
 local Toast = {}
 Toast.__index = Toast
 
@@ -50,6 +52,7 @@ function Toast:push(text, color, seconds)
         Font = Theme.font.Display, TextSize = 22, TextWrapped = false, stroke = 2, Parent = card,
     })
     Tween.bounce(card, 1.15, 0.3)
+    Sfx.play("notify")
     local entry = { card = card, text = text, expires = os.clock() + (seconds or 3) }
     table.insert(self.cards, entry)
     if #self.cards > self.max then table.remove(self.cards, 1).card:Destroy() end

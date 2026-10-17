@@ -14,6 +14,7 @@ local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local StrokedText = require(UI.StrokedText)
 local Popup = require(UI.Popup)
+local Sfx = require(UI.Sfx)
 local Tween = require(UI.Tween)
 local TutorialController = {}
 
@@ -222,6 +223,7 @@ function TutorialController.start()
                 Name = "Banner", Text = "TUTORIAL COMPLETE! " .. Theme.icon.Star, TextColor3 = Theme.color.Gold, seconds = 4,
                 AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.26), Parent = Create.screen("RocketProgress"),
             })
+            Sfx.play("jingle")
         elseif last and now and now ~= last and now ~= "Done" and table.find({ "Carry", "Place", "Upgrade", "Bench", "Treadmill", "Together" }, now) then
             Tween.bounce(gui:FindFirstChild("Objective") or skip, 1.25, 0.35)
         end
