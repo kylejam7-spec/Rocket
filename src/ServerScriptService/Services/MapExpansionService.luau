@@ -30,7 +30,6 @@ end
 function Map.build(part, label, reserved)
     local grass = Color3.fromRGB(62, 103, 72)
     local concrete = Color3.fromRGB(81, 91, 107)
-    local paint = Color3.fromRGB(245, 182, 71)
     -- Builds a centre/size slab as carved pieces; returns the largest.
     local function slab(name, center, size, color)
         local largest, area = nil, 0
@@ -42,36 +41,26 @@ function Map.build(part, label, reserved)
         end
         return largest
     end
-    -- Ground and apron run out to z = -340 under the tilted rockets, which lean toward -Z
-    -- (the scaled Tier 5 nose reaches about z = -290). Behind spawn the ground reaches
-    -- z = 160 to hold the material stations, which are carved out of it.
-    slab("Ground", Vector3.new(0, -1, -90), Vector3.new(240, 2, 500), grass)
-    part("LaunchApron", Vector3.new(0, -0.17, -195), Vector3.new(160, 0.5, 270), concrete)
-    -- Permanent pad sized for the scaled Tier 5 rocket (mount 83x57 + climbing ramps out to
-    -- x = +/-53 on both flanks); its top surface (y = 0.58) is the origin every tier is built from.
-    part("LaunchPad", Vector3.new(0, 0.33, -112), Vector3.new(112, 0.5, 88), Color3.fromRGB(96, 104, 118))
-    -- Sits between spawn and the apron, on the lane from spawn to the rocket.
-    local sign = part("ExpansionSign", Vector3.new(0, 0.1, -54), Vector3.new(12, 0.2, 4), paint)
-    label(sign, "SPACEPORT")
-    -- Flat markings leave the cabin entrance and future boosters unobstructed.
-    for _, z in {-330, -60} do
-        part("ApronMarking", Vector3.new(0, 0.10, z), Vector3.new(160, 0.04, 1), paint).CanCollide = false
-    end
+    -- The launch origin is (0, 0.58, -190). Tilted rockets lean toward -Z: the Tier 5
+    -- complex spans x = +/-178 and z = -723..-59 (nose to boarding hatch). Ground and apron
+    -- cover that; behind spawn the ground reaches z = 160 to hold the material stations,
+    -- which are carved out of it.
+    slab("Ground", Vector3.new(0, -1, -300), Vector3.new(460, 2, 920), grass)
+    part("LaunchApron", Vector3.new(0, -0.17, -400), Vector3.new(380, 0.5, 680), concrete)
+    -- Permanent pad under the Tier 5 mount (250 x 172), its ramps (out to x = +/-139) and
+    -- boarding hatch; its top surface (y = 0.58) is the origin every tier is built from.
+    part("LaunchPad", Vector3.new(0, 0.33, -175), Vector3.new(300, 0.5, 230), Color3.fromRGB(96, 104, 118))
     local stage = 0
     return function(cycle)
         local target = math.floor((cycle - 1) / 3)
         for index = stage + 1, target do
             for _, side in {-1, 1} do
                 slab("ExpansionGround" .. index .. "_" .. side,
-                    Vector3.new(side * (80 + index * 80), -1, -90), Vector3.new(80, 2, 500), grass)
-                local x = side * (40 + index * 80)
+                    Vector3.new(side * (190 + index * 80), -1, -300), Vector3.new(80, 2, 920), grass)
+                local x = side * (150 + index * 80)
                 local bay = slab("ConstructionBay" .. index .. "_" .. side,
-                    Vector3.new(x, -0.17, -195), Vector3.new(80, 0.5, 270), concrete)
+                    Vector3.new(x, -0.17, -400), Vector3.new(80, 0.5, 680), concrete)
                 if bay then label(bay, "EXPANSION " .. index) end
-                for _, z in {-330, -60} do
-                    local marking = slab("BayMarking", Vector3.new(x, 0.10, z), Vector3.new(80, 0.04, 1), paint)
-                    if marking then marking.CanCollide = false end
-                end
             end
             if index % 10 == 0 then task.wait() end
         end

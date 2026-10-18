@@ -273,3 +273,13 @@
 - Desktop players keep a normal cursor and hold right-click to look around (the usual
   Roblox feel), instead of a locked mouse-look with a V toggle.
 - Dropping cargo is the Q key on desktop; touch keeps the round DROP button.
+
+## 2026-10-18: Rockets 3x, landing pads off the destination
+
+- Rockets are three times their 2026-10-16 size so one player's small delivery visibly
+  grows the fill. The launch complex, pad, apron and ground grew to match, and the
+  origin moved back to z = -190.
+- Ramps get longer with the rocket (Tier 5 is about 850 studs of ramp), but the fill
+  goes lowest-first, so early trips stay short.
+- A landed rocket stands on its own pad past each destination's fence, instead of on
+  the walkable ground.

@@ -13,7 +13,7 @@ local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
 -- Each ramp is at least RAMP_MIN_WIDTH wide, so a full 50-player server can climb, pass
 -- and stand along the fill line at once. The outer edge stays RAMP_PAST_MOUNT beyond the
 -- launch mount, inside the floodlights.
-local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 14, 11, 4, 14
+local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 14, 11, 4, 30
 local reveal = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local Build = {}
@@ -210,8 +210,9 @@ function Build:load(tier, variant)
         local arm = create({ name = "RampArm", shape = "Block", size = Vector3.new(2 * inner + 2, 1, ARM_WIDTH), color = Models.Colors.grey, material = "Metal" },
             CFrame.new(center.X, center.Y - 0.5, center.Z) * up, complex)
         table.insert(self.arms, arm)
-        -- Support posts under every other arm keep tall ramps from looking like a fence.
-        for _, x in (#self.arms % 2 == 1 and { -outer + 0.5, -inner - 0.5, inner + 0.5, outer - 0.5 } or {}) do
+        -- Posts under every other arm, on the outer edges only, so they never hide the
+        -- rocket being built and tall ramps don't look like a fence.
+        for _, x in (#self.arms % 2 == 1 and { -outer + 0.5, outer - 0.5 } or {}) do
             local top = tilted * Vector3.new(x, y, surface - 1)
             local height = top.Y - self.origin.Y
             if height > 2 then

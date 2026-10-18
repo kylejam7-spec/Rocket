@@ -37,7 +37,7 @@ return function()
             assert(not ids[spec.id], "duplicate destination " .. spec.id)
             ids[spec.id] = true
             assert(type(place.name) == "string" and place.gravity > 0, spec.id .. " name/gravity")
-            -- Far from the main map (±520 x, -340..160 z) and from each other.
+            -- Far from the main map (±550 x, -760..160 z) and from each other.
             assert(math.abs(place.center.X) > 1000 or math.abs(place.center.Z) > 1000, spec.id .. " is on the main map")
             -- Both gym spots stand on this destination's ground, clear of the arrival.
             for kind, spot in place.gym do

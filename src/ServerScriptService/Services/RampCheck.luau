@@ -16,7 +16,7 @@ return function()
                 for _, item in build.lists.Metal.items do widest = math.max(widest, item.high.X, -item.low.X) end
                 assert(build.rampInner >= widest + 1 and build.rampInner <= widest + 1.5, name .. " ramp hugs the widest segment")
                 assert(build.rampOuter - build.rampInner >= 14, name .. " ramp wide enough for a full server")
-                assert(build.rampOuter <= 53, name .. " ramp inside the floodlights and launch complex")
+                assert(build.rampOuter <= 150, name .. " ramp inside the floodlights and launch complex")
                 -- No ledge: where a ramp's inner edge crosses the mount's front face, its
                 -- surface is above the mount top.
                 local mount = build.site.LaunchComplex.LaunchMount

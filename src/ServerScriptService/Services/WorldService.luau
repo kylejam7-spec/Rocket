@@ -97,8 +97,9 @@ function World.new(ctx)
     service.expandMap = require(script.Parent.MapExpansionService).build(part, label, MaterialStations.Reserved)
     service.expandMap(1)
     local spawn = tag(part("Spawn", Vector3.new(0, 1, 36), Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
-    spawn.Neutral = true
-    label(spawn, "SPAWN")
+    -- Invisible: players just appear on the ground, with no pad or label.
+    spawn.Neutral, spawn.Transparency = true, 1
+    spawn.CanCollide, spawn.CanQuery, spawn.CanTouch, spawn.CastShadow = false, false, false, false
     service.spawn = spawn
     -- Scrap pit (Metal) and oil refinery (Fuel) sit right behind spawn; the Gym District is past them.
     service.materialStations = MaterialStations.build(world)
@@ -106,7 +107,7 @@ function World.new(ctx)
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }
     -- Glowing ring at the rocket's lowest unfinished point. Players climb the ramp and
     -- the finished hull to reach it, then hold E to pour their scrap ball in.
-    local frontier = tag(part("BuildFrontier", Vector3.new(0, -50, -112), Vector3.new(0.4, 6, 6), service.materialColors.Metal), World.Tags.Frontier)
+    local frontier = tag(part("BuildFrontier", Vector3.new(0, -50, -190), Vector3.new(0.4, 6, 6), service.materialColors.Metal), World.Tags.Frontier)
     frontier.Shape = Enum.PartType.Cylinder
     frontier.Material = Enum.Material.Neon
     frontier.Transparency = 0.55
@@ -139,7 +140,7 @@ function World.new(ctx)
     label(boarding, "BOARD")
     service.boarding = boarding
     -- Rockets are built on the permanent LaunchPad (MapExpansionService); y = pad top.
-    service.rocketBuild = require(script.Parent.RocketBuildService).new(world, CFrame.new(0, 0.58, -112))
+    service.rocketBuild = require(script.Parent.RocketBuildService).new(world, CFrame.new(0, 0.58, -190))
     -- The rocket cabin and the five destinations (DestinationService), far off the map.
     service.destinations, service.cabin = require(script.Parent.DestinationService).build(world, config)
     world.Parent = workspace

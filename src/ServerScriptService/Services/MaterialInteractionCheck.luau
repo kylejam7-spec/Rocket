@@ -25,7 +25,7 @@ return function()
         for _, list in { data.build, data.fuel, data.infra } do
             for _, spec in list do
                 local p = spec.cframe.Position
-                assert(math.abs(p.X) <= 58 and math.abs(p.Z) <= 44, spec.name .. " leaves the launch complex")
+                assert(math.abs(p.X) <= 174 and math.abs(p.Z) <= 132, spec.name .. " leaves the launch complex")
             end
         end
     end

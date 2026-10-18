@@ -1,4 +1,38 @@
-# Latest session: 2026-10-18 (3), pet polish and the launch camera
+# Latest session: 2026-10-18 (4), salvage scrap, 3x rockets, cleaner spaceport
+
+- Branch `claude/happy-rhodes-21d202` from master @ 46257c7. Rojo on 34873.
+- Carried scrap: the plain ball with six cubes is now a salvage heap. It has a rusty
+  core with two rust lumps, a pipe with a flange, a tyre and hub, a brass gear with
+  teeth, an orange I-beam girder, a bent diamond-plate sheet, a copper coil, bolts, and
+  an antenna with a red bulb (22 parts). Each spec is shape, size, offset, colour and
+  material in units of the ball's diameter, so it grows like the jerry can.
+- Rockets are 3x: `RocketModels.Scale` is { 6, 5.4, 4.8, 4.35, 3.9 }, about 318, 420,
+  522, 621 and 756 studs tall. Tier 5's complex spans x = +/-178 and z = -533..+131
+  around the origin. Map changes:
+  - The origin moved from z = -112 to -190, so the boarding hatch (Tier 5 front at
+    about -65) stays clear of the hut and the UFO shop at z = -32.
+  - Ground is 460 x 920 (z -760..160), the apron is 380 x 680 and the pad is 300 x 230.
+  - Expansion strips and bays moved out past x = +/-190.
+  - Check limits scaled: specs within |x| <= 174 and |z| <= 132, rampOuter <= 150.
+- Ramps: arms every 30 studs (was 14), with posts under every other arm on the outer
+  edges only. At 3x the old spacing made a dense fence that hid the fill.
+- Destinations: the rocket no longer fits on a destination's ground (radius 65-75), so
+  each destination has a LandingPad (radius 116, a neon ring in the destination colour)
+  just past the fence, straight ahead of the arrival. The sign stands in front of it.
+- Removed: the yellow SPACEPORT floor sign and the yellow apron and bay marking lines.
+  The SpawnLocation stays but is invisible and non-colliding, with no SPAWN label.
+- Studio: RunChecks 10/10. Seen:
+  - the scrap heap close up
+  - the Tier 1 and Tier 5 builds at 30-50% fill
+  - a Moon landing on the new pad
+  - the cleared spawn lane
+  Not seen: a passenger's launch camera at the new height (the Studio player couldn't
+  board in time, see the next point).
+- Found, not fixed: MovementService's anti-teleport snaps any new character back to
+  where its root was first tracked. So players appear at (0, 3, 0), 36 studs short of
+  the spawn, and server PivotTo test teleports get reverted (walk in <MaxSpeed steps).
+
+# Earlier session: 2026-10-18 (3), pet polish and the launch camera
 
 - PR #25 merged by the user. Branch `claude/pets-polish` from master.
 - Launch camera: the second passenger shot sat 6 studs up beside the pad, right where

@@ -74,14 +74,14 @@ local function arrival(parent, position, tier, color)
     return pad
 end
 -- Every destination keeps these clear (offsets from its centre, with a radius): the
--- gym (bench left, treadmill right of the arrival), the arrival itself and the landing
--- spot. The widest rocket (tier 5) spans 68 x 32 studs, and every rocket fits its own
--- destination's ground there.
+-- gym (bench left, treadmill right of the arrival), the arrival itself and the shop.
 Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3.new(28, 0, 24) }
-Destinations.LandingOffset = Vector3.new(0, 0, -42)
 Destinations.ShopOffset = Vector3.new(38, 0, -4)
 local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
-    { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 } }
+    { Destinations.ShopOffset, 14 } }
+-- Rockets are far wider than a destination (tier 5 spans ~200 x 95 studs), so they land
+-- on their own pad just past the fence, straight ahead of the arrival (-Z).
+Destinations.LandingPadRadius = 116
 -- A coloured band around a planet ball: a thin disc through it at `height`, just wider
 -- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
 local function band(parent, name, center, radius, height, thickness, color)
@@ -241,8 +241,14 @@ function Destinations.build(world, config)
         arrival(folder, arrivalAt + Vector3.new(0, 0.2, 0), tier, spec.color)
         -- Players arrive facing -Z (the main map's view toward the rocket): sign ahead, facing them.
         sign(folder, center + Vector3.new(0, 22, arrivalOffset.Z - 40), Vector3.new(0, 0, 1), "WELCOME TO " .. spec.name .. "!", spec.color)
+        local radius = ground.Size.Y / 2
+        local landing = center + Vector3.new(0, 0, -(radius + Destinations.LandingPadRadius + 6))
+        local pad = disc(folder, "LandingPad", landing - Vector3.new(0, 2, 0), Destinations.LandingPadRadius, 4, Color3.fromRGB(88, 94, 108), Enum.Material.Concrete)
+        local ring = disc(folder, "LandingRing", landing + Vector3.new(0, 0.05, 0), Destinations.LandingPadRadius - 8, 0.2, spec.color, Enum.Material.Neon)
+        ring.CanCollide, ring.CanQuery = false, false
+        disc(folder, "LandingCenter", landing + Vector3.new(0, 0.1, 0), Destinations.LandingPadRadius - 10, 0.2, pad.Color, Enum.Material.Concrete).CanCollide = false
         built[tier] = { id = spec.id, name = spec.name, gravity = spec.gravity, reward = spec.reward, folder = folder,
-            arrival = arrivalAt + Vector3.new(0, 4, 0), center = center, landing = center + Destinations.LandingOffset,
+            arrival = arrivalAt + Vector3.new(0, 4, 0), center = center, landing = landing,
             shop = center + Destinations.ShopOffset, shopFacing = (arrivalOffset - Destinations.ShopOffset).Unit,
             gym = { bench = center + Destinations.GymOffsets.bench + Vector3.new(0, 1, 0), treadmill = center + Destinations.GymOffsets.treadmill + Vector3.new(0, 1, 0) } }
     end

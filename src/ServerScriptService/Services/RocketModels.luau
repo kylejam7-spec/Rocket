@@ -24,8 +24,8 @@
     one so a full 50-player server can climb the ramps and hull together. Smaller
     tiers scale more because their short ramps were the bottleneck.
 
-    Once scaled, every tier must fit the reserved launch complex: |x| <= 58, |z| <= 44.
-    The ramps themselves reach |x| ~53 on Tier 5.
+    Once scaled, every tier must fit the reserved launch complex: |x| <= 174, |z| <= 132.
+    The ramps themselves reach |x| ~139 on Tier 5.
 ]]
 local V = Vector3.new
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
@@ -306,8 +306,9 @@ Models[5] = function()
     return t
 end
 
--- Per-tier enlargement: ~106, 140, 174, 207 and 252 studs tall once scaled.
-Models.Scale = { 2, 1.8, 1.6, 1.45, 1.3 }
+-- Per-tier enlargement: ~318, 420, 522, 621 and 756 studs tall once scaled. Rockets are
+-- huge so one player's small delivery still visibly grows the fill (3x the 2026-10-16 size).
+Models.Scale = { 6, 5.4, 4.8, 4.35, 3.9 }
 for tier, k in Models.Scale do
     local author = Models[tier]
     Models[tier] = function()
