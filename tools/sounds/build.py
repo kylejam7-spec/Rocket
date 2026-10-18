@@ -79,6 +79,35 @@ MANIFEST = {
         {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg"},
         {"file": "kenney_sci-fi-sounds/Audio/explosionCrunch_000.ogg", "pitch": 0.55, "lowpass": 900, "gain": 0.6},
     ]},
+    # UFO pet delivery (Kenney sci-fi). The UFO swoops in on a rising sweep; its tractor
+    # beam powers up (forceField_002 climbs ~750 -> 1,150 Hz) over a soft warbling hum;
+    # the pet pops out with a retro zap on a low thump; the UFO zooms off on a falling
+    # laser played backwards (so it rises away).
+    "pet/arrive": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/laserSmall_003.ogg", "pitch": 0.7, "lowpass": 5000},
+        {"file": "kenney_sci-fi-sounds/Audio/forceField_001.ogg", "gain": 0.35, "delay": 0.12},
+    ]},
+    "pet/beam": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/forceField_002.ogg"},
+        {"file": "kenney_sci-fi-sounds/Audio/engineCircular_002.ogg", "clip": [0, 1.6], "fadein": 0.25, "fadeout": 0.7,
+         "lowpass": 2500, "gain": 0.3},
+    ]},
+    "pet/pop": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/laserRetro_001.ogg", "pitch": 1.25},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_001.ogg", "gain": 0.55},
+        {"file": "kenney_sci-fi-sounds/Audio/slime_000.ogg", "gain": 0.25, "delay": 0.04, "highpass": 400},
+    ]},
+    "pet/zip": ("kenney_sci-fi-sounds/Audio/laserSmall_002.ogg", "reverse"),
+    # Rarity fanfares after the pop, bigger with each tier (rising 8-bit arpeggios;
+    # Legendary adds a second phrase and a deep boom). Common has none.
+    "pet/fanfare2": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES09.ogg",
+    "pet/fanfare3": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES03.ogg",
+    "pet/fanfare4": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES12.ogg",
+    "pet/fanfare5": {"layers": [
+        {"file": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES12.ogg"},
+        {"file": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES08.ogg", "delay": 0.78},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg", "gain": 0.6},
+    ]},
 }
 
 ONSET_DB = -40  # first sample this far under the peak counts as the start

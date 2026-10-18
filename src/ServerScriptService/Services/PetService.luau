@@ -162,12 +162,10 @@ function PetService.new(ctx)
         for _, player in Players:GetPlayers() do
             local profile = profileOf(player)
             if profile and profile.ufo then
-                local id, equipped = PetService.advance(profile, step)
+                local id = PetService.advance(profile, step)
                 if id then
-                    local entry = Pets.get(id)
-                    ctx.Remote.feedback(player, "Your UFO landed! You got " .. entry.Name .. " (" .. entry.Rarity:upper() .. ")"
-                        .. (equipped and "!" or ". It is waiting in your backpack."))
-                    -- The landing cue goes first so clients hold the UFO for it.
+                    -- The landing cue goes first so clients hold the UFO for it; the owner's
+                    -- client shows the reveal card (no toast).
                     hatched:FireAllClients(player, id)
                     changed(player)
                 else

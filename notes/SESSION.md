@@ -1,4 +1,47 @@
-# Latest session: 2026-10-18 (2), real pet models, animation, sizes, backpack
+# Latest session: 2026-10-18 (3), pet polish and the launch camera
+
+- PR #25 merged by the user. Branch `claude/pets-polish` from master.
+- Launch camera: the second passenger shot sat 6 studs up beside the pad, right where
+  the UFO Shop stands, and players could walk into it. It now looks up from high on the
+  other side (`-0.7h, 40 + 0.5h, 1.3h` from the pad). A posed check at the Moon
+  rocket's height showed open sky, and a raycast from the camera hits only the rocket.
+- Names: bland pets renamed to alien names. A creature's forms share a root: Glorple /
+  Glorpwing, Gloopling / Gloopzilla, Mushnub / Mushnubbus / King Mushnubulon, Grunkle /
+  Grunklor / Skullgrunklor, Drakko / Drakkothar... Already-alien names (Hywirl, Squidle,
+  Alpaking...) stay. Ids are unchanged, so saves are fine. PetCheck requires unique names.
+- Clips: every model now carries 5-8 clips from the importer's saves (Blob: Idle, Move,
+  Jump, Yes, Dance, Bite, No; Large: + Run, Wave, Punch, Swing; Flying: Idle, Move, Yes,
+  Headbutt, Punch, No). Finger and leaf-bone poses are dropped and long clips halved, so
+  the file is 2.8 MB.
+- PetAnimator: Idle -> Walk -> Run blending with the step rate matched to ground speed.
+  Measured at pet size, Walk keeps pace at ~2 studs/s and Run at ~3, so at player speed
+  (24-70) Large pets bound in leaps timed to each step and blobs hop per Walk cycle.
+  One-shot clips play over the base with fades (play/busy/phase).
+- PetController rewrite. Rarity flair: Rare+ glow ring, Epic+ sparkles, Legendary light
+  and a short trail. Idle shows (clips and tricks: hop, spin, roll, backflip, loop,
+  barrel roll) grow in variety and frequency with rank, and Epic+ trick on the move.
+  Pets hop when their owner jumps. Name and rarity tags are sized in studs to each pet
+  (3 x 0.75 at full size, fading by 45 studs), and Legendary tags shimmer. The UFO swoops
+  in on purchase, and its lights race in the last 10 s.
+- Landing: the UFO swoops in front of the owner, wobbles and spins up, its beam powers on
+  with rising sparkles, and the pet spins up from a speck inside it. At the pop come a
+  shockwave ring, a flash and a burst (confetti for Epic+, a gold light pillar and a
+  camera kick for Legendary). The UFO zips off and the pet drops, bounces and celebrates
+  (Dance/Wave/Yes/Headbutt), then joins its owner. It's longer for rarer pets.
+- `PetRevealCard` replaces the banner and the server toast: a live 3D pet, name, star
+  rarity pill and "now following you" / "sent to your backpack". Epic+ get rays,
+  Legendary a gold shimmer. Fixed: a UIGradient on the CanvasGroup dimmed everything,
+  so the wash is its own frame now.
+- Sounds (Kenney sci-fi): pet/arrive, beam (forceField_002 + warble), pop (retro zap +
+  thump + slime), zip (reversed falling laser), and fanfare2-5 (rising 8-bit arpeggios;
+  Legendary adds a phrase and a boom). Built and copied to Studio. **Not uploaded** (no
+  API key here); the user runs tools/sounds/upload.py. Until then they're silent live.
+- Studio: RunChecks 10/10. Seen: a Legendary landing (rays, trail, tag), the Epic card,
+  Legendary idle tricks, the Large run stride, the posed launch shot. Trails and rings
+  were toned down after a look. Not seen: a full passenger launch (the character didn't
+  board), and a second player.
+
+# Earlier session: 2026-10-18 (2), real pet models, animation, sizes, backpack
 
 - PR #25 (`claude/pets`) opened with the first round. The user imported all 50 FBX into
   Studio and asked for: fixed animations, pet-sized pets (the Large ones were far too

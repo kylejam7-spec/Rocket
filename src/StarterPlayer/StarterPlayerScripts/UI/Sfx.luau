@@ -46,6 +46,15 @@ local CUES = {
     engine = { file = "game/engine", volume = 1.2, world = true, loop = true, near = 60, far = 2500 },
     ignition = { file = "game/ignition", volume = 0.9, world = true, near = 80, far = 2500 },
     liftoff = { file = "game/liftoff", volume = 1, world = true, near = 80, far = 2500 },
+    -- UFO pet deliveries, heard from the UFO (PetController); fanfares are the owner's.
+    petArrive = { file = "pet/arrive", volume = 0.5, world = true, near = 12, far = 160 },
+    petBeam = { file = "pet/beam", volume = 0.55, world = true, near = 12, far = 160 },
+    petPop = { file = "pet/pop", volume = 0.6, world = true, near = 12, far = 160 },
+    petZip = { file = "pet/zip", volume = 0.45, world = true, near = 12, far = 200 },
+    fanfare2 = { file = "pet/fanfare2", volume = 0.35 },
+    fanfare3 = { file = "pet/fanfare3", volume = 0.38 },
+    fanfare4 = { file = "pet/fanfare4", volume = 0.4 },
+    fanfare5 = { file = "pet/fanfare5", volume = 0.45 },
 }
 
 local function source(file)

@@ -35,7 +35,7 @@ local function preview(parent, id)
     local model = PetModels.pet(id)
     model:PivotTo(CFrame.Angles(0, math.rad(200), 0))
     model.Parent = world
-    local animator = PetAnimator.new(model)
+    local animator = PetAnimator.new(model, Pets.get(id).Form)
     if animator then animator.idleTime = 0; animator:step(0, 0) end
     local camera = Instance.new("Camera")
     -- Frame the widest side, so winged pets fit as well as tall ones.

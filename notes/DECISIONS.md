@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-10-18: Pet names and rarity flair
+
+- User: give bland pets fun alien names, keep the already-alien ones, and keep a
+  creature's forms recognisably related (their example: Glorple -> Glorpurus).
+- Rarer pets are cooler, but all of it is presentation: more animations and tricks, glow,
+  sparkles, a light and a trail, a longer landing with a bigger fanfare. Pets still grant
+  nothing.
+- Pet tags are world-sized (shrink with distance) so they never crowd the screen.
+
 ## 2026-10-18: Pets are cosmetic; backpack; pet sizes
 
 - User: pets only follow you and look cool, with no stats or coins. A small backpack
