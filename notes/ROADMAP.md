@@ -161,6 +161,17 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 - **Accept:** side-by-side screenshots with the reference, and 60 FPS on a mid-range phone emulator with 8 players at Tier 5.
 
+### Phase 5.5: Earth site (added 2026-10-18)
+
+**Status:** first pass on `claude/earth-map`. The layout is spaced out, the rocket,
+ramps and pad are 1.35x bigger, the stations are remodelled, the construction-site
+dressing is built from primitives, and planets are hidden from Earth.
+
+- **Next:** import the staged Kenney models (`tools/map/README.md`) and swap them in
+  (cranes, containers, hangars, satellite dishes, catwalks); connect the Blender MCP
+  for custom pieces; add terrain or edge treatment so the site doesn't end at a floating
+  edge; a skybox or atmosphere pass; and a part-count and performance check on phones.
+
 ### Phase 6: Meta and social
 
 - **Friend Boost:** +X% coins or training for each friend in the server.

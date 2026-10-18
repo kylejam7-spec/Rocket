@@ -24,8 +24,11 @@
     one so a full 50-player server can climb the ramps and hull together. Smaller
     tiers scale more because their short ramps were the bottleneck.
 
-    Once scaled, every tier must fit the reserved launch complex: |x| <= 58, |z| <= 44.
-    The ramps themselves reach |x| ~53 on Tier 5.
+    Models.SiteScale (2026-10-18, the bigger Earth site) enlarges every tier once more,
+    with the pad, ramps and apron sized to match (SiteLayout). It is 3x the first Earth
+    site's 1.35, so one player's small delivery visibly grows the fill. Once scaled,
+    every tier must fit the pad: |x| <= 190, |z| <= 175. At destinations the landed copy is shrunk
+    back by SiteScale so it fits their grounds as before (RocketBuildService).
 ]]
 local V = Vector3.new
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
@@ -306,8 +309,10 @@ Models[5] = function()
     return t
 end
 
--- Per-tier enlargement: ~106, 140, 174, 207 and 252 studs tall once scaled.
+-- Per-tier enlargement, times the site scale: ~428, 568, 708, 845 and 1019 studs tall.
+Models.SiteScale = 1.35 * 3
 Models.Scale = { 2, 1.8, 1.6, 1.45, 1.3 }
+for tier, k in Models.Scale do Models.Scale[tier] = k * Models.SiteScale end
 for tier, k in Models.Scale do
     local author = Models[tier]
     Models[tier] = function()

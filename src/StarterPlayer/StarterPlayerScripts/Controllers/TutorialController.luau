@@ -20,7 +20,7 @@ local TutorialController = {}
 
 local MATERIAL = { Building = "Metal", Fueling = "Fuel" }
 local CALLOUTS = {
-    Fuel = { phase = "Fueling", text = "FIRST FUEL RUN! Fill a jerry can at the OIL REFINERY, then pour it in at the ring!", color = Theme.color.Fuel },
+    Fuel = { phase = "Fueling", text = "FIRST FUEL RUN! Fill a jerry can at the FUEL DEPOT, then pour it in at the ring!", color = Theme.color.Fuel },
     Boarding = { phase = "Boarding", text = "Walk into the rocket at the green BOARD hatch to fly to space for free stats!", color = Theme.color.Ready },
 }
 
@@ -38,7 +38,7 @@ function TutorialController.objective(state)
     local material = MATERIAL[state.phase]
     local hold = Actions.touch and "Hold GRAB" or "Hold E"
     if current == "Pickup" and material and not state.training then
-        return material == "Fuel" and hold .. " at the OIL REFINERY to fill a jerry can!" or hold .. " at the SCRAP PIT to grab scrap metal!"
+        return material == "Fuel" and hold .. " at the FUEL DEPOT to fill a jerry can!" or hold .. " at the SALVAGE YARD to grab scrap metal!"
     elseif current == "Carry" and material and not state.training then
         return "Carry it up the ramp to the glowing ring!"
     elseif current == "Place" and material and not state.training then
@@ -133,7 +133,7 @@ function TutorialController.start()
     local guide = Create.new("ScreenGui", {
         Name = "TutorialGuide", IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = -1, Parent = player:WaitForChild("PlayerGui"),
     })
-    -- Off-screen targets (the Scrap Pit is behind you at spawn): an arrow on a ring
+    -- Off-screen targets (a station off to the side at spawn): an arrow on a ring
     -- around your character pointing the way, clear of the HUD at the edges.
     local edgeArrow = StrokedText.new({
         Name = "EdgeArrow", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(110, 110), Text = "⬆",
@@ -165,7 +165,7 @@ function TutorialController.start()
         local root = character and character:FindFirstChild("HumanoidRootPart")
         local position, focus
         if current and root then position, focus = target(current) end
-        -- Distance to the target's nearest edge: the Scrap Pit alone is 52 x 66 studs.
+        -- Distance to the target's nearest edge: the Salvage Yard zone alone is 76 x 100 studs.
         local distance = position and (position - root.Position).Magnitude or math.huge
         if focus then
             local offset = focus.CFrame:PointToObjectSpace(root.Position)

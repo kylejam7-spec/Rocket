@@ -311,11 +311,20 @@ function LaunchEffectsController.start()
     local world = workspace:WaitForChild("RocketWorld")
     watch(world:WaitForChild("RocketSite"))
     local destinations = world:WaitForChild("Destinations")
+    -- DestinationController parks far destinations in ReplicatedStorage.HiddenDestinations
+    -- and brings them back, which re-adds their contents: land each rocket once.
+    local seen = setmetatable({}, { __mode = "k" })
     local function track(item)
-        if item.Name == "LandedRocket" and item:IsA("Model") then task.defer(land, item) end
+        if item.Name == "LandedRocket" and item:IsA("Model") and not seen[item] then
+            seen[item] = true
+            task.defer(land, item)
+        end
     end
-    destinations.DescendantAdded:Connect(track)
-    for _, item in destinations:GetDescendants() do track(item) end
+    local hidden = game:GetService("ReplicatedStorage"):WaitForChild("HiddenDestinations")
+    for _, container in { destinations, hidden } do
+        container.DescendantAdded:Connect(track)
+        for _, item in container:GetDescendants() do track(item) end
+    end
 end
 
 return LaunchEffectsController

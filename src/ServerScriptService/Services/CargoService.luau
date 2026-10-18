@@ -137,8 +137,8 @@ function Cargo.new(ctx)
         local profile = ctx.profiles.records[player.UserId].profile
         local amount, advanced = rocket:deliver(player.UserId, Upgrades.placeUnits(config, profile))
         if amount == 0 then
-            Remote.feedback(player, material == "Fuel" and "Fill up on Fuel at the OIL REFINERY first."
-                or "Pick up Metal at the SCRAP PIT first.")
+            Remote.feedback(player, material == "Fuel" and "Fill up on Fuel at the FUEL DEPOT first."
+                or "Pick up Metal at the SALVAGE YARD first.")
             return false
         end
         service.visual(player)

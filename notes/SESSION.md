@@ -1,4 +1,68 @@
-# Latest session: 2026-10-18 (3), pet polish and the launch camera
+# Latest session: 2026-10-18 (5), touches on the Earth site
+
+- Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The
+  first attempt (PR #27, on master) would have undone it and was closed.
+- Carried scrap: the plain ball with cubes is now a salvage heap (22 parts: rusty core
+  and lumps, pipe, tyre, brass gear, I-beam, bent sheet, copper coil, bolts, and an
+  antenna with a red bulb). It grows like the jerry can (CargoVisualService).
+- Rockets 3x: `Models.SiteScale` = 1.35 * 3, about 428, 568, 708, 845 and 1019 studs
+  tall. Landed copies still shrink back by SiteScale (the partner's design), so
+  destinations are unchanged. SiteLayout changes:
+  - PadOrigin z -265; Tier 5's hatch ends at -97, short of the forecourt.
+  - Pad 380 x 350; ramps reach |x| = 182.
+  - Apron |x| 270, z -1000..-88. Ground |x| 290, z0 -1020.
+  - SiteDressing's back floodlights sit at the apron's mid z.
+- Ramps: arms every 40 studs, with posts on the outer edges only, so the fill stays
+  visible.
+- Removed: the SPACEPORT floor sign, the apron and bay marking lines, and the visible
+  spawn pad and SPAWN label. The SpawnLocation stays, invisible and non-colliding.
+- Spawn fix: the anti-teleport check snapped new characters back to (0, 3, 0), because
+  CharacterAdded fires before the character moves onto its spawn. `Movement.track`
+  takes a settle time (1 s on spawn), so players now spawn at z = 40.
+- Studio: RunChecks 10/10. Seen:
+  - Tier 1 at 35% fill and Tier 5 at 45% fill
+  - no overlap between the site dressing, hut or UFO shop and the rocket complex,
+    tilted or upright (Tiers 1, 3, 5)
+  - a Moon landing at the original size
+  - no game errors in LogService
+  Not seen: a passenger's launch camera at the new heights.
+
+# Earlier session: 2026-10-18 (4), Earth site first pass
+
+- PR #26 merged. Branch `claude/earth-map` from master. The user asked for a ground-zero
+  spaceport construction site: things spaced out (not extremely), the scrap pit and fuel
+  station remodelled, the rocket, build site and side ramps notably bigger, and no
+  planets visible from Earth.
+- `SiteLayout` holds every position. The pad (164 x 124) is at z = -150, the apron
+  reaches -480, and the ground is dirt (|x| <= 200, z -500..112). Spawn is at z 40.
+  Salvage Yard (x -125) and Fuel Depot (x +125) flank the lane at z 15. The Upgrades hut
+  and UFO Shop sit either side of the forecourt (+-42, -42). The Gym District starts
+  behind spawn (z 132). Map expansion strips start at the new ground edge.
+- Rocket: `Models.SiteScale` 1.35 (143..340 studs tall). Ramps are at least 20 wide
+  (was 14), with RAMP_PAST_MOUNT 14 and arms 5 wide every 16. `landedCopy` shrinks the
+  copy back by SiteScale. Moon check: base on the ground, ~102 tall, within 58 of the
+  centre on its 75 radius. RampCheck and MaterialInteractionCheck now read the pad
+  from SiteLayout.
+- Stations remodelled: the Salvage Yard (fenced gravel yard, three climbable scrap
+  mountains, magnet crane, conveyor and compactor, skips, crushed cubes; the whole yard
+  is the pickup) and the Fuel Depot (two cryo spheres on legs, bullet tanks, pipe rack,
+  vent stack with vapour, tanker; the fuelling gantry is the pickup). HUD and tutorial
+  text renamed to match.
+- `SiteDressingService`: roads, two tower cranes with jibs over the pad, floodlights,
+  container stacks, girder piles, site offices, Mission Control and hangar skeletons in
+  scaffolding, cones and barriers, and a SPACEPORT EARTH / GROUND ZERO arch over the lane.
+  It adds about 2,240 parts to RocketWorld.
+- DestinationController hides far destinations and the cabin per client (2,500 / 700
+  studs from the camera or character, checked every physics step). LaunchEffects
+  lands each LandedRocket once despite the reparenting.
+- `tools/map/stage.py` stages 67 Kenney models (factory, space and station kits) plus
+  two palettes. Not imported yet. The Blender MCP isn't connected to Claude Code here.
+- Studio: RunChecks 10/10. Seen: overview, spawn, Salvage Yard and pad views; the sky
+  with no planets; a full load of scrap picked up in the yard; boarding into the cabin
+  and the Moon landing measured. The MCP character_navigation tool silently did nothing
+  on this map, so Humanoid:MoveTo was used instead.
+
+# Earlier session: 2026-10-18 (3), pet polish and the launch camera
 
 - PR #25 merged by the user. Branch `claude/pets-polish` from master.
 - Launch camera: the second passenger shot sat 6 studs up beside the pad, right where

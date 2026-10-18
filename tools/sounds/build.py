@@ -100,7 +100,7 @@ MANIFEST = {
     ]},
     "pet/zip": ("kenney_sci-fi-sounds/Audio/laserSmall_002.ogg", "reverse"),
     # Rarity fanfares after the pop: nomagician's pickup notification (freesound 833635,
-    # supplied by the user; a bright two-note chime around 1-2 kHz), climbing with rarity. Uncommon
+    # CC0, supplied by the user; a bright two-note chime around 1-2 kHz), climbing with rarity. Uncommon
     # plays it as is; Rare a whole tone up with a fifth above it; Epic a major third up
     # with its fifth; Legendary three entries rising (root, third, fifth) over a deep
     # boom. Common has none.
