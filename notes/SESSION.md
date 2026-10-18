@@ -1,4 +1,33 @@
-# Latest session: 2026-10-18 (4), Earth site first pass
+# Latest session: 2026-10-18 (5), touches on the Earth site
+
+- Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The
+  first attempt (PR #27, on master) would have undone it and was closed.
+- Carried scrap: the plain ball with cubes is now a salvage heap (22 parts: rusty core
+  and lumps, pipe, tyre, brass gear, I-beam, bent sheet, copper coil, bolts, and an
+  antenna with a red bulb). It grows like the jerry can (CargoVisualService).
+- Rockets 3x: `Models.SiteScale` = 1.35 * 3, about 428, 568, 708, 845 and 1019 studs
+  tall. Landed copies still shrink back by SiteScale (the partner's design), so
+  destinations are unchanged. SiteLayout changes:
+  - PadOrigin z -265; Tier 5's hatch ends at -97, short of the forecourt.
+  - Pad 380 x 350; ramps reach |x| = 182.
+  - Apron |x| 270, z -1000..-88. Ground |x| 290, z0 -1020.
+  - SiteDressing's back floodlights sit at the apron's mid z.
+- Ramps: arms every 40 studs, with posts on the outer edges only, so the fill stays
+  visible.
+- Removed: the SPACEPORT floor sign, the apron and bay marking lines, and the visible
+  spawn pad and SPAWN label. The SpawnLocation stays, invisible and non-colliding.
+- Spawn fix: the anti-teleport check snapped new characters back to (0, 3, 0), because
+  CharacterAdded fires before the character moves onto its spawn. `Movement.track`
+  takes a settle time (1 s on spawn), so players now spawn at z = 40.
+- Studio: RunChecks 10/10. Seen:
+  - Tier 1 at 35% fill and Tier 5 at 45% fill
+  - no overlap between the site dressing, hut or UFO shop and the rocket complex,
+    tilted or upright (Tiers 1, 3, 5)
+  - a Moon landing at the original size
+  - no game errors in LogService
+  Not seen: a passenger's launch camera at the new heights.
+
+# Earlier session: 2026-10-18 (4), Earth site first pass
 
 - PR #26 merged. Branch `claude/earth-map` from master. The user asked for a ground-zero
   spaceport construction site: things spaced out (not extremely), the scrap pit and fuel

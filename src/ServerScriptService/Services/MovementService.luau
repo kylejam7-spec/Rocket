@@ -27,8 +27,12 @@ function Movement.new(ctx)
         if Vector3.new(delta.X, 0, delta.Z).Magnitude > config.MaxSpeed * elapsed + 3 then return nil end
         return root
     end
-    function service.track(player, root, grace)
-        motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(), blockedUntil = os.clock() + grace }
+    -- `settle` seconds of free movement before the jump check applies: CharacterAdded fires
+    -- before Roblox moves the new character onto its SpawnLocation, so without it the
+    -- spawn move looks like a teleport and snaps players back to the map centre.
+    function service.track(player, root, grace, settle)
+        motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(),
+            blockedUntil = os.clock() + grace, settledAt = os.clock() + (settle or 0) }
     end
     -- Takes a position (stands upright) or a full CFrame (gym poses).
     function service.relocate(player, position)
@@ -44,7 +48,7 @@ function Movement.new(ctx)
         local sample = motion[player.UserId]
         if not root or not sample or sample.root ~= root then return end
         local delta = root.Position - sample.position
-        if Vector3.new(delta.X, 0, delta.Z).Magnitude > config.MaxSpeed * (now - sample.time) + 3 then
+        if now >= sample.settledAt and Vector3.new(delta.X, 0, delta.Z).Magnitude > config.MaxSpeed * (now - sample.time) + 3 then
             root.CFrame = sample.safe
             root.AssemblyLinearVelocity = Vector3.zero
             sample.blockedUntil = now + 2

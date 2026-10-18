@@ -33,7 +33,6 @@ function Map.build(part, label, reserved)
     local Layout = require(script.Parent.SiteLayout)
     local dirt = Color3.fromRGB(150, 122, 92)
     local concrete = Color3.fromRGB(118, 120, 124)
-    local paint = Color3.fromRGB(245, 182, 71)
     -- Builds a centre/size slab as carved pieces; returns the largest.
     local function slab(name, center, size, color, material)
         local largest, area = nil, 0
@@ -57,15 +56,8 @@ function Map.build(part, label, reserved)
     -- surface (y = 0.58) is the origin every tier is built from.
     local pad = part("LaunchPad", Layout.Pad.center, Layout.Pad.size, Color3.fromRGB(96, 104, 118))
     pad.Material = Enum.Material.Concrete
-    -- Sits on the lane between spawn and the apron.
-    local sign = part("ExpansionSign", Vector3.new(0, 0.1, apron.z1 + 30), Vector3.new(14, 0.2, 4), paint)
-    label(sign, "SPACEPORT")
-    -- Flat markings leave the cabin entrance and future boosters unobstructed.
-    for _, z in { apron.z0 + 10, apron.z1 - 4 } do
-        part("ApronMarking", Vector3.new(0, 0.10, z), Vector3.new(apron.x * 2, 0.04, 1), paint).CanCollide = false
-    end
     -- Each expansion adds a strip of ground outside the base on both sides, and a
-    -- concrete construction bay alongside the apron (8 studs per side under the strip).
+    -- concrete construction bay alongside the apron.
     local stage = 0
     return function(cycle)
         local target = math.floor((cycle - 1) / 3)
@@ -77,10 +69,6 @@ function Map.build(part, label, reserved)
                 local bay = slab("ConstructionBay" .. index .. "_" .. side,
                     Vector3.new(x, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(80, 0.5, apron.z1 - apron.z0), concrete, Enum.Material.Concrete)
                 if bay then label(bay, "EXPANSION " .. index) end
-                for _, z in { apron.z0 + 10, apron.z1 - 4 } do
-                    local marking = slab("BayMarking", Vector3.new(x, 0.10, z), Vector3.new(80, 0.04, 1), paint)
-                    if marking then marking.CanCollide = false end
-                end
             end
             if index % 10 == 0 then task.wait() end
         end
