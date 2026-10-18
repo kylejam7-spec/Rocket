@@ -9,10 +9,13 @@ return function()
     local Service = require(script.Parent.PetService)
     local Profiles = require(script.Parent.ProfileService)
 
-    -- Catalog: 50 unique pets, one per FBX (form + model), tiered 14/12/10/8/6.
+    -- Catalog: 50 unique pets, one per FBX (form + model), tiered 14/12/10/8/6, each
+    -- with its own name.
     assert(#Pets.Catalog == 50, "catalog has " .. #Pets.Catalog)
-    local perRarity, perForm, models = {}, {}, {}
+    local perRarity, perForm, models, names = {}, {}, {}, {}
     for _, entry in Pets.Catalog do
+        assert(not names[entry.Name], "two pets are called " .. entry.Name)
+        names[entry.Name] = true
         assert(Pets.get(entry.Id) == entry and entry.Id == entry.Form .. "_" .. entry.Model)
         assert(not models[entry.Id], "two pets share " .. entry.Id)
         models[entry.Id] = true
@@ -155,8 +158,14 @@ return function()
         end
         if imported then
             assert(model:GetAttribute("Imported"), entry.Id .. " has no imported model")
-            local animator = assert(PetAnimator.new(model), entry.Id .. " has no Idle clip")
+            local animator = assert(PetAnimator.new(model, entry.Form), entry.Id .. " has no Idle clip")
             assert(model.Clips:FindFirstChild("Move"), entry.Id .. " has no Move clip")
+            assert(entry.Form ~= "Large" or model.Clips:FindFirstChild("Run"), entry.Id .. " has no Run clip")
+            for _, move in PetAnimator.Moves[entry.Form] do assert(animator:has(move), entry.Id .. " has no " .. move .. " clip") end
+            -- A one-shot plays out and hands back to the base layer.
+            local seconds = assert(animator:play(PetAnimator.Moves[entry.Form][1]), entry.Id .. " won't play a move")
+            for _ = 1, math.ceil(seconds * 30) + 2 do animator:step(1 / 30, 12) end
+            assert(not animator:busy(), entry.Id .. " move never ends")
             assert(next(animator.bones) and next(animator.idle.tracks), entry.Id .. " clips don't reach its bones")
             local posed = 0
             for name in animator.idle.tracks do if animator.bones[name] then posed += 1 end end

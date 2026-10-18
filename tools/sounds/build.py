@@ -26,6 +26,7 @@ SOURCE = os.path.join(ROOT, "Sounds")
 OUTPUT = os.path.join(ROOT, "assets", "sounds")
 RATE = 48000
 NASA = "590189main_ringtone_131_launchNats.mp3"
+PICKUP = "833635__nomagician__pickup-notification-videogame-ui-sound.mp3"
 
 # group/name -> one of
 #   "file under Sounds/"
@@ -78,6 +79,45 @@ MANIFEST = {
     "game/liftoff": {"layers": [
         {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg"},
         {"file": "kenney_sci-fi-sounds/Audio/explosionCrunch_000.ogg", "pitch": 0.55, "lowpass": 900, "gain": 0.6},
+    ]},
+    # UFO pet delivery (Kenney sci-fi). The UFO swoops in on a rising sweep; its tractor
+    # beam powers up (forceField_002 climbs ~750 -> 1,150 Hz) over a soft warbling hum;
+    # the pet pops out with a retro zap on a low thump; the UFO zooms off on a falling
+    # laser played backwards (so it rises away).
+    "pet/arrive": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/laserSmall_003.ogg", "pitch": 0.7, "lowpass": 5000},
+        {"file": "kenney_sci-fi-sounds/Audio/forceField_001.ogg", "gain": 0.35, "delay": 0.12},
+    ]},
+    "pet/beam": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/forceField_002.ogg"},
+        {"file": "kenney_sci-fi-sounds/Audio/engineCircular_002.ogg", "clip": [0, 1.6], "fadein": 0.25, "fadeout": 0.7,
+         "lowpass": 2500, "gain": 0.3},
+    ]},
+    "pet/pop": {"layers": [
+        {"file": "kenney_sci-fi-sounds/Audio/laserRetro_001.ogg", "pitch": 1.25},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_001.ogg", "gain": 0.55},
+        {"file": "kenney_sci-fi-sounds/Audio/slime_000.ogg", "gain": 0.25, "delay": 0.04, "highpass": 400},
+    ]},
+    "pet/zip": ("kenney_sci-fi-sounds/Audio/laserSmall_002.ogg", "reverse"),
+    # Rarity fanfares after the pop: nomagician's pickup notification (freesound 833635,
+    # supplied by the user; a bright two-note chime around 1-2 kHz), climbing with rarity. Uncommon
+    # plays it as is; Rare a whole tone up with a fifth above it; Epic a major third up
+    # with its fifth; Legendary three entries rising (root, third, fifth) over a deep
+    # boom. Common has none.
+    "pet/fanfare2": {"layers": [{"file": PICKUP}]},
+    "pet/fanfare3": {"layers": [
+        {"file": PICKUP, "pitch": 1.122},
+        {"file": PICKUP, "pitch": 1.682, "gain": 0.45, "delay": 0.12},
+    ]},
+    "pet/fanfare4": {"layers": [
+        {"file": PICKUP, "pitch": 1.26},
+        {"file": PICKUP, "pitch": 1.888, "gain": 0.5, "delay": 0.13},
+    ]},
+    "pet/fanfare5": {"layers": [
+        {"file": PICKUP},
+        {"file": PICKUP, "pitch": 1.26, "gain": 0.8, "delay": 0.16},
+        {"file": PICKUP, "pitch": 1.498, "gain": 0.85, "delay": 0.32},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg", "gain": 0.5},
     ]},
 }
 

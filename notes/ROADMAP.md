@@ -174,7 +174,10 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 **Status (2026-10-18):** built on `claude/pets` (PR #25). The real meshes are imported
 (`PetModels.rbxm`), pet-sized and animated with their own Idle and Move clips. The 🎒
 backpack equips them. Pets are cosmetic only (user). The atlases are uploaded
-(`PetModels.Atlases`), so the pets are fully coloured.
+(`PetModels.Atlases`), so the pets are fully coloured. Polish (2026-10-18, `claude/pets-polish`): alien names,
+5-8 clips per pet with speed-matched gaits, rarity flair and idle tricks, name tags, a
+staged UFO landing with sci-fi sounds and a reveal card. The new sounds still need
+uploading (`tools/sounds/upload.py`).
 
 - **Built:** a 50-pet catalog (`Shared/Pets`) from the Quaternius Ultimate Monsters
   FBX files. It covers 3 forms (Blob, Large, Flying) and 5 rarities (14/12/10/8/6 pets),
