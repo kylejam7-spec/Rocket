@@ -18,9 +18,13 @@ PetModels.Fit = table.freeze({
     Flying = table.freeze({ measure = "span", size = 3 }),
 })
 -- The pets' shared colour atlases (the FBX files reference them but don't embed
--- them), one per Quaternius pack, as uploaded image ids ("rbxassetid://..."); empty
--- until uploaded (tools/pets/README.md), and the meshes stay untextured grey.
-PetModels.Atlases = table.freeze({ Blob = "", Large = "", Flying = "" })
+-- them), one per Quaternius pack, as uploaded image ids (tools/pets/atlas, README).
+-- An empty id leaves that pack's meshes untextured grey.
+PetModels.Atlases = table.freeze({
+    Blob = "rbxassetid://82233115260905",
+    Large = "rbxassetid://127491665071338",
+    Flying = "rbxassetid://119141981005054",
+})
 -- Rarity colours (match UI Theme.rarity).
 PetModels.RarityColors = table.freeze({
     Common = Color3.fromRGB(170, 180, 200),

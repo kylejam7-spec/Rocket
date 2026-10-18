@@ -12,7 +12,7 @@ The pets are the 50 Quaternius *Ultimate Monsters* models (CC0) in
   `Shared/PetAnimator` plays these by writing the Bones' `Transform`, so no animation
   assets are uploaded. `Shared/PetModels` sizes each copy as a pet:
   `PetModels.Fit` gives Blob span 2.2, Large height 3 and Flying wingspan 3 studs.
-- **Textures, still to do:** the FBX files reference an atlas they don't embed. There
+- **Textures, done:** the FBX files reference an atlas they don't embed. There
   is one per pack, and all three are in `tools/pets/atlas/`. They're copies of the CC0
   Quaternius atlases taken from public Godot projects that use the same pack
   (galensoft/learning-godot, Godot-Dojo/Godot-XR-Avatar). The two 32 px palettes are

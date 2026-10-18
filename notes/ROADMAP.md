@@ -173,9 +173,8 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 
 **Status (2026-10-18):** built on `claude/pets` (PR #25). The real meshes are imported
 (`PetModels.rbxm`), pet-sized and animated with their own Idle and Move clips. The 🎒
-backpack equips them. Pets are cosmetic only (user). **Left:** upload the 3 atlases
-in `tools/pets/atlas` and paste the ids into `PetModels.Atlases`; the pets are grey
-until then.
+backpack equips them. Pets are cosmetic only (user). The atlases are uploaded
+(`PetModels.Atlases`), so the pets are fully coloured.
 
 - **Built:** a 50-pet catalog (`Shared/Pets`) from the Quaternius Ultimate Monsters
   FBX files. It covers 3 forms (Blob, Large, Flying) and 5 rarities (14/12/10/8/6 pets),

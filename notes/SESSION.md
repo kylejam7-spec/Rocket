@@ -24,8 +24,10 @@
 - **Textures blocked:** the atlas is not in the downloads. Copies of the CC0 Quaternius
   atlases (one per pack) found in public Godot repos are in `tools/pets/atlas/`;
   textured previews of all 50 rendered correctly with them. Uploading them from
-  Claude was denied by the auto-mode classifier, so the user uploads them and pastes
-  the ids into `PetModels.Atlases`. Until then the pets are grey.
+  Claude was denied by the auto-mode classifier, so the user uploaded them (Blob
+  82233115260905, Large 127491665071338, Flying 119141981005054), now in
+  `PetModels.Atlases`. All three load, and all three packs show fully coloured in
+  Studio.
 - Studio: RunChecks 10/10 (PetCheck now checks sizes, pivots and clips for all 50 imports,
   and unequip-all). Seen: Yeti, Cat and Dragon following and animating, facing their
   travel, a Hywirl landing from an Uncommon UFO, the backpack round-trip, and immediate
