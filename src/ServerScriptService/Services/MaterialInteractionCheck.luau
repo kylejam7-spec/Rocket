@@ -15,7 +15,8 @@ return function()
         assert(work > previous, "Rarer missions must need more work")
         previous = work
     end
-    -- Tiers fit the reserved launch complex and grow visibly taller.
+    -- Tiers fit the pad (SiteLayout) and grow visibly taller.
+    local padHalf = require(script.Parent.SiteLayout).Pad.size / 2
     local lastHeight = 0
     for tier = 1, 5 do
         local data = Models[tier]()
@@ -25,7 +26,7 @@ return function()
         for _, list in { data.build, data.fuel, data.infra } do
             for _, spec in list do
                 local p = spec.cframe.Position
-                assert(math.abs(p.X) <= 58 and math.abs(p.Z) <= 44, spec.name .. " leaves the launch complex")
+                assert(math.abs(p.X) <= padHalf.X and math.abs(p.Z) <= padHalf.Z, spec.name .. " leaves the pad")
             end
         end
     end

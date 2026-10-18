@@ -93,20 +93,23 @@ function World.new(ctx)
     end
     service.part, service.label = part, label
 
+    local Layout = require(script.Parent.SiteLayout)
     local MaterialStations = require(script.Parent.MaterialStationService)
     service.expandMap = require(script.Parent.MapExpansionService).build(part, label, MaterialStations.Reserved)
     service.expandMap(1)
-    local spawn = tag(part("Spawn", Vector3.new(0, 1, 36), Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
+    local spawn = tag(part("Spawn", Layout.Spawn, Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
     spawn.Neutral = true
     label(spawn, "SPAWN")
     service.spawn = spawn
-    -- Scrap pit (Metal) and oil refinery (Fuel) sit right behind spawn; the Gym District is past them.
+    -- Salvage Yard (Metal) and Fuel Depot (Fuel) flank spawn; the Gym District is behind it.
     service.materialStations = MaterialStations.build(world)
     for material, station in service.materialStations do tag(station.zone, World.Tags.MaterialSource, { Material = material }) end
+    -- Roads, cranes, floodlights, containers, offices and buildings going up.
+    require(script.Parent.SiteDressingService).build(world)
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }
     -- Glowing ring at the rocket's lowest unfinished point. Players climb the ramp and
     -- the finished hull to reach it, then hold E to pour their scrap ball in.
-    local frontier = tag(part("BuildFrontier", Vector3.new(0, -50, -112), Vector3.new(0.4, 6, 6), service.materialColors.Metal), World.Tags.Frontier)
+    local frontier = tag(part("BuildFrontier", Layout.PadOrigin.Position - Vector3.new(0, 50, 0), Vector3.new(0.4, 6, 6), service.materialColors.Metal), World.Tags.Frontier)
     frontier.Shape = Enum.PartType.Cylinder
     frontier.Material = Enum.Material.Neon
     frontier.Transparency = 0.55
@@ -139,7 +142,7 @@ function World.new(ctx)
     label(boarding, "BOARD")
     service.boarding = boarding
     -- Rockets are built on the permanent LaunchPad (MapExpansionService); y = pad top.
-    service.rocketBuild = require(script.Parent.RocketBuildService).new(world, CFrame.new(0, 0.58, -112))
+    service.rocketBuild = require(script.Parent.RocketBuildService).new(world, Layout.PadOrigin)
     -- The rocket cabin and the five destinations (DestinationService), far off the map.
     service.destinations, service.cabin = require(script.Parent.DestinationService).build(world, config)
     world.Parent = workspace
@@ -190,7 +193,8 @@ function World.new(ctx)
     -- between them (x = -8..8). Gyms run in tier order along a central walkway,
     -- alternating sides: FREE GYM at the entrance, then 2X, 5X ... 100X deepest in.
     -- Each bay is 30 (x) by 24 (z) with its sign on the outer edge, facing the walkway.
-    local DISTRICT_Z0, BAY_STEP, BAY_X = 176, 16, 27
+    local DISTRICT_Z0, BAY_STEP, BAY_X = Layout.Gym.z0, Layout.Gym.step, Layout.Gym.x
+    local groundEnd, archZ = Layout.Ground.z1, Layout.Gym.entrance
     local slots = 1 + #config.TrainingTiers
     local districtZ1 = DISTRICT_Z0 + (slots - 1) * BAY_STEP + 22
     local floorColor = Color3.fromRGB(58, 64, 78)
@@ -224,19 +228,19 @@ function World.new(ctx)
             stroke.Parent = textLabel
         end
     end
-    -- Floor slab from the end of the ground (z = 160) to past the last bay, plus a
+    -- Floor slab from the end of the ground (Layout.Ground.z1) to past the last bay, plus a
     -- painted walkway and an entrance arch facing back toward spawn.
-    part("GymDistrictFloor", Vector3.new(0, -1, (160 + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - 160), floorColor)
-    part("GymWalkway", Vector3.new(0, 0.03, (152 + districtZ1) / 2), Vector3.new(16, 0.06, districtZ1 - 152), Color3.fromRGB(245, 182, 71)).CanCollide = false
+    part("GymDistrictFloor", Vector3.new(0, -1, (groundEnd + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - groundEnd), floorColor)
+    part("GymWalkway", Vector3.new(0, 0.03, (groundEnd - 8 + districtZ1) / 2), Vector3.new(16, 0.06, districtZ1 - groundEnd + 8), Color3.fromRGB(245, 182, 71)).CanCollide = false
     for _, side in {-1, 1} do
-        part("GymArchPost", Vector3.new(side * 10, 7, 164), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
+        part("GymArchPost", Vector3.new(side * 10, 7, archZ), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
     end
-    signText(part("GymArchSign", Vector3.new(0, 15.5, 164), Vector3.new(24, 4, 1), Color3.fromRGB(35, 40, 50)),
+    signText(part("GymArchSign", Vector3.new(0, 15.5, archZ), Vector3.new(24, 4, 1), Color3.fromRGB(35, 40, 50)),
         Enum.NormalId.Front, { { name = "Title", text = "GYM DISTRICT", height = 0.8 } })
     -- Low walls on the open sides and back so nobody walks off the plaza.
     local wallColor = Color3.fromRGB(81, 91, 107)
     for _, side in {-1, 1} do
-        part("GymDistrictWall", Vector3.new(side * 55, 1.5, (160 + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - 160), wallColor)
+        part("GymDistrictWall", Vector3.new(side * 55, 1.5, (groundEnd + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - groundEnd), wallColor)
     end
     part("GymDistrictWall", Vector3.new(0, 1.5, districtZ1), Vector3.new(111, 3, 1), wallColor)
 
@@ -295,10 +299,11 @@ function World.new(ctx)
     -- Upgrades hut beside the lane between spawn and the launch pad, door facing the
     -- lane. Its prompt only opens the panel (client); purchases go through BuyUpgrade.
     local hutColor, roofColor = Color3.fromRGB(70, 175, 95), Color3.fromRGB(255, 204, 40)
-    local hut = tag(part("UpgradesHut", Vector3.new(-26, 4, -32), Vector3.new(12, 8, 14), hutColor), World.Tags.Upgrades)
-    part("UpgradesRoof", Vector3.new(-26, 8.6, -32), Vector3.new(14, 1.2, 16), roofColor)
-    part("UpgradesDoor", Vector3.new(-19.9, 3, -32), Vector3.new(0.2, 6, 4), Color3.fromRGB(40, 32, 60))
-    local hutSign = part("UpgradesSign", Vector3.new(-19.6, 10.6, -32), Vector3.new(0.4, 3, 12), roofColor)
+    local h = Layout.Upgrades
+    local hut = tag(part("UpgradesHut", h + Vector3.new(0, 4, 0), Vector3.new(12, 8, 14), hutColor), World.Tags.Upgrades)
+    part("UpgradesRoof", h + Vector3.new(0, 8.6, 0), Vector3.new(14, 1.2, 16), roofColor)
+    part("UpgradesDoor", h + Vector3.new(6.1, 3, 0), Vector3.new(0.2, 6, 4), Color3.fromRGB(40, 32, 60))
+    local hutSign = part("UpgradesSign", h + Vector3.new(6.4, 10.6, 0), Vector3.new(0.4, 3, 12), roofColor)
     signText(hutSign, Enum.NormalId.Right, { { name = "Title", text = "UPGRADES", height = 0.8 } })
     local hutPrompt = service.prompt(hut, "Open Upgrades")
     hutPrompt.ObjectText = "Upgrades"
@@ -307,7 +312,7 @@ function World.new(ctx)
 
     -- UFO Shops (PetService sells there): a round pad with a counter, a sign and a
     -- big saucer beaming down over it. One at the spaceport, opposite the upgrades
-    -- hut, and one on every destination. Only the counter collides.
+    -- hut across the lane, and one on every destination. Only the counter collides.
     local PetModels = require(game:GetService("ReplicatedStorage").Shared.PetModels)
     local shopColor, shopGlow = Color3.fromRGB(60, 46, 96), Color3.fromRGB(120, 255, 110)
     local function ufoShop(ground, facing)
@@ -347,7 +352,7 @@ function World.new(ctx)
         shopPrompt.MaxActivationDistance = 14
         return counter
     end
-    service.ufoShops = { ufoShop(Vector3.new(26, 0, -32), Vector3.new(-1, 0, 0)) }
+    service.ufoShops = { ufoShop(Layout.UfoShop, Vector3.new(-1, 0, 0)) }
     for _, place in service.destinations do table.insert(service.ufoShops, ufoShop(place.shop, place.shopFacing)) end
 
     function service.anchors(name)

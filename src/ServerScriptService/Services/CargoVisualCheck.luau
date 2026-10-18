@@ -41,16 +41,21 @@ return function()
     visual.update(character, {Metal = 0, Fuel = 0}, colors)
     assert(not character:FindFirstChild("CarriedMaterials"))
     character:Destroy()
-    -- Stations: right behind spawn (z = 32..40), short of the Gym District (z >= 160) and the
-    -- road between them (x = -8..8), on the ground, and never paved over.
+    -- Stations flank spawn either side of the lane (SiteLayout): big enough for a full
+    -- server, a short walk from spawn, on the ground, clear of the lane, the apron and the
+    -- Gym District, and never paved over by map expansion.
     local stations = require(script.Parent.MaterialStationService)
     local map = require(script.Parent.MapExpansionService)
+    local Layout = require(script.Parent.SiteLayout)
+    local lane = Layout.Lane.width / 2
     for _, rect in stations.Reserved do
         assert(rect.x1 - rect.x0 >= 60 and rect.z1 - rect.z0 >= 60, "Stations are big enough for a full server")
-        assert(rect.z0 >= 44 and rect.z0 <= 60, "Stations sit right behind spawn")
-        assert(rect.x0 >= 8 or rect.x1 <= -8, "Stations leave the road between them clear")
-        assert(rect.x0 >= -120 and rect.x1 <= 120 and rect.z1 <= 160, "Stations sit on the ground")
-        for _, piece in map.carve({ x0 = -500, x1 = 500, z0 = -400, z1 = 200 }, stations.Reserved) do
+        assert(rect.x0 >= lane + 40 or rect.x1 <= -lane - 40, "Stations stand off the lane, either side")
+        local center = Vector3.new((rect.x0 + rect.x1) / 2, 0, (rect.z0 + rect.z1) / 2)
+        assert((center - Layout.Spawn * Vector3.new(1, 0, 1)).Magnitude <= 160, "Stations are a short walk from spawn")
+        assert(rect.z0 > Layout.Apron.z1 and rect.z1 < Layout.Gym.entrance, "Stations sit between the apron and the Gym District")
+        assert(math.max(math.abs(rect.x0), math.abs(rect.x1)) <= Layout.Ground.x, "Stations sit on the ground")
+        for _, piece in map.carve({ x0 = -500, x1 = 500, z0 = -700, z1 = 200 }, stations.Reserved) do
             assert(piece.x0 >= rect.x1 or piece.x1 <= rect.x0 or piece.z0 >= rect.z1 or piece.z1 <= rect.z0,
                 "Map expansion must not cover a station")
         end
@@ -60,5 +65,5 @@ return function()
         area += (piece.x1 - piece.x0) * (piece.z1 - piece.z0)
     end
     assert(area == 100 * 100 - 20 * 30, "Carving removes exactly the hole")
-    return "Cargo checks passed: overhead scrap ball and jerry can grow to a cap, shrink in place, swap, clear, never collide; stations are clear of gyms and expansion"
+    return "Cargo checks passed: overhead scrap ball and jerry can grow to a cap, shrink in place, swap, clear, never collide; stations flank the lane clear of the apron, gyms and expansion"
 end

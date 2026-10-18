@@ -44,10 +44,10 @@ local function objective(state, learned)
             if learned.PlaceMetal then return "" end
             return full and "Full! Carry the scrap up the ramp to the glowing ring!" or "Grab more, or carry it up the ramp to the glowing ring!"
         end
-        return learned.PickupMetal and "" or "Grab scrap metal at the SCRAP PIT to build the rocket!"
+        return learned.PickupMetal and "" or "Grab scrap metal at the SALVAGE YARD to build the rocket!"
     elseif state.phase == "Fueling" then
         if material == "Fuel" then return learned.PlaceFuel and "" or "Pour the fuel into the rocket at the glowing ring!" end
-        return learned.PickupFuel and "" or "Rocket built! Fill your jerry can at the OIL REFINERY!"
+        return learned.PickupFuel and "" or "Rocket built! Fill your jerry can at the FUEL DEPOT!"
     elseif state.phase == "Boarding" then
         return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
     elseif state.phase == "Launching" then

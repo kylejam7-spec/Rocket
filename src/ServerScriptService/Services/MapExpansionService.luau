@@ -1,4 +1,5 @@
--- Map space grows every three cycles; rocket construction remains separate.
+-- The Earth site's ground, apron and pad, and the space that grows every three cycles;
+-- rocket construction remains separate.
 local Map = {}
 
 -- Splits an x/z rectangle into the pieces left after cutting out each hole.
@@ -27,48 +28,56 @@ local function carve(rect, holes)
 end
 
 -- `reserved` lists x/z footprints (the material stations) that expansion must not cover.
+-- Sizes and positions come from SiteLayout.
 function Map.build(part, label, reserved)
-    local grass = Color3.fromRGB(62, 103, 72)
-    local concrete = Color3.fromRGB(81, 91, 107)
+    local Layout = require(script.Parent.SiteLayout)
+    local dirt = Color3.fromRGB(150, 122, 92)
+    local concrete = Color3.fromRGB(118, 120, 124)
     local paint = Color3.fromRGB(245, 182, 71)
     -- Builds a centre/size slab as carved pieces; returns the largest.
-    local function slab(name, center, size, color)
+    local function slab(name, center, size, color, material)
         local largest, area = nil, 0
         local rect = { x0 = center.X - size.X / 2, x1 = center.X + size.X / 2, z0 = center.Z - size.Z / 2, z1 = center.Z + size.Z / 2 }
         for _, r in carve(rect, reserved or {}) do
             local piece = part(name, Vector3.new((r.x0 + r.x1) / 2, center.Y, (r.z0 + r.z1) / 2),
                 Vector3.new(r.x1 - r.x0, size.Y, r.z1 - r.z0), color)
+            if material then piece.Material = material end
             if (r.x1 - r.x0) * (r.z1 - r.z0) > area then largest, area = piece, (r.x1 - r.x0) * (r.z1 - r.z0) end
         end
         return largest
     end
-    -- Ground and apron run out to z = -340 under the tilted rockets, which lean toward -Z
-    -- (the scaled Tier 5 nose reaches about z = -290). Behind spawn the ground reaches
-    -- z = 160 to hold the material stations, which are carved out of it.
-    slab("Ground", Vector3.new(0, -1, -90), Vector3.new(240, 2, 500), grass)
-    part("LaunchApron", Vector3.new(0, -0.17, -195), Vector3.new(160, 0.5, 270), concrete)
-    -- Permanent pad sized for the scaled Tier 5 rocket (mount 83x57 + climbing ramps out to
-    -- x = +/-53 on both flanks); its top surface (y = 0.58) is the origin every tier is built from.
-    part("LaunchPad", Vector3.new(0, 0.33, -112), Vector3.new(112, 0.5, 88), Color3.fromRGB(96, 104, 118))
-    -- Sits between spawn and the apron, on the lane from spawn to the rocket.
-    local sign = part("ExpansionSign", Vector3.new(0, 0.1, -54), Vector3.new(12, 0.2, 4), paint)
+    -- Packed construction dirt from the far end of the apron to the Gym District, with
+    -- the material stations carved out of it (they bring their own floors).
+    local ground = Layout.Ground
+    local length = ground.z1 - ground.z0
+    slab("Ground", Vector3.new(0, -1, (ground.z0 + ground.z1) / 2), Vector3.new(ground.x * 2, 2, length), dirt, Enum.Material.Ground)
+    local apron = Layout.Apron
+    part("LaunchApron", Vector3.new(0, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(apron.x * 2, 0.5, apron.z1 - apron.z0), concrete).Material = Enum.Material.Concrete
+    -- Permanent pad sized for the scaled Tier 5 complex (mount and both ramps); its top
+    -- surface (y = 0.58) is the origin every tier is built from.
+    local pad = part("LaunchPad", Layout.Pad.center, Layout.Pad.size, Color3.fromRGB(96, 104, 118))
+    pad.Material = Enum.Material.Concrete
+    -- Sits on the lane between spawn and the apron.
+    local sign = part("ExpansionSign", Vector3.new(0, 0.1, apron.z1 + 30), Vector3.new(14, 0.2, 4), paint)
     label(sign, "SPACEPORT")
     -- Flat markings leave the cabin entrance and future boosters unobstructed.
-    for _, z in {-330, -60} do
-        part("ApronMarking", Vector3.new(0, 0.10, z), Vector3.new(160, 0.04, 1), paint).CanCollide = false
+    for _, z in { apron.z0 + 10, apron.z1 - 4 } do
+        part("ApronMarking", Vector3.new(0, 0.10, z), Vector3.new(apron.x * 2, 0.04, 1), paint).CanCollide = false
     end
+    -- Each expansion adds a strip of ground outside the base on both sides, and a
+    -- concrete construction bay alongside the apron (8 studs per side under the strip).
     local stage = 0
     return function(cycle)
         local target = math.floor((cycle - 1) / 3)
         for index = stage + 1, target do
             for _, side in {-1, 1} do
                 slab("ExpansionGround" .. index .. "_" .. side,
-                    Vector3.new(side * (80 + index * 80), -1, -90), Vector3.new(80, 2, 500), grass)
-                local x = side * (40 + index * 80)
+                    Vector3.new(side * (ground.x + 40 + (index - 1) * 80), -1, (ground.z0 + ground.z1) / 2), Vector3.new(80, 2, length), dirt, Enum.Material.Ground)
+                local x = side * (apron.x + 40 + (index - 1) * 80)
                 local bay = slab("ConstructionBay" .. index .. "_" .. side,
-                    Vector3.new(x, -0.17, -195), Vector3.new(80, 0.5, 270), concrete)
+                    Vector3.new(x, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(80, 0.5, apron.z1 - apron.z0), concrete, Enum.Material.Concrete)
                 if bay then label(bay, "EXPANSION " .. index) end
-                for _, z in {-330, -60} do
+                for _, z in { apron.z0 + 10, apron.z1 - 4 } do
                     local marking = slab("BayMarking", Vector3.new(x, 0.10, z), Vector3.new(80, 0.04, 1), paint)
                     if marking then marking.CanCollide = false end
                 end
