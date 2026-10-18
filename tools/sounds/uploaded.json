@@ -76,6 +76,62 @@
     },
     "sha256": "d3e6c28510c5f612e7f5a1c0786ba7733bde63418f08c86806a09a43527f556d"
   },
+  "pet/arrive": {
+    "assetId": "121500277316329",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "9b92e52bd95781d8f3b2ae3dd60db26ab6cfffd6134a6699212b44440d7738f9"
+  },
+  "pet/beam": {
+    "assetId": "75459552698987",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "4e71f2b7f4125457832d2875957b7c9e4278b55f04255f3abde994d10a47783b"
+  },
+  "pet/fanfare2": {
+    "assetId": "122029137683929",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "2877413d8c2b796572345606e41ce680b08d4f78a777ecff1ea15e199521a3d3"
+  },
+  "pet/fanfare3": {
+    "assetId": "107639561433108",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "205980016b6a40edd6dc0c1f85735c3746487514a111340df76c2df54287dcb2"
+  },
+  "pet/fanfare4": {
+    "assetId": "124017835173966",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "f49eeb97252d51b30a986769f647dd24822a11259daf2a86e362c4b29f92dce7"
+  },
+  "pet/fanfare5": {
+    "assetId": "128209446636375",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "15c7c4a860df7d7565d78e4fbb3373db1d1e94b5088d0eecdc982c619dadbf2e"
+  },
+  "pet/pop": {
+    "assetId": "116932873116968",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "2707925402499d91542b962e41d9b965e88196683cfefd18905a97989b9d947f"
+  },
+  "pet/zip": {
+    "assetId": "136631171810461",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "38311c03c4912a8bd48733ab419acd9f4ebe83995e10addba0bd697407b53eda"
+  },
   "ui/click": {
     "assetId": "118256580196638",
     "creator": {
