@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-18: Earth site layout
+
+- User: a ground-zero spaceport construction site, spaced out but not extremely; a
+  bigger rocket, build site and side ramps; no other planets visible from Earth.
+- Stations flank the lane rather than sitting behind spawn, keeping round trips near the
+  old length. The rocket grows 1.35x on Earth only: the landed copy shrinks back, so
+  destination grounds stay as they are.
+- Planets are hidden per client by distance rather than moved further away.
+- The nomagician pickup sound is CC0, so no credit is needed.
+
 ## 2026-10-18: Pet names and rarity flair
 
 - User: give bland pets fun alien names, keep the already-alien ones, and keep a
