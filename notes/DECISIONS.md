@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-10-18: Rockets 3x on the Earth site
+
+- `Models.SiteScale` is 1.35 * 3, so one player's small delivery still visibly grows
+  the fill. It's one number to tune; the pad, apron and ground in SiteLayout must still
+  hold Tier 5 (RampCheck and MaterialInteractionCheck read the pad size).
+- Ramps get longer with the rocket (Tier 5 is about 1100 studs of ramp), but the fill
+  goes lowest-first, so early trips stay short.
+
 ## 2026-10-18: Earth site layout
 
 - User: a ground-zero spaceport construction site, spaced out but not extremely; a

@@ -2,7 +2,8 @@
     Where everything on the Earth launch site (the main map) stands, in one place.
     -Z is toward the launch site; the spawn lane runs along x = 0.
 
-        z -480 .. -90   launch apron, the pad at its near end (rockets tilt toward -Z)
+        z -1000 .. -88  launch apron, the pad at its near end (rockets tilt toward -Z;
+                        Tier 5 is ~1000 studs long)
         z  -90 ..  -10  forecourt: Upgrades hut (west) and UFO Shop (east) either side
                         of the lane; site offices and stores off to the sides
         z  -45 ..   75  Salvage Yard (Metal, west) and Fuel Depot (Fuel, east), flanking
@@ -17,13 +18,16 @@
 local Layout = {}
 
 -- The rocket's upright build frame on the pad top (RocketBuildService origin).
-Layout.PadOrigin = CFrame.new(0, 0.58, -150)
--- The permanent pad under every tier (scaled Tier 5 complex: |x| <= 80, |z| <= 60).
-Layout.Pad = { center = Vector3.new(0, 0.33, -150), size = Vector3.new(164, 0.5, 124) }
--- Concrete apron under the tilted rockets (Tier 5's farthest part reaches z = -385).
-Layout.Apron = { x = 115, z0 = -480, z1 = -88 }
+-- Far enough back that Tier 5's boarding hatch (+168) stops short of the forecourt.
+Layout.PadOrigin = CFrame.new(0, 0.58, -265)
+-- The permanent pad under every tier (scaled Tier 5 mount, ramps out to |x| = 182 and
+-- boarding hatch: |x| <= 190, |z| <= 175).
+Layout.Pad = { center = Vector3.new(0, 0.33, -265), size = Vector3.new(380, 0.5, 350) }
+-- Concrete apron under the tilted rockets (Tier 5's farthest part reaches z = -984,
+-- its floodlights x = +/-234).
+Layout.Apron = { x = 270, z0 = -1000, z1 = -88 }
 -- The base ground; map expansion adds strips outside |x| = Ground.x.
-Layout.Ground = { x = 200, z0 = -500, z1 = 112 }
+Layout.Ground = { x = 290, z0 = -1020, z1 = 112 }
 
 Layout.Spawn = Vector3.new(0, 1, 40)
 Layout.Lane = { width = 20, z0 = -92, z1 = 112 }

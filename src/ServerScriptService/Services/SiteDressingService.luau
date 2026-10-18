@@ -302,7 +302,7 @@ function Dressing.build(world)
     -- Floodlights on the apron's corners, aimed at the rocket.
     local target = pad.center
     for _, corner in { Vector3.new(-apron.x + 5, 0, apron.z1 - 6), Vector3.new(apron.x - 5, 0, apron.z1 - 6),
-        Vector3.new(-apron.x + 5, 0, -360), Vector3.new(apron.x - 5, 0, -360) } do
+        Vector3.new(-apron.x + 5, 0, (apron.z0 + apron.z1) / 2), Vector3.new(apron.x - 5, 0, (apron.z0 + apron.z1) / 2) } do
         floodlight(site, corner, target)
     end
     -- Container stacks on the forecourt's outer corners; girder piles by the new buildings.

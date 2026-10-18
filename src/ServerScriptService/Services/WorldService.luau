@@ -98,8 +98,9 @@ function World.new(ctx)
     service.expandMap = require(script.Parent.MapExpansionService).build(part, label, MaterialStations.Reserved)
     service.expandMap(1)
     local spawn = tag(part("Spawn", Layout.Spawn, Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
-    spawn.Neutral = true
-    label(spawn, "SPAWN")
+    -- Invisible: players just appear on the ground, with no pad or label.
+    spawn.Neutral, spawn.Transparency = true, 1
+    spawn.CanCollide, spawn.CanQuery, spawn.CanTouch, spawn.CastShadow = false, false, false, false
     service.spawn = spawn
     -- Salvage Yard (Metal) and Fuel Depot (Fuel) flank spawn; the Gym District is behind it.
     service.materialStations = MaterialStations.build(world)
