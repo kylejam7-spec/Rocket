@@ -13,6 +13,8 @@ World.Tags = table.freeze({
     Training = "TrainingStation",
     GymSign = "GymSign",
     Upgrades = "UpgradesHut", -- its "Open Upgrades" prompt opens the client panel
+    UfoShop = "UfoShop", -- each counter's "Open UFO Shop" prompt opens the client panel
+    UfoShopDisplay = "UfoShopDisplay", -- the saucer over each shop (clients spin it)
 })
 
 function World.new(ctx)
@@ -302,6 +304,51 @@ function World.new(ctx)
     hutPrompt.ObjectText = "Upgrades"
     hutPrompt.MaxActivationDistance = 14
     service.upgradesHut = hut
+
+    -- UFO Shops (PetService sells there): a round pad with a counter, a sign and a
+    -- big saucer beaming down over it. One at the spaceport, opposite the upgrades
+    -- hut, and one on every destination. Only the counter collides.
+    local PetModels = require(game:GetService("ReplicatedStorage").Shared.PetModels)
+    local shopColor, shopGlow = Color3.fromRGB(60, 46, 96), Color3.fromRGB(120, 255, 110)
+    local function ufoShop(ground, facing)
+        local frame = CFrame.lookAt(ground, ground + facing)
+        local folder = Instance.new("Model")
+        folder.Name = "UfoShop"
+        folder.Parent = world
+        local function piece(name, cframe, size, color, shape)
+            local object = part(name, cframe.Position, size, color)
+            object.CFrame = cframe
+            if shape then object.Shape = shape end
+            object.Parent = folder
+            return object
+        end
+        local upright = CFrame.Angles(0, 0, math.rad(90))
+        piece("ShopPad", frame * CFrame.new(0, 0.2, 0) * upright, Vector3.new(0.4, 12, 12), shopColor, Enum.PartType.Cylinder)
+        local ring = piece("ShopRing", frame * CFrame.new(0, 0.15, 0) * upright, Vector3.new(0.3, 12.8, 12.8), shopGlow, Enum.PartType.Cylinder)
+        ring.Material, ring.CanCollide = Enum.Material.Neon, false
+        local counter = tag(piece("UfoShopCounter", frame * CFrame.new(0, 1.9, 0), Vector3.new(7, 3, 2.4), shopColor), World.Tags.UfoShop)
+        piece("CounterTop", frame * CFrame.new(0, 3.5, 0), Vector3.new(7.4, 0.3, 2.8), shopGlow).Material = Enum.Material.Neon
+        for _, x in { -4.2, 4.2 } do piece("ShopPost", frame * CFrame.new(x, 4.5, 2.5), Vector3.new(0.5, 9, 0.5), Color3.fromRGB(165, 175, 190)) end
+        local board = piece("ShopSign", frame * CFrame.new(0, 8, 2.5), Vector3.new(9, 2.6, 0.5), shopColor)
+        signText(board, Enum.NormalId.Front, { { name = "Title", text = "🛸 UFO SHOP", height = 0.8 } })
+        local beam = piece("ShopBeam", frame * CFrame.new(0, 7, 2.5) * upright, Vector3.new(11, 3.4, 3.4), shopGlow, Enum.PartType.Cylinder)
+        beam.Material, beam.Transparency, beam.CanCollide, beam.CastShadow = Enum.Material.Neon, 0.85, false, false
+        local display = PetModels.ufo(3)
+        display.Name = "UfoShopDisplay"
+        display:ScaleTo(1.8)
+        display:PivotTo(frame * CFrame.new(0, 13.5, 2.5))
+        display.Parent = folder
+        tag(display, World.Tags.UfoShopDisplay)
+        for _, object in folder:GetDescendants() do
+            if object:IsA("BasePart") and object ~= counter then object.CanCollide, object.CanQuery = false, false end
+        end
+        local shopPrompt = service.prompt(counter, "Open UFO Shop")
+        shopPrompt.ObjectText = "UFO Shop"
+        shopPrompt.MaxActivationDistance = 14
+        return counter
+    end
+    service.ufoShops = { ufoShop(Vector3.new(26, 0, -32), Vector3.new(-1, 0, 0)) }
+    for _, place in service.destinations do table.insert(service.ufoShops, ufoShop(place.shop, place.shopFacing)) end
 
     function service.anchors(name)
         local found = {}

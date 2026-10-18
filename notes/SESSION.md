@@ -1,4 +1,40 @@
-# Latest session: 2026-10-17, prompt, toast and hint polish
+# Latest session: 2026-10-18, alien pets and UFOs
+
+- Branch `claude/pets` from master. The user added 50 Quaternius *Ultimate Monsters*
+  FBX files in three downloads. Their previews and rigs show they are Blob (17), Big
+  (16, T-posed humanoids) and Flying (17).
+- `Shared/Pets`: the catalog (id = `<Form>_<Model>`), tiered 14/12/10/8/6 Common to
+  Legendary. Plain animals and base blobs are Common; armour, weapons, crowns and evolved
+  forms climb the tiers. UFO tiers: 500 / 5K / 50K coins, 5-25 minutes, odds 80/20,
+  90/10, 95/5. Epic (95/5) and Legendary (100) aren't on sale; they will be Robux. The
+  roll is uniform within a rarity.
+- `PetService`: BuyUfo(tier, requestId) runs only near a UFO Shop, once per ID, with one
+  UFO at a time. The pet is rolled at purchase and never sent to the client until it
+  lands. The countdown runs on play time only (profile.ufo.remaining, ticked each second
+  while in game). On landing, the pet is added and equipped if a slot (max 3) is free,
+  and PetHatched fires before the attributes change. EquipPet(id, on). Player attributes
+  UfoTier, UfoHatchAt and Pets drive every client.
+- Profile v7: pets (id -> count), equippedPets and ufo. Retired ids and equips of pets
+  not owned are dropped on load; other bad data is refused. The countdown alone doesn't
+  mark a save dirty.
+- World: UFO Shops (a pad, counter, sign and a spinning saucer beaming down) opposite the
+  upgrades hut at (26, -32), and on every destination at (38, -4), facing the arrival.
+  The scatter keeps 14 studs clear around them.
+- Client: `PetController` draws everyone's UFO (rarity lights, countdown billboard) and
+  pets. Blobs hop, large pets waddle, flyers hover and flap. On landing, the UFO beams
+  the pet down, flies off, and shows a reveal banner. `UfoShopController` (panel opened
+  by the shop prompt) and `PetsController` (🐾 top-bar button, card grid with 3D
+  previews, tap to equip). Skip Tutorial moved one slot left to make room.
+- `Shared/PetModels`: a primitive UFO and per-form stand-in pets, used until
+  ReplicatedStorage.PetModels holds the imported meshes. `tools/pets/stage.py` copies the
+  FBX files to `import/<Id>.fbx`. **Blocked:** `Atlas_Monsters.png` isn't in the
+  downloads, so the meshes would import untextured.
+- Studio: RunChecks 10/10 (PetCheck is new). Tested: bought a Common UFO (panel closed,
+  UFO followed, 4:58 countdown), a Rare UFO landed (beam, growth, banner, toast,
+  auto-equip), the 4th equip was refused, and all 5 destination shops are clear of
+  scenery. Not tested: a second player, persistence (off in Studio), phone layout.
+
+# Earlier session: 2026-10-17, prompt, toast and hint polish
 
 - Branch `claude/prompt-and-hint-polish` from master.
 - Gym station prompts read just "[E] Use": no ObjectText (it was the part name, e.g.

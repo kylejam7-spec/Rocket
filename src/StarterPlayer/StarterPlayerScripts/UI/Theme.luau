@@ -39,6 +39,8 @@ Theme.icon = {
     Settings = "⚙️",
     Hand = "✋",
     Jump = "⬆",
+    Pets = "🐾",
+    Ufo = "🛸",
 }
 
 -- Mission wheel rarities (Shared.Missions); WheelController and the progress tag.

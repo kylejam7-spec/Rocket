@@ -32,7 +32,7 @@ return function()
 
     -- Purchases: validated, charged once per request ID, ledger bounded.
     local profile = Profiles.validate(nil, config)
-    assert(profile.schemaVersion == 6 and next(profile.upgrades) == nil and #profile.purchaseIds == 0)
+    assert(profile.schemaVersion == 7 and next(profile.upgrades) == nil and #profile.purchaseIds == 0)
     assert(Upgrades.cheapest(config, profile) == 50)
     assert(Service.buy(config, profile, "BulkPickup", "a") == nil, "bought without coins")
     profile.coins = 200
@@ -68,11 +68,11 @@ return function()
     local v3 = Profiles.validate(nil, config)
     v3.schemaVersion, v3.upgrades, v3.purchaseIds = 3, nil, nil
     local migrated = Profiles.validate(v3, config)
-    assert(migrated.schemaVersion == 6 and next(migrated.upgrades) == nil and #migrated.purchaseIds == 0)
+    assert(migrated.schemaVersion == 7 and next(migrated.upgrades) == nil and #migrated.purchaseIds == 0)
     local v4 = Profiles.validate(nil, config)
     v4.schemaVersion, v4.upgrades = 4, { BulkPickup = 3, CarryCapacity = 6 }
     migrated = Profiles.validate(v4, config)
-    assert(migrated.schemaVersion == 6 and migrated.upgrades.BulkPickup == 3 and migrated.upgrades.CarryCapacity == nil)
+    assert(migrated.schemaVersion == 7 and migrated.upgrades.BulkPickup == 3 and migrated.upgrades.CarryCapacity == nil)
     assert(v4.upgrades.CarryCapacity == 6, "migration changed the caller's table")
     for _, bad in { { Nope = 1 }, { BulkPickup = -1 }, { BulkPickup = 1.5 }, { BulkPickup = 11 }, { CarryCapacity = 1 } } do
         local raw = Profiles.validate(nil, config)

@@ -1,12 +1,15 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Pets = require(ReplicatedStorage.Shared.Pets)
 local Tutorial = require(script.Parent.TutorialService)
 local Profiles = {}
 Profiles.__index = Profiles
 
 local function defaults()
-    return { schemaVersion = 6, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
-        tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {} }
+    return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
+        tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
+        pets = {}, equippedPets = {}, ufo = nil }
 end
 
 local function copy(profile)
@@ -17,12 +20,15 @@ local function copy(profile)
     result.seenCallouts = table.clone(profile.seenCallouts)
     result.upgrades = table.clone(profile.upgrades)
     result.purchaseIds = table.clone(profile.purchaseIds)
+    result.pets = table.clone(profile.pets)
+    result.equippedPets = table.clone(profile.equippedPets)
+    result.ufo = profile.ufo and table.clone(profile.ufo)
     return result
 end
 
 local function validate(raw, config)
     if raw == nil then return defaults() end
-    if type(raw) ~= "table" or (type(raw.schemaVersion) ~= "number" or raw.schemaVersion < 1 or raw.schemaVersion > 6) then error("Unsupported profile schema; refusing overwrite") end
+    if type(raw) ~= "table" or (type(raw.schemaVersion) ~= "number" or raw.schemaVersion < 1 or raw.schemaVersion > 7) then error("Unsupported profile schema; refusing overwrite") end
     -- v1 -> v2 adds coins.
     if raw.schemaVersion == 1 then raw = table.clone(raw); raw.schemaVersion, raw.coins = 2, 0 end
     -- v2 -> v3 adds the tutorial; anyone who already delivered has played, so skip it.
@@ -57,6 +63,11 @@ local function validate(raw, config)
             end
         end
     end
+    -- v6 -> v7 adds pets: owned counts, the equipped list and the UFO on its way.
+    if raw.schemaVersion == 6 then
+        raw = table.clone(raw)
+        raw.schemaVersion, raw.pets, raw.equippedPets = 7, {}, {}
+    end
     if not Tutorial.valid(raw.tutorialStep) then error("Invalid tutorial step") end
     if type(raw.upgrades) ~= "table" or type(raw.purchaseIds) ~= "table" then error("Invalid upgrades") end
     for track, level in raw.upgrades do
@@ -82,13 +93,44 @@ local function validate(raw, config)
             if type(id) ~= "string" or type(ticks) ~= "number" or ticks ~= ticks or ticks < 0 or ticks % 1 ~= 0 or ticks == math.huge then error("Invalid reward ticks") end
         end
     end
+    if type(raw.pets) ~= "table" or type(raw.equippedPets) ~= "table" then error("Invalid pets") end
+    for id, count in raw.pets do
+        if type(id) ~= "string" or type(count) ~= "number" or count < 1 or count % 1 ~= 0 or count > Pets.MaxCount then error("Invalid pets") end
+    end
+    if #raw.equippedPets > Pets.MaxEquipped then error("Invalid equipped pets") end
+    for _, id in raw.equippedPets do if type(id) ~= "string" then error("Invalid equipped pets") end end
+    local ufo = raw.ufo
+    if ufo ~= nil and (type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
+        or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400) then
+        error("Invalid UFO")
+    end
     local result = copy(raw)
+    -- Pets that left the catalog are dropped, not refused; so is an equip of a pet not owned.
+    for id in raw.pets do if not Pets.get(id) then result.pets[id] = nil end end
+    local equipped, used = {}, {}
+    for _, id in raw.equippedPets do
+        used[id] = (used[id] or 0) + 1
+        if used[id] <= (result.pets[id] or 0) then table.insert(equipped, id) end
+    end
+    result.equippedPets = equipped
+    if ufo and not Pets.get(ufo.pet) then result.ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
     end
     return result
 end
 Profiles.validate = validate
+
+-- Same pets, equipped list and UFO (to tell whether a save left pet changes unsaved).
+-- The UFO's countdown alone doesn't count: it ticks every second.
+function Profiles.samePets(a, b)
+    if (a.ufo == nil) ~= (b.ufo == nil) or (a.ufo and (a.ufo.tier ~= b.ufo.tier or a.ufo.pet ~= b.ufo.pet)) then return false end
+    if #a.equippedPets ~= #b.equippedPets then return false end
+    for index, id in a.equippedPets do if b.equippedPets[index] ~= id then return false end end
+    for id, count in a.pets do if b.pets[id] ~= count then return false end end
+    for id in b.pets do if not a.pets[id] then return false end end
+    return true
+end
 
 -- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
@@ -207,6 +249,9 @@ function Profiles:save(userId)
                 current.seenCallouts = snapshot.seenCallouts
                 current.upgrades = snapshot.upgrades
                 current.purchaseIds = snapshot.purchaseIds
+                current.pets = snapshot.pets
+                current.equippedPets = snapshot.equippedPets
+                current.ufo = snapshot.ufo
                 applyRewards(current)
                 current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
                 return current
@@ -225,7 +270,7 @@ function Profiles:save(userId)
         for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
-            or #record.profile.purchaseIds ~= #snapshot.purchaseIds
+            or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if record.leaving and not next(record.pending) and not record.dirty then
             -- Keep lease until expiry: protects a disconnected locked passenger.
