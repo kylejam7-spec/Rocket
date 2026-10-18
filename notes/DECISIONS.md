@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-10-18: Pets are cosmetic; backpack; pet sizes
+
+- User: pets only follow you and look cool, with no stats or coins. A small backpack
+  button lets you equip or unequip from the pets you own.
+- Pets are pet-sized next to a ~5 stud character: Blob 2.2 span, Large 3 tall, Flying 3
+  wingspan. The following UFO is about half the shop saucer.
+- Imported animations are played by the client writing Bone.Transform from the FBX
+  KeyframeSequences, so there are no animation asset uploads.
+- Up to 3 pets follow at once (`Pets.MaxEquipped`, unchanged).
+
+## 2026-10-18: Pets come from UFOs
+
+- User: a UFO from a shop on every planet and the station follows you for 5 minutes
+  (Common), plus 5 minutes per tier, then turns into a pet. Odds: Common 80/20,
+  Uncommon 90/10, Rare 95/5 into the next rarity. Epic and Legendary UFOs are Robux-only
+  and not built yet. The less unique models go in the lower tiers.
+- My calls, open to change: coin prices 500 / 5K / 50K; Epic odds 95/5 and Legendary
+  100%; tiers of 14/12/10/8/6 pets; one UFO at a time; 3 pets follow; the countdown runs
+  on play time only; pets are cosmetic for now; the pet is rolled at purchase so a rejoin
+  can't reroll it.
+
 ## 2026-10-16: Strength and speed are levels
 
 - Profiles still store point totals (`strengthLevel`/`speedLevel` are points despite the

@@ -5,10 +5,14 @@
 -- restarts every player's tutorial (at Pickup by default) and clears seen callouts;
 -- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades;
 -- Invoke("stats", strength, speed) sets everyone's trained points (destination bonuses kept);
--- Invoke("launches", n) sets everyone's completed launches (gym tier unlocks).
+-- Invoke("launches", n) sets everyone's completed launches (gym tier unlocks);
+-- Invoke("ufo", tier, seconds) gives everyone a UFO of that tier (rolled as bought)
+-- landing in `seconds` (10 by default); Invoke("pets", count) gives everyone `count`
+-- (1) of every pet; Invoke("nopets") clears everyone's pets and UFO.
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
+local Pets = require(game:GetService("ReplicatedStorage").Shared.Pets)
 local Debug = {}
 
 function Debug.new(ctx, parent)
@@ -47,6 +51,21 @@ function Debug.new(ctx, parent)
                 else profile.upgrades = {} end
             end
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Stats.update(player) end
+            Cycle.broadcast()
+        elseif action == "ufo" or action == "pets" or action == "nopets" then
+            local random = Random.new()
+            for _, record in ctx.profiles.records do
+                local profile = record.profile
+                if action == "ufo" then
+                    local tier = value or 1
+                    profile.ufo = { tier = tier, pet = Pets.roll(random, tier), remaining = extra or 10 }
+                elseif action == "pets" then
+                    for _, entry in Pets.Catalog do profile.pets[entry.Id] = value or 1 end
+                else
+                    profile.pets, profile.equippedPets, profile.ufo = {}, {}, nil
+                end
+            end
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Pets.refresh(player) end
             Cycle.broadcast()
         end
         rocket = Cycle.rocket

@@ -15,13 +15,18 @@ ctx.Stats = require(Services.StatsService).new(ctx)
 ctx.Cycle = require(Services.CycleService).new(ctx)
 ctx.profiles = Profiles.new(Config, function(userId)
     local player = Players:GetPlayerByUserId(userId)
-    if player then ctx.Stats.update(player); ctx.Cycle.send(player) end
+    if player then
+        ctx.Stats.update(player)
+        if ctx.Pets then ctx.Pets.refresh(player) end
+        ctx.Cycle.send(player)
+    end
 end)
 ctx.Launch = require(Services.LaunchService).new(ctx)
 ctx.Cargo = require(Services.CargoService).new(ctx)
 ctx.Tutorial = require(Services.TutorialService).new(ctx)
 ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 ctx.Robux = require(Services.RobuxUpgradeService).new(ctx)
+ctx.Pets = require(Services.PetService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,

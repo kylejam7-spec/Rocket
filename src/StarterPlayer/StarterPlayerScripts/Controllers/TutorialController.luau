@@ -100,7 +100,8 @@ function TutorialController.start()
     local holder = Create.new("Frame", {
         Name = "SkipTutorialHolder", Size = UDim2.fromOffset(170, 44), BackgroundTransparency = 1, Parent = gui,
     })
-    Create.inTopBar(holder, gui, 0.66, function(rowHeight) return Theme.gutter + rowHeight + 10 end)
+    -- Left of the ⚙ and 🐾 buttons.
+    Create.inTopBar(holder, gui, 0.66, function(rowHeight) return Theme.gutter + 2 * (rowHeight + 10) end)
     local skip = Button.new({
         Name = "SkipTutorial", Text = "SKIP TUTORIAL", TextSize = 18, color = Theme.color.Purple,
         Size = UDim2.fromScale(1, 1), Visible = false, Parent = holder,

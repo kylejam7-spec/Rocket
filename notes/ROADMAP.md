@@ -166,8 +166,39 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 - **Friend Boost:** +X% coins or training for each friend in the server.
 - **Leaderboards:** in-world boards for top builders and launches using OrderedDataStore.
 - **Destinations:** moved up to Phase 4.5 (one destination per rocket design).
-- **Pets** (optional, only if retention data supports it).
+- **Pets:** see Phase 6.5.
 - **Daily rewards and playtime gifts.**
+
+### Phase 6.5: Alien pets and UFOs (added 2026-10-18)
+
+**Status (2026-10-18):** built on `claude/pets` (PR #25). The real meshes are imported
+(`PetModels.rbxm`), pet-sized and animated with their own Idle and Move clips. The 🎒
+backpack equips them. Pets are cosmetic only (user). The atlases are uploaded
+(`PetModels.Atlases`), so the pets are fully coloured.
+
+- **Built:** a 50-pet catalog (`Shared/Pets`) from the Quaternius Ultimate Monsters
+  FBX files. It covers 3 forms (Blob, Large, Flying) and 5 rarities (14/12/10/8/6 pets),
+  with the plainer models in the lower tiers. Each destination and the spaceport has a
+  UFO Shop. A Common, Uncommon or Rare UFO (500 / 5K / 50K coins) follows its owner for
+  5 / 10 / 15 minutes of play, then lands and turns into a pet rolled at purchase:
+  80/20, 90/10 or 95/5 into the next rarity. Epic (20 min, 95/5) and Legendary (25 min,
+  100%) UFOs are shown as "R$ SOON". There is one UFO at a time, and up to 3 pets follow
+  you. A PETS panel equips them. Profile v7. PetCheck.
+- **Next, in order:**
+  1. ~~Import the meshes~~ (done). **Upload the atlases** (`tools/pets/README.md`).
+  2. ~~Rig poses and animation~~ (done: Idle and Move via PetAnimator). Maybe later: a
+     happy jump or dance when a pet lands, using the FBX's Jump or Dance clips.
+  3. **Robux UFOs:** Epic and Legendary as Developer Products. This needs the Phase 8
+     receipt journal first, because a UFO is a repeatable purchase.
+  4. ~~Decide what pets do~~: decided, cosmetic only. Pets are presence, looks and
+     cool factor.
+  5. **More slots and quality of life:** an "Equip best" button, gamepasses for a 4th/5th
+     slot and a second simultaneous UFO, and showing the pet's odds per pet in the panel.
+  6. **Collection:** an index of all 50 with silhouettes for undiscovered pets, and a
+     reward for completing a form or rarity.
+  7. **Trading/selling** duplicates for coins (needs anti-dupe ledger work).
+- **Open questions for the user:** UFO coin prices, the Epic and Legendary odds (95/5 and
+  100% are placeholders), whether the countdown should also run offline, and pet perks.
 
 ### Phase 7: Monetization (after the journal in Phase 8 exists)
 

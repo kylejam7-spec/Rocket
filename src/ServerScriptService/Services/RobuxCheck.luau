@@ -76,9 +76,9 @@ return function()
 
     -- Profile v6: v5 levels above the new max are capped; the caller's table is untouched.
     local v5 = Profiles.validate(nil, config)
-    assert(v5.schemaVersion == 6)
+    assert(v5.schemaVersion == 7)
     v5.schemaVersion, v5.upgrades = 5, { BulkPickup = 40, BulkPlace = 3 }
     local migrated = Profiles.validate(v5, config)
-    assert(migrated.schemaVersion == 6 and migrated.upgrades.BulkPickup == MAX and migrated.upgrades.BulkPlace == 3)
+    assert(migrated.schemaVersion == 7 and migrated.upgrades.BulkPickup == MAX and migrated.upgrades.BulkPlace == 3)
     assert(v5.upgrades.BulkPickup == 40, "migration changed the caller's table")
 end

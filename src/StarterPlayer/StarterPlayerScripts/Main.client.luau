@@ -9,7 +9,8 @@ Players.LocalPlayer:WaitForChild("PlayerGui")
 
 for _, name in { "CameraController", "LaunchEffectsController", "HudController", "ProgressController",
     "GymSignController", "TrainingController", "GymAnimationController", "CargoController", "PromptController", "DeliveryFeedbackController",
-    "ActionController", "SettingsController", "TutorialController", "UpgradesController", "DestinationController", "WheelController" } do
+    "ActionController", "SettingsController", "TutorialController", "UpgradesController", "DestinationController", "WheelController",
+    "PetController", "UfoShopController", "PetsController" } do
     task.spawn(require(Controllers:WaitForChild(name)).start)
 end
 State.start()

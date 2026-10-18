@@ -1,4 +1,75 @@
-# Latest session: 2026-10-17, prompt, toast and hint polish
+# Latest session: 2026-10-18 (2), real pet models, animation, sizes, backpack
+
+- PR #25 (`claude/pets`) opened with the first round. The user imported all 50 FBX into
+  Studio and asked for: fixed animations, pet-sized pets (the Large ones were far too
+  big), pets purely cosmetic, and a small backpack button to equip or unequip.
+- Import: models came in at FBX scale (200-465 studs) with a pivot turned 90° about X.
+  Multi-mesh models (14) keep their bones under an invisible RootPart that is their
+  PrimaryPart. My first re-pivot turned single-mesh models over; that was caught by
+  bone heights and corrected. All 50 are now upright, face -Z, have their pivot at the
+  feet, and keep `Clips/Idle` and `Clips/Move` (from the importer's AnimSaves). They are
+  saved as `src/ReplicatedStorage/PetModels.rbxm` (3 MB, SerializationService, written out
+  over a local HTTP receiver).
+- `Shared/PetAnimator`: compiles a KeyframeSequence into per-bone key lists (cached per
+  clip), samples them linearly, and blends Idle into Move by speed. It writes
+  Bone.Transform with translations times the copy's scale. No animation uploads.
+  PetController animates pets within 110 studs. Stand-ins keep the procedural hop.
+- Sizes (`PetModels.Fit`): Blob span 2.2, Large height 3 (their T bind pose would make
+  width-fitting tiny), Flying wingspan 3. The following UFO is 0.55 scale, slots are
+  tighter, and the beam is slimmer and more transparent.
+- Backpack: a 🎒 top-bar button opens PET BACKPACK. Cards have posed previews (WorldModel)
+  and an EQUIP / UNEQUIP button (greyed when full), plus UNEQUIP ALL
+  (`EquipPet("*", false)`). Pet meshes are preloaded; viewports built before a mesh
+  loaded stayed blank.
+- **Textures blocked:** the atlas is not in the downloads. Copies of the CC0 Quaternius
+  atlases (one per pack) found in public Godot repos are in `tools/pets/atlas/`;
+  textured previews of all 50 rendered correctly with them. Uploading them from
+  Claude was denied by the auto-mode classifier, so the user uploaded them (Blob
+  82233115260905, Large 127491665071338, Flying 119141981005054), now in
+  `PetModels.Atlases`. All three load, and all three packs show fully coloured in
+  Studio.
+- Studio: RunChecks 10/10 (PetCheck now checks sizes, pivots and clips for all 50 imports,
+  and unequip-all). Seen: Yeti, Cat and Dragon following and animating, facing their
+  travel, a Hywirl landing from an Uncommon UFO, the backpack round-trip, and immediate
+  previews.
+
+# Earlier session: 2026-10-18, alien pets and UFOs
+
+- Branch `claude/pets` from master. The user added 50 Quaternius *Ultimate Monsters*
+  FBX files in three downloads. Their previews and rigs show they are Blob (17), Big
+  (16, T-posed humanoids) and Flying (17).
+- `Shared/Pets`: the catalog (id = `<Form>_<Model>`), tiered 14/12/10/8/6 Common to
+  Legendary. Plain animals and base blobs are Common; armour, weapons, crowns and evolved
+  forms climb the tiers. UFO tiers: 500 / 5K / 50K coins, 5-25 minutes, odds 80/20,
+  90/10, 95/5. Epic (95/5) and Legendary (100) aren't on sale; they will be Robux. The
+  roll is uniform within a rarity.
+- `PetService`: BuyUfo(tier, requestId) runs only near a UFO Shop, once per ID, with one
+  UFO at a time. The pet is rolled at purchase and never sent to the client until it
+  lands. The countdown runs on play time only (profile.ufo.remaining, ticked each second
+  while in game). On landing, the pet is added and equipped if a slot (max 3) is free,
+  and PetHatched fires before the attributes change. EquipPet(id, on). Player attributes
+  UfoTier, UfoHatchAt and Pets drive every client.
+- Profile v7: pets (id -> count), equippedPets and ufo. Retired ids and equips of pets
+  not owned are dropped on load; other bad data is refused. The countdown alone doesn't
+  mark a save dirty.
+- World: UFO Shops (a pad, counter, sign and a spinning saucer beaming down) opposite the
+  upgrades hut at (26, -32), and on every destination at (38, -4), facing the arrival.
+  The scatter keeps 14 studs clear around them.
+- Client: `PetController` draws everyone's UFO (rarity lights, countdown billboard) and
+  pets. Blobs hop, large pets waddle, flyers hover and flap. On landing, the UFO beams
+  the pet down, flies off, and shows a reveal banner. `UfoShopController` (panel opened
+  by the shop prompt) and `PetsController` (🐾 top-bar button, card grid with 3D
+  previews, tap to equip). Skip Tutorial moved one slot left to make room.
+- `Shared/PetModels`: a primitive UFO and per-form stand-in pets, used until
+  ReplicatedStorage.PetModels holds the imported meshes. `tools/pets/stage.py` copies the
+  FBX files to `import/<Id>.fbx`. **Blocked:** `Atlas_Monsters.png` isn't in the
+  downloads, so the meshes would import untextured.
+- Studio: RunChecks 10/10 (PetCheck is new). Tested: bought a Common UFO (panel closed,
+  UFO followed, 4:58 countdown), a Rare UFO landed (beam, growth, banner, toast,
+  auto-equip), the 4th equip was refused, and all 5 destination shops are clear of
+  scenery. Not tested: a second player, persistence (off in Studio), phone layout.
+
+# Earlier session: 2026-10-17, prompt, toast and hint polish
 
 - Branch `claude/prompt-and-hint-polish` from master.
 - Gym station prompts read just "[E] Use": no ObjectText (it was the part name, e.g.

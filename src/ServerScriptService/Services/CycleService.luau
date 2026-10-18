@@ -51,7 +51,10 @@ function Cycle.new(ctx)
             boarded = service.boarded[player.UserId] == true, passenger = rocket.passengers[player.UserId] == true,
             profile = profile and { strength = profile.strengthLevel + profile.planetBonuses.strength, speed = profile.speedLevel + profile.planetBonuses.speed, completedLaunches = profile.completedLaunches, lifetimeDeliveries = profile.lifetimeDeliveries, coins = profile.coins, walkSpeed = stats.speed(profile), capacity = stats.capacity(profile),
                 tutorialStep = profile.tutorialStep, seenCallouts = table.clone(profile.seenCallouts),
-                upgrades = table.clone(profile.upgrades), rank = player:GetAttribute("Rank") },
+                upgrades = table.clone(profile.upgrades), rank = player:GetAttribute("Rank"),
+                -- The UFO's pet stays secret until it lands.
+                pets = table.clone(profile.pets), equippedPets = table.clone(profile.equippedPets),
+                ufo = profile.ufo and { tier = profile.ufo.tier, hatchAt = workspace:GetServerTimeNow() + profile.ufo.remaining } },
             saveStatus = record and record.status or "Loading",
             persistent = config.PersistenceEnabled,
             training = training and training.station.name,

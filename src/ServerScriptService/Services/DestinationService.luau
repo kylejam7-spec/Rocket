@@ -2,7 +2,8 @@
 -- destination per rocket design (Config.Destinations, by ModelTier), far from the
 -- main map. Primitives only; Phase 5 swaps in art and sky. Each destination has a
 -- walled play area, an ArrivalPad tagged DestinationArrival (attribute Tier), two
--- gym spots (WorldService puts a bench and a treadmill there) and a landing spot
+-- gym spots (WorldService puts a bench and a treadmill there), a UFO Shop spot
+-- (WorldService builds it, right of the arrival facing it) and a landing spot
 -- behind the welcome sign, where the rocket touches down (LaunchService).
 local CollectionService = game:GetService("CollectionService")
 local Destinations = {}
@@ -78,8 +79,9 @@ end
 -- destination's ground there.
 Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3.new(28, 0, 24) }
 Destinations.LandingOffset = Vector3.new(0, 0, -42)
+Destinations.ShopOffset = Vector3.new(38, 0, -4)
 local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
-    { Destinations.LandingOffset, 30 } }
+    { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 } }
 -- A coloured band around a planet ball: a thin disc through it at `height`, just wider
 -- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
 local function band(parent, name, center, radius, height, thickness, color)
@@ -221,7 +223,7 @@ builders[5] = function(folder, c)
 end
 
 -- Returns { [tier] = { id, name, gravity, reward, arrival = Vector3, center, landing = Vector3 (on the ground),
--- gym = { bench, treadmill } } } and the cabin
+-- gym = { bench, treadmill }, shop = Vector3 (on the ground), shopFacing } } and the cabin
 -- { center, size, arrival, exit (part with the Leave prompt) }.
 function Destinations.build(world, config)
     local root = Instance.new("Folder")
@@ -241,6 +243,7 @@ function Destinations.build(world, config)
         sign(folder, center + Vector3.new(0, 22, arrivalOffset.Z - 40), Vector3.new(0, 0, 1), "WELCOME TO " .. spec.name .. "!", spec.color)
         built[tier] = { id = spec.id, name = spec.name, gravity = spec.gravity, reward = spec.reward, folder = folder,
             arrival = arrivalAt + Vector3.new(0, 4, 0), center = center, landing = center + Destinations.LandingOffset,
+            shop = center + Destinations.ShopOffset, shopFacing = (arrivalOffset - Destinations.ShopOffset).Unit,
             gym = { bench = center + Destinations.GymOffsets.bench + Vector3.new(0, 1, 0), treadmill = center + Destinations.GymOffsets.treadmill + Vector3.new(0, 1, 0) } }
     end
 
