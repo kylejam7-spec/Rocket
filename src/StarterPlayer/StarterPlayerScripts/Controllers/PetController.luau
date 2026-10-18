@@ -6,11 +6,13 @@
 -- joins its owner (or vanishes into the inventory if no slot is free). The owner gets
 -- a reveal banner. The UFO Shop saucers spin here too.
 local CollectionService = game:GetService("CollectionService")
+local ContentProvider = game:GetService("ContentProvider")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Pets = require(ReplicatedStorage.Shared.Pets)
 local PetModels = require(ReplicatedStorage.Shared.PetModels)
+local PetAnimator = require(ReplicatedStorage.Shared.PetAnimator)
 local State = require(script.Parent.State)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
@@ -21,12 +23,16 @@ local Sfx = require(UI.Sfx)
 local WorldScale = require(UI.WorldScale)
 local PetController = {}
 
--- Followers of players farther than this from the camera aren't drawn.
+-- Followers of players farther than this from the camera aren't drawn, and past
+-- ANIMATE_DISTANCE their pets hold still.
 local DRAW_DISTANCE = 220
+local ANIMATE_DISTANCE = 110
 -- Pet slots behind the owner (owner space: +X right, +Z behind) and the UFO's perch.
-local SLOTS = { Vector3.new(-3.6, 0, 3.4), Vector3.new(3.6, 0, 3.4), Vector3.new(0, 0, 6) }
-local UFO_PERCH = Vector3.new(2.6, 6.5, 2.2)
-local FLY_HEIGHT = 2.6
+local SLOTS = { Vector3.new(-3, 0, 3), Vector3.new(3, 0, 3), Vector3.new(0, 0, 5) }
+local UFO_PERCH = Vector3.new(2.2, 5.6, 1.8)
+-- The following UFO is a small copy of the shop saucer.
+local UFO_SCALE = 0.55
+local FLY_HEIGHT = 2.2
 -- Farther than this from its target, a follower jumps there (teleports, launches).
 local SNAP = 60
 local HATCH = { beam = 0.7, grow = 1.6, leave = 2.6 }
@@ -39,6 +45,10 @@ end
 
 function PetController.start()
     local localPlayer = Players.LocalPlayer
+    -- Fetch the pet meshes up front, so followers and backpack previews (which stay
+    -- blank if built before their mesh arrives) show at once.
+    local imported = ReplicatedStorage:FindFirstChild("PetModels")
+    if imported then task.spawn(ContentProvider.PreloadAsync, ContentProvider, { imported }) end
     local folder = Instance.new("Folder")
     folder.Name = "PetFollowers"
     folder.Parent = workspace
@@ -55,7 +65,7 @@ function PetController.start()
     local function ufoLabel(model, tier)
         local spec = Pets.Ufos[tier]
         local billboard = Create.new("BillboardGui", {
-            Name = "UfoCountdown", Size = UDim2.fromOffset(150, 46), StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0),
+            Name = "UfoCountdown", Size = UDim2.fromOffset(150, 46), StudsOffsetWorldSpace = Vector3.new(0, 1.6, 0),
             LightInfluence = 0, MaxDistance = 80, Adornee = model.PrimaryPart, Parent = model,
         })
         WorldScale.apply(billboard)
@@ -66,6 +76,7 @@ function PetController.start()
     end
     local function newUfo(tier, at)
         local model = PetModels.ufo(tier)
+        model:ScaleTo(UFO_SCALE)
         model:PivotTo(CFrame.new(at))
         model.Parent = folder
         return { model = model, tier = tier, position = at, spin = 0, time = ufoLabel(model, tier) }
@@ -73,7 +84,8 @@ function PetController.start()
     local function newPet(id, at)
         local model = PetModels.pet(id)
         local entry = Pets.get(id)
-        local slot = { id = id, model = model, form = entry.Form, position = at, yaw = 0, phase = math.random() * 10 }
+        local slot = { id = id, model = model, form = entry.Form, position = at, yaw = 0, phase = math.random() * 10,
+            animator = PetAnimator.new(model) }
         -- Stand-in flyers flap their wings around the inner edge.
         local pivot = model:GetPivot()
         for _, name in { "WingL", "WingR" } do
@@ -134,7 +146,7 @@ function PetController.start()
         return hit and hit.Position.Y
     end
 
-    local function updatePet(slot, target, facing, dt, now)
+    local function updatePet(slot, target, facing, dt, now, animate)
         local snapped = (slot.position - target).Magnitude > SNAP
         local before = slot.position
         slot.position = snapped and target or slot.position:Lerp(target, lerpFactor(7, dt))
@@ -148,7 +160,11 @@ function PetController.start()
         end
         local t = now + slot.phase
         local lift, tilt, roll = 0, 0, 0
-        if slot.form == "Blob" then
+        -- Imported pets walk and fly with their own clips; stand-ins hop and waddle.
+        if slot.animator then
+            if animate then slot.animator:step(dt, moving) end
+            if slot.form == "Flying" then lift = FLY_HEIGHT + math.sin(t * 2.4) * 0.25 end
+        elseif slot.form == "Blob" then
             lift = math.abs(math.sin(t * 9)) * 0.9 * moving + math.sin(t * 2) * 0.05
         elseif slot.form == "Large" then
             lift = math.abs(math.sin(t * 7)) * 0.3 * moving
@@ -195,12 +211,12 @@ function PetController.start()
         model.Parent = folder
         -- PetService fires this before it updates the attributes, so the new pet's slot
         -- (sync) finds the reveal and waits for it.
-        entry.reveal = { id = id, ufo = ufo, model = model, scale = model:GetScale(), start = os.clock(), floor = floor,
+        entry.reveal = { id = id, ufo = ufo, model = model, scale = model:GetScale(), animator = PetAnimator.new(model), start = os.clock(), floor = floor,
             at = Vector3.new(ufo.position.X, floor, ufo.position.Z), claimed = false }
         ufo.time.Text = "LANDING!"
     end)
 
-    local function updateReveal(entry, now)
+    local function updateReveal(entry, now, dt)
         local reveal = entry.reveal
         local t = now - reveal.start
         local ufo = reveal.ufo
@@ -210,8 +226,8 @@ function PetController.start()
             -- Hover in place, beam reaching the ground.
             local reach = math.clamp(t / HATCH.beam, 0, 1) * height
             if beam then
-                beam.Transparency = 0.62
-                beam.Size = Vector3.new(math.max(0.1, reach), 2.4 + reach * 0.25, 2.4 + reach * 0.25)
+                beam.Transparency = 0.74
+                beam.Size = Vector3.new(math.max(0.1, reach), 1 + reach * 0.12, 1 + reach * 0.12)
                 beam.CFrame = CFrame.new(ufo.position - Vector3.new(0, reach / 2, 0)) * CFrame.Angles(0, 0, math.rad(90))
             end
             ufo.spin += 0.2
@@ -228,6 +244,7 @@ function PetController.start()
         if model then
             local scale = reveal.scale * math.max(0.05, 1 - (1 - grow) ^ 3)
             if math.abs(model:GetScale() - scale) > 0.01 * reveal.scale then model:ScaleTo(scale) end
+            if reveal.animator then reveal.animator:step(dt, 0) end
             model:PivotTo(CFrame.new(reveal.at + Vector3.new(0, (1 - grow) * height * 0.5, 0)) * CFrame.Angles(0, t * 6 * (1 - grow) + math.pi, 0))
         end
         if t < HATCH.leave then return end
@@ -303,14 +320,15 @@ function PetController.start()
                     ufo.time.Text = hatchAt and Pets.clock(hatchAt - serverNow) or ""
                 end
             end
-            if entry.reveal then updateReveal(entry, now) end
+            if entry.reveal then updateReveal(entry, now, dt) end
+            local animate = (root.Position - camera.CFrame.Position).Magnitude <= ANIMATE_DISTANCE
             for index, slot in entry.pets do
                 if slot.model then
                     local spot = base * SLOTS[index]
                     local floor = slot.form == "Flying" and feet or ground(spot) or feet
                     -- Never sink far below the owner's feet (holes, ramps' edges).
                     if floor < feet - 6 then floor = feet end
-                    updatePet(slot, Vector3.new(spot.X, floor, spot.Z), yawOf(root.CFrame), dt, now)
+                    updatePet(slot, Vector3.new(spot.X, floor, spot.Z), yawOf(root.CFrame), dt, now, animate)
                 end
             end
         end

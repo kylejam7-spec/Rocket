@@ -100,6 +100,9 @@ return function()
     assert(select(2, Service.equip(fresh, "Large_Yeti", true)) == "full")
     assert(Service.equip(fresh, "Blob_Cat", false) and #fresh.equippedPets == 2)
     assert(select(2, Service.equip(fresh, "Large_Yeti", false)) == "not equipped")
+    assert(select(2, Service.equip(fresh, "*", true)) == "unknown pet", "\"*\" only unequips")
+    assert(Service.equip(fresh, "*", false) and #fresh.equippedPets == 0 and fresh.pets.Blob_Cat == 2)
+    assert(select(2, Service.equip(fresh, "*", false)) == "not equipped")
     fresh.pets.Blob_Cat = Pets.MaxCount
     Service.grant(fresh, "Blob_Cat")
     assert(fresh.pets.Blob_Cat == Pets.MaxCount)
@@ -134,16 +137,31 @@ return function()
     b.pets.Blob_Cat = (b.pets.Blob_Cat or 0) + 1
     assert(not Profiles.samePets(a, b))
 
-    -- Models: every pet builds at its form's height with the pivot at its feet; the UFO
-    -- has its saucer, beam and lights.
+    -- Models: every pet is pet-sized for its form (Blob span, Large height, Flying
+    -- wingspan) with its pivot at its feet, and only decor parts. Imported pets (all 50
+    -- once ReplicatedStorage.PetModels is in) carry Idle and Move clips that pose them.
+    local PetAnimator = require(ReplicatedStorage.Shared.PetAnimator)
+    local imported = ReplicatedStorage:FindFirstChild("PetModels")
     for _, entry in Pets.Catalog do
         local model = PetModels.pet(entry.Id)
-        local box, size = model:GetBoundingBox()
-        local height = PetModels.Heights[entry.Form]
-        assert(math.abs(size.Y - height) <= height * 0.06, ("%s is %.2f tall, want %.2f"):format(entry.Id, size.Y, height))
-        assert(math.abs(box.Position.Y - size.Y / 2 - model:GetPivot().Position.Y) <= 0.15 * height, entry.Id .. " pivot isn't at its feet")
+        local box, size = PetModels.bounds(model)
+        local fit = PetModels.Fit[entry.Form]
+        local measure = fit.measure == "height" and size.Y or math.max(size.X, size.Y, size.Z)
+        assert(math.abs(measure - fit.size) <= fit.size * 0.03, ("%s measures %.2f, want %.2f"):format(entry.Id, measure, fit.size))
+        assert(size.Y <= 3.2 and math.max(size.X, size.Z) <= 6, entry.Id .. " isn't pet-sized: " .. tostring(size))
+        assert(math.abs(box.Position.Y - size.Y / 2 - model:GetPivot().Position.Y) <= 0.05, entry.Id .. " pivot isn't at its feet")
         for _, part in model:GetDescendants() do
             if part:IsA("BasePart") then assert(part.Anchored and not part.CanCollide and not part.CanQuery, entry.Id .. " has a solid part") end
+        end
+        if imported then
+            assert(model:GetAttribute("Imported"), entry.Id .. " has no imported model")
+            local animator = assert(PetAnimator.new(model), entry.Id .. " has no Idle clip")
+            assert(model.Clips:FindFirstChild("Move"), entry.Id .. " has no Move clip")
+            assert(next(animator.bones) and next(animator.idle.tracks), entry.Id .. " clips don't reach its bones")
+            local posed = 0
+            for name in animator.idle.tracks do if animator.bones[name] then posed += 1 end end
+            assert(posed >= 1, entry.Id .. " Idle poses no bone")
+            animator:step(1 / 30, 1)
         end
         model:Destroy()
     end

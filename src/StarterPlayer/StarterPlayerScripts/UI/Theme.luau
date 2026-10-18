@@ -40,6 +40,7 @@ Theme.icon = {
     Hand = "✋",
     Jump = "⬆",
     Pets = "🐾",
+    Backpack = "🎒",
     Ufo = "🛸",
 }
 

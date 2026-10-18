@@ -1,4 +1,37 @@
-# Latest session: 2026-10-18, alien pets and UFOs
+# Latest session: 2026-10-18 (2), real pet models, animation, sizes, backpack
+
+- PR #25 (`claude/pets`) opened with the first round. The user imported all 50 FBX into
+  Studio and asked for: fixed animations, pet-sized pets (the Large ones were far too
+  big), pets purely cosmetic, and a small backpack button to equip or unequip.
+- Import: models came in at FBX scale (200-465 studs) with a pivot turned 90° about X.
+  Multi-mesh models (14) keep their bones under an invisible RootPart that is their
+  PrimaryPart. My first re-pivot turned single-mesh models over; that was caught by
+  bone heights and corrected. All 50 are now upright, face -Z, have their pivot at the
+  feet, and keep `Clips/Idle` and `Clips/Move` (from the importer's AnimSaves). They are
+  saved as `src/ReplicatedStorage/PetModels.rbxm` (3 MB, SerializationService, written out
+  over a local HTTP receiver).
+- `Shared/PetAnimator`: compiles a KeyframeSequence into per-bone key lists (cached per
+  clip), samples them linearly, and blends Idle into Move by speed. It writes
+  Bone.Transform with translations times the copy's scale. No animation uploads.
+  PetController animates pets within 110 studs. Stand-ins keep the procedural hop.
+- Sizes (`PetModels.Fit`): Blob span 2.2, Large height 3 (their T bind pose would make
+  width-fitting tiny), Flying wingspan 3. The following UFO is 0.55 scale, slots are
+  tighter, and the beam is slimmer and more transparent.
+- Backpack: a 🎒 top-bar button opens PET BACKPACK. Cards have posed previews (WorldModel)
+  and an EQUIP / UNEQUIP button (greyed when full), plus UNEQUIP ALL
+  (`EquipPet("*", false)`). Pet meshes are preloaded; viewports built before a mesh
+  loaded stayed blank.
+- **Textures blocked:** the atlas is not in the downloads. Copies of the CC0 Quaternius
+  atlases (one per pack) found in public Godot repos are in `tools/pets/atlas/`;
+  textured previews of all 50 rendered correctly with them. Uploading them from
+  Claude was denied by the auto-mode classifier, so the user uploads them and pastes
+  the ids into `PetModels.Atlases`. Until then the pets are grey.
+- Studio: RunChecks 10/10 (PetCheck now checks sizes, pivots and clips for all 50 imports,
+  and unequip-all). Seen: Yeti, Cat and Dragon following and animating, facing their
+  travel, a Hywirl landing from an Uncommon UFO, the backpack round-trip, and immediate
+  previews.
+
+# Earlier session: 2026-10-18, alien pets and UFOs
 
 - Branch `claude/pets` from master. The user added 50 Quaternius *Ultimate Monsters*
   FBX files in three downloads. Their previews and rigs show they are Blob (17), Big

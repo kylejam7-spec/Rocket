@@ -1,16 +1,26 @@
 -- Builds the UFO and pet models (server: shop displays; client: followers, previews).
 -- PetModels.ufo(tier) is a small primitive saucer lit in its rarity's colour.
 -- PetModels.pet(id) clones ReplicatedStorage.PetModels[id] (the imported Quaternius
--- mesh, see tools/pets) scaled to its form's height, or builds a primitive stand-in
--- with the same silhouette class until that mesh is imported.
+-- mesh with its Idle/Move clips, see tools/pets; PetAnimator plays them) fitted to
+-- its form's pet size, or builds a primitive stand-in of that form if it's missing.
 -- Every model is anchored decor (no collisions, queries or touches) with its pivot
 -- at the bottom centre, facing -Z; attribute Height is its height in studs.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Pets = require(script.Parent.Pets)
 local PetModels = {}
 
--- Studs tall, per form. Flyers hover (PetController lifts them).
-PetModels.Heights = table.freeze({ Blob = 2.4, Large = 4, Flying = 2.6 })
+-- Pet size per form, in studs (a character is ~5 tall): Blob's widest side, Large's
+-- height (their bind pose is a T, so width would shrink them), Flying's wingspan.
+-- Flyers hover (PetController lifts them).
+PetModels.Fit = table.freeze({
+    Blob = table.freeze({ measure = "span", size = 2.2 }),
+    Large = table.freeze({ measure = "height", size = 3 }),
+    Flying = table.freeze({ measure = "span", size = 3 }),
+})
+-- The pets' shared colour atlases (the FBX files reference them but don't embed
+-- them), one per Quaternius pack, as uploaded image ids ("rbxassetid://..."); empty
+-- until uploaded (tools/pets/README.md), and the meshes stay untextured grey.
+PetModels.Atlases = table.freeze({ Blob = "", Large = "", Flying = "" })
 -- Rarity colours (match UI Theme.rarity).
 PetModels.RarityColors = table.freeze({
     Common = Color3.fromRGB(170, 180, 200),
@@ -19,8 +29,6 @@ PetModels.RarityColors = table.freeze({
     Epic = Color3.fromRGB(175, 80, 255),
     Legendary = Color3.fromRGB(255, 170, 30),
 })
--- Imported meshes face +Z after import; turn them to face -Z like everything else.
-PetModels.ImportedYaw = math.pi
 
 local function decor(part)
     part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
@@ -153,40 +161,65 @@ local function standIn(entry)
     return model
 end
 
--- The imported mesh, made anchored decor, turned to face -Z and scaled to `height`.
-local function imported(source, height)
+-- World-aligned bounds of the visible parts (imported multi-mesh rigs carry an
+-- invisible RootPart that holds the bones).
+function PetModels.bounds(model)
+    local low, high
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") and part.Transparency < 1 then
+            -- Half extents of the (possibly turned) part along the world axes.
+            local extent = Vector3.zero
+            for _, axis in { part.CFrame.RightVector * part.Size.X, part.CFrame.UpVector * part.Size.Y, part.CFrame.LookVector * part.Size.Z } do
+                extent += Vector3.new(math.abs(axis.X), math.abs(axis.Y), math.abs(axis.Z)) / 2
+            end
+            local a, b = part.Position - extent, part.Position + extent
+            low = low and low:Min(a) or a
+            high = high and high:Max(b) or b
+        end
+    end
+    if not low then return CFrame.new(), Vector3.zero end
+    return CFrame.new((low + high) / 2), high - low
+end
+
+-- Scales `model` to its form's pet size and puts its pivot at its feet, upright.
+local function fit(model, form)
+    local spec = PetModels.Fit[form]
+    model.WorldPivot = CFrame.new(model:GetPivot().Position)
+    local box, size = PetModels.bounds(model)
+    local measure = spec.measure == "height" and size.Y or math.max(size.X, size.Y, size.Z)
+    if measure <= 0 then return false end
+    model.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
+    model:ScaleTo(model:GetScale() * spec.size / measure)
+    return true
+end
+
+-- The imported mesh as anchored decor, textured with its pack's atlas.
+local function imported(source, form)
+    if not source:IsA("Model") then return nil end
     local model = source:Clone()
+    local atlas = PetModels.Atlases[form]
     for _, part in model:GetDescendants() do
         if part:IsA("BasePart") then decor(part); part.Massless = true end
-        if part:IsA("Humanoid") or part:IsA("Script") or part:IsA("LocalScript") then part:Destroy() end
+        if part:IsA("MeshPart") and atlas ~= "" then part.TextureID = atlas end
+        if part:IsA("Humanoid") or part:IsA("AnimationController") or part:IsA("LuaSourceContainer") then part:Destroy() end
     end
-    if not model:IsA("Model") then return nil end
-    -- Turn it about an upright pivot, then put the pivot at the bottom centre.
-    model.WorldPivot = CFrame.new(model:GetPivot().Position)
-    model:PivotTo(CFrame.Angles(0, PetModels.ImportedYaw, 0))
-    model.WorldPivot = CFrame.new(model:GetPivot().Position)
-    local box, size = model:GetBoundingBox()
-    if size.Y <= 0 then return nil end
-    model.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
-    model:ScaleTo(model:GetScale() * height / size.Y)
-    return model
+    return fit(model, form) and model or nil
 end
 
 function PetModels.pet(id)
     local entry = assert(Pets.get(id), "PetModels: unknown pet " .. tostring(id))
-    local height = PetModels.Heights[entry.Form]
     local folder = ReplicatedStorage:FindFirstChild("PetModels")
     local source = folder and folder:FindFirstChild(id)
-    local model = source and imported(source, height)
+    local model = source and imported(source, entry.Form)
     local real = model ~= nil
     if not model then
         model = standIn(entry)
-        local box, size = model:GetBoundingBox()
-        model.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
-        model:ScaleTo(height / size.Y)
+        model.WorldPivot = CFrame.new()
+        fit(model, entry.Form)
     end
     model.Name = id
-    model:SetAttribute("Height", height)
+    local _, size = PetModels.bounds(model)
+    model:SetAttribute("Height", size.Y)
     model:SetAttribute("Imported", real)
     return model
 end

@@ -1,8 +1,9 @@
 -- Pets and UFOs (Shared.Pets has the catalog and odds). BuyUfo(tier, requestId) at a UFO
 -- Shop charges coins once per request ID and rolls the pet then; the UFO follows its
 -- owner while they play (profile.ufo.remaining counts down only in game) and then
--- turns into that pet, equipped at once if a slot is free. EquipPet(id, on) changes
--- which pets follow you. Every client draws everyone's UFO and pets (PetController)
+-- turns into that pet, equipped at once if a slot is free. Pets are only for show:
+-- they follow you and grant nothing. EquipPet(id, on) changes which pets follow you
+-- (the backpack); EquipPet("*", false) puts them all away. Every client draws everyone's UFO and pets (PetController)
 -- from player attributes: UfoTier, UfoHatchAt (server time) and Pets (equipped ids,
 -- comma separated); PetHatched(player, id) cues the landing. The rolled pet stays on
 -- the server until it lands. PetCheck runs the pure parts.
@@ -54,8 +55,14 @@ function PetService.advance(profile, seconds)
     return ufo.pet, PetService.grant(profile, ufo.pet)
 end
 
--- Equips (on) or unequips one copy of `id`. Returns true, or nil and a reason.
+-- Equips (on) or unequips one copy of `id`; "*" unequips them all. Returns true, or
+-- nil and a reason.
 function PetService.equip(profile, id, on)
+    if id == "*" and not on then
+        if #profile.equippedPets == 0 then return nil, "not equipped" end
+        table.clear(profile.equippedPets)
+        return true
+    end
     if type(id) ~= "string" or not Pets.get(id) then return nil, "unknown pet" end
     local equipped = 0
     for _, other in profile.equippedPets do if other == id then equipped += 1 end end
@@ -159,7 +166,7 @@ function PetService.new(ctx)
                 if id then
                     local entry = Pets.get(id)
                     ctx.Remote.feedback(player, "Your UFO landed! You got " .. entry.Name .. " (" .. entry.Rarity:upper() .. ")"
-                        .. (equipped and "!" or ". Equip it from PETS."))
+                        .. (equipped and "!" or ". It is waiting in your backpack."))
                     -- The landing cue goes first so clients hold the UFO for it.
                     hatched:FireAllClients(player, id)
                     changed(player)

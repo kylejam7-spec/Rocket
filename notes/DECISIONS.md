@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-18: Pets are cosmetic; backpack; pet sizes
+
+- User: pets only follow you and look cool, with no stats or coins. A small backpack
+  button lets you equip or unequip from the pets you own.
+- Pets are pet-sized next to a ~5 stud character: Blob 2.2 span, Large 3 tall, Flying 3
+  wingspan. The following UFO is about half the shop saucer.
+- Imported animations are played by the client writing Bone.Transform from the FBX
+  KeyframeSequences, so there are no animation asset uploads.
+- Up to 3 pets follow at once (`Pets.MaxEquipped`, unchanged).
+
 ## 2026-10-18: Pets come from UFOs
 
 - User: a UFO from a shop on every planet and the station follows you for 5 minutes

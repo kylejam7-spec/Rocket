@@ -9,8 +9,8 @@ model after its file, so the imports already carry the names PetModels looks up.
     python tools/pets/stage.py            (stage and check)
     python tools/pets/stage.py --check    (only report what's missing)
 
-It also reports whether the shared texture, Atlas_Monsters.png, is present: the FBX
-files reference it but don't embed it, so without it the pets import untextured.
+It also reports whether Atlas_Monsters.png is present: the FBX files reference it but
+don't embed it. The game textures the meshes itself from tools/pets/atlas (see README).
 """
 import argparse
 import os
@@ -57,7 +57,7 @@ def main():
     for form, model in extra:
         print(f"  FBX not in the catalog: {form}/{model}.fbx")
     atlas = [os.path.join(dirpath, ATLAS) for dirpath, _, files in os.walk(PETS) if ATLAS in files]
-    print(f"{ATLAS}: " + (atlas[0] if atlas else "NOT FOUND (add it from the Quaternius download's Textures folder)"))
+    print(f"{ATLAS}: " + (atlas[0] if atlas else "not found (fine: the game uses tools/pets/atlas)"))
     if args.check:
         return 1 if missing else 0
     os.makedirs(OUT, exist_ok=True)
