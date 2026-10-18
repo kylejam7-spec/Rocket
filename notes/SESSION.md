@@ -28,9 +28,12 @@
   - the cleared spawn lane
   Not seen: a passenger's launch camera at the new height (the Studio player couldn't
   board in time, see the next point).
-- Found, not fixed: MovementService's anti-teleport snaps any new character back to
-  where its root was first tracked. So players appear at (0, 3, 0), 36 studs short of
-  the spawn, and server PivotTo test teleports get reverted (walk in <MaxSpeed steps).
+- Spawn fix: MovementService's anti-teleport snapped new characters back to (0, 3, 0)
+  (CharacterAdded fires before Roblox moves the character onto its SpawnLocation).
+  `Movement.track` takes an optional `settle` time, which Main sets to 1 s on spawn.
+  Players now appear at the spawn (z = 36) on join and respawn, and a later server
+  teleport is still snapped back. (Server PivotTo test teleports still need <MaxSpeed
+  steps.)
 
 # Earlier session: 2026-10-18 (3), pet polish and the launch camera
 

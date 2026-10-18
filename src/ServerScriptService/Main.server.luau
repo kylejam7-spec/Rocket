@@ -58,7 +58,7 @@ local function joined(player)
     local function characterAdded(character)
         local root = character:WaitForChild("HumanoidRootPart", 10)
         if not root or player.Character ~= character then return end
-        ctx.Movement.track(player, root, 1)
+        ctx.Movement.track(player, root, 1, 1)
         ctx.Stats.update(player)
         ctx.Cargo.visual(player)
         ctx.Launch.characterAdded(player)
