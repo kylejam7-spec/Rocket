@@ -1,7 +1,7 @@
 -- The owner's card when a UFO lands their pet (PetController calls show at the pop):
--- the pet live in 3D doing its celebration, its name, a star rarity pill and where it
--- went (following you, or into the backpack). Rarer cards hold longer; Epic and
--- Legendary ones have turning light rays behind them, and Legendary names shimmer
+-- the pet live in 3D doing its celebration, its name, a rarity pill and where it
+-- went (following you, or into the backpack). Rarer cards hold longer; Rare and up
+-- have turning light rays behind them (more for rarer), and Legendary names shimmer
 -- gold. Pops in with a bounce, then floats up and fades; a click dismisses it.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -53,7 +53,8 @@ function PetRevealCard.show(id, owner)
     local root = Create.new("Frame", { Name = "PetReveal", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.32),
         Size = UDim2.fromOffset(WIDTH, HEIGHT), BackgroundTransparency = 1, Parent = gui })
     local scale = Create.new("UIScale", { Scale = 0.4, Parent = root })
-    if spec.Rank >= 4 then rays(root, color, spec.Rank == 5 and 16 or 10) end
+    -- Rays behind Rare and up, more of them for rarer pets.
+    if spec.Rank >= 3 then rays(root, color, ({ 8, 12, 16 })[spec.Rank - 2]) end
     local card = Create.new("CanvasGroup", { Name = "Card", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Theme.color.Panel,
         BackgroundTransparency = 0.04, GroupTransparency = 1, ZIndex = 2, Parent = root })
     Create.new("UICorner", { CornerRadius = UDim.new(0, 18), Parent = card })
@@ -93,11 +94,11 @@ function PetRevealCard.show(id, owner)
             ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 190, 50)) }), Offset = Vector2.new(-1, 0), Parent = name })
         TweenService:Create(shimmer, TweenInfo.new(1.4, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), { Offset = Vector2.new(1, 0) }):Play()
     end
-    local pill = Create.new("Frame", { Name = "Rarity", Position = UDim2.fromOffset(172, 92), Size = UDim2.fromOffset(170, 30),
+    local pill = Create.new("Frame", { Name = "Rarity", Position = UDim2.fromOffset(172, 92), Size = UDim2.fromOffset(150, 30),
         BackgroundColor3 = color, Parent = card })
     Create.new("UICorner", { CornerRadius = UDim.new(1, 0), Parent = pill })
     Theme.shine(pill)
-    StrokedText.new({ Size = UDim2.fromScale(1, 1), Text = string.rep("★", spec.Rank) .. " " .. spec.Rarity:upper(),
+    StrokedText.new({ Size = UDim2.fromScale(1, 1), Text = spec.Rarity:upper(),
         Font = Theme.font.Display, TextSize = 18, stroke = 2, Parent = pill })
     local following = false
     for _, other in ((owner or player):GetAttribute("Pets") or ""):split(",") do

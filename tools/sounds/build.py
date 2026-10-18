@@ -26,6 +26,7 @@ SOURCE = os.path.join(ROOT, "Sounds")
 OUTPUT = os.path.join(ROOT, "assets", "sounds")
 RATE = 48000
 NASA = "590189main_ringtone_131_launchNats.mp3"
+PICKUP = "833635__nomagician__pickup-notification-videogame-ui-sound.mp3"
 
 # group/name -> one of
 #   "file under Sounds/"
@@ -98,15 +99,25 @@ MANIFEST = {
         {"file": "kenney_sci-fi-sounds/Audio/slime_000.ogg", "gain": 0.25, "delay": 0.04, "highpass": 400},
     ]},
     "pet/zip": ("kenney_sci-fi-sounds/Audio/laserSmall_002.ogg", "reverse"),
-    # Rarity fanfares after the pop, bigger with each tier (rising 8-bit arpeggios;
-    # Legendary adds a second phrase and a deep boom). Common has none.
-    "pet/fanfare2": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES09.ogg",
-    "pet/fanfare3": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES03.ogg",
-    "pet/fanfare4": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES12.ogg",
+    # Rarity fanfares after the pop: nomagician's pickup notification (freesound 833635,
+    # supplied by the user; a bright two-note chime around 1-2 kHz), climbing with rarity. Uncommon
+    # plays it as is; Rare a whole tone up with a fifth above it; Epic a major third up
+    # with its fifth; Legendary three entries rising (root, third, fifth) over a deep
+    # boom. Common has none.
+    "pet/fanfare2": {"layers": [{"file": PICKUP}]},
+    "pet/fanfare3": {"layers": [
+        {"file": PICKUP, "pitch": 1.122},
+        {"file": PICKUP, "pitch": 1.682, "gain": 0.45, "delay": 0.12},
+    ]},
+    "pet/fanfare4": {"layers": [
+        {"file": PICKUP, "pitch": 1.26},
+        {"file": PICKUP, "pitch": 1.888, "gain": 0.5, "delay": 0.13},
+    ]},
     "pet/fanfare5": {"layers": [
-        {"file": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES12.ogg"},
-        {"file": "kenney_music-jingles/Audio/8-Bit jingles/jingles_NES08.ogg", "delay": 0.78},
-        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg", "gain": 0.6},
+        {"file": PICKUP},
+        {"file": PICKUP, "pitch": 1.26, "gain": 0.8, "delay": 0.16},
+        {"file": PICKUP, "pitch": 1.498, "gain": 0.85, "delay": 0.32},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_000.ogg", "gain": 0.5},
     ]},
 }
 

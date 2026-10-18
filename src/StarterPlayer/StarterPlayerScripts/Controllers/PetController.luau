@@ -10,7 +10,8 @@
 --   Legendaries carry a light and a trail. Everyone's pets jump when they jump.
 -- * On PetHatched the UFO swoops in front of its owner, beams down with rising
 --   sparkles, the pet spins into being inside the beam and pops out (shockwave, burst,
---   fanfare; confetti and a camera kick for Legendaries), the UFO zips away and the pet
+--   fanfare; Rare+ get confetti, a camera kick and a screen blink, growing with rank;
+--   Legendaries also a light pillar), the UFO zips away and the pet
 --   celebrates before joining its owner (or poofing into the backpack). The owner gets a
 --   reveal card (PetRevealCard).
 -- The UFO Shop saucers spin here too.
@@ -113,6 +114,10 @@ function PetController.start()
     local folder = Instance.new("Folder")
     folder.Name = "PetFollowers"
     folder.Parent = workspace
+    -- Full-screen blink for rare landings (under the reveal card).
+    -- (A plain ScreenGui: Create.screen's UIScale would shrink it off the edges.)
+    local flashGui = Create.new("ScreenGui", { Name = "RocketPetFlash", DisplayOrder = 15, ResetOnSpawn = false,
+        IgnoreGuiInset = true, ScreenInsets = Enum.ScreenInsets.None, Parent = localPlayer:WaitForChild("PlayerGui") })
     local rayParams = RaycastParams.new()
     rayParams.FilterType = Enum.RaycastFilterType.Exclude
     rayParams.RespectCanCollide = true
@@ -198,7 +203,7 @@ function PetController.start()
         local name = StrokedText.new({ Name = "PetName", Size = UDim2.fromScale(1, 0.6), Text = spec.Name, Font = Theme.font.Display,
             TextScaled = true, TextColor3 = spec.Rank == 5 and Color3.fromRGB(255, 225, 120) or Theme.color.White, stroke = 1.5, Parent = billboard })
         local rank = StrokedText.new({ Name = "Rarity", Position = UDim2.fromScale(0, 0.6), Size = UDim2.fromScale(1, 0.4),
-            Text = string.rep("★", math.max(0, spec.Rank - 2)) .. (spec.Rank > 2 and " " or "") .. spec.Rarity:upper(),
+            Text = spec.Rarity:upper(),
             Font = Theme.font.Display, TextScaled = true, TextColor3 = color, stroke = 1.2, Parent = billboard })
         -- Legendary tags shimmer.
         if spec.Rank == 5 then
@@ -343,7 +348,9 @@ function PetController.start()
         if choice.move then slot.animator:play(choice.move) else startTrick(slot, choice.trick, now) end
     end
 
-    local function updatePet(slot, target, facing, dt, now, animate)
+    -- `pace` is the owner's smoothed speed: legs step with the player, not with the
+    -- pet's own catch-up speed (which jitters).
+    local function updatePet(slot, target, facing, dt, now, animate, pace)
         local snapped = (slot.position - target).Magnitude > SNAP
         local before = slot.position
         slot.position = snapped and target or slot.position:Lerp(target, lerpFactor(7, dt))
@@ -360,35 +367,36 @@ function PetController.start()
         local t = now + slot.phase
         local lift, tilt, roll = 0, 0, 0
         local height = slot.height
+        -- While the owner stands still a lagging pet still walks the last steps in.
+        pace = pace > 1 and pace or speed
         if slot.animator then
-            if animate then slot.animator:step(dt, speed) end
-            local gait = PetAnimator.Gaits[slot.form]
+            if animate then slot.animator:step(dt, pace) end
             local step = slot.animator:phase()
             if slot.form == "Flying" then
                 lift = FLY_HEIGHT + math.sin(t * 2.4) * 0.25
                 tilt = -0.35 * moving
             elseif slot.form == "Large" then
-                -- Past its fastest run it bounds: a leap per step, feet off the ground.
-                local bound = math.clamp((speed - gait.run * gait.maxRate * 0.7) / 18, 0, 1)
-                lift = math.abs(math.sin(step * math.pi * 2)) * height * 0.32 * bound
-                tilt = -0.12 * bound
+                -- At running pace it bounds: a low leap per step, feet off the ground.
+                local bound = math.clamp((pace - 14) / 30, 0, 1)
+                lift = math.abs(math.sin(step * math.pi * 2)) * height * 0.22 * bound
+                tilt = -0.1 * bound
             else
                 -- Blobs hop a little higher the faster they go, one hop per Walk cycle.
-                local bound = math.clamp(speed / 30, 0, 1)
-                lift = math.sin(step * math.pi) * height * 0.35 * bound
+                local bound = math.clamp(pace / 30, 0, 1)
+                lift = math.sin(step * math.pi) * height * 0.3 * bound
             end
             -- Shows when the owner stands still; Epic+ show off on the move too.
             local flair = FLAIR[slot.rank]
             if animate and not slot.trick and not slot.animator:busy() then
-                if speed < 1 and now >= slot.nextShow then
+                if pace < 1 and now >= slot.nextShow then
                     show(slot, now)
                     slot.nextShow = now + math.random() * (flair.every[2] - flair.every[1]) + flair.every[1]
-                elseif flair.moving and speed > 6 and now >= slot.nextMovingTrick then
+                elseif flair.moving and pace > 6 and now >= slot.nextMovingTrick then
                     startTrick(slot, slot.form == "Large" and "spin" or "roll", now)
                     slot.nextMovingTrick = now + math.random() * (flair.moving[2] - flair.moving[1]) + flair.moving[1]
                 end
             end
-            if speed >= 1 then slot.nextShow = math.max(slot.nextShow, now + 1.5) end
+            if pace >= 1 then slot.nextShow = math.max(slot.nextShow, now + 1.5) end
         elseif slot.form == "Blob" then
             lift = math.abs(math.sin(t * 9)) * 0.9 * moving + math.sin(t * 2) * 0.05
         elseif slot.form == "Large" then
@@ -447,10 +455,14 @@ function PetController.start()
         local ufo = entry.ufo or newUfo(player:GetAttribute("UfoTier") or math.min(spec.Rank, #Pets.Ufos), root.Position + UFO_PERCH, false)
         entry.ufo = nil
         if entry.reveal then clearReveal(entry.reveal) end
-        -- It lands a few studs in front of its owner.
-        local look = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+        -- It lands a few studs in front of its owner: for your own, ahead of your camera
+        -- and off to one side so your character doesn't hide it; it faces the viewer.
+        local mine = player == localPlayer
+        local view = mine and workspace.CurrentCamera.CFrame or root.CFrame
+        local look = view.LookVector * Vector3.new(1, 0, 1)
         look = look.Magnitude > 0.01 and look.Unit or Vector3.new(0, 0, -1)
-        local spot = root.Position + look * 7
+        local right = Vector3.new(-look.Z, 0, look.X)
+        local spot = root.Position + look * (mine and 6 or 7) + right * (mine and 4 or 0)
         local floor = ground(spot) or (root.Position.Y - 3)
         local model = PetModels.pet(id)
         decorate(model, spec)
@@ -480,7 +492,7 @@ function PetController.start()
             Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.45), NumberSequenceKeypoint.new(1, 0) }),
             Texture = "rbxasset://textures/particles/sparkles_main.dds",
         })
-        if spec.Rank >= 4 then
+        if spec.Rank >= 3 then
             reveal.confetti = emitter(base, {
                 Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, color), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 230, 90)),
                     ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 220, 255)) }),
@@ -517,7 +529,7 @@ function PetController.start()
         Sfx.playAt("petPop", reveal.parts[1])
         reveal.sparkles.Rate = 0
         reveal.burst:Emit(24 + spec.Rank * 14)
-        if reveal.confetti then reveal.confetti:Emit(spec.Rank == 5 and 140 or 70) end
+        if reveal.confetti then reveal.confetti:Emit(({ 40, 80, 140 })[spec.Rank - 2]) end
         -- A shockwave ring across the ground and a flash.
         local wave = ringPart(reveal.color, 1, 0.2)
         wave.CFrame = CFrame.new(reveal.at + Vector3.new(0, 0.08, 0)) * CFrame.Angles(0, 0, math.rad(90))
@@ -538,16 +550,25 @@ function PetController.start()
         if reveal.owner then
             if spec.Rank >= 2 then Sfx.play("fanfare" .. spec.Rank) end
             RevealCard.show(reveal.id, localPlayer)
-            -- Legendaries kick the camera.
-            if spec.Rank == 5 and not Settings.get("reducedEffects") then
+            -- Rare and up kick the camera (harder for rarer) and wash the screen in the
+            -- rarity's colour for a blink.
+            if spec.Rank >= 3 and not Settings.get("reducedEffects") then
                 local camera = workspace.CurrentCamera
-                local until_ = os.clock() + 0.45
-                RunService:BindToRenderStep("PetLegendaryShake", Enum.RenderPriority.Camera.Value + 3, function()
+                local seconds = ({ 0.3, 0.38, 0.5 })[spec.Rank - 2]
+                local strength = ({ 0.14, 0.24, 0.38 })[spec.Rank - 2]
+                local until_ = os.clock() + seconds
+                RunService:BindToRenderStep("PetRevealShake", Enum.RenderPriority.Camera.Value + 3, function()
                     local left = until_ - os.clock()
-                    if left <= 0 then return RunService:UnbindFromRenderStep("PetLegendaryShake") end
-                    local amount = 0.35 * left / 0.45
+                    if left <= 0 then return RunService:UnbindFromRenderStep("PetRevealShake") end
+                    local amount = strength * left / seconds
                     camera.CFrame *= CFrame.new((math.random() - 0.5) * amount, (math.random() - 0.5) * amount, 0)
+                        * CFrame.Angles(0, 0, (math.random() - 0.5) * amount * 0.04)
                 end)
+                local wash = Create.new("Frame", { Name = "RevealFlash", Size = UDim2.fromScale(1, 1), BorderSizePixel = 0,
+                    BackgroundColor3 = reveal.color:Lerp(Color3.new(1, 1, 1), 0.35), BackgroundTransparency = 1 - (0.12 + spec.Rank * 0.04),
+                    ZIndex = 50, Parent = flashGui })
+                TweenService:Create(wash, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { BackgroundTransparency = 1 }):Play()
+                task.delay(0.5, wash.Destroy, wash)
             end
         end
     end
@@ -732,7 +753,11 @@ function PetController.start()
             if entry.reveal then updateReveal(entry, now, dt) end
             local animate = (root.Position - camera.CFrame.Position).Magnitude <= ANIMATE_DISTANCE
             -- Everyone's pets jump when they do (each a beat after the last).
-            local jumping = root.AssemblyLinearVelocity.Y > 12
+            -- The owner's ground speed, smoothed; their pets' legs keep to it.
+            local velocity = root.AssemblyLinearVelocity
+            local flat = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+            entry.pace = (entry.pace or 0) + (flat - (entry.pace or 0)) * lerpFactor(6, dt)
+            local jumping = velocity.Y > 12
             if jumping and not entry.airborne and animate then
                 for index, slot in entry.pets do
                     if slot.model and not slot.trick then
@@ -749,7 +774,7 @@ function PetController.start()
                     local floor = slot.form == "Flying" and feet or ground(spot) or feet
                     -- Never sink far below the owner's feet (holes, ramps' edges).
                     if floor < feet - 6 then floor = feet end
-                    updatePet(slot, Vector3.new(spot.X, floor, spot.Z), yawOf(root.CFrame), dt, now, animate)
+                    updatePet(slot, Vector3.new(spot.X, floor, spot.Z), yawOf(root.CFrame), dt, now, animate, entry.pace)
                 end
             end
         end

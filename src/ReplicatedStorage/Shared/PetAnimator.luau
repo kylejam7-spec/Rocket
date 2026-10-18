@@ -4,22 +4,23 @@
 -- for Large pets, and one-shot moves (Jump, Yes, Dance, Wave, Headbutt...; see
 -- PetAnimator.Moves). Clips compile once into per-bone key lists shared by every copy.
 --   local animator = PetAnimator.new(model, form)  -- nil for stand-ins (no Clips)
---   animator:step(dt, speed)    -- speed in studs/s: Idle -> Move -> Run, with the
---                               -- step rate matched to the ground speed
+--   animator:step(dt, speed)    -- speed in studs/s (the owner's): Idle -> Move ->
+--                               -- Run, stepping faster as it rises
 --   animator:play("Dance")      -- a one-shot over the base; returns its seconds
 local PetAnimator = {}
 PetAnimator.__index = PetAnimator
 
--- Ground speed (studs/s, at pet size) at which each clip's feet keep pace when
--- played at normal speed, and the fastest it may play. Large: measured from the foot
--- travel of the Walk and Run clips at 3 studs tall (~2 and ~3 studs/s). Players run
--- 24-70 studs/s, far past any clip, so above maxRate the pets bound along instead:
--- PetController lifts them in leaps timed to phase(), one per step, and the feet are
--- off the ground while they cover the distance. Blob and flyer gaits are by eye.
+-- Speed (studs/s) at which each clip plays at its normal rate; it plays proportionally
+-- faster or slower around that, between minRate and maxRate. These are the owner's
+-- speeds, not foot-matching ones: at pet size the clips only keep pace with the ground
+-- at ~2 (Walk) and ~3 (Run) studs/s, and players run 24-70, so matching would whirl
+-- the legs and arms (user, 2026-10-18: too fast). Instead the step rate follows the
+-- owner calmly (Run ~1.1x at a 24 walk speed, 1.8x at most) and PetController's leaps
+-- (timed to phase()) carry the rest. Run takes over from Walk from `move` * 1.6.
 PetAnimator.Gaits = table.freeze({
-    Blob = table.freeze({ move = 3, maxRate = 2.6 }),
-    Large = table.freeze({ move = 2, run = 3, maxRate = 3.5 }),
-    Flying = table.freeze({ move = 9, maxRate = 2.2 }),
+    Blob = table.freeze({ move = 14, minRate = 0.7, maxRate = 1.8 }),
+    Large = table.freeze({ move = 6, run = 22, minRate = 0.6, maxRate = 1.8 }),
+    Flying = table.freeze({ move = 18, minRate = 0.8, maxRate = 1.7 }),
 })
 -- One-shots each form has (the rarer the pet, the more of them it uses; PetController).
 PetAnimator.Moves = table.freeze({
@@ -126,10 +127,10 @@ function PetAnimator:step(dt, speed)
     self.running = approach(self.running, wantRun, 8, dt)
     -- Steps keep pace with the ground: the clip speeds up with the pet.
     self.idleTime = (self.idleTime + dt) % self.idle.length
-    local moveRate = math.clamp(speed / gait.move, 0.7, gait.maxRate)
+    local moveRate = math.clamp(speed / gait.move, gait.minRate, gait.maxRate)
     self.moveTime = (self.moveTime + dt * moveRate) % self.move.length
     if self.run then
-        local runRate = math.clamp(speed / gait.run, 0.7, gait.maxRate)
+        local runRate = math.clamp(speed / gait.run, gait.minRate, gait.maxRate)
         self.runTime = (self.runTime + dt * runRate) % self.run.length
     end
     local action = self.action

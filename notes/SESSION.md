@@ -36,6 +36,18 @@
   thump + slime), zip (reversed falling laser), and fanfare2-5 (rising 8-bit arpeggios;
   Legendary adds a phrase and a boom). Built and copied to Studio. **Not uploaded** (no
   API key here); the user runs tools/sounds/upload.py. Until then they're silent live.
+- Round 2 (user):
+  - Legged pets stepped too fast (Run at 3.5x). Gaits are now owner-speed based (Run
+    ~1.1x at 24, 1.8x max), driven by the owner's smoothed ground speed instead of the
+    pet's jittery catch-up speed, with lower leaps.
+  - Fanfares rebuilt from the user's nomagician pickup notification (freesound 833635,
+    moved to Sounds/), climbing per rarity: as is / +2 semitones with a fifth / +4 with
+    a fifth / three rising entries over a boom.
+  - Stars removed from tags and the card.
+  - Rare+ get confetti, card rays, a camera kick and a rarity-tinted screen blink, all
+    growing with rank.
+  - Your own landings happen ahead of the camera and off to the side, so your character
+    no longer hides them.
 - Studio: RunChecks 10/10. Seen: a Legendary landing (rays, trail, tag), the Epic card,
   Legendary idle tricks, the Large run stride, the posed launch shot. Trails and rings
   were toned down after a look. Not seen: a full passenger launch (the character didn't

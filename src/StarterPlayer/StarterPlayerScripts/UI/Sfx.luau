@@ -51,10 +51,10 @@ local CUES = {
     petBeam = { file = "pet/beam", volume = 0.55, world = true, near = 12, far = 160 },
     petPop = { file = "pet/pop", volume = 0.6, world = true, near = 12, far = 160 },
     petZip = { file = "pet/zip", volume = 0.45, world = true, near = 12, far = 200 },
-    fanfare2 = { file = "pet/fanfare2", volume = 0.35 },
-    fanfare3 = { file = "pet/fanfare3", volume = 0.38 },
-    fanfare4 = { file = "pet/fanfare4", volume = 0.4 },
-    fanfare5 = { file = "pet/fanfare5", volume = 0.45 },
+    fanfare2 = { file = "pet/fanfare2", volume = 0.3 },
+    fanfare3 = { file = "pet/fanfare3", volume = 0.33 },
+    fanfare4 = { file = "pet/fanfare4", volume = 0.36 },
+    fanfare5 = { file = "pet/fanfare5", volume = 0.42 },
 }
 
 local function source(file)
