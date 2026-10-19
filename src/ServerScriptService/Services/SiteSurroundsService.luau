@@ -7,11 +7,13 @@
     - The land beyond: a grass plain out past the horizon and trees outside the fence.
       The plain has a hole where the site is (refitted with the perimeter), never lying
       under the site's ground: seen from a launching rocket, two surfaces that close
-      flicker through each other. A ring of low-poly mountains stands well inside the
-      draw distance (Roblox shortens it when the frame rate dips, as in a launch), and
-      Earth's sky haze (Shared.Skies) fades it into the distance.
+      flicker through each other. Two staggered rows of low-poly mountains (Mountains)
+      close the horizon all round, well inside the draw distance (Roblox shortens it when
+      the frame rate dips, as in a launch); Earth's sky carries matching land behind them.
 ]]
 local Layout = require(script.Parent.SiteLayout)
+local Signs = require(script.Parent.SignService)
+local Mountains = require(script.Parent.Mountains)
 local Surrounds = {}
 
 Surrounds.WallHeight = 10
@@ -20,7 +22,12 @@ Surrounds.BarrierHeight = 120
 Surrounds.PlainDepth = 0.35
 Surrounds.PlainReach = 5120
 Surrounds.Tile = 2048
-Surrounds.Mountains = { count = 24, near = 2200, far = 3100, size = { 500, 950 } }
+-- Two staggered rows of mountains (Mountains.ring) closing the horizon all round.
+local ROCK, ROCK_ALT = Color3.fromRGB(112, 104, 128), Color3.fromRGB(140, 120, 110)
+Surrounds.Mountains = {
+    { radius = 2350, spread = 150, count = 34, size = { 520, 820 }, rock = ROCK, rockAlt = ROCK_ALT, snow = 700, seed = 1969 },
+    { radius = 2850, spread = 250, count = 32, size = { 650, 950 }, rock = ROCK, rockAlt = ROCK_ALT, snow = 750, seed = 1971 },
+}
 
 local HOARDING = Color3.fromRGB(52, 58, 74)
 local HAZARD = Color3.fromRGB(240, 180, 30)
@@ -35,22 +42,6 @@ local function make(parent, name, size, cframe, color, material)
     part.CanCollide, part.CanQuery, part.CanTouch = false, false, false
     part.Parent = parent
     return part
-end
-
-local function signText(part, text)
-    local surface = Instance.new("SurfaceGui")
-    surface.Face = Enum.NormalId.Front
-    surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-    surface.PixelsPerStud = 20
-    surface.Parent = part
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextScaled = true
-    label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = HAZARD
-    label.Parent = surface
 end
 
 -- The fence lines, as { from, to } on the ground: the site rectangle (open where the
@@ -91,10 +82,9 @@ local function run(parent, a, b, inside)
         local facing = (inside - mid)
         local side = (frame:VectorToObjectSpace(Vector3.new(facing.X, 0, facing.Y)).X > 0) and 1 or -1
         for offset = -length / 2 + 120, length / 2 - 119, 240 do
-            local at = frame * CFrame.new(side * 0.6, h * 0.55, offset)
-            local board = make(parent, "HoardingNotice", Vector3.new(26, 4, 0.2),
-                CFrame.lookAt(at.Position, at.Position + at.RightVector * side), Color3.fromRGB(30, 34, 44))
-            signText(board, "SPACEPORT EARTH  •  HARD HATS ON")
+            local at = frame * CFrame.new(side * 1.1, h * 0.55, offset)
+            Signs.board(parent, "HoardingNotice", CFrame.lookAt(at.Position, at.Position + at.RightVector * side), Vector2.new(24, 4.4),
+                { title = "SPACEPORT EARTH", subtitle = "HARD HATS ON  •  NO ENTRY BEYOND THIS POINT", icon = "⛑️", accent = HAZARD })
         end
     end
 end
@@ -141,26 +131,6 @@ local function tree(parent, at, random)
     end
 end
 
--- A mountain: one or two cubes stood on a corner and sunk into the plain, so their
--- faces read as a faceted peak; the biggest get a snow cap.
-local function mountain(parent, at, size, random)
-    -- Turns the cube's (1, 1, 1) corner straight up.
-    local corner = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
-    local rock = Color3.fromRGB(112, 104, 128):Lerp(Color3.fromRGB(140, 120, 110), random:NextNumber())
-    for index = 1, random:NextInteger(1, 2) do
-        local s = size * (index == 1 and 1 or random:NextNumber(0.5, 0.75))
-        local offset = index == 1 and Vector3.zero or Vector3.new(random:NextNumber(-0.35, 0.35) * size, 0, random:NextNumber(-0.35, 0.35) * size)
-        local peak = CFrame.new(at + offset + Vector3.new(0, -s * math.sqrt(3) / 2 * 0.45, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner
-        make(parent, "Mountain", Vector3.one * s, peak, rock, Enum.Material.Rock)
-        if index == 1 and size > 750 then
-            -- The cap: a smaller cube at the top corner, standing a little proud of the
-            -- peak's faces (flush, the two flicker through each other from afar).
-            local cap = s * 0.3
-            make(parent, "SnowCap", Vector3.one * cap, peak * CFrame.new(Vector3.one * ((s - cap) / 2 + s * 0.012)), Color3.fromRGB(236, 236, 248), Enum.Material.Snow)
-        end
-    end
-end
-
 function Surrounds.build(world, district)
     local model = Instance.new("Model")
     model.Name = "SiteSurrounds"
@@ -168,14 +138,11 @@ function Surrounds.build(world, district)
     local land = Instance.new("Folder")
     land.Name = "Land"
     land.Parent = model
-    local random = Random.new(1969)
     local centerZ = (Layout.Ground.z0 + Layout.Ground.z1) / 2
     local center = Vector3.new(0, 0, centerZ)
-    local spec = Surrounds.Mountains
-    for index = 1, spec.count do
-        local angle = (index + random:NextNumber(-0.3, 0.3)) / spec.count * math.pi * 2
-        local distance = random:NextNumber(spec.near, spec.far)
-        mountain(land, center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), random:NextNumber(spec.size[1], spec.size[2]), random)
+    local random = Random.new(1969)
+    for _, row in Surrounds.Mountains do
+        Mountains.ring(land, center, row, make)
     end
     -- Trees in loose clumps outside the widest the site ever gets (4 expansions).
     local widest = Layout.Ground.x + 4 * 80 + 60

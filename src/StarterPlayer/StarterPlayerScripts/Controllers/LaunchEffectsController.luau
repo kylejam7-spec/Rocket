@@ -101,16 +101,32 @@ local function play(vehicle)
     -- exhaust through ignition, bigger rockets deeper, and turns duller as it climbs
     -- away (air soaks up the highs). Liftoff booms on the pad on the frame the rocket
     -- starts to rise. Not when joining mid-launch, long after those moments.
-    if workspace:GetServerTimeNow() - launchAt < 0.5 then Sfx.playAt("ignition", pad, { volume = math.min(1.5, exhaust) }) end
+    -- Heavier rockets sound heavier: 0 for the Lunar Rocket up to 1 for the biggest.
+    -- Their booms drop in pitch, the roar gains bass, and a sub rumble (the engine an
+    -- octave down with its highs cut) swells in under it.
+    local heavy = math.clamp((exhaust - 1) / 2.6, 0, 1)
+    if workspace:GetServerTimeNow() - launchAt < 0.5 then Sfx.playAt("ignition", pad, { volume = math.min(1.5, exhaust), pitch = 1 - 0.3 * heavy }) end
     local engine = Sfx.attach("engine", nozzle or pad)
     local roar, air = engine and engine.Volume, nil
+    local sub, subVolume
     if engine then
         engine.Volume = 0
         engine.PlaybackSpeed = 1 / math.sqrt(math.max(1, exhaust))
         air = Instance.new("EqualizerSoundEffect")
-        air.LowGain, air.MidGain, air.HighGain = 0, 0, 0
+        air.LowGain, air.MidGain, air.HighGain = 10 * heavy, 0, 0
         air.Parent = engine
         engine:Play()
+        if heavy > 0 then
+            sub = Sfx.attach("engine", nozzle or pad)
+            if sub then
+                sub.PlaybackSpeed = engine.PlaybackSpeed * 0.5
+                subVolume, sub.Volume = sub.Volume * 1.2 * heavy, 0
+                local rumble = Instance.new("EqualizerSoundEffect")
+                rumble.LowGain, rumble.MidGain, rumble.HighGain = 10, -18, -40
+                rumble.Parent = sub
+                sub:Play()
+            end
+        end
     end
     local lifted = false
 
@@ -128,9 +144,10 @@ local function play(vehicle)
         end
         for _, item in smoke do item.Rate = (t < duration * 0.8 and 8 or 0) * power * smokeScale end
         if engine then engine.Volume = roar * power end
+        if sub then sub.Volume = subVolume * power end
         if not lifted and lift > 0 then
             lifted = true
-            if lift < 0.5 then Sfx.playAt("liftoff", pad, { volume = math.min(1.5, exhaust) }) end
+            if lift < 0.5 then Sfx.playAt("liftoff", pad, { volume = math.min(1.5, exhaust), pitch = 1 - 0.25 * heavy }) end
         end
         vehicle:PivotTo(origin + Vector3.new(0, rise, 0))
         local rocketMid = origin.Position + Vector3.new(0, rise + height * 0.5, 0)
@@ -151,7 +168,11 @@ local function play(vehicle)
             camera.CameraType = Enum.CameraType.Scriptable
             local view = origin.Position + Vector3.new(height * 0.9, 12 + height * 0.1 + rise * 0.85, height * 1.2)
             if lift > (duration - ignition) * 0.45 then
-                view = origin.Position + Vector3.new(-height * 0.7, 40 + height * 0.5, height * 1.3)
+                -- Rises at three quarters of the rocket's pace: it still pulls away and
+                -- shrinks, but stays within ~2000 studs. Held still, the big rockets got
+                -- ~5000 away, past the draw distance Roblox drops to when a launch's
+                -- smoke and fire cut the frame rate, and vanished mid-shot.
+                view = origin.Position + Vector3.new(-height * 0.7, 40 + height * 0.5 + rise * 0.75, height * 1.3)
             end
             camera.CFrame = CFrame.lookAt(view, rocketMid)
         end
@@ -166,9 +187,11 @@ local function play(vehicle)
     end)
     task.delay(math.max(0, launchAt + duration - workspace:GetServerTimeNow()), function()
         RunService:UnbindFromRenderStep(shakeName)
-        if engine then
-            TweenService:Create(engine, TweenInfo.new(0.6), { Volume = 0 }):Play()
-            task.delay(0.6, engine.Destroy, engine)
+        for _, sound in { engine, sub } do
+            if sound then
+                TweenService:Create(sound, TweenInfo.new(0.6), { Volume = 0 }):Play()
+                task.delay(0.6, sound.Destroy, sound)
+            end
         end
         if camera:GetAttribute("Cinematic") then
             camera:SetAttribute("Cinematic", nil)

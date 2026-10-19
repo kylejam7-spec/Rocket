@@ -112,7 +112,9 @@ return table.freeze({
         table.freeze({ id = "BlackHole", reward = 5, name = "THE BLACK HOLE", gravity = 80, color = Color3.fromRGB(190, 110, 255), position = Vector3.new(50000, 200, 10000) }),
     }),
     -- The inside of the rocket: boarding players wait here for liftoff.
-    CabinPosition = Vector3.new(-3000, 200, 0),
+    -- Far from Earth, past its mountains and land (SiteSurroundsService, drawn within
+    -- 7000): at -3000 a mountain pushed through the cabin's back wall.
+    CabinPosition = Vector3.new(-12000, 200, 0),
     -- Persistence stays off for reproducible, non-production Studio tests.
     PersistenceEnabled = false,
     DataStoreName = "RocketProfiles_v1_test",
