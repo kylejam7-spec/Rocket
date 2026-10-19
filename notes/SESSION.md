@@ -1,4 +1,39 @@
-# Latest session: 2026-10-18 (6), Kenney props on the Earth site
+# Latest session: 2026-10-19, planet overhaul starts with the Moon
+
+- Working tree on master (84319bc), not committed yet. Goal from the user: destinations
+  that look less flat and feel alive, using the SBS planet texture pack (CC0, uploaded to
+  `assets/models-textures/sbs_-_planet_texture_pack_*`). Moon first.
+- `Services/Planets.luau` (new, shared by future planets): textured globes (UV sphere
+  MeshPart + ForceField atmosphere rim, spun by the client), CSG crater bowls with
+  continuous raised rims (`carve`), sunk-ball mounds and rounded boulders, texture
+  overlays. Intermediate CSG steps use Box collision: precise decomposition on each step
+  took 12 s; the whole Moon now builds in about 0.3 s.
+- Moon (`DestinationService` builder 1): carved, rimmed craters you can walk into, regolith
+  overlay, rounded rocks, Apollo-style lander (blinking beacon), flag on a rod, science
+  station, boot prints, drifting dust motes. Beyond: a low crater wall, a plain with 12
+  carved craters and maria/regolith overlays, two rows of rounded highlands
+  (`Mountains` `dome` option), and a textured cloudy Earth (earthrise over the hills,
+  half lit). `surroundings` gained ridge/round/craters/overlays/farRing options; the other
+  destinations are unchanged (same random sequence).
+- Lighting: `Skies` sets may carry `lighting` and `moon = false`; the Moon set is a low hard
+  sun (ClockTime 7.3, ShadowSoftness 0.04, dark ambient) for long shadows. Earth's own
+  values come back on the way home (checked in Play).
+- `PlanetController` (new, client): spins PlanetSpin parts, flashes Blinker lights,
+  meteors over destinations with a Meteors attribute, and low-gravity foot dust on
+  destinations with a Dust colour.
+- Textures: `tools/planets/textures.py` (Earth with baked clouds, moon regolith and maria
+  overlays; `--studio` copies for `Planets.LocalPreview`). Uploaded to k_b4nd0: Earth
+  98936869274892, regolith 95330664069444, maria 131900343409098. **They need experience
+  access** like the skies did; until then Play shows the Moon untextured.
+- Sphere mesh: `tools/planets/sphere.py` writes a clean 96x48 UV sphere
+  (`assets/planets/planet_sphere.fbx`); the user imported it: `Planets.SphereMesh` =
+  101153315842104. (Free Creator Store spheres shaded a dark seam and pinched poles.)
+- Found: SpecialMesh `Sphere` renders as a cube in this Studio build, and MeshPart
+  TextureID ignores alpha (a cloud shell rendered as an opaque white ball).
+- Studio: RunChecks all pass (12/12, MaterialInteractionCheck included). Flown to the Moon
+  in Play: lighting, spin, blink, meteors, foot dust and the return home all verified.
+
+# Earlier session: 2026-10-18 (6), Kenney props on the Earth site
 
 - Branch `claude/earth-props` from master (bfce87f). The user imported the staged
   factory and station FBX files and uploaded their palettes: Factory 96315897677106,

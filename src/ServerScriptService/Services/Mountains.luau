@@ -10,9 +10,13 @@
 
     Mountains.ring(parent, center, spec, make) builds one: spec = { radius, spread, count,
     size = { min, max }, rock = Color3, rockAlt = Color3?, material?, snow = size above
-    which peaks get caps (nil: none), seed }. It places `count` mountains evenly round the
-    circle (jittered) at radius +- spread/2. `make(parent, name, size, cframe, color,
-    material)` creates one part (each caller's own builder, so collision etc. match).
+    which peaks get caps (nil: none), dome = true for rounded hills, seed }. It places
+    `count` mountains evenly round the circle (jittered) at radius +- spread/2.
+    `make(parent, name, size, cframe, color, material, shape)` creates one part (each
+    caller's own builder, so collision etc. match); shape is nil (a block) or Ball.
+
+    Domes (the Moon's worn highlands) are balls sunk to the same height and a broader base
+    (Mountains.DomeBase x size, jittered), so neighbours run together into one rolling range.
 ]]
 local Mountains = {}
 
@@ -20,9 +24,26 @@ local Mountains = {}
 local CORNER = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
 Mountains.Rise = 0.476
 Mountains.Base = 0.6
+Mountains.DomeBase = 0.72
+
+local function dome(parent, at, size, rock, spec, make, random)
+    local height, radius = size * Mountains.Rise, size * Mountains.DomeBase * random:NextNumber(0.75, 1.15)
+    local diameter = radius * radius / height + height
+    make(parent, "Mountain", Vector3.one * diameter, CFrame.new(at + Vector3.new(0, height - diameter / 2, 0)), rock,
+        spec.material or Enum.Material.Rock, Enum.PartType.Ball)
+end
 
 function Mountains.peak(parent, at, size, random, spec, make)
     local rock = spec.rock:Lerp(spec.rockAlt or spec.rock, random:NextNumber())
+    if spec.dome then
+        dome(parent, at, size, rock, spec, make, random)
+        -- A lower shoulder beside most, so the skyline isn't a row of identical humps.
+        if random:NextNumber() < 0.7 then
+            local side = Vector3.new(random:NextNumber(-1, 1), 0, random:NextNumber(-1, 1)) * size * 0.45
+            dome(parent, at + side, size * random:NextNumber(0.45, 0.7), spec.rock:Lerp(spec.rockAlt or spec.rock, random:NextNumber()), spec, make, random)
+        end
+        return
+    end
     for index = 1, random:NextInteger(1, 2) do
         local s = size * (index == 1 and 1 or random:NextNumber(0.5, 0.75))
         local offset = index == 1 and Vector3.zero or Vector3.new(random:NextNumber(-0.35, 0.35) * size, 0, random:NextNumber(-0.35, 0.35) * size)

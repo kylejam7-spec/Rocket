@@ -1,0 +1,207 @@
+"""Builds the textures the destination planets wear, from the SBS planet texture pack
+(assets/models-textures/sbs_-_planet_texture_pack_-_1024x512, CC0) plus a few made here.
+
+    python tools/planets/textures.py            # -> assets/planets/*.png
+    python tools/planets/textures.py --preview  # also a contact sheet, assets/planets/preview.png
+    python tools/planets/textures.py --studio   # also into Studio's content/textures
+                                                # (rbxasset://textures/rocket-planets/<name>.png)
+
+Outputs:
+  earth.png          Earth for the Moon's sky (SBS Grassland) under a white cloud layer
+                     that wraps round (the seam at u=0/1 matches), equirectangular 1024x512.
+                     The clouds are baked in: MeshPart textures ignore alpha, so a separate
+                     cloud shell would be an opaque white ball.
+  moon_regolith.png  A seamless 512x512 overlay for the Moon's ground: pocked small craters
+                     (shaded from the sun's side) and mottling, mostly transparent so the
+                     part's Slate material shows through.
+  moon_maria.png     A seamless 512x512 overlay of broad dark patches (lunar seas) for the
+                     plain round the platform, tiled large so the ground isn't one grey.
+
+Upload each as an Image and put the ids in ServerScriptService/Services/Planets.luau
+(TEXTURES). Planets.LocalPreview = true uses the --studio copies instead, for
+looking at changes in Studio before an upload loads.
+"""
+import argparse
+import glob
+import os
+import shutil
+import sys
+
+import numpy as np
+from PIL import Image
+
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PACK = os.path.join(ROOT, "assets", "models-textures", "sbs_-_planet_texture_pack_-_1024x512", "Planet Textures 1024x512")
+OUT = os.path.join(ROOT, "assets", "planets")
+
+
+def periodic_noise(width, height, cells_x, cells_y, rng):
+    """Smooth value noise that tiles in both directions (a grid of random values,
+    wrapped, sampled with a smoothstep blend)."""
+    grid = rng.random((cells_y, cells_x))
+    ys = np.linspace(0, cells_y, height, endpoint=False)
+    xs = np.linspace(0, cells_x, width, endpoint=False)
+    y0, x0 = np.floor(ys).astype(int), np.floor(xs).astype(int)
+    ty, tx = ys - y0, xs - x0
+    ty, tx = ty * ty * (3 - 2 * ty), tx * tx * (3 - 2 * tx)
+    y1, x1 = (y0 + 1) % cells_y, (x0 + 1) % cells_x
+    a = grid[np.ix_(y0, x0)]
+    b = grid[np.ix_(y0, x1)]
+    c = grid[np.ix_(y1, x0)]
+    d = grid[np.ix_(y1, x1)]
+    top = a + (b - a) * tx[None, :]
+    bottom = c + (d - c) * tx[None, :]
+    return top + (bottom - top) * ty[:, None]
+
+
+def fbm(width, height, base_x, base_y, octaves, rng, gain=0.5):
+    total, amplitude, norm = np.zeros((height, width)), 1.0, 0.0
+    for octave in range(octaves):
+        scale = 2 ** octave
+        total += amplitude * periodic_noise(width, height, base_x * scale, base_y * scale, rng)
+        norm += amplitude
+        amplitude *= gain
+    return total / norm
+
+
+def smoothstep(edge0, edge1, x):
+    t = np.clip((x - edge0) / (edge1 - edge0), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def earth():
+    image = Image.open(os.path.join(PACK, "Grassland", "Grassland_02-1024x512.png")).convert("RGB")
+    return image
+
+
+def earth_clouds(rng):
+    width, height = 1024, 512
+    # Wraps in x only matters, but tiling both ways is harmless. Stretch cells wide near the
+    # equator the way weather bands run.
+    noise = fbm(width, height, 8, 4, 6, rng, gain=0.55)
+    streak = fbm(width, height, 3, 12, 3, rng)
+    value = noise * 0.75 + streak * 0.25
+    alpha = smoothstep(0.50, 0.70, value) * 0.92
+    # Thin out over the poles (the texture's own ice caps show there) and leave a clear
+    # band here and there so continents read.
+    lat = np.abs(np.linspace(-1, 1, height))[:, None]
+    alpha *= 1 - smoothstep(0.82, 0.97, lat)
+    rgba = np.zeros((height, width, 4), dtype=np.uint8)
+    shade = 235 + 20 * smoothstep(0.55, 0.8, value)
+    rgba[..., 0] = rgba[..., 1] = np.clip(shade, 0, 255)
+    rgba[..., 2] = 255
+    rgba[..., 3] = np.clip(alpha * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def wrapped_distance(size, cx, cy):
+    ys, xs = np.mgrid[0:size, 0:size]
+    dx = (xs - cx + size / 2) % size - size / 2
+    dy = (ys - cy + size / 2) % size - size / 2
+    return dx, dy
+
+
+def moon_regolith(rng):
+    size = 512
+    # Darkness (0 = leave the material alone) and light, each 0..1, composed into an
+    # overlay: black where darker, white where lighter.
+    dark = np.zeros((size, size))
+    light = np.zeros((size, size))
+    mottle = fbm(size, size, 6, 6, 5, rng)
+    dark += smoothstep(0.5, 0.75, mottle) * 0.25
+    light += smoothstep(0.5, 0.25, mottle) * 0.12
+    # Craters: a shaded bowl (dark on the side toward the sun, which comes from -x/-y,
+    # lit on the far wall) and a bright raised rim with a soft ejecta halo.
+    sun = np.array([-0.7, -0.7])
+    for _ in range(46):
+        radius = rng.choice([rng.uniform(4, 9), rng.uniform(9, 20), rng.uniform(20, 40)], p=[0.55, 0.35, 0.10])
+        cx, cy = rng.uniform(0, size), rng.uniform(0, size)
+        dx, dy = wrapped_distance(size, cx, cy)
+        r = np.sqrt(dx * dx + dy * dy) / radius
+        facing = (dx * sun[0] + dy * sun[1]) / (np.sqrt(dx * dx + dy * dy) + 1e-6)
+        # The near wall (toward the sun) sits in shadow, the far wall catches light; both
+        # fade into the floor so the bowl reads as a dip, not a ring.
+        wall = smoothstep(0.15, 0.95, r) * (r < 1.05)
+        dark += wall * 0.42 * np.clip(-facing * 0.8 + 0.2, 0, 1)
+        light += wall * 0.22 * np.clip(facing * 0.8 + 0.1, 0, 1)
+        dark += np.where(r < 1, 0.08 * (1 - r), 0)
+        rim = np.exp(-((r - 1.08) / 0.2) ** 2)
+        light += rim * 0.16 * (0.6 + 0.4 * np.clip(-facing, 0, 1))
+        halo = np.where(r > 1, np.exp(-(r - 1) * 1.6), 0)
+        light += halo * 0.07
+    dark, light = np.clip(dark, 0, 1), np.clip(light, 0, 1)
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    lighter = light > dark
+    value = np.where(lighter, 255, 0)
+    rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = value
+    rgba[..., 3] = np.clip(np.where(lighter, light - dark, dark - light) * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def moon_maria(rng):
+    size = 512
+    broad = fbm(size, size, 3, 3, 5, rng, gain=0.55)
+    alpha = smoothstep(0.52, 0.66, broad) * 0.55 + smoothstep(0.4, 0.52, broad) * 0.08
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    rgba[..., 0], rgba[..., 1], rgba[..., 2] = 40, 40, 46
+    rgba[..., 3] = np.clip(alpha * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def preview(images):
+    tiles = []
+    for name, image in images.items():
+        backdrop = Image.new("RGBA", image.size, (150, 150, 156, 255))
+        backdrop.alpha_composite(image.convert("RGBA"))
+        if image.size[0] == image.size[1]:
+            # Tiled 2x2 to show the seams match.
+            tiled = Image.new("RGBA", (image.size[0] * 2, image.size[1] * 2))
+            for ox in (0, image.size[0]):
+                for oy in (0, image.size[1]):
+                    tiled.paste(backdrop, (ox, oy))
+            backdrop = tiled
+        tiles.append(backdrop.resize((512, 256 if backdrop.size[0] != backdrop.size[1] else 512)))
+    sheet = Image.new("RGBA", (512, sum(t.size[1] for t in tiles)), "white")
+    y = 0
+    for tile in tiles:
+        sheet.paste(tile, (0, y))
+        y += tile.size[1]
+    return sheet
+
+
+def studio_textures():
+    base = os.path.join(os.environ.get("LOCALAPPDATA", ""), "Roblox", "Versions")
+    installs = [d for d in glob.glob(os.path.join(base, "*")) if os.path.isfile(os.path.join(d, "RobloxStudioBeta.exe"))]
+    return os.path.join(max(installs, key=os.path.getmtime), "content", "textures") if installs else None
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--preview", action="store_true")
+    parser.add_argument("--studio", action="store_true", help="also copy into Studio's content/textures/rocket-planets")
+    args = parser.parse_args()
+    studio = studio_textures() if args.studio else None
+    if args.studio and not studio:
+        sys.exit("No Roblox Studio install found under %LOCALAPPDATA%/Roblox/Versions")
+    os.makedirs(OUT, exist_ok=True)
+    rng = np.random.default_rng(7)
+    clouds = earth_clouds(rng)
+    surface = earth().convert("RGBA")
+    surface.alpha_composite(clouds)
+    images = {
+        "earth": surface.convert("RGB"),
+        "moon_regolith": moon_regolith(rng),
+        "moon_maria": moon_maria(rng),
+    }
+    for name, image in images.items():
+        image.save(os.path.join(OUT, name + ".png"))
+        print("wrote", os.path.join(OUT, name + ".png"))
+        if studio:
+            os.makedirs(os.path.join(studio, "rocket-planets"), exist_ok=True)
+            shutil.copy(os.path.join(OUT, name + ".png"), os.path.join(studio, "rocket-planets", name + ".png"))
+    if args.preview:
+        preview(images).save(os.path.join(OUT, "preview.png"))
+
+
+if __name__ == "__main__":
+    main()
