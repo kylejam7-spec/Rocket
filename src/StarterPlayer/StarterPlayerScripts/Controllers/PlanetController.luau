@@ -3,7 +3,10 @@
 --   PlanetOrbit also travel round their OrbitCenter about OrbitAxis at OrbitRate.
 -- - Models tagged Hover bob up and down (Amplitude studs, every Period seconds).
 -- - Dust devils (tag DustDevil) wander within Roam studs of their Home.
--- - Lights tagged Blinker flash on and off every Period seconds.
+-- - Lights tagged Blinker flash on and off every Period seconds; glows tagged Pulse
+--   brighten and dim every Period seconds.
+-- - Geyser vents (tag GeyserVent) erupt every 7-15 s: a jet of ice crystals and a
+--   column of vapour, sized by the vent's Scale, with a faint wisp in between.
 -- - A destination folder with a Meteors attribute gets a shooting star across its sky
 --   now and then while this player's camera is there.
 -- - Walking on a destination whose folder has a Dust colour kicks up slow puffs that
@@ -47,6 +50,14 @@ local function animate(dt)
             local home, roam = part:GetAttribute("Home"), part:GetAttribute("Roam") or 100
             local phase = home.X * 0.013 + home.Z * 0.007
             part.CFrame = CFrame.new(home + Vector3.new(math.sin(now * 0.05 + phase) * roam, 0, math.sin(now * 0.037 + phase * 2) * roam * 0.8))
+        end
+    end
+    for _, part in CollectionService:GetTagged("Pulse") do
+        if part:IsDescendantOf(workspace) then
+            local glow = 0.5 + 0.5 * math.sin(now / (part:GetAttribute("Period") or 3) * math.pi * 2)
+            part.Transparency = 0.45 - glow * 0.4
+            local light = part:FindFirstChildOfClass("PointLight")
+            if light then light.Brightness = 1.5 + glow * 2 end
         end
     end
     for _, part in CollectionService:GetTagged("Blinker") do
@@ -111,6 +122,69 @@ local function meteors()
             local folder = root:FindFirstChild(spec.id)
             if folder and folder:GetAttribute("Meteors") and camera and (camera.CFrame.Position - spec.position).Magnitude < METEOR_DISTANCE then
                 meteor(spec.position, random)
+            end
+        end
+    end
+end
+
+local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
+local function geyserEmitters(vent)
+    local scale = vent:GetAttribute("Scale") or 1
+    local mouth = Instance.new("Attachment")
+    mouth.Name = "GeyserMouth"
+    mouth.Parent = vent
+    mouth.WorldCFrame = CFrame.new(vent.Position)
+    local jet = Instance.new("ParticleEmitter")
+    jet.Name = "Jet"
+    jet.Texture = SPARKLE
+    jet.Enabled = false
+    jet.Rate = 140
+    jet.Lifetime = NumberRange.new(3, 4.5)
+    jet.Speed = NumberRange.new(22 * scale ^ 0.75, 36 * scale ^ 0.75)
+    jet.SpreadAngle = Vector2.new(7, 7)
+    jet.Acceleration = Vector3.new(0, -9 * scale ^ 0.5, 0)
+    jet.Size = NumberSequence.new(0.5 * scale ^ 0.5, 0.25 * scale ^ 0.5)
+    jet.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.8, 0.4), NumberSequenceKeypoint.new(1, 1) })
+    jet.LightEmission = 0.8
+    jet.Color = ColorSequence.new(Color3.fromRGB(220, 245, 255))
+    jet.Parent = mouth
+    local steam = Instance.new("ParticleEmitter")
+    steam.Name = "Steam"
+    steam.Texture = SMOKE
+    steam.Rate = 2
+    steam.Lifetime = NumberRange.new(3, 5)
+    steam.Speed = NumberRange.new(10 * scale ^ 0.75, 18 * scale ^ 0.75)
+    steam.SpreadAngle = Vector2.new(10, 10)
+    steam.Drag = 0.6
+    steam.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 3 * scale ^ 0.6), NumberSequenceKeypoint.new(1, 14 * scale ^ 0.6) })
+    steam.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.45), NumberSequenceKeypoint.new(1, 1) })
+    steam.Rotation, steam.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-40, 40)
+    steam.LightInfluence = 0.6
+    steam.Color = ColorSequence.new(Color3.fromRGB(230, 242, 255))
+    steam.Parent = mouth
+    return { jet = jet, steam = steam }
+end
+
+local function geysers()
+    local random = Random.new()
+    local state = setmetatable({}, { __mode = "k" })
+    while true do
+        task.wait(0.25)
+        local now = os.clock()
+        for _, vent in CollectionService:GetTagged("GeyserVent") do
+            if vent:IsDescendantOf(workspace) then
+                local s = state[vent]
+                if not s then
+                    s = geyserEmitters(vent)
+                    s.nextAt = now + random:NextNumber(1, 10)
+                    state[vent] = s
+                end
+                if s.untilAt and now >= s.untilAt then
+                    s.jet.Enabled, s.steam.Rate, s.untilAt = false, 2, nil
+                    s.nextAt = now + random:NextNumber(7, 15)
+                elseif not s.untilAt and now >= s.nextAt then
+                    s.jet.Enabled, s.steam.Rate, s.untilAt = true, 30, now + random:NextNumber(2.5, 4)
+                end
             end
         end
     end
@@ -185,6 +259,7 @@ end
 function PlanetController.start()
     RunService.RenderStepped:Connect(animate)
     task.spawn(meteors)
+    task.spawn(geysers) -- ice and vapour from every GeyserVent
     local player = Players.LocalPlayer
     if player.Character then task.spawn(footDust, player.Character) end
     player.CharacterAdded:Connect(footDust)

@@ -21,6 +21,9 @@ Outputs:
   mars_strata.png    Opaque layered rock beds for the canyon walls (seamless).
   phobos.png         Phobos and Deimos (the pack's Barren map, greyed to dusty brown).
   mars_sky_<Face>.png  Mars's daytime sky, cut into the six faces a Roblox Sky takes.
+  jupiter.png        Jupiter for Europa's sky (SBS Gaseous) with the Great Red Spot painted in.
+  io.png             Io (SBS Arid) pushed to sulfur yellow, with dark volcanic spots.
+  europa_ice.png     A seamless 512x512 overlay of reddish lineae and fine cracks for Europa's ice.
 
 Upload each as an Image and put the ids in ServerScriptService/Services/Planets.luau
 (TEXTURES). Planets.LocalPreview = true uses the --studio copies instead, for
@@ -254,6 +257,77 @@ def mars_sky(rng):
     return np.clip(rgb, 0, 255).astype(np.uint8)
 
 
+def jupiter(rng):
+    """Jupiter for Europa's sky: the pack's orange banded gas giant, its bands sharpened a
+    little, with the Great Red Spot (a swirled oval with a pale rim) in the south."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Gaseous", "Gaseous_05-1024x512.png")).convert("RGB")).astype(float)
+    h, w = image.shape[:2]
+    mean = image.mean(axis=(0, 1))
+    image = mean + (image - mean) * 1.15
+    ys, xs = np.mgrid[0:h, 0:w]
+    cx, cy, rx, ry = w * 0.62, h * 0.66, w * 0.055, h * 0.055
+    dx, dy = (xs - cx) / rx, (ys - cy) / ry
+    r = np.sqrt(dx * dx + dy * dy)
+    swirl = np.sin(np.arctan2(dy, dx) * 3 + r * 6) * 0.5 + 0.5
+    spot = np.array((196, 82, 52)) * (0.85 + 0.15 * swirl[..., None])
+    inside = smoothstep(1.0, 0.75, r)[..., None]
+    rim = (np.exp(-((r - 1.1) / 0.12) ** 2))[..., None]
+    image = image * (1 - inside) + spot * inside
+    image = image * (1 - rim * 0.5) + np.array((238, 214, 180)) * rim * 0.5
+    return Image.fromarray(np.clip(image, 0, 255).astype(np.uint8), "RGB")
+
+
+def io(rng):
+    """Io: the pack's Arid map pushed to sulfur yellow and orange, freckled with dark
+    volcanic spots ringed in red."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Arid", "Arid_03-1024x512.png")).convert("RGB")).astype(float)
+    grey = image.mean(axis=2, keepdims=True) / 255
+    base = np.array((222, 196, 92)) * (0.7 + 0.5 * grey) + (np.array((206, 120, 54)) - np.array((222, 196, 92))) * smoothstep(0.45, 0.25, grey)
+    h, w = base.shape[:2]
+    ys, xs = np.mgrid[0:h, 0:w]
+    for _ in range(24):
+        cx, cy, radius = rng.uniform(0, w), rng.uniform(h * 0.15, h * 0.85), rng.uniform(3, 10)
+        dx = (xs - cx + w / 2) % w - w / 2
+        r = np.sqrt(dx * dx + (ys - cy) ** 2) / radius
+        base = base * (1 - smoothstep(1, 0.4, r)[..., None] * 0.85) + np.array((120, 44, 26)) * (np.exp(-((r - 1.5) / 0.4) ** 2) * 0.35)[..., None]
+    return Image.fromarray(np.clip(base, 0, 255).astype(np.uint8), "RGB")
+
+
+def europa_ice(rng):
+    """Seamless overlay for Europa's ice: long reddish-brown lineae (double bands, gently
+    curving, crossing each other) and fine pale cracks."""
+    size = 512
+    dark = np.zeros((size, size))
+    light = np.zeros((size, size))
+    ys, xs = np.mgrid[0:size, 0:size]
+    for _ in range(5):
+        # A band along a line with a whole-number slope (so it wraps at the tile's edges),
+        # bent by a slow sine so it curves.
+        k = rng.integers(1, 3)
+        tx, ty = rng.integers(-2, 3), rng.integers(1, 3)
+        length = np.hypot(tx, ty)
+        nx, ny = -ty / length, tx / length
+        offset = rng.uniform(0, size)
+        bend = np.sin((xs * tx + ys * ty) / size * 2 * np.pi * k) * rng.uniform(6, 18)
+        d = ((xs * nx + ys * ny + offset + bend) % (size / length)) - size / length / 2
+        width = rng.uniform(4, 8)
+        band = np.exp(-((np.abs(d) - width) / (width * 0.6)) ** 2)
+        dark += band * rng.uniform(0.25, 0.45)
+        light += np.exp(-(d / (width * 0.4)) ** 2) * 0.15
+    cracks = fbm(size, size, 24, 24, 3, rng)
+    light += smoothstep(0.03, 0.0, np.abs(cracks - 0.5)) * 0.25
+    mottle = fbm(size, size, 4, 4, 4, rng)
+    dark += smoothstep(0.55, 0.8, mottle) * 0.12
+    dark, light = np.clip(dark, 0, 1), np.clip(light, 0, 1)
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    lighter = light > dark
+    rgba[..., 0] = np.where(lighter, 240, 120)
+    rgba[..., 1] = np.where(lighter, 250, 58)
+    rgba[..., 2] = np.where(lighter, 255, 40)
+    rgba[..., 3] = np.clip(np.where(lighter, light - dark, dark - light) * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
 def preview(images):
     tiles = []
     for name, image in images.items():
@@ -302,6 +376,9 @@ def main():
         "mars_ground": mars_ground(np.random.default_rng(21)),
         "mars_strata": mars_strata(np.random.default_rng(22)),
         "phobos": phobos(),
+        "jupiter": jupiter(np.random.default_rng(31)),
+        "io": io(np.random.default_rng(32)),
+        "europa_ice": europa_ice(np.random.default_rng(33)),
     }
     sky = mars_sky(np.random.default_rng(23))
     for key, axes in cubemap.FACES.items():

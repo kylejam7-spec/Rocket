@@ -674,37 +674,251 @@ builders[2] = function(folder, c)
     fence(folder, c, 75, 45)
     return ground, Vector3.new(0, 0, 20)
 end
--- 3 (Rare): Jupiter's ice moon. A cracked ice shell with glowing cyan fissures, ice
--- ridges and geyser vents (tagged for the geyser mechanic), under a giant banded Jupiter.
-builders[3] = function(folder, c)
-    local ground = disc(folder, "IceShell", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(225, 235, 245), Enum.Material.Glacier)
-    scatter(31, 16, 70, function(index, offset, random)
-        decor(folder, "Fissure", { Size = Vector3.new(random:NextNumber(14, 34), 0.12, random:NextNumber(0.4, 0.9)),
-            CFrame = CFrame.new(c + offset + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
-            Color = Color3.fromRGB(90, 220, 255), Material = Enum.Material.Neon })
-    end)
-    scatter(32, 6, 62, function(index, offset, random)
-        disc(folder, "GeyserRim", c + offset + Vector3.new(0, 0.2, 0), 4.5, 0.6, Color3.fromRGB(200, 225, 240), Enum.Material.Ice)
-        local vent = disc(folder, "GeyserVent", c + offset + Vector3.new(0, 0.35, 0), 2.8, 0.6, Color3.fromRGB(20, 60, 110), Enum.Material.Neon)
-        vent.CanCollide = false
-        CollectionService:AddTag(vent, "GeyserVent")
-    end)
-    scatter(33, 8, 68, function(index, offset, random)
-        local height = random:NextNumber(3, 7)
-        make(folder, "IceRidge", { ClassName = "WedgePart", Size = Vector3.new(random:NextNumber(10, 18), height, 5),
-            CFrame = CFrame.new(c + offset + Vector3.new(0, height / 2, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
-            Color = Color3.fromRGB(190, 220, 245), Material = Enum.Material.Ice })
-    end)
-    local jupiter = c + Vector3.new(320, 300, -1100)
-    decor(folder, "Jupiter", { Shape = Enum.PartType.Ball, Size = Vector3.one * 900, CFrame = CFrame.new(jupiter), Color = Color3.fromRGB(215, 170, 125) })
-    for index, stripe in { { 250, 70, Color3.fromRGB(170, 105, 70) }, { 120, 45, Color3.fromRGB(235, 205, 170) },
-        { -30, 80, Color3.fromRGB(185, 120, 80) }, { -210, 60, Color3.fromRGB(160, 100, 70) } } do
-        band(folder, "JupiterBand" .. index, jupiter, 450, stripe[1], stripe[2], stripe[3])
+-- 3 (Rare): Europa, Jupiter's ice moon. Glowing crevasses cut into the ice shell, geyser
+-- vents on little ice cones (tagged GeyserVent: they erupt on each client, and the geyser
+-- mechanic can use them), reddish lineae across the ice, and a drilling rig over a hole
+-- that glows with the ocean below, beside a habitat pod. Beyond: double ridges, fields
+-- of jumbled ice rafts, distant geysers, blades of ice in front of icy peaks, and a
+-- giant banded Jupiter rising behind them (Io crosses its face). Ice crystals sparkle
+-- down through the cold light (Shared.Skies "Europa").
+local EUROPA = { ice = Color3.fromRGB(222, 232, 242), snow = Color3.fromRGB(240, 246, 252), blue = Color3.fromRGB(160, 208, 240), pale = Color3.fromRGB(196, 222, 244),
+    glow = Color3.fromRGB(90, 220, 255), deep = Color3.fromRGB(30, 120, 220), metal = Color3.fromRGB(196, 198, 206), rig = Color3.fromRGB(236, 160, 50), hull = Color3.fromRGB(232, 236, 240) }
+local DRILL, POD = Vector3.new(-40, 0, -18), Vector3.new(36, 0, -32)
+local EUROPA_PROPS = { { DRILL, 10 }, { POD, 8 } }
+-- The drilling rig: a hole through the ice with the ocean glowing in it, a railing round
+-- it, a truss tower with a winch, and a probe hanging into the hole on its cable.
+local function drillRig(parent, c)
+    local at = c + DRILL
+    local glow = decor(parent, "OceanGlow", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 7, 7), CFrame = CFrame.new(at - Vector3.new(0, 4.8, 0)) * CFrame.Angles(0, 0, math.rad(90)),
+        Color = EUROPA.deep, Material = Enum.Material.Neon })
+    local light = Instance.new("PointLight")
+    light.Color, light.Range, light.Brightness = EUROPA.glow, 20, 3
+    light.Parent = glow
+    glow:SetAttribute("Period", 3)
+    CollectionService:AddTag(glow, "Pulse")
+    for index = 1, 10 do
+        local angle = index / 10 * math.pi * 2
+        local post = at + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 5.2
+        make(parent, "RailPost", { Size = Vector3.new(0.25, 3.2, 0.25), CFrame = CFrame.new(post + Vector3.new(0, 1.6, 0)), Color = EUROPA.rig, Material = Enum.Material.Metal })
+        local nextPost = at + Vector3.new(math.cos(angle + math.pi / 5), 0, math.sin(angle + math.pi / 5)) * 5.2
+        make(parent, "Rail", { Size = Vector3.new(0.18, 0.18, (nextPost - post).Magnitude), CFrame = CFrame.lookAt((post + nextPost) / 2 + Vector3.new(0, 3, 0), nextPost + Vector3.new(0, 3, 0)), Color = EUROPA.rig, Material = Enum.Material.Metal })
+        -- An invisible wall behind the rail, so nobody drops into the hole.
+        make(parent, "RailGuard", { Size = Vector3.new(0.2, 6, (nextPost - post).Magnitude), CFrame = CFrame.lookAt((post + nextPost) / 2 + Vector3.new(0, 3, 0), nextPost + Vector3.new(0, 3, 0)), Transparency = 1, CanQuery = false })
     end
-    local facing = (c - jupiter).Unit
-    decor(folder, "GreatRedSpot", { Shape = Enum.PartType.Ball, Size = Vector3.one * 130,
-        CFrame = CFrame.new(jupiter + facing * 405 + Vector3.new(0, -150, 0)), Color = Color3.fromRGB(200, 80, 50) })
-    surroundings(folder, c, 75, { seed = 13, reach = 750, ring = { radius = 520, spread = 40, count = 20, size = { 200, 320 }, rock = Color3.fromRGB(190, 215, 240), rockAlt = Color3.fromRGB(160, 195, 230), material = Enum.Material.Ice, seed = 23 },  ground = Color3.fromRGB(205, 220, 235), material = Enum.Material.Glacier, crag = Color3.fromRGB(185, 215, 240), cragMaterial = Enum.Material.Ice })
+    local apex = at + Vector3.new(0, 15, 0)
+    for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+        strut(parent, "RigLeg", at + corner * 6.5, apex + corner * 0.6, 0.45, EUROPA.rig)
+        strut(parent, "RigBrace", at + corner * 4.8 + Vector3.new(0, 4, 0), at + Vector3.new(corner.Z, 0, -corner.X) * 4.8 + Vector3.new(0, 4, 0), 0.2, EUROPA.rig)
+    end
+    make(parent, "Winch", { Size = Vector3.new(2.4, 1.6, 2.4), CFrame = CFrame.new(apex + Vector3.new(0, 0.8, 0)), Color = EUROPA.metal, Material = Enum.Material.Metal })
+    decor(parent, "Sheave", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 2, 2), CFrame = CFrame.new(apex + Vector3.new(0, -0.6, 0)), Color = Color3.fromRGB(60, 62, 70), Material = Enum.Material.Metal })
+    local beacon = decor(parent, "Beacon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.7, CFrame = CFrame.new(apex + Vector3.new(0, 1.9, 0)), Color = Color3.fromRGB(255, 70, 50), Material = Enum.Material.Neon })
+    local red = Instance.new("PointLight")
+    red.Color, red.Range, red.Brightness = beacon.Color, 12, 2
+    red.Parent = beacon
+    beacon:SetAttribute("Period", 1.8)
+    CollectionService:AddTag(beacon, "Blinker")
+    -- The probe and its cable bob together (tag Hover), as if the winch were paying out.
+    local probe = Instance.new("Model")
+    probe.Name = "Probe"
+    probe.Parent = parent
+    local body = decor(probe, "ProbeBody", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(3.4, 1.4, 1.4), CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = EUROPA.hull, Material = Enum.Material.SmoothPlastic })
+    decor(probe, "ProbeNose", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = CFrame.new(at + Vector3.new(0, -1.3, 0)), Color = EUROPA.hull, Material = Enum.Material.SmoothPlastic })
+    decor(probe, "ProbeLight", { Size = Vector3.new(1.45, 0.25, 1.45), CFrame = CFrame.new(at + Vector3.new(0, 1, 0)), Color = EUROPA.glow, Material = Enum.Material.Neon })
+    strut(probe, "Cable", at + Vector3.new(0, 2.1, 0), apex - Vector3.new(0, 1.4, 0), 0.08, Color3.fromRGB(40, 40, 46))
+    probe.PrimaryPart = body
+    probe:SetAttribute("Amplitude", 0.9)
+    probe:SetAttribute("Period", 6)
+    CollectionService:AddTag(probe, "Hover")
+end
+-- The crew's pod: a capsule on legs with warm windows, a ladder, a dish, and crates.
+local function europaPod(parent, c)
+    local at = c + POD
+    local turn = CFrame.Angles(0, math.rad(30), 0)
+    local frame = CFrame.new(at + Vector3.new(0, 4.4, 0)) * turn
+    make(parent, "Pod", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, 5, 5), CFrame = frame, Color = EUROPA.hull, Material = Enum.Material.SmoothPlastic })
+    for _, side in { -1, 1 } do
+        decor(parent, "PodCap", { Shape = Enum.PartType.Ball, Size = Vector3.one * 5, CFrame = frame * CFrame.new(side * 4.5, 0, 0), Color = EUROPA.hull, Material = Enum.Material.SmoothPlastic })
+        for _, end_ in { -1, 1 } do
+            strut(parent, "PodLeg", (frame * CFrame.new(end_ * 3, -1.6, side * 1.4)).Position, (frame * CFrame.new(end_ * 3.8, -4.4, side * 2.6)).Position, 0.3, EUROPA.metal)
+        end
+        for x = -2, 2, 2 do
+            decor(parent, "PodWindow", { Size = Vector3.new(1.2, 0.8, 0.15), CFrame = frame * CFrame.new(x, 0.6, side * 2.47), Color = Color3.fromRGB(255, 210, 140), Material = Enum.Material.Neon })
+        end
+    end
+    for step = 1, 4 do
+        decor(parent, "PodRung", { Size = Vector3.new(1.2, 0.12, 0.12), CFrame = frame * CFrame.new(0, -1.6 - step * 0.6, 2.9), Color = EUROPA.metal, Material = Enum.Material.Metal })
+    end
+    strut(parent, "PodMast", (frame * CFrame.new(-2, 2.4, 0)).Position, (frame * CFrame.new(-2, 5, 0)).Position, 0.15, EUROPA.metal)
+    decor(parent, "PodDish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, 2.4, 2.4), CFrame = CFrame.new((frame * CFrame.new(-2, 5.2, 0)).Position) * CFrame.Angles(0.4, 0.8, math.rad(65)), Color = EUROPA.hull, Material = Enum.Material.SmoothPlastic })
+    for index, offset in { Vector3.new(-6, 0, 3), Vector3.new(-7.5, 0, 0.5), Vector3.new(-6.6, 1.4, 1.6) } do
+        make(parent, "Crate", { Size = Vector3.new(1.8, 1.4, 1.4), CFrame = CFrame.new(at + turn * offset + Vector3.new(0, 0.7, 0)) * turn * CFrame.Angles(0, index * 0.3, 0), Color = index == 2 and EUROPA.rig or EUROPA.metal, Material = Enum.Material.Metal })
+    end
+end
+-- A pointed blade of ice: two wedges back to back make a tall thin triangle, standing on
+-- `frame` (its base centre).
+local function iceBlade(parent, frame, width, height, thickness, color)
+    for _, side in { -1, 1 } do
+        decor(parent, "IceBlade", { ClassName = "WedgePart", Size = Vector3.new(thickness, height, width / 2), Material = Enum.Material.Glacier, Color = color,
+            CFrame = frame * CFrame.new(0, height / 2, side * width / 4) * CFrame.Angles(0, side == 1 and math.pi or 0, 0) }).CastShadow = true
+    end
+end
+-- The horizon: clusters of ice blades, leaning a little, in front of a ring of icy peaks.
+local function iceBlades(c)
+    return function(parent)
+        local random = Random.new(37)
+        local count = 26
+        for index = 1, count do
+            local angle = (index + random:NextNumber(-0.3, 0.3)) / count * math.pi * 2
+            local distance = random:NextNumber(470, 580)
+            local base = c + Vector3.new(math.cos(angle) * distance, -3, math.sin(angle) * distance)
+            for _ = 1, random:NextInteger(3, 7) do
+                local height = random:NextNumber(40, 150)
+                local spot = base + Vector3.new(random:NextNumber(-40, 40), -height * 0.08, random:NextNumber(-40, 40))
+                iceBlade(parent, CFrame.new(spot) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * CFrame.Angles(random:NextNumber(-0.15, 0.15), 0, random:NextNumber(-0.15, 0.15)),
+                    height * random:NextNumber(0.35, 0.6), height, random:NextNumber(4, 9), EUROPA.pale:Lerp(EUROPA.snow, random:NextNumber()))
+            end
+        end
+    end
+end
+-- A geyser vent: a neon pool in the bottom of a little ice cone (the cone is carved into
+-- the ground by the caller; `scale` sizes its plumes).
+local function geyser(parent, at, radius, depth, scale)
+    local vent = decor(parent, "GeyserVent", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, radius * 1.3, radius * 1.3),
+        CFrame = CFrame.new(at - Vector3.new(0, depth - 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromRGB(40, 140, 220), Material = Enum.Material.Neon })
+    vent:SetAttribute("Scale", scale)
+    CollectionService:AddTag(vent, "GeyserVent")
+    return vent
+end
+builders[3] = function(folder, c)
+    local random = Random.new(31)
+    folder:SetAttribute("Dust", Color3.fromRGB(226, 238, 250))
+    folder:SetAttribute("Meteors", true)
+    local ground = disc(folder, "IceShell", c - Vector3.new(0, 3, 0), 75, 6, EUROPA.ice, Enum.Material.Glacier)
+    -- Geyser cones, then crevasses and the drill hole, all cut into the ice.
+    local vents = {}
+    for _ = 1, 120 do
+        if #vents >= 5 then break end
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 66)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local free = isClear(offset, 6, EUROPA_PROPS)
+        for _, vent in vents do
+            if (vent.at - c - offset).Magnitude < 16 then free = false end
+        end
+        if free then table.insert(vents, { at = c + offset, radius = 2.4, depth = 1.1, rim = 1.6 }) end
+    end
+    ground = Planets.carve(ground, vents, true)
+    local cracks, glows = {}, {}
+    for _ = 1, 160 do
+        if #cracks >= 11 then break end
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(8, 62)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local length = random:NextNumber(12, 28)
+        local free = isClear(offset, length / 2 + 1, EUROPA_PROPS)
+        for _, vent in vents do
+            if (vent.at - c - offset).Magnitude < length / 2 + 6 then free = false end
+        end
+        if free then
+            local frame = CFrame.new(c + offset) * CFrame.Angles(0, random:NextNumber(0, math.pi), 0)
+            local cut = Instance.new("Part")
+            cut.Anchored = true
+            cut.Size = Vector3.new(1.5, 4.4, length)
+            cut.CFrame = frame * CFrame.new(0, 0.2, 0)
+            table.insert(cracks, cut)
+            table.insert(glows, { frame = frame, length = length })
+        end
+    end
+    local hole = Instance.new("Part")
+    hole.Anchored = true
+    hole.Shape = Enum.PartType.Cylinder
+    hole.Size = Vector3.new(10, 7.2, 7.2)
+    hole.CFrame = CFrame.new(c + DRILL) * CFrame.Angles(0, 0, math.rad(90))
+    table.insert(cracks, hole)
+    ground = Planets.subtract(ground, cracks, true)
+    Planets.overlay(ground, Enum.NormalId.Right, "EuropaIce", 90, 0.15)
+    -- Glowing water in the bottom of each crevasse, pulsing out of step with the others.
+    for index, crack in glows do
+        local strip = decor(folder, "Fissure", { Size = Vector3.new(1.2, 0.2, crack.length - 0.6), CFrame = crack.frame * CFrame.new(0, -1.9, 0), Color = EUROPA.glow, Material = Enum.Material.Neon })
+        strip:SetAttribute("Period", 2.5 + index % 4 * 0.6)
+        CollectionService:AddTag(strip, "Pulse")
+    end
+    for _, vent in vents do geyser(folder, vent.at, vent.radius, vent.depth, 1) end
+    -- Ice chunks and frost drifts where there's room.
+    for _ = 1, 50 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 70)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local size = random:NextNumber(1.2, 3.6)
+        local free = isClear(offset, size + 1, EUROPA_PROPS)
+        for _, vent in vents do
+            if (vent.at - c - offset).Magnitude < 7 + size then free = false end
+        end
+        for _, crack in glows do
+            if ((crack.frame.Position - c) - offset).Magnitude < crack.length / 2 + size + 1 then free = false end
+        end
+        if free then
+            if random:NextNumber() < 0.7 then
+                make(folder, "IceChunk", { Size = Vector3.new(size * 1.3, size * 0.8, size), Color = EUROPA.blue:Lerp(EUROPA.snow, random:NextNumber(0, 0.6)), Material = Enum.Material.Ice,
+                    CFrame = CFrame.new(c + offset + Vector3.new(0, size * 0.15, 0)) * CFrame.Angles(random:NextNumber(0, 6.28), random:NextNumber(0, 6.28), random:NextNumber(0, 6.28)) })
+            else
+                Planets.mound(folder, "FrostDrift", c + offset, size * 2.5, size * 0.3, EUROPA.snow, Enum.Material.Snow, true)
+            end
+        end
+    end
+    drillRig(folder, c)
+    europaPod(folder, c)
+    -- Ice crystals glinting as they drift down (geyser fallout).
+    local sky = decor(folder, "IceCrystals", { Size = Vector3.new(150, 2, 150), CFrame = CFrame.new(c + Vector3.new(0, 40, 0)), Transparency = 1 })
+    local crystals = Instance.new("ParticleEmitter")
+    crystals.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    crystals.Shape = Enum.ParticleEmitterShape.Box
+    crystals.EmissionDirection = Enum.NormalId.Bottom
+    crystals.Rate, crystals.Lifetime = 26, NumberRange.new(10, 14)
+    crystals.Speed, crystals.SpreadAngle = NumberRange.new(2, 4), Vector2.new(25, 25)
+    crystals.Size = NumberSequence.new(0.25, 0.4)
+    crystals.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.15, 0.2), NumberSequenceKeypoint.new(0.85, 0.3), NumberSequenceKeypoint.new(1, 1) })
+    crystals.Rotation, crystals.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-90, 90)
+    crystals.LightEmission, crystals.LightInfluence = 0.8, 0.3
+    crystals.Color = ColorSequence.new(Color3.fromRGB(210, 240, 255))
+    crystals.Parent = sky
+    -- Jupiter fills the sky beyond the landing site, rising behind the ice; Io swings round
+    -- it, crossing its face when on the near side (it starts there, about to cross).
+    local jupiter = c + Vector3.new(260, 380, -1260)
+    Planets.globe(folder, "Jupiter", { center = jupiter, diameter = 1100, texture = "Jupiter", tilt = 3, spin = 0.012,
+        atmosphere = Color3.fromRGB(236, 200, 160), glow = 0.35, color = Color3.fromRGB(215, 170, 125) })
+    local ioAxis = Vector3.new(0, 1, 0.08).Unit
+    local toward = ((c - jupiter) - ioAxis * (c - jupiter):Dot(ioAxis)).Unit
+    Planets.globe(folder, "Io", { center = jupiter + CFrame.fromAxisAngle(ioAxis, -0.35) * (toward * 760), diameter = 64, texture = "Io", spin = 0.02,
+        color = Color3.fromRGB(222, 196, 92), orbit = { center = jupiter, axis = ioAxis, rate = 0.02 } })
+    surroundings(folder, c, 75, { seed = 13, reach = 750, horizon = iceBlades(c), ridge = { color = EUROPA.snow, material = Enum.Material.Snow },
+        overlays = { { "MoonMaria", 640, 0.35, Color3.fromRGB(170, 112, 86) }, { "EuropaIce", 300, 0.1 } },
+        ring = { radius = 640, spread = 60, count = 22, size = { 180, 300 }, rock = Color3.fromRGB(200, 222, 242), rockAlt = Color3.fromRGB(168, 200, 232), material = Enum.Material.Glacier, seed = 23 },
+        ground = EUROPA.ice, material = Enum.Material.Glacier, crag = EUROPA.pale, cragMaterial = Enum.Material.Ice })
+    -- Out on the plain: double ridges (two parallel walls with a trough between), rafts
+    -- of jumbled ice, and three big geysers that erupt on the horizon.
+    local outer = Random.new(34)
+    for _ = 1, 9 do
+        local angle, distance = outer:NextNumber(0, math.pi * 2), outer:NextNumber(160, 420)
+        local at = c + Vector3.new(math.cos(angle) * distance, -3, math.sin(angle) * distance)
+        local yaw, length = outer:NextNumber(0, math.pi), outer:NextNumber(180, 420)
+        local across = Vector3.new(math.cos(yaw), 0, -math.sin(yaw))
+        for _, side in { -1, 1 } do
+            Planets.dune(folder, at + across * side * 9, length, 12, outer:NextNumber(6, 10), yaw, EUROPA.pale, Enum.Material.Glacier)
+        end
+    end
+    for _ = 1, 4 do
+        local angle, distance = outer:NextNumber(0, math.pi * 2), outer:NextNumber(200, 400)
+        local field = c + Vector3.new(math.cos(angle) * distance, -3, math.sin(angle) * distance)
+        for _ = 1, 16 do
+            local size = outer:NextNumber(8, 26)
+            decor(folder, "IceRaft", { Size = Vector3.new(size, size * 0.3, size * outer:NextNumber(0.6, 1)), Material = Enum.Material.Glacier,
+                Color = EUROPA.ice:Lerp(Color3.fromRGB(176, 128, 104), outer:NextNumber(0, 0.3)),
+                CFrame = CFrame.new(field + Vector3.new(outer:NextNumber(-60, 60), 0, outer:NextNumber(-60, 60))) * CFrame.Angles(outer:NextNumber(-0.35, 0.35), outer:NextNumber(0, 6.28), outer:NextNumber(-0.35, 0.35)) }).CastShadow = true
+        end
+    end
+    for _, spot in { Vector3.new(-260, -3, -330), Vector3.new(330, -3, -240), Vector3.new(-380, -3, 160) } do
+        Planets.mound(folder, "GeyserCone", c + spot, 26, 9, EUROPA.snow, Enum.Material.Snow)
+        geyser(folder, c + spot + Vector3.new(0, 9, 0), 5, 0, 4)
+    end
     fence(folder, c, 75, 70)
     return ground, Vector3.new(0, 0, 20)
 end
