@@ -47,6 +47,9 @@ local TEXTURES = {
     MarsGround = { id = 112067650457008, file = "mars_ground" },
     MarsStrata = { id = 97408578392069, file = "mars_strata" },
     Phobos = { id = 104118206737090, file = "phobos" },
+    Jupiter = { id = 138703120001562, file = "jupiter" },
+    Io = { id = 92758180219133, file = "io" },
+    EuropaIce = { id = 124873466873497, file = "europa_ice" },
 }
 
 function Planets.texture(key)

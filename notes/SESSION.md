@@ -1,4 +1,33 @@
-# Latest session: 2026-10-19 (2), Mars
+# Latest session: 2026-10-19 (3), Europa
+
+- Moon and Mars pushed as PRs #34 (to master) and #35 (to `claude/planet-moon`). Europa
+  is `claude/planet-europa`, stacked on Mars. The imported sphere model was removed
+  from Workspace (the planets load the mesh by id).
+- Europa (`DestinationService` builder 3): crevasses cut into the ice (CSG, 2 deep,
+  walkable) with pulsing glowing water at the bottom; five geyser vents on little ice
+  cones (carved bowls with rims), still tagged GeyserVent for the planned mechanic; a
+  drilling rig over a hole to the glowing ocean (railing plus an invisible guard; the
+  probe and cable bob, tag Hover), a crew pod with crates, and ice chunks and frost
+  drifts. Beyond: a snow berm, double ridges, four fields of jumbled ice rafts, three big
+  geysers on cones out on the plain (Scale 4), pointed ice blades (two mirrored wedges)
+  in front of a ring of icy peaks, a giant Jupiter (1100 across, Great Red Spot painted
+  into the SBS texture, turning) rising behind them, and Io orbiting Jupiter, crossing
+  its face on the near side. Ice crystals sparkle down over the platform.
+- PlanetController: geysers erupt every 7-15 s (a crystal jet and a vapour column, sized
+  by Scale, with a wisp between), and Pulse glows breathe.
+- Sky: `Skies` "Europa" uses Kenney's "dark" skybox (cut with cubemap.py `dark`) with a
+  small cold sun from +X (Jupiter half lit), glossy ice, and an orange ColorShift_Bottom
+  for Jupiter-shine. ColorShift_Bottom joins the managed lighting keys (Earth's is black).
+- Uploads needing experience access: Jupiter 138703120001562, Io 92758180219133,
+  ice 124873466873497, dark sky Bk 135698275869633, Dn 89429151521851,
+  Ft 112325889790250, Lf 134675348379561, Rt 116080667193829, Up 104136192848757.
+- Rojo dropped the last of four quick edits to PlanetController once (Studio kept the old
+  source and Play ran without geysers). Touching the file didn't resync; a real edit did.
+  Compare sources (serve `src/` and diff from the Edit datamodel) before a Play test.
+- Studio: RunChecks 12/12. Seen in Play: Jupiter half lit, Io crossing it, the glowing
+  drill hole, crystals, crevasse glow and geysers erupting.
+
+# Earlier session: 2026-10-19 (2), Mars
 
 - One branch per planet, stacked: `claude/planet-moon` (8219051), then
   `claude/planet-mars` on top of it (Mars uses Moon's Planets module). The user imported
