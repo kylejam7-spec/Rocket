@@ -1,4 +1,29 @@
-# Latest session: 2026-10-19 (5), Saturn rework, then the Black Hole
+# Latest session: 2026-10-19 (6), music
+
+- Planet PRs #34-#38 squash-merged into master. Music on `claude/music`.
+- The user's MP3s (HoliznaCC0 lofi, CC0) sit in `assets/sounds/Earth Music` and
+  `assets/sounds/Space Music` (not committed). `tools/sounds/music.py` loudness-matches
+  them (two-pass loudnorm, -20 LUFS, linear; the sources ranged -9.8 to -17.3) into
+  `assets/sounds/music/<earth|space>/<slug>.ogg` (stereo Vorbis q3, 12 MB) and writes
+  `Shared/MusicTracks.luau`. `--studio` copies them for local play. build.py now leaves
+  music/ alone and skips the MP3s when copying to Studio; upload.py labels music.
+- **Not uploaded yet:** no ROBLOX_API_KEY here. The user runs
+  `python tools/sounds/upload.py --user-id ...` (as for the SFX); until then only Studio
+  plays music (Sfx.source falls back to the Studio copy).
+- `MusicController` (client): shuffle bags per mood (each song once before repeats, no
+  song twice running), 6 s crossfade into the next song, 3.5 s fade out and 5 s fade in
+  on mood changes. Mood from the state snapshot plus the LandedRocket's DescentAt:
+  passengers get silence from liftoff, space music from the start of the descent through
+  the stay, Earth music again on return; players left on Earth hear it dip to 30% while
+  the rocket climbs. Song volume 0.4 under the Music SoundGroup; the default Music
+  setting is now 0.5 (was 0.6). The player folder is `SoundService.MusicPlayer` (a
+  folder named "Music" would shadow the SoundGroup in Settings.group).
+- Studio Play verified: crossfade (Ode To Forgetting into Tokyo Sunset over 6 s),
+  boarding, then silence at liftoff, then Dreamshifter fading in at the descent, the
+  crossfade back to Earth music on return, and the dip for a non-passenger. RunChecks
+  12/12.
+
+# Earlier session: 2026-10-19 (5), Saturn rework, then the Black Hole
 
 - Black Hole on `claude/planet-blackhole` (stacked on Saturn). Builder 5: a glossy black
   glass shard (Basalt went sandy under warm light) with violet fissures cut in and

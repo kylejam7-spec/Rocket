@@ -57,11 +57,13 @@ local CUES = {
     fanfare5 = { file = "pet/fanfare5", volume = 0.42 },
 }
 
+-- The content id for a built file (its upload, else Studio's local copy), or nil.
 local function source(file)
     if SoundIds[file] then return SoundIds[file] end
     if RunService:IsStudio() then return "rbxasset://sounds/rocket/" .. file .. ".ogg" end
     return nil
 end
+Sfx.source = source
 
 local folder = Instance.new("Folder")
 folder.Name = "Sfx"
