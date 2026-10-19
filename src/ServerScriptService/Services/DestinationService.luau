@@ -8,6 +8,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Signs = require(script.Parent.SignService)
 local Mountains = require(script.Parent.Mountains)
+local Planets = require(script.Parent.Planets)
 local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
 local Destinations = {}
 Destinations.ArrivalTag = "DestinationArrival"
@@ -53,26 +54,75 @@ end
 -- a plain a few studs lower out to `look.reach`, strewn with boulders, and a continuous
 -- ring of mountains (look.ring, Mountains.ring) closing the horizon inside the plain's
 -- edge, low enough to leave the backdrop planet in view.
+-- Optional, for worlds that should read as worn rather than jagged (the Moon):
+-- look.ridge (a smooth crater wall of sunk balls instead of the crags), look.round
+-- (rounded boulders), look.craters (count of rimmed bowls carved into the plain, which is
+-- then look.plainDepth thick), look.overlays ({ texture key, studs per tile, transparency? } over
+-- the plain) and look.farRing (a second, taller mountain row behind the first).
 local function surroundings(parent, center, radius, look)
     local random = Random.new(look.seed)
-    local corner = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
-    local count = math.floor(radius * 0.42)
-    for index = 1, count do
-        local angle = (index + random:NextNumber(-0.25, 0.25)) / count * math.pi * 2
-        local size = random:NextNumber(10, 19)
-        local at = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + size * 0.35)
-        decor(parent, "RimCrag", { Size = Vector3.one * size, Color = look.crag:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.18)), Material = look.cragMaterial,
-            CFrame = CFrame.new(at - Vector3.new(0, size * 0.25, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner })
+    if look.ridge then
+        local count = math.floor(radius * 0.55)
+        for index = 1, count do
+            local angle = (index + random:NextNumber(-0.3, 0.3)) / count * math.pi * 2
+            local width = random:NextNumber(18, 26)
+            Planets.mound(parent, "CraterWall", center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + width * 0.5), width,
+                random:NextNumber(4, 7.5), look.crag:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.06)), look.cragMaterial)
+        end
+    else
+        local corner = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
+        local count = math.floor(radius * 0.42)
+        for index = 1, count do
+            local angle = (index + random:NextNumber(-0.25, 0.25)) / count * math.pi * 2
+            local size = random:NextNumber(10, 19)
+            local at = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + size * 0.35)
+            decor(parent, "RimCrag", { Size = Vector3.one * size, Color = look.crag:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.18)), Material = look.cragMaterial,
+                CFrame = CFrame.new(at - Vector3.new(0, size * 0.25, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner })
+        end
     end
-    disc(parent, "Plain", center - Vector3.new(0, 5, 0), look.reach, 4, look.ground, look.material).CanCollide = false
-    Mountains.ring(parent, center - Vector3.new(0, 3, 0), look.ring, function(folder, name, size, cframe, color, material)
-        return decor(folder, name, { Size = size, CFrame = cframe, Color = color, Material = material })
-    end)
+    -- The plain's top stays 3 below the platform however thick it is.
+    local depth = look.plainDepth or 4
+    local plain = disc(parent, "Plain", center - Vector3.new(0, 3 + depth / 2, 0), look.reach, depth, look.ground, look.material)
+    plain.CanCollide = false
+    if look.craters then
+        local bowls = {}
+        for _ = 1, look.craters * 4 do
+            if #bowls >= look.craters then break end
+            local size = random:NextNumber(18, 85)
+            local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(radius + 50 + size, look.ring.radius - look.ring.spread - size * 1.4)
+            local at = center + Vector3.new(math.cos(angle) * distance, -3, math.sin(angle) * distance)
+            local free = true
+            for _, bowl in bowls do
+                if (bowl.at - at).Magnitude < (bowl.radius + size) * 1.35 then free = false end
+            end
+            if free then table.insert(bowls, { at = at, radius = size, depth = math.min(size * 0.2, depth - 2), rim = size * random:NextNumber(0.08, 0.14) }) end
+        end
+        plain = Planets.carve(plain, bowls, false)
+        for _, bowl in bowls do
+            if bowl.radius > 55 then
+                Planets.mound(parent, "CentralPeak", bowl.at - Vector3.new(0, bowl.depth, 0), bowl.radius * 0.22, bowl.depth + bowl.radius * 0.06, look.crag, look.cragMaterial)
+            end
+        end
+    end
+    for _, overlay in look.overlays or {} do
+        Planets.overlay(plain, Enum.NormalId.Right, overlay[1], overlay[2], overlay[3])
+    end
+    local function mountain(folder, name, size, cframe, color, material, shape)
+        return decor(folder, name, { Shape = shape or Enum.PartType.Block, Size = size, CFrame = cframe, Color = color, Material = material })
+    end
+    Mountains.ring(parent, center - Vector3.new(0, 3, 0), look.ring, mountain)
+    -- A taller second row behind (look.farRing) layers the skyline.
+    if look.farRing then Mountains.ring(parent, center - Vector3.new(0, 3, 0), look.farRing, mountain) end
     for _ = 1, 14 do
         local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(radius + 60, look.reach * 0.8)
         local size = random:NextNumber(14, 40)
-        decor(parent, "Boulder", { Size = Vector3.new(size * 1.4, size, size * 1.1), Color = look.crag, Material = look.cragMaterial,
-            CFrame = CFrame.new(center + Vector3.new(math.cos(angle) * distance, size * 0.15 - 3, math.sin(angle) * distance)) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), random:NextNumber(-0.3, 0.3)) })
+        local at = center + Vector3.new(math.cos(angle) * distance, size * 0.15 - 3, math.sin(angle) * distance)
+        if look.round then
+            Planets.boulder(parent, at - Vector3.new(0, size * 0.15, 0), size, look.crag, look.cragMaterial, random, false)
+        else
+            decor(parent, "Boulder", { Size = Vector3.new(size * 1.4, size, size * 1.1), Color = look.crag, Material = look.cragMaterial,
+                CFrame = CFrame.new(at) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), random:NextNumber(-0.3, 0.3)) })
+        end
     end
 end
 -- The welcome sign stands on posts out to the left of the arrival pad, turned toward it:
@@ -129,22 +179,161 @@ local function scatter(seed, count, radius, fn)
 end
 
 local builders = {}
--- 1 (Common): grey regolith with craters, a flag and a lander; Earth hangs in the sky.
-builders[1] = function(folder, c)
-    local ground = disc(folder, "Regolith", c - Vector3.new(0, 2, 0), 75, 4, Color3.fromRGB(170, 170, 175), Enum.Material.Slate)
-    scatter(2, 7, 70, function(index, offset, random)
-        local r = random:NextNumber(5, 11)
-        disc(folder, "CraterRim", c + offset + Vector3.new(0, 0.3, 0), r + 2, 0.8, Color3.fromRGB(150, 150, 156))
-        disc(folder, "Crater", c + offset + Vector3.new(0, 0.45, 0), r, 0.8, Color3.fromRGB(110, 110, 118))
-    end)
-    make(folder, "FlagPole", { Size = Vector3.new(0.4, 12, 0.4), CFrame = CFrame.new(c + Vector3.new(14, 6, -10)), Color = Color3.fromRGB(230, 230, 230) })
-    decor(folder, "Flag", { Size = Vector3.new(6, 4, 0.2), CFrame = CFrame.new(c + Vector3.new(17, 10, -10)), Color = Color3.fromRGB(220, 50, 50) })
-    make(folder, "Lander", { Size = Vector3.new(8, 6, 8), CFrame = CFrame.new(c + Vector3.new(-18, 6, -16)), Color = Color3.fromRGB(230, 180, 50), Material = Enum.Material.Foil })
-    for _, corner in { Vector3.new(5, 0, 5), Vector3.new(-5, 0, 5), Vector3.new(5, 0, -5), Vector3.new(-5, 0, -5) } do
-        make(folder, "LanderLeg", { Size = Vector3.new(0.6, 5, 0.6), CFrame = CFrame.new(c + Vector3.new(-18, 2.5, -16) + corner), Color = Color3.fromRGB(160, 160, 165) })
+-- 1 (Common): the floor of an old crater on the Moon. Bowl craters carved into the
+-- ground with soft raised rims, rounded boulders, an Apollo-style lander with a blinking
+-- beacon, a flag and boot prints between them, and moon dust hanging in the light. A low
+-- crater wall rings the platform; beyond it a cratered plain with dark seas runs out to
+-- worn, rounded highlands, and a textured, cloudy Earth turns overhead.
+-- The sun stands low (Shared.Skies "Moon"), so every rim and rock throws a long shadow.
+local MOON = { regolith = Color3.fromRGB(166, 166, 170), rock = Color3.fromRGB(128, 128, 134), foil = Color3.fromRGB(222, 170, 60),
+    metal = Color3.fromRGB(196, 198, 204), dark = Color3.fromRGB(46, 48, 56) }
+Destinations.LanderOffset = Vector3.new(-18, 0, -16)
+local FLAG_OFFSET = Vector3.new(14, 0, -10)
+local EXPERIMENT_OFFSET = Vector3.new(22, 0, 4)
+-- True if a feature `reach` wide at `offset` keeps off every clear spot and the props.
+local function moonClear(offset, reach)
+    for _, spot in CLEAR do
+        if (offset - spot[1]).Magnitude < spot[2] + reach then return false end
     end
-    decor(folder, "Earth", { Shape = Enum.PartType.Ball, Size = Vector3.one * 160, CFrame = CFrame.new(c + Vector3.new(250, 260, -520)), Color = Color3.fromRGB(50, 120, 220) })
-    surroundings(folder, c, 75, { seed = 11, reach = 1000, ring = { radius = 700, spread = 60, count = 22, size = { 260, 420 }, rock = Color3.fromRGB(140, 140, 148), rockAlt = Color3.fromRGB(108, 108, 116), material = Enum.Material.Slate, seed = 21 },  ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = Color3.fromRGB(135, 135, 142), cragMaterial = Enum.Material.Slate })
+    for _, prop in { { Destinations.LanderOffset, 8 }, { FLAG_OFFSET, 4 }, { EXPERIMENT_OFFSET, 5 } } do
+        if (offset - prop[1]).Magnitude < prop[2] + reach then return false end
+    end
+    return offset.Magnitude + reach < 72
+end
+-- A strut between two points.
+local function strut(parent, name, a, b, thickness, color, material)
+    return decor(parent, name, { Size = Vector3.new(thickness, thickness, (b - a).Magnitude), CFrame = CFrame.lookAt((a + b) / 2, b), Color = color, Material = material or Enum.Material.Metal })
+end
+local function lander(parent, at)
+    local model = Instance.new("Model")
+    model.Name = "Lander"
+    model.Parent = parent
+    -- Descent stage: an octagon of gold foil (two boxes, one turned 45 degrees).
+    for _, turn in { 0, 45 } do
+        make(model, "DescentStage", { Size = Vector3.new(7, 3.4, 7), CFrame = CFrame.new(at + Vector3.new(0, 3.4, 0)) * CFrame.Angles(0, math.rad(turn), 0), Color = MOON.foil, Material = Enum.Material.Foil })
+    end
+    decor(model, "EngineBell", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 2.2, 2.2), CFrame = CFrame.new(at + Vector3.new(0, 1.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MOON.dark, Material = Enum.Material.Metal })
+    for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+        local top, foot = at + corner * 3.2 + Vector3.new(0, 4.4, 0), at + corner * 5.4 + Vector3.new(0, 0.3, 0)
+        strut(model, "LanderLeg", top, foot, 0.4, MOON.metal)
+        strut(model, "LegBrace", at + corner * 3.3 + Vector3.new(0, 2, 0), foot + Vector3.new(0, 0.6, 0) - corner * 0.4, 0.22, MOON.metal)
+        decor(model, "FootPad", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 1.8, 1.8), CFrame = CFrame.new(foot) * CFrame.Angles(0, 0, math.rad(90)), Color = MOON.metal, Material = Enum.Material.Metal })
+    end
+    -- Ladder on the side toward the flag.
+    for step = 1, 5 do
+        decor(model, "LadderRung", { Size = Vector3.new(0.12, 0.12, 1.1), CFrame = CFrame.new(at + Vector3.new(4.6 - step * 0.2, 0.4 + step * 0.65, 0)), Color = MOON.metal, Material = Enum.Material.Metal })
+    end
+    -- Ascent stage: a faceted silver cabin with two dark windows facing the arrival.
+    local cabin = make(model, "AscentStage", { Size = Vector3.new(5.2, 3.4, 4.6), CFrame = CFrame.new(at + Vector3.new(0, 6.8, 0)), Color = MOON.metal, Material = Enum.Material.Metal })
+    make(model, "AscentFront", { ClassName = "WedgePart", Size = Vector3.new(5.2, 2.4, 1.6), CFrame = cabin.CFrame * CFrame.new(0, -0.5, 3.1), Color = Color3.fromRGB(176, 178, 186), Material = Enum.Material.Metal })
+    for _, side in { -1, 1 } do
+        decor(model, "Window", { Size = Vector3.new(1.3, 1, 0.12), CFrame = cabin.CFrame * CFrame.new(side * 1.3, 0.9, 2.31) * CFrame.Angles(0, 0, side * 0.35), Color = MOON.dark, Material = Enum.Material.Glass })
+        -- Thruster quads on the cabin's sides.
+        decor(model, "Thrusters", { Size = Vector3.new(0.9, 0.9, 0.9), CFrame = cabin.CFrame * CFrame.new(side * 3, 1, 0) * CFrame.Angles(0, math.rad(45), 0), Color = Color3.fromRGB(150, 152, 160), Material = Enum.Material.Metal })
+    end
+    decor(model, "DockingHatch", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 1.8, 1.8), CFrame = cabin.CFrame * CFrame.new(0, 2.1, 0) * CFrame.Angles(0, 0, math.rad(90)), Color = MOON.metal, Material = Enum.Material.Metal })
+    strut(model, "AntennaMast", cabin.Position + Vector3.new(-1.6, 1.7, -1.2), cabin.Position + Vector3.new(-2.2, 4.2, -1.8), 0.15, MOON.metal)
+    decor(model, "AntennaDish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.25, 2, 2), CFrame = CFrame.new(cabin.Position + Vector3.new(-2.2, 4.3, -1.8)) * CFrame.Angles(0.5, 0.6, math.rad(70)), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.SmoothPlastic })
+    local beacon = decor(model, "Beacon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.6, CFrame = CFrame.new(cabin.Position + Vector3.new(1.4, 2.2, -1.2)), Color = Color3.fromRGB(255, 60, 50), Material = Enum.Material.Neon })
+    local light = Instance.new("PointLight")
+    light.Color, light.Range, light.Brightness = beacon.Color, 10, 2
+    light.Parent = beacon
+    beacon:SetAttribute("Period", 1.6)
+    CollectionService:AddTag(beacon, "Blinker")
+end
+local function flag(parent, at)
+    make(parent, "FlagPole", { Size = Vector3.new(0.3, 11, 0.3), CFrame = CFrame.new(at + Vector3.new(0, 5.5, 0)), Color = Color3.fromRGB(230, 230, 230), Material = Enum.Material.Metal })
+    -- No air to fly it: a rod along the top holds it out, and it keeps the creases it
+    -- was packed with (three panels at slight angles).
+    decor(parent, "FlagRod", { Size = Vector3.new(6, 0.14, 0.14), CFrame = CFrame.new(at + Vector3.new(3, 10.7, 0)), Color = Color3.fromRGB(230, 230, 230), Material = Enum.Material.Metal })
+    for index, lean in { 0.12, -0.1, 0.08 } do
+        decor(parent, "Flag", { Size = Vector3.new(2, 3.8, 0.08), CFrame = CFrame.new(at + Vector3.new(index * 2 - 1, 8.75, 0)) * CFrame.Angles(0, lean, 0), Color = Color3.fromRGB(215, 45, 45), Material = Enum.Material.SmoothPlastic })
+    end
+end
+-- A small science station: a foil box with two solar wings and a dish.
+local function experiment(parent, at)
+    make(parent, "Experiment", { Size = Vector3.new(1.6, 1.2, 1.6), CFrame = CFrame.new(at + Vector3.new(0, 0.6, 0)), Color = MOON.foil, Material = Enum.Material.Foil })
+    for _, side in { -1, 1 } do
+        decor(parent, "SolarWing", { Size = Vector3.new(2.6, 0.1, 1.5), CFrame = CFrame.new(at + Vector3.new(side * 2.1, 1.1, 0)) * CFrame.Angles(0, 0, side * -0.25), Color = Color3.fromRGB(40, 60, 130), Material = Enum.Material.Glass })
+    end
+    strut(parent, "ExperimentMast", at + Vector3.new(0, 1.2, 0), at + Vector3.new(0, 2.6, 0), 0.1, MOON.metal)
+    decor(parent, "ExperimentDish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.15, 1, 1), CFrame = CFrame.new(at + Vector3.new(0, 2.65, 0)) * CFrame.Angles(0, 0.4, math.rad(60)), Color = Color3.fromRGB(235, 235, 240) })
+end
+-- Boot prints along a path, alternating feet, skipping anything over a bowl.
+local function prints(parent, from, to, bowls)
+    local step = (to - from) * Vector3.new(1, 0, 1)
+    local count = math.floor(step.Magnitude / 1.6)
+    local across = Vector3.new(-step.Z, 0, step.X).Unit
+    for index = 1, count do
+        local at = from + step * (index / count) + across * (index % 2 == 0 and 0.45 or -0.45)
+        local inBowl = false
+        for _, bowl in bowls do
+            if ((at - bowl.at) * Vector3.new(1, 0, 1)).Magnitude < bowl.radius * 1.5 + 1 then inBowl = true end
+        end
+        if not inBowl then
+            decor(parent, "BootPrint", { Size = Vector3.new(0.5, 0.04, 1), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.02, 0), at + step + Vector3.new(0, 0.02, 0)), Color = Color3.fromRGB(122, 122, 128), Material = Enum.Material.Slate })
+        end
+    end
+end
+builders[1] = function(folder, c)
+    local random = Random.new(2)
+    folder:SetAttribute("Dust", Color3.fromRGB(196, 196, 202))
+    folder:SetAttribute("Meteors", true)
+    -- Thick enough for bowls three studs deep.
+    local ground = disc(folder, "Regolith", c - Vector3.new(0, 3, 0), 75, 6, MOON.regolith, Enum.Material.Slate)
+    local bowls = {}
+    for _ = 1, 200 do
+        if #bowls >= 8 then break end
+        local radius = random:NextNumber(4.5, 10)
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0, 70)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local free = moonClear(offset, radius * 1.5)
+        for _, bowl in bowls do
+            if (bowl.at - c - offset).Magnitude < (bowl.radius + radius) * 1.5 then free = false end
+        end
+        if free then table.insert(bowls, { at = c + offset, radius = radius, depth = math.min(3, radius * 0.3), rim = math.min(1.4, radius * 0.15) }) end
+    end
+    ground = Planets.carve(ground, bowls, true)
+    Planets.overlay(ground, Enum.NormalId.Right, "MoonRegolith", 36)
+    -- Rounded rocks in what room is left.
+    for _ = 1, 60 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 70)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local size = random:NextNumber(1.5, 4.5)
+        local free = moonClear(offset, size)
+        for _, bowl in bowls do
+            if (bowl.at - c - offset).Magnitude < bowl.radius * 1.5 + size then free = false end
+        end
+        if free then Planets.boulder(folder, c + offset, size, MOON.rock, Enum.Material.Slate, random, true) end
+    end
+    lander(folder, c + Destinations.LanderOffset)
+    flag(folder, c + FLAG_OFFSET)
+    experiment(folder, c + EXPERIMENT_OFFSET)
+    prints(folder, c + Destinations.LanderOffset + Vector3.new(5.5, 0, 0), c + FLAG_OFFSET - Vector3.new(1, 0, 0), bowls)
+    prints(folder, c + FLAG_OFFSET + Vector3.new(1, 0, 1), c + EXPERIMENT_OFFSET - Vector3.new(1, 0, 1), bowls)
+    -- Dust kicked up long ago, still settling: faint specks drifting in the sunlight.
+    local haze = decor(folder, "DustHaze", { Size = Vector3.new(140, 6, 140), CFrame = CFrame.new(c + Vector3.new(0, 4, 0)), Transparency = 1 })
+    local motes = Instance.new("ParticleEmitter")
+    motes.Shape = Enum.ParticleEmitterShape.Box
+    motes.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+    motes.Rate, motes.Lifetime = 14, NumberRange.new(6, 10)
+    motes.Speed, motes.SpreadAngle = NumberRange.new(0.2, 0.8), Vector2.new(180, 180)
+    motes.Acceleration = Vector3.new(0, -0.08, 0)
+    motes.Size = NumberSequence.new(0.12, 0.22)
+    motes.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.35), NumberSequenceKeypoint.new(0.7, 0.35), NumberSequenceKeypoint.new(1, 1) })
+    motes.LightEmission, motes.LightInfluence = 0.6, 0.4
+    motes.Color = ColorSequence.new(Color3.fromRGB(235, 235, 240))
+    motes.Parent = haze
+    -- Earth rises over the highlands beyond the landing site, half in sunlight, low
+    -- enough to sit in the default camera's view (its lower edge can dip behind the
+    -- tallest hills: an earthrise).
+    Planets.globe(folder, "Earth", { center = c + Vector3.new(300, 290, -760), diameter = 260, texture = "Earth",
+        atmosphere = Color3.fromRGB(110, 175, 255), glow = 0.1, tilt = 23, spin = 0.025, color = Color3.fromRGB(50, 120, 220) })
+    surroundings(folder, c, 75, { seed = 11, reach = 1000, ridge = true, round = true, craters = 12, plainDepth = 20,
+        overlays = { { "MoonMaria", 520 }, { "MoonRegolith", 120, 0.35 } },
+        ring = { radius = 690, spread = 140, count = 30, size = { 140, 320 }, dome = true, rock = Color3.fromRGB(150, 150, 156), rockAlt = Color3.fromRGB(118, 118, 126), material = Enum.Material.Slate, seed = 21 },
+        farRing = { radius = 900, spread = 60, count = 26, size = { 260, 410 }, dome = true, rock = Color3.fromRGB(136, 136, 144), rockAlt = Color3.fromRGB(112, 112, 120), material = Enum.Material.Slate, seed = 31 },
+        ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = MOON.rock, cragMaterial = Enum.Material.Slate })
     fence(folder, c, 75, 60)
     return ground, Vector3.new(0, 0, 20)
 end
