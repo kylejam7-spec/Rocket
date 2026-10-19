@@ -7,9 +7,8 @@
   `assets/sounds/music/<earth|space>/<slug>.ogg` (stereo Vorbis q3, 12 MB) and writes
   `Shared/MusicTracks.luau`. `--studio` copies them for local play. build.py now leaves
   music/ alone and skips the MP3s when copying to Studio; upload.py labels music.
-- **Not uploaded yet:** no ROBLOX_API_KEY here. The user runs
-  `python tools/sounds/upload.py --user-id ...` (as for the SFX); until then only Studio
-  plays music (Sfx.source falls back to the Studio copy).
+- Uploaded by the user with `tools/sounds/upload.py` (ids in Shared/SoundIds; checked
+  playing from the asset in Play). Merged as #39.
 - `MusicController` (client): shuffle bags per mood (each song once before repeats, no
   song twice running), 6 s crossfade into the next song, 3.5 s fade out and 5 s fade in
   on mood changes. Mood from the state snapshot plus the LandedRocket's DescentAt:
