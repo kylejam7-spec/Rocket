@@ -1,4 +1,37 @@
-# Latest session: 2026-10-19, planet overhaul starts with the Moon
+# Latest session: 2026-10-19 (2), Mars
+
+- One branch per planet, stacked: `claude/planet-moon` (8219051), then
+  `claude/planet-mars` on top of it (Mars uses Moon's Planets module). The user imported
+  the sphere: `Planets.SphereMesh` = 101153315842104.
+- Mars (`DestinationService` builder 2): a base on the rim of a canyon. The canyon runs
+  along X beyond the landing site (`CANYON`: near rim 95 toward -Z, three terraces down to
+  114 below the plain; the plain is 130 thick), cut by `Planets.subtract`, with the
+  strata texture on the plain's four side faces. Layered, lobed mesas and buttes close the
+  horizon (ones in the canyon rise from its floor). Also: buttes, dunes and fallen rock in
+  the canyon, dune fields on the plain, a sand berm round the platform (left open on the
+  canyon side, `keep`), white habitat domes with an airlock, a greenhouse with pink grow
+  lights, a solar array, a mast with a beacon, a six-wheeled rover with tracks, and a
+  hovering helicopter with counter-turning rotors.
+- Moving parts (PlanetController): Phobos and Deimos orbit (tag PlanetOrbit) on tilted
+  circles round a point below the ground, peaking at 37 and 28 degrees over the canyon;
+  dust devils wander the plain (tag DustDevil); the helicopter bobs (tag Hover). Wind dust
+  blows across the platform.
+- Sky: `Skies` set "Mars" uses a procedural sky (textures.py `mars_sky`, cut with
+  `tools/sky/cubemap.py`), warm afternoon light (sun in the west) and a thin Atmosphere.
+  The first Atmosphere settings (Density 0.3, Haze 1.4, a dark Decay) turned the far mesas
+  blue-grey; Density 0.22, Haze 0.6, Glare 0 with tan colours keep their colour. Earth's
+  lighting comes back, with no haze (checked in Play). `surroundings` gained `keep`, `cut`,
+  `horizon` and a coloured `ridge`; the other destinations keep their random sequence.
+- Uploads (k_b4nd0) that need experience access: Mars sky Bk 116733246444349,
+  Dn 112767906081295, Ft 96691941054366, Lf 134366695000385, Rt 77374313685282,
+  Up 139021632660213; ground 112067650457008, strata 97408578392069, Phobos
+  104118206737090.
+- Studio caches rbxasset:// textures by path: after regenerating a file, preview it under
+  a new name (I used `*_v2` copies) or it shows the old image.
+- Studio: RunChecks 12/12. Flown to Mars in Play: rotors, hover, dust devils, Phobos's
+  orbit and the return home verified. Mars builds in about 0.3 s, 786 parts.
+
+# Earlier session: 2026-10-19, planet overhaul starts with the Moon
 
 - Working tree on master (84319bc), not committed yet. Goal from the user: destinations
   that look less flat and feel alive, using the SBS planet texture pack (CC0, uploaded to

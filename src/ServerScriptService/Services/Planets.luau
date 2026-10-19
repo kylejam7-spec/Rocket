@@ -13,7 +13,9 @@
     fresnel rim, so the planet's limb shines like air. Clouds are baked into a texture
     (MeshPart textures ignore alpha, so a cloud shell would be an opaque ball). The surface
     is tagged PlanetSpin with a SpinRate (radians a second); PlanetController turns it on
-    each client. Without the mesh (it failed to load) the planet is a plain ball of
+    each client. spec.size (a Vector3) makes a lumpy moon instead of a round planet, and
+    spec.orbit = { center, axis, rate } sends it round `center` (tagged PlanetOrbit; the
+    client moves it). Without the mesh (it failed to load) the planet is a plain ball of
     spec.color.
 
     Relief, all deterministic from the caller's Random so every server builds the same:
@@ -21,9 +23,13 @@
       raised rim, into a ground part (CSG), so players walk down into them (walkable:
       precise collision; otherwise a box, for scenery). Returns the carved part (or the
       ground, unchanged, if CSG fails).
+    - Planets.subtract(ground, cutters, walkable) cuts any parts out of a ground part (a
+      canyon from boxes, say), with the same fallback.
     - Planets.mound(...) is a ball sunk until only a low cap shows: a smooth hill.
-      Planets.boulder heaps a few balls into a rounded rock.
-    - Planets.overlay(part, face, key, studs) lays a tiling texture over one face.
+      Planets.boulder heaps a few balls into a rounded rock. Planets.dune is a stretched
+      sphere sunk the same way: a long, smooth drift of sand.
+    - Planets.overlay(part, face, key, studs, transparency?, tint?) lays a tiling texture
+      over one face.
 ]]
 local AssetService = game:GetService("AssetService")
 local CollectionService = game:GetService("CollectionService")
@@ -31,12 +37,16 @@ local GeometryService = game:GetService("GeometryService")
 local Planets = {}
 
 Planets.SpinTag = "PlanetSpin"
+Planets.OrbitTag = "PlanetOrbit"
 Planets.LocalPreview = false
 Planets.SphereMesh = "rbxassetid://101153315842104"
 local TEXTURES = {
     Earth = { id = 98936869274892, file = "earth" },
     MoonRegolith = { id = 95330664069444, file = "moon_regolith" },
     MoonMaria = { id = 131900343409098, file = "moon_maria" },
+    MarsGround = { id = 112067650457008, file = "mars_ground" },
+    MarsStrata = { id = 97408578392069, file = "mars_strata" },
+    Phobos = { id = 104118206737090, file = "phobos" },
 }
 
 function Planets.texture(key)
@@ -74,37 +84,45 @@ local function sphereTemplate()
     return sphere or nil
 end
 
-local function shell(parent, name, center, diameter, props)
+-- A sphere MeshPart `size` across (a Vector3: stretched, it's an ellipsoid). Without the
+-- mesh, a ball as wide as the smallest axis.
+local function shell(parent, name, center, size, props)
     local template = sphereTemplate()
     local item
     if template then
         item = template:Clone()
         item.Name = name
         item.Anchored = true
-        item.Size = Vector3.one * diameter
+        item.Size = size
         item.CFrame = center
         for key, value in props do item[key] = value end
         item.Parent = parent
     else
         props = table.clone(props)
         props.TextureID = nil
-        props.Shape, props.Size, props.CFrame = Enum.PartType.Ball, Vector3.one * diameter, center
+        props.Shape, props.Size, props.CFrame = Enum.PartType.Ball, Vector3.one * math.min(size.X, size.Y, size.Z), center
         item = part(parent, name, props)
     end
     return decor(item)
 end
 
--- spec = { center = Vector3, diameter, texture = key, color = Color3 (tint, and the
--- fallback), tilt = degrees (axial tilt), spin = rad/s, atmosphere = Color3?,
--- glow = 0..1 (atmosphere transparency) }
+-- spec = { center = Vector3, diameter, size = Vector3? (instead of diameter), texture = key,
+-- color = Color3 (tint, and the fallback), tilt = degrees (axial tilt), spin = rad/s,
+-- atmosphere = Color3?, glow = 0..1 (atmosphere transparency), orbit = { center, axis, rate }? }
 function Planets.globe(parent, name, spec)
     local model = Instance.new("Model")
     model.Name = name
     model.Parent = parent
     local frame = CFrame.new(spec.center) * CFrame.Angles(0, 0, math.rad(spec.tilt or 0))
-    local surface = shell(model, "Surface", frame, spec.diameter, { Color = spec.color or Color3.new(1, 1, 1), TextureID = Planets.texture(spec.texture) })
+    local surface = shell(model, "Surface", frame, spec.size or Vector3.one * spec.diameter, { Color = spec.color or Color3.new(1, 1, 1), TextureID = Planets.texture(spec.texture) })
     surface:SetAttribute("SpinRate", spec.spin or 0.02)
     CollectionService:AddTag(surface, Planets.SpinTag)
+    if spec.orbit then
+        surface:SetAttribute("OrbitCenter", spec.orbit.center)
+        surface:SetAttribute("OrbitAxis", spec.orbit.axis.Unit)
+        surface:SetAttribute("OrbitRate", spec.orbit.rate)
+        CollectionService:AddTag(surface, Planets.OrbitTag)
+    end
     if spec.atmosphere then
         part(model, "Atmosphere", { Shape = Enum.PartType.Ball, Size = Vector3.one * spec.diameter * 1.06, CFrame = frame,
             Color = spec.atmosphere, Material = Enum.Material.ForceField, Transparency = spec.glow or 0 })
@@ -127,11 +145,6 @@ local function ball(center, diameter)
     return item
 end
 function Planets.carve(ground, bowls, walkable)
-    local options = {
-        CollisionFidelity = walkable and Enum.CollisionFidelity.PreciseConvexDecomposition or Enum.CollisionFidelity.Box,
-        RenderFidelity = Enum.RenderFidelity.Precise,
-        SplitApart = false,
-    }
     local lips, cutters, tallest = {}, {}, 0
     for _, bowl in bowls do
         if bowl.rim then
@@ -149,6 +162,19 @@ function Planets.carve(ground, bowls, walkable)
     local envelope = ground:Clone()
     envelope.Size += Vector3.new(tallest * 2 + 1, 0, 0)
     envelope.CFrame += Vector3.new(0, tallest + 0.5, 0)
+    return Planets.subtract(ground, cutters, walkable, lips, envelope)
+end
+
+-- Cuts `cutters` out of `ground` and returns the result in its place (or `ground` if CSG
+-- fails). `lips`/`envelope` (from carve) are merged in and clipped first. Destroys every
+-- cutter.
+function Planets.subtract(ground, cutters, walkable, lips, envelope)
+    local options = {
+        CollisionFidelity = walkable and Enum.CollisionFidelity.PreciseConvexDecomposition or Enum.CollisionFidelity.Box,
+        RenderFidelity = Enum.RenderFidelity.Precise,
+        SplitApart = false,
+    }
+    lips = lips or {}
     local temporary = {}
     local ok, result = pcall(function()
         local base = ground
@@ -164,11 +190,11 @@ function Planets.carve(ground, bowls, walkable)
         end
         return GeometryService:SubtractAsync(base, cutters, options)
     end)
-    for _, list in { lips, cutters, temporary, { envelope } } do
+    for _, list in { lips, cutters, temporary, envelope and { envelope } or {} } do
         for _, item in list do item:Destroy() end
     end
     if not ok or not result or not result[1] then
-        warn("Planets: carving craters failed, ground stays flat: " .. tostring(result))
+        warn("Planets: carving " .. ground.Name .. " failed, it stays uncut: " .. tostring(result))
         return ground
     end
     local carved = result[1]
@@ -204,13 +230,23 @@ function Planets.boulder(parent, at, size, color, material, random, collide)
     end
 end
 
-function Planets.overlay(target, face, key, studs, transparency)
+-- A long smooth drift: a sphere stretched to `length` x `width`, sunk so `height` shows,
+-- turned `yaw` radians. Scenery only (no collision).
+function Planets.dune(parent, at, length, width, height, yaw, color, material)
+    local item = shell(parent, "Dune", CFrame.new(at + Vector3.new(0, -0.2 * height, 0)) * CFrame.Angles(0, yaw, 0),
+        Vector3.new(length, height * 2.4, width), { Color = color, Material = material or Enum.Material.Sand })
+    item.CastShadow = true
+    return item
+end
+
+function Planets.overlay(target, face, key, studs, transparency, tint)
     local texture = Instance.new("Texture")
     texture.Name = key
     texture.Face = face
     texture.Texture = Planets.texture(key)
     texture.StudsPerTileU, texture.StudsPerTileV = studs, studs
     texture.Transparency = transparency or 0
+    texture.Color3 = tint or Color3.new(1, 1, 1)
     texture.Parent = target
     return texture
 end
