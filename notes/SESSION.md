@@ -1,5 +1,29 @@
 # Latest session: 2026-10-19 (5), Saturn rework, then the Black Hole
 
+- Black Hole on `claude/planet-blackhole` (stacked on Saturn). Builder 5: a glossy black
+  glass shard (Basalt went sandy under warm light) with violet fissures cut in and
+  breathing, faint violet veins (Europa's lineae texture, tinted), a rim of obsidian
+  blades and an underside of hanging blades round a lumpy core, crystal clusters, an
+  observatory scope and dish aimed at the hole, floating turning shards, violet motes.
+  The hole at (700, 330, -1100), horizon radius 210: a black Neon ball; the accretion disk
+  (tipped 12 degrees off edge on) and the lensed halo (square to the player) are nested
+  flattened sphere-mesh discs, each smaller one thicker so it bulges through the next
+  (white-hot to deep red). 26 hot clumps orbit the disk faster further in, twin jets with
+  a faint sheath, four Beam streams spiralling in (one from the shard's edge), and 140
+  debris shards wheeling about the hole (those passing near the platform only spin).
+  The sun stands exactly behind the hole (ClockTime 7.7, latitude -32, found by search),
+  so the disk is the light; Skies "BlackHole" uses the band sky with violet fill below.
+- **Server-made CSG rings drew unreliably on clients here**: the disk's MeshPart bands
+  (from `Planets.rings`) were invisible in Play, with or without anything in front, while
+  a client clone of the same part drew, and re-parenting one made it draw. Saturn's
+  identical rings drew every time. The Black Hole now uses no CSG for its disk; if
+  Saturn's rings ever go missing, that's the cause (a client-side re-parent on show, or
+  nested discs with an opaque dark Cassini band, would fix it).
+- Concurrent CSG cuts gave no speed-up, so `Planets.rings` cuts one at a time.
+- `scatter` (only the old Black Hole used it) is gone. Full destinations build: ~3.4 s.
+- Studio: RunChecks 12/12; in Play the disk, clumps (77 studs/s), debris orbits and the
+  return home all verified. No new image uploads for the Black Hole.
+
 - Saturn rework on `claude/planet-saturn` (PR #37), after the user's feedback: the ring
   plane is no longer an opaque banded floor. Three see-through layers of ring particles
   (`ring_speckle`, alpha) lie at 46, 60 and 76 below the platform, each a 4 x 4 grid of

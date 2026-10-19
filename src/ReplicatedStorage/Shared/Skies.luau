@@ -72,12 +72,18 @@ Skies.Sets = table.freeze({
             OutdoorAmbient = Color3.fromRGB(82, 82, 98), EnvironmentDiffuseScale = 0.3, EnvironmentSpecularScale = 0.5,
             ShadowSoftness = 0.1, ColorShift_Top = Color3.fromRGB(255, 238, 206), ColorShift_Bottom = Color3.fromRGB(86, 80, 66) },
     },
-    Band = {
+    -- The Black Hole: Kenney's band sky, lit from the hole itself: the sun stands exactly
+    -- behind it (hidden), warm, with a violet fill from below.
+    BlackHole = {
         faces = faces(87670783189823, 84277202571331, 136923449858016, 100857173953889, 106596975936954, 96253202128209),
+        moon = false,
+        lighting = { ClockTime = 7.7, GeographicLatitude = -32, Brightness = 2.4, Ambient = Color3.fromRGB(30, 20, 46),
+            OutdoorAmbient = Color3.fromRGB(64, 44, 96), EnvironmentDiffuseScale = 0.3, EnvironmentSpecularScale = 0.7,
+            ShadowSoftness = 0.12, ColorShift_Top = Color3.fromRGB(255, 196, 140), ColorShift_Bottom = Color3.fromRGB(96, 56, 150) },
     },
 })
 -- Which set each destination (Config.Destinations id) and the cabin use.
-Skies.ByPlace = table.freeze({ Moon = "Moon", Mars = "Mars", Europa = "Europa", Saturn = "Saturn", BlackHole = "Band", RocketCabin = "Space" })
+Skies.ByPlace = table.freeze({ Moon = "Moon", Mars = "Mars", Europa = "Europa", Saturn = "Saturn", BlackHole = "BlackHole", RocketCabin = "Space" })
 
 local LIGHTING_KEYS = { "ClockTime", "GeographicLatitude", "Brightness", "Ambient", "OutdoorAmbient",
     "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "ShadowSoftness", "ColorShift_Top", "ColorShift_Bottom" }
