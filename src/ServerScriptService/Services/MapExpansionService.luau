@@ -57,7 +57,7 @@ function Map.build(part, label, reserved)
     local pad = part("LaunchPad", Layout.Pad.center, Layout.Pad.size, Color3.fromRGB(96, 104, 118))
     pad.Material = Enum.Material.Concrete
     -- Each expansion adds a strip of ground outside the base on both sides, and a
-    -- concrete construction bay alongside the apron.
+    -- concrete construction bay alongside the apron. Returns the ground's half-width.
     local stage = 0
     return function(cycle)
         local target = math.floor((cycle - 1) / 3)
@@ -73,6 +73,7 @@ function Map.build(part, label, reserved)
             if index % 10 == 0 then task.wait() end
         end
         stage = math.max(stage, target)
+        return ground.x + stage * 80
     end
 end
 Map.carve = carve

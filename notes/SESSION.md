@@ -20,6 +20,36 @@
   master. #28 put Tier 5's FloodPole at x = 234, outside the 380-wide pad. Left for
   whoever owns the 3x rockets.
 
+## Same session, part 2: sky, perimeter, surroundings, liftoff
+
+- Skies: `tools/sky/cubemap.py` cuts the Kenney equirectangular skyboxes into Roblox's
+  six faces. Face orientation was checked in Studio with `--test`: Rt covers -X, and Up
+  and Dn are turned a quarter. Earth uses "day" (purple dusk) with a matching
+  Atmosphere haze. Destinations and the cabin use "galaxy"; the Black Hole uses "band".
+  `Shared/Skies` holds the ids, and DestinationController picks one each frame.
+  - The 18 faces were uploaded with the Studio MCP `upload_image` to k_b4nd0. They're
+    approved, but the experience (universe 10770732428, owner user 1502038929) still
+    can't load them. Studio reports "User is not authorized", so the experience needs
+    permission to use them. Until then the default sky shows.
+- Earth perimeter (`SiteSurroundsService`): hoarding (10 tall, hazard rail, posts,
+  notices) on a closed loop round the ground and the Gym District, with a 120-stud
+  invisible barrier. `fit(edge)` rebuilds it whenever map expansion widens the ground
+  (`expandMap` now returns the half-width).
+- Land beyond: a grass plain to +-5120, 0.35 under the site, so expansion strips cover
+  it; 70 low-poly trees; and 22 faceted mountains at 2600-4200 (snow caps on the big
+  ones). DestinationController hides this land more than 7000 from Earth.
+- Destinations: a rim of faceted crags just outside each fence, and a plain 3 below the
+  platform with boulders, reaching 1000 on the Moon and Mars, 650 on Europa and Saturn,
+  and 800 on the Black Hole. The Black Hole backdrop moved up 70 so its disk clears the
+  plain. Each reach clears its giant planet and covers the arrival camera's spot.
+- Liftoff: the tilted ramps stayed up when the rocket swung upright, so the hull seemed
+  to cut through them. `Build:erect` now fades the ramps, rails, posts and beacons
+  (no collision), and `beginBoarding` lifts anyone on a ramp down beside the hatch
+  (`Build:isOnRamps`). Shot 1 starts 0.1h higher, to see the pad over the hoarding. A
+  numeric check over all 5 tiers: the whole rocket stays in frame in both shots.
+- PerimeterCheck added. RunChecks: all pass except the pre-existing
+  MaterialInteractionCheck (Tier 5 FloodPole off the pad).
+
 # Earlier session: 2026-10-18 (5), touches on the Earth site
 
 - Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The

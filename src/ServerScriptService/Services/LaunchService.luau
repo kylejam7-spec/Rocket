@@ -86,10 +86,11 @@ function Launch.new(ctx)
         local definition = rocket.definition
         local tier = definition.Tier
         Cycle.deadline = workspace:GetServerTimeNow() + tier.BoardingSeconds
-        -- Lift anyone standing on the hull down beside the hatch before it swings up.
+        -- Lift anyone standing on the hull or the ramps down beside the hatch before it
+        -- swings up (the ramps retract).
         for _, player in Players:GetPlayers() do
             local root = Movement.body(player)
-            if root and root.Position.Y - boarding.Position.Y > 5 and rocketBuild:isAboard(root.Position) then
+            if root and root.Position.Y - boarding.Position.Y > 5 and (rocketBuild:isAboard(root.Position) or rocketBuild:isOnRamps(root.Position)) then
                 Movement.relocate(player, besideHatch())
             end
         end

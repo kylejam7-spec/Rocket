@@ -45,6 +45,28 @@ local function fence(parent, center, radius, height)
         })
     end
 end
+-- What surrounds a destination's platform (radius `radius`), so it reads as a place on
+-- a world rather than a disc in space: a rim of crags just outside the invisible fence,
+-- and a plain a few studs lower out to `look.reach`, strewn with boulders.
+local function surroundings(parent, center, radius, look)
+    local random = Random.new(look.seed)
+    local corner = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
+    local count = math.floor(radius * 0.42)
+    for index = 1, count do
+        local angle = (index + random:NextNumber(-0.25, 0.25)) / count * math.pi * 2
+        local size = random:NextNumber(10, 19)
+        local at = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + size * 0.35)
+        decor(parent, "RimCrag", { Size = Vector3.one * size, Color = look.crag:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.18)), Material = look.cragMaterial,
+            CFrame = CFrame.new(at - Vector3.new(0, size * 0.25, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner })
+    end
+    disc(parent, "Plain", center - Vector3.new(0, 5, 0), look.reach, 4, look.ground, look.material).CanCollide = false
+    for _ = 1, 14 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(radius + 60, look.reach * 0.8)
+        local size = random:NextNumber(14, 40)
+        decor(parent, "Boulder", { Size = Vector3.new(size * 1.4, size, size * 1.1), Color = look.crag, Material = look.cragMaterial,
+            CFrame = CFrame.new(center + Vector3.new(math.cos(angle) * distance, size * 0.15 - 3, math.sin(angle) * distance)) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), random:NextNumber(-0.3, 0.3)) })
+    end
+end
 local function sign(parent, position, facing, text, color)
     local board = make(parent, "WelcomeSign", { Size = Vector3.new(30, 7, 0.6), CFrame = CFrame.lookAt(position, position + facing), Color = color })
     local surface = Instance.new("SurfaceGui")
@@ -119,6 +141,7 @@ builders[1] = function(folder, c)
         make(folder, "LanderLeg", { Size = Vector3.new(0.6, 5, 0.6), CFrame = CFrame.new(c + Vector3.new(-18, 2.5, -16) + corner), Color = Color3.fromRGB(160, 160, 165) })
     end
     decor(folder, "Earth", { Shape = Enum.PartType.Ball, Size = Vector3.one * 160, CFrame = CFrame.new(c + Vector3.new(250, 260, -520)), Color = Color3.fromRGB(50, 120, 220) })
+    surroundings(folder, c, 75, { seed = 11, reach = 1000, ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = Color3.fromRGB(135, 135, 142), cragMaterial = Enum.Material.Slate })
     fence(folder, c, 75, 60)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -138,6 +161,7 @@ builders[2] = function(folder, c)
     for _, w in { Vector3.new(3, 0, 3), Vector3.new(-3, 0, 3), Vector3.new(3, 0, -3), Vector3.new(-3, 0, -3) } do
         make(folder, "RoverWheel", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 2.4, 2.4), CFrame = CFrame.new(c + Vector3.new(24, 1.2, -18) + w) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(50, 50, 55) })
     end
+    surroundings(folder, c, 75, { seed = 12, reach = 1000, ground = Color3.fromRGB(180, 84, 48), material = Enum.Material.Sand, crag = Color3.fromRGB(140, 64, 42), cragMaterial = Enum.Material.Rock })
     fence(folder, c, 75, 45)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -171,6 +195,7 @@ builders[3] = function(folder, c)
     local facing = (c - jupiter).Unit
     decor(folder, "GreatRedSpot", { Shape = Enum.PartType.Ball, Size = Vector3.one * 130,
         CFrame = CFrame.new(jupiter + facing * 405 + Vector3.new(0, -150, 0)), Color = Color3.fromRGB(200, 80, 50) })
+    surroundings(folder, c, 75, { seed = 13, reach = 650, ground = Color3.fromRGB(205, 220, 235), material = Enum.Material.Glacier, crag = Color3.fromRGB(185, 215, 240), cragMaterial = Enum.Material.Ice })
     fence(folder, c, 75, 70)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -190,6 +215,7 @@ builders[4] = function(folder, c)
         local size = random:NextNumber(6, 18)
         decor(folder, "FloatingRock", { Size = Vector3.one * size, CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(30, 90), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0), Color = Color3.fromRGB(190, 180, 160), Material = Enum.Material.Rock })
     end)
+    surroundings(folder, c, 65, { seed = 14, reach = 650, ground = Color3.fromRGB(185, 175, 150), material = Enum.Material.Rock, crag = Color3.fromRGB(220, 230, 240), cragMaterial = Enum.Material.Ice })
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end
@@ -210,7 +236,8 @@ builders[5] = function(folder, c)
             CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(20, 110), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0),
             Color = Color3.fromRGB(40, 32, 60), Material = Enum.Material.Basalt })
     end)
-    local hole = c + Vector3.new(0, 260, -1100)
+    -- High enough that the tilted disk's near rim stays above the plain round the shard.
+    local hole = c + Vector3.new(0, 330, -1100)
     decor(folder, "AccretionDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 1500, 1500),
         CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(25), 0, math.rad(90)), Color = Color3.fromRGB(255, 130, 40), Material = Enum.Material.Neon, Transparency = 0.3 })
     decor(folder, "InnerDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.4, 820, 820),
@@ -218,6 +245,7 @@ builders[5] = function(folder, c)
     decor(folder, "LensedArc", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 900, 900),
         CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(80), 0, math.rad(90)), Color = Color3.fromRGB(255, 170, 80), Material = Enum.Material.Neon, Transparency = 0.45 })
     decor(folder, "EventHorizon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 500, CFrame = CFrame.new(hole), Color = Color3.new(0, 0, 0), Material = Enum.Material.Neon })
+    surroundings(folder, c, 70, { seed = 15, reach = 800, ground = Color3.fromRGB(22, 18, 32), material = Enum.Material.Basalt, crag = Color3.fromRGB(40, 32, 60), cragMaterial = Enum.Material.Basalt })
     fence(folder, c, 70, 60)
     return ground, Vector3.new(0, 0, 20)
 end
