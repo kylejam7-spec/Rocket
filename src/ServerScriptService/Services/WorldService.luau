@@ -340,10 +340,32 @@ function World.new(ctx)
     for tier, place in service.destinations do
         for _, kind in { "bench", "treadmill" } do
             local treadmill = kind == "treadmill"
-            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(255, 190, 40))
+            -- Dark plate on the gold-trimmed mat (TierColor stays gold for the signs).
+            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(74, 78, 92))
             equipment(base, treadmill)
+            base.Material = Enum.Material.DiamondPlate
             base:SetAttribute("Destination", place.id)
             base:SetAttribute("TierColor", Color3.fromRGB(255, 190, 40))
+            -- An outpost mat under it: rubber with a gold trim, posts at the back corners
+            -- carrying lamps (decor, no collision).
+            local ground = place.gym[kind] - Vector3.new(0, 1, 0)
+            local mat = part("OutpostMat", ground + Vector3.new(0, 0.06, 0), Vector3.new(12, 0.12, 14), Color3.fromRGB(46, 50, 62))
+            mat.Material, mat.CanCollide, mat.CanQuery, mat.CanTouch = Enum.Material.Rubber, false, false, false
+            Planets.overlay(mat, Enum.NormalId.Top, "GymFloor", 10, 0.3)
+            for _, edge in { { Vector3.new(0, 0, 6.7), Vector3.new(12, 0.16, 0.6) }, { Vector3.new(0, 0, -6.7), Vector3.new(12, 0.16, 0.6) },
+                { Vector3.new(5.7, 0, 0), Vector3.new(0.6, 0.16, 14) }, { Vector3.new(-5.7, 0, 0), Vector3.new(0.6, 0.16, 14) } } do
+                local trim = part("OutpostTrim", ground + Vector3.new(0, 0.08, 0) + edge[1], edge[2], Color3.fromRGB(255, 190, 40))
+                trim.Material, trim.CanCollide, trim.CanQuery, trim.CanTouch = Enum.Material.Neon, false, false, false
+            end
+            for _, x in { -5.4, 5.4 } do
+                local post = part("OutpostPost", ground + Vector3.new(x, 3, 6.4), Vector3.new(0.4, 6, 0.4), Color3.fromRGB(46, 50, 62))
+                post.Material, post.CanCollide = Enum.Material.Metal, false
+                local lamp = part("OutpostLamp", ground + Vector3.new(x, 6.2, 6.4), Vector3.new(0.8, 0.8, 0.8), Color3.fromRGB(255, 190, 40))
+                lamp.Shape, lamp.Material, lamp.CanCollide = Enum.PartType.Ball, Enum.Material.Neon, false
+                local glow = Instance.new("PointLight")
+                glow.Color, glow.Range, glow.Brightness = Color3.fromRGB(255, 210, 140), 12, 1
+                glow.Parent = lamp
+            end
             local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
             table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = 2 * bonus * place.reward, required = 0 })
