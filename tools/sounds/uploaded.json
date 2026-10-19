@@ -76,6 +76,48 @@
     },
     "sha256": "d3e6c28510c5f612e7f5a1c0786ba7733bde63418f08c86806a09a43527f556d"
   },
+  "music/earth/ode-to-forgetting": {
+    "assetId": "80999109764444",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "2c6d14017692199c4b6b936e42fe79e7d7ad1b1a5918f1d951a72bd7adf055c7"
+  },
+  "music/earth/tokyo-sunset": {
+    "assetId": "85369291069099",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "a20385a3791fbd72285a0675168e09be337ca3e029c6cf16e45fcf19ba6fb3da"
+  },
+  "music/earth/when-time-called-me-darling": {
+    "assetId": "136612848114541",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "e2da3fae77b7100a8277949576fc7ba092d20c5aa3442c7710a899e5b89b0614"
+  },
+  "music/space/birds": {
+    "assetId": "98428178862951",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "6a9c555ca068e4deb0a7077d9bbb499cc868a47bc841caa73b5db2b45cf392fb"
+  },
+  "music/space/dreamshifter": {
+    "assetId": "94578718167875",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "1c815f121f8406b1977e93da39337b9b450114811b4cc965d0d17e4a19893784"
+  },
+  "music/space/theta-frequency": {
+    "assetId": "91389748859080",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "a58386422bddb888098bcc178ea4f0b5dce2a568593a43496b081eb9084be026"
+  },
   "pet/arrive": {
     "assetId": "121500277316329",
     "creator": {

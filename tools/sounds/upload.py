@@ -45,7 +45,7 @@ def upload(path, cue, creator, key):
     meta = {
         "assetType": "Audio",
         "displayName": "Rocket " + cue.replace("/", " "),
-        "description": "Rocket sound effect (Kenney, CC0)",
+        "description": "Rocket music (HoliznaCC0, CC0)" if cue.startswith("music/") else "Rocket sound effect (Kenney, CC0)",
         "creationContext": {"creator": creator},
     }
     with open(path, "rb") as f:

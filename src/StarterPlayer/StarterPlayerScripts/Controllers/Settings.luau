@@ -5,7 +5,7 @@
 -- them with Settings.group(name). Session-only for now (persistence is off).
 local SoundService = game:GetService("SoundService")
 local Settings = {}
-local values = { music = 0.6, sfx = 0.8, reducedEffects = false }
+local values = { music = 0.5, sfx = 0.8, reducedEffects = false }
 local listeners = {}
 
 function Settings.group(name)

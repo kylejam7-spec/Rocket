@@ -11,3 +11,4 @@ All of these are CC0 (public domain), so no credit is required.
 | Ultimate Monsters | Alien pets (`PetModels.rbxm`) | Quaternius | https://quaternius.com | CC0 | 2026-10-18 |
 | Pickup notification (videogame UI sound) | Pet reveal fanfare (`tools/sounds`) | nomagician | https://freesound.org/s/833635/ | CC0 | 2026-10-18 |
 | Planet Texture Pack | Destination planets and ground overlays (`Services/Planets`); built by `tools/planets/textures.py` | Screaming Brain Studios | https://screamingbrainstudios.itch.io | CC0 | 2026-10-19 |
+| Lofi tracks by HoliznaCC0 (Ode To Forgetting, Tokyo Sunset, When Time Called Me Darling, Birds, Dreamshifter, Theta Frequency) | Earth and space music (`MusicController`); built by `tools/sounds/music.py` | HoliznaCC0 | Free Music Archive (artist HoliznaCC0) | CC0 | 2026-10-19 |

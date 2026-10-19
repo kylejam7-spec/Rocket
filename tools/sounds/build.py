@@ -10,7 +10,7 @@ encoders pad the start with up to ~50 ms of silence.
     python tools/sounds/build.py --studio   # also copy them into Studio's content
                                             # folder for local playtests (see Sfx.luau)
 
-Built files whose cue is no longer in MANIFEST are deleted.
+Built files whose cue is no longer in MANIFEST are deleted (music/ is tools/sounds/music.py's).
 Needs ffmpeg on PATH and numpy.
 """
 import argparse
@@ -273,7 +273,7 @@ def main():
     for folder, _, files in os.walk(OUTPUT):
         for name in files:
             cue = os.path.relpath(os.path.join(folder, name), OUTPUT)[:-4].replace(os.sep, "/")
-            if name.endswith(".ogg") and cue not in MANIFEST:
+            if name.endswith(".ogg") and cue not in MANIFEST and not cue.startswith("music/"):
                 os.remove(os.path.join(folder, name))
                 print("removed", cue)
     if args.studio:
@@ -282,7 +282,8 @@ def main():
             sys.exit("No Roblox Studio install found under %LOCALAPPDATA%/Roblox/Versions")
         target = os.path.join(content, "rocket")
         shutil.rmtree(target, ignore_errors=True)
-        shutil.copytree(OUTPUT, target)
+        # Not the source MP3s that sit beside the built music.
+        shutil.copytree(OUTPUT, target, ignore=shutil.ignore_patterns("*.mp3"))
         print("Copied to", target)
 
 
