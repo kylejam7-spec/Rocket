@@ -24,7 +24,7 @@ return function()
     local keepOut = {
         { "lane", -Layout.Lane.width / 2 - 2, Layout.Lane.width / 2 + 2, Layout.Lane.z0, Layout.Lane.z1 },
         { "spawn", Layout.Spawn.X - 14, Layout.Spawn.X + 14, Layout.Spawn.Z - 14, Layout.Spawn.Z + 14 },
-        { "launch complex", -245, 245, Layout.Apron.z0, Layout.Apron.z1 },
+        { "launch complex", -Layout.Pad.size.X / 2, Layout.Pad.size.X / 2, Layout.Apron.z0, Layout.Apron.z1 },
     }
     for _, hut in { Layout.Upgrades, Layout.UfoShop } do
         table.insert(keepOut, { "forecourt hut", hut.X - 16, hut.X + 16, hut.Z - 16, hut.Z + 16 })

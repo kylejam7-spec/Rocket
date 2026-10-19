@@ -296,7 +296,7 @@ end
 
 -- Kenney props: { model, x, z, yaw (degrees), studs per kit metre, solid }. They fill
 -- the open ground outside the stations and along the apron's edges (|x| >= 250, clear
--- of Tier 5's launch complex at |x| <= 240), so none is on a walk players need.
+-- of the launch pad at |x| <= 245), so none is on a walk players need.
 Dressing.Props = {
     -- Recycling line beside the Salvage Yard: conveyors out of the yard, under a
     -- hopper, into the crushers; skips of sorted rock and crates of salvage by them.
