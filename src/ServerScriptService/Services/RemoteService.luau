@@ -1,4 +1,5 @@
--- Owns the Remotes folder. ExitTraining is added by TrainingService.
+-- Owns the Remotes folder. ExitTraining is added by TrainingService. ClientReady: the
+-- loading screen is done, spawn me (Main).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local Remote = {}
@@ -7,7 +8,7 @@ function Remote.new()
     local folder = Instance.new("Folder")
     folder.Name = "Remotes"
     local service = { folder = folder }
-    for _, name in { "StateUpdated", "RequestState", "Feedback", "MaterialHold", "DiscardCargo" } do
+    for _, name in { "StateUpdated", "RequestState", "Feedback", "MaterialHold", "DiscardCargo", "ClientReady" } do
         local event = Instance.new("RemoteEvent")
         event.Name = name
         event.Parent = folder

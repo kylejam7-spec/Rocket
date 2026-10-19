@@ -2,6 +2,12 @@
 -- others through it at call time, so order matters for construction, not for calls.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+-- Characters spawn once the client's loading screen (ReplicatedFirst) reports the world
+-- and its assets are in (ClientReady), so nobody drops through ground that hasn't
+-- reached them yet. Set before anything yields, so the first player waits too.
+Players.CharacterAutoLoads = false
+-- A client that never reports (it errored, say) spawns after this many seconds anyway.
+local LOAD_TIMEOUT = 45
 local Config = require(ReplicatedStorage.Shared.Config)
 local Services = script.Parent.Services
 local Profiles = require(Services.ProfileService)
@@ -53,9 +59,35 @@ ctx.Training = require(Services.TrainingService).new({
     stations = ctx.World.stations,
 })
 
+-- Spawns `player` if they have no character (ready, timeout and respawn all land here).
+local spawning = {}
+local function spawnCharacter(player)
+    if spawning[player] or player.Character or player.Parent ~= Players then return end
+    spawning[player] = true
+    local ok, err = pcall(player.LoadCharacter, player)
+    spawning[player] = nil
+    if not ok then warn("Rocket: couldn't spawn", player.UserId, err) end
+end
+ctx.Remote.ClientReady.OnServerEvent:Connect(spawnCharacter)
+-- The world is built: loading screens wait for this before preloading.
+ctx.World.world:SetAttribute("Built", true)
+
 local function joined(player)
     ctx.Stats.attach(player)
+    task.delay(LOAD_TIMEOUT, spawnCharacter, player)
     local function characterAdded(character)
+        -- Without CharacterAutoLoads there's no automatic respawn either.
+        local humanoid = character:WaitForChild("Humanoid", 10)
+        if humanoid then
+            humanoid.Died:Once(function()
+                task.delay(Players.RespawnTime, function()
+                    if player.Character == character then
+                        player.Character = nil
+                        spawnCharacter(player)
+                    end
+                end)
+            end)
+        end
         local root = character:WaitForChild("HumanoidRootPart", 10)
         if not root or player.Character ~= character then return end
         ctx.Movement.track(player, root, 1, 1)
