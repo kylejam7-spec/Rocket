@@ -50,6 +50,26 @@
 - PerimeterCheck added. RunChecks: all pass except the pre-existing
   MaterialInteractionCheck (Tier 5 FloodPole off the pad).
 
+## Same session, part 5: launch and landing animations (2026-10-19)
+
+- Missing flames: particle-only exhaust was too small to see on the 3x rockets and
+  disappears on lower graphics. Each engine now gets a flame plume made of parts: an
+  outer orange flame and a pale core, each three tapering Neon segments that flicker.
+  Plumes are sized to the nozzle (capped at a quarter of the rocket's height), plus the
+  particles. `burn(power, reach)` drives them; landing flames never reach past the
+  ground. Engine lights got smaller (they washed the boosters white with bloom).
+- Rockets disappearing: the cinematics never set `Camera.Focus`, so it stayed on the
+  passenger far away in the cabin. Roblox draws and loads the world around Focus, so
+  the launch pad and landing site drew late or dropped out. Focus now follows the shot.
+  Both launch shots are closer (about one rocket height off), and the wide shot rises at
+  0.82 of the climb. Simulated for every tier: nose at 12% and flame tips at 86% of the
+  screen, never off it.
+- Landing shot: drop 80 + 0.9h, camera 1.1h + 40 back (at most 220, inside every
+  destination's mountain ring), riding down at 0.6 of the descent and aimed at 0.35h.
+  For Tiers 4-5 the lens widens to as much as 88 degrees, restored after the cutscene.
+  Measured live on Tier 5: the whole rocket and its flames stay between 18% and 91% of
+  the screen. Rays from the camera to the rocket hit nothing on any destination.
+
 ## Same session, part 4: closed horizons, accurate gym badges, signs, launch fixes
 
 - Horizons: `Mountains.ring` builds continuous rings of faceted peaks (neighbours'
