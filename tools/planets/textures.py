@@ -24,6 +24,10 @@ Outputs:
   jupiter.png        Jupiter for Europa's sky (SBS Gaseous) with the Great Red Spot painted in.
   io.png             Io (SBS Arid) pushed to sulfur yellow, with dark volcanic spots.
   europa_ice.png     A seamless 512x512 overlay of reddish lineae and fine cracks for Europa's ice.
+  saturn.png, enceladus.png, titan.png  Saturn (SBS Gaseous, warmed, ring shadow) and two moons.
+  ring_speckle.png   One see-through layer of ring particles in bands, for the ring plane round the platform.
+  ring_rock.png      A seamless overlay of frost and bare rock for the ring chunk underfoot.
+  saturn_sky_<Face>.png  Stars all round, and the rings edge on as a glowing line on the horizon.
 
 Upload each as an Image and put the ids in ServerScriptService/Services/Planets.luau
 (TEXTURES). Planets.LocalPreview = true uses the --studio copies instead, for
@@ -328,6 +332,130 @@ def europa_ice(rng):
     return Image.fromarray(rgba, "RGBA")
 
 
+def saturn():
+    """Saturn: the pack's pale banded gas giant, warmed toward butterscotch and softened,
+    with the rings' shadow lying across it just south of the equator (a soft dark band
+    and a fainter one; the planet only spins about its pole, so they stay put)."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Gaseous", "Gaseous_13-1024x512.png")).convert("RGB")).astype(float)
+    grey = image.mean(axis=2, keepdims=True)
+    warm = grey * np.array([1.08, 0.94, 0.70]) * 0.9 + image * 0.25
+    mean = warm.mean(axis=(0, 1))
+    image = mean + (warm - mean) * 0.8 + 18
+    h = image.shape[0]
+    lat = (0.5 - (np.arange(h) + 0.5) / h) * 180
+    shade = 1 - 0.45 * np.exp(-((lat + 13) / 2.6) ** 2) - 0.2 * np.exp(-((lat + 19) / 1.6) ** 2)
+    return Image.fromarray(np.clip(image * shade[:, None, None], 0, 255).astype(np.uint8), "RGB")
+
+
+def enceladus(rng):
+    """Enceladus: the pack's Snowy map brightened nearly white, with blue tiger stripes
+    across the south pole."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Snowy", "Snowy_02-1024x512.png")).convert("RGB")).astype(float)
+    grey = image.mean(axis=2, keepdims=True)
+    base = 200 + (grey - grey.mean()) * 0.5 + np.zeros_like(image)
+    h, w = base.shape[:2]
+    ys, xs = np.mgrid[0:h, 0:w]
+    for index in range(4):
+        y0 = h * (0.80 + index * 0.035)
+        line = y0 + np.sin(xs / w * 2 * np.pi * 2 + index) * h * 0.012
+        stripe = np.exp(-((ys - line) / 2.5) ** 2)[..., None]
+        base = base * (1 - stripe * 0.7) + np.array((90, 160, 210)) * stripe * 0.7
+    return Image.fromarray(np.clip(base, 0, 255).astype(np.uint8), "RGB")
+
+
+def titan():
+    """Titan: hazy orange, almost featureless (the pack's Dusty map, washed out)."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Dusty", "Dusty_02-1024x512.png")).convert("RGB")).astype(float)
+    grey = image.mean(axis=2, keepdims=True)
+    tinted = np.array((214, 150, 70)) * (0.85 + (grey - grey.mean()) / 255 * 0.3)
+    return Image.fromarray(np.clip(tinted, 0, 255).astype(np.uint8), "RGB")
+
+
+def ring_bands(v, rng_seed=41):
+    """Brightness of Saturn's rings across their width, v in 0..1 (repeats): many fine
+    ringlets of different brightness, and a few dark gaps."""
+    rng = np.random.default_rng(rng_seed)
+    total = np.zeros_like(v, dtype=float)
+    for k in range(1, 40):
+        total += rng.uniform(-1, 1) / k ** 0.8 * np.sin(2 * np.pi * (k * v + rng.uniform()))
+    total = (total - total.min()) / (np.ptp(total) + 1e-6)
+    gaps = np.ones_like(total)
+    for centre, width in ((0.23, 0.012), (0.61, 0.03), (0.86, 0.008)):
+        d = np.abs(((v - centre + 0.5) % 1) - 0.5)
+        gaps *= 1 - 0.85 * np.exp(-(d / width) ** 2)
+    return (0.45 + 0.55 * total ** 1.3) * gaps
+
+
+def ring_speckle(rng):
+    """One layer of the ring plane round the platform: ice particles on a clear ground
+    (alpha), dense in the bright ringlets and sparse in the gaps (bands down the image,
+    toward and away from Saturn), with a faint haze of the same bands. Laid on three
+    see-through sheets at different heights and scales, drifting at different speeds,
+    they read as a deep swarm with space showing between. Tiles."""
+    size = 512
+    v = np.arange(size) / size
+    bands = ring_bands(v)[:, None] * np.ones((1, size))
+    dots = rng.random((size, size))
+    near = dots > 1 - 0.035 * bands
+    big = rng.random((size, size)) > 0.9985
+    alpha = np.where(near, 0.9, 0) + np.where(big, 1, 0)
+    # Grow the big particles to a few pixels so they hold up at a distance.
+    grown = alpha.copy()
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1)):
+        grown = np.maximum(grown, np.roll(np.roll(np.where(big, 1.0, 0), dx, 1), dy, 0))
+    haze = 0.07 * bands * (fbm(size, size, 8, 8, 3, rng) * 0.6 + 0.7)
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    tone = 225 + 30 * rng.random((size, size))
+    rgba[..., 0] = np.clip(tone, 0, 255)
+    rgba[..., 1] = np.clip(tone - 6, 0, 255)
+    rgba[..., 2] = np.clip(tone - 16, 0, 255)
+    rgba[..., 3] = np.clip(np.maximum(grown, haze) * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def ring_rock(rng):
+    """Seamless overlay for the ring chunk underfoot: frost crust with patches of bare dark
+    rock and glinting ice grains."""
+    size = 512
+    patches = fbm(size, size, 5, 5, 5, rng)
+    dark = smoothstep(0.55, 0.72, patches) * 0.45
+    light = smoothstep(0.42, 0.25, patches) * 0.25
+    grains = rng.random((size, size)) ** 30
+    light = np.clip(light + grains * 0.8, 0, 1)
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    lighter = light > dark
+    rgba[..., 0] = np.where(lighter, 245, 60)
+    rgba[..., 1] = np.where(lighter, 250, 62)
+    rgba[..., 2] = np.where(lighter, 255, 72)
+    rgba[..., 3] = np.clip(np.where(lighter, light - dark, dark - light) * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def saturn_sky(rng):
+    """An equirectangular sky for the rings: stars all round, a faint band of the galaxy,
+    and the rings seen edge on as a glowing line along the horizon."""
+    w, h = 2048, 1024
+    lon = ((np.arange(w) + 0.5) / w - 0.5) * 2 * np.pi
+    lat = (0.5 - (np.arange(h) + 0.5) / h) * np.pi
+    lon, lat = np.meshgrid(lon, lat)
+    # Direction: longitude 0 at -Z, growing toward +X (as cubemap.face reads it).
+    dx, dy, dz = np.cos(lat) * np.sin(lon), np.sin(lat), -np.cos(lat) * np.cos(lon)
+    rgb = np.zeros((h, w, 3))
+    rgb[:] = (6, 7, 14)
+    stars = rng.random((h, w))
+    rgb += (stars > 0.9993)[..., None] * rng.uniform(120, 255, (h, w))[..., None]
+    rgb += (stars > 0.99985)[..., None] * 120
+    galaxy = np.exp(-((dy * 0.8 + dx * 0.6) / 0.18) ** 2) * (fbm(w, h, 12, 6, 4, rng) * 0.8 + 0.2)
+    rgb += galaxy[..., None] * np.array((40, 36, 56))
+    # Edge on, the rings shrink to a bright line on the horizon with a soft glow either
+    # side, strongest toward Saturn (-Z) and fading round to the far side. Below it the
+    # stars carry on: there's open space under the ring layers.
+    toward = 0.65 + 0.35 * np.clip(-dz, 0, 1)
+    line = np.exp(-(dy / 0.004) ** 2) * 1.0 + np.exp(-(dy / 0.03) ** 2) * 0.35 + np.exp(-(dy / 0.09) ** 2) * 0.12
+    rgb += (line * toward)[..., None] * np.array((236, 226, 206))
+    return np.clip(rgb, 0, 255).astype(np.uint8)
+
+
 def preview(images):
     tiles = []
     for name, image in images.items():
@@ -379,10 +507,15 @@ def main():
         "jupiter": jupiter(np.random.default_rng(31)),
         "io": io(np.random.default_rng(32)),
         "europa_ice": europa_ice(np.random.default_rng(33)),
+        "saturn": saturn(),
+        "enceladus": enceladus(np.random.default_rng(42)),
+        "titan": titan(),
+        "ring_speckle": ring_speckle(np.random.default_rng(43)),
+        "ring_rock": ring_rock(np.random.default_rng(44)),
     }
-    sky = mars_sky(np.random.default_rng(23))
-    for key, axes in cubemap.FACES.items():
-        images["mars_sky_" + key] = Image.fromarray(cubemap.face(sky, *axes))
+    for name, sky in (("mars_sky", mars_sky(np.random.default_rng(23))), ("saturn_sky", saturn_sky(np.random.default_rng(45)))):
+        for key, axes in cubemap.FACES.items():
+            images[name + "_" + key] = Image.fromarray(cubemap.face(sky, *axes))
     for name, image in images.items():
         image.save(os.path.join(OUT, name + ".png"))
         print("wrote", os.path.join(OUT, name + ".png"))
@@ -390,7 +523,7 @@ def main():
             os.makedirs(os.path.join(studio, "rocket-planets"), exist_ok=True)
             shutil.copy(os.path.join(OUT, name + ".png"), os.path.join(studio, "rocket-planets", name + ".png"))
     if args.preview:
-        preview({k: v for k, v in images.items() if not k.startswith("mars_sky_")}).save(os.path.join(OUT, "preview.png"))
+        preview({k: v for k, v in images.items() if "_sky_" not in k}).save(os.path.join(OUT, "preview.png"))
 
 
 if __name__ == "__main__":

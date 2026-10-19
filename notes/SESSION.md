@@ -1,4 +1,55 @@
-# Latest session: 2026-10-19 (3), Europa
+# Latest session: 2026-10-19 (5), Saturn rework, then the Black Hole
+
+- Saturn rework on `claude/planet-saturn` (PR #37), after the user's feedback: the ring
+  plane is no longer an opaque banded floor. Three see-through layers of ring particles
+  (`ring_speckle`, alpha) lie at 46, 60 and 76 below the platform, each a 4 x 4 grid of
+  invisible 2048-stud tiles (out to the horizon), scaled 256/512/1024, their textures
+  drifting at different speeds (tag TextureDrift, PlanetController). The sky shows the
+  rings edge on as a glowing horizon line with stars below.
+- Saturn now hangs fully above the horizon at (-1500, 400, -1700), 41 degrees left of the
+  arrival so a landed Tier 4-5 rocket doesn't hide it, its pole tipped 28 degrees toward
+  the player so `Planets.rings` (six annuli cut by CSG from the flattened sphere mesh:
+  smooth, unlike CSG cylinders) open into a wide ellipse. The rings are dark Neon, since
+  the low sun left SmoothPlastic rings a dull grey-brown. The ring shadow is painted onto
+  the Saturn texture. Each ring band costs about 0.45 s of CSG, so Saturn builds in
+  about 2 s.
+- Tried and dropped: one annulus wearing a radial ringlet texture (the cut keeps the
+  sphere's UVs, latitude = radius) came out stair-stepped: too few latitude rows.
+- `Planets.mound` is now a sunk ellipsoid of the sphere mesh: big sunk Ball parts showed
+  as flat polygons (Saturn's frost drifts looked like white squares). This smooths the
+  crater walls, talus and drifts on every destination.
+- New uploads needing access: Saturn 72973342803379, ring speckle 118246725794362, sky Bk
+  96836179595217, Dn 70901967949717, Ft 111141752494092, Lf 94514358915591, Rt
+  117806823065119 (Up unchanged). `ring_sheet` is gone.
+
+# Earlier session: 2026-10-19 (4), Saturn's Rings
+
+- `claude/planet-saturn`, stacked on Europa (PR #36). Europa's images have access.
+- Saturn (`DestinationService` builder 4): the platform is one big ring particle:
+  frosted rock (ring_rock overlay) over a lumpy underside of ellipsoids (`Planets.blob`)
+  that bulges past the edge, with a lip of frosted boulders. On it: crystal clusters with
+  breathing cores, frost drifts, ice lumps, a lighthouse whose beam sweeps two ways
+  (spinning neon bar with spotlights), an ice harvester with a sled of glowing blocks,
+  and a crew pod tethered to pegs. No plain or mountains: the ring plane is four
+  2048-stud tiles 60 below the top (`RING_PLANE`), a dark field crowded with ice
+  particles in bands, and the sky (`saturn_sky`) carries the same bands on past their
+  edge (its plane is darker than the sheet's texture, since the sky is never shaded). 150
+  ice chunks of every size float all round, sliding along X faster the further they
+  are from z = 0 (tag RingDrift, wrapping within 1400 of the centre) and tumbling; ones
+  near the landing line stay below the platform. Saturn (1700 across) rises out of the
+  ring plane beyond the landing site, Enceladus (tiger stripes) orbits across the sky,
+  and hazy Titan hangs far off. Glitter drifts over the platform.
+- `orbitingMoon` (shared by Mars and Saturn) and `isClear`'s edge argument moved to
+  module level; the unused `band` helper is gone.
+- Uploads needing experience access: Saturn 92757706712119, Enceladus 84183449209134,
+  Titan 95534044250868, ring sheet 79775712039680, ring rock 97315882149044; sky Bk
+  128681954064565, Dn 121094191642894, Ft 114895300719628, Lf 117925321081193, Rt
+  73948970098985, Up 125914376227514. (Earlier uploads of the sheet and sky, 875545...
+  and 940106.../126629.../839926.../816123.../815170..., are unused.)
+- Studio: RunChecks 12/12. In Play: chunks drift at their set speed, the beam sweeps,
+  Saturn behind the landed rocket, and Earth's lighting restored on the way home.
+
+# Earlier session: 2026-10-19 (3), Europa
 
 - Moon and Mars pushed as PRs #34 (to master) and #35 (to `claude/planet-moon`). Europa
   is `claude/planet-europa`, stacked on Mars. The imported sphere model was removed
