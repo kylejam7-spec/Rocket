@@ -1,5 +1,8 @@
 -- What keeps a destination from feeling frozen, all local to this client:
--- - Planets (and their cloud shells) tagged PlanetSpin turn at their SpinRate.
+-- - Parts tagged PlanetSpin (planets, rotor blades) turn at their SpinRate; those tagged
+--   PlanetOrbit also travel round their OrbitCenter about OrbitAxis at OrbitRate.
+-- - Models tagged Hover bob up and down (Amplitude studs, every Period seconds).
+-- - Dust devils (tag DustDevil) wander within Roam studs of their Home.
 -- - Lights tagged Blinker flash on and off every Period seconds.
 -- - A destination folder with a Meteors attribute gets a shooting star across its sky
 --   now and then while this player's camera is there.
@@ -17,13 +20,35 @@ local PlanetController = {}
 local METEOR_DISTANCE = 2500
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
 
-local function spinAndBlink(dt)
+local hoverBase = setmetatable({}, { __mode = "k" })
+local function animate(dt)
     for _, part in CollectionService:GetTagged("PlanetSpin") do
         if part:IsDescendantOf(workspace) then
             part.CFrame *= CFrame.Angles(0, (part:GetAttribute("SpinRate") or 0) * dt, 0)
         end
     end
+    for _, part in CollectionService:GetTagged("PlanetOrbit") do
+        if part:IsDescendantOf(workspace) then
+            local center = part:GetAttribute("OrbitCenter")
+            local step = CFrame.fromAxisAngle(part:GetAttribute("OrbitAxis"), part:GetAttribute("OrbitRate") * dt)
+            part.CFrame = CFrame.new(center + step * (part.Position - center)) * part.CFrame.Rotation
+        end
+    end
     local now = os.clock()
+    for _, model in CollectionService:GetTagged("Hover") do
+        if model:IsDescendantOf(workspace) and model.PrimaryPart then
+            hoverBase[model] = hoverBase[model] or model:GetPivot()
+            local period = model:GetAttribute("Period") or 3
+            model:PivotTo(hoverBase[model] + Vector3.new(0, math.sin(now / period * math.pi * 2) * (model:GetAttribute("Amplitude") or 1), 0))
+        end
+    end
+    for _, part in CollectionService:GetTagged("DustDevil") do
+        if part:IsDescendantOf(workspace) then
+            local home, roam = part:GetAttribute("Home"), part:GetAttribute("Roam") or 100
+            local phase = home.X * 0.013 + home.Z * 0.007
+            part.CFrame = CFrame.new(home + Vector3.new(math.sin(now * 0.05 + phase) * roam, 0, math.sin(now * 0.037 + phase * 2) * roam * 0.8))
+        end
+    end
     for _, part in CollectionService:GetTagged("Blinker") do
         if part:IsDescendantOf(workspace) then
             local period = part:GetAttribute("Period") or 1.5
@@ -158,7 +183,7 @@ local function footDust(character)
 end
 
 function PlanetController.start()
-    RunService.RenderStepped:Connect(spinAndBlink)
+    RunService.RenderStepped:Connect(animate)
     task.spawn(meteors)
     local player = Players.LocalPlayer
     if player.Character then task.spawn(footDust, player.Character) end

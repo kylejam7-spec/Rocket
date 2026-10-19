@@ -16,6 +16,11 @@ Outputs:
                      part's Slate material shows through.
   moon_maria.png     A seamless 512x512 overlay of broad dark patches (lunar seas) for the
                      plain round the platform, tiled large so the ground isn't one grey.
+                     Tinted (Texture.Color3), it also darkens Mars's plain in patches.
+  mars_ground.png    A seamless 512x512 overlay for Mars's sand: wind ripples, pebbles, mottling.
+  mars_strata.png    Opaque layered rock beds for the canyon walls (seamless).
+  phobos.png         Phobos and Deimos (the pack's Barren map, greyed to dusty brown).
+  mars_sky_<Face>.png  Mars's daytime sky, cut into the six faces a Roblox Sky takes.
 
 Upload each as an Image and put the ids in ServerScriptService/Services/Planets.luau
 (TEXTURES). Planets.LocalPreview = true uses the --studio copies instead, for
@@ -29,6 +34,9 @@ import sys
 
 import numpy as np
 from PIL import Image
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sky"))
+import cubemap  # noqa: E402  (tools/sky: the face projection the skies use)
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PACK = os.path.join(ROOT, "assets", "models-textures", "sbs_-_planet_texture_pack_-_1024x512", "Planet Textures 1024x512")
@@ -148,6 +156,104 @@ def moon_maria(rng):
     return Image.fromarray(rgba, "RGBA")
 
 
+def mars_ground(rng):
+    """Seamless overlay for Mars's sand: wind ripples (bands bent by noise), scattered
+    pebbles with a shadow on the side away from the sun, and soft mottling."""
+    size = 512
+    dark = np.zeros((size, size))
+    light = np.zeros((size, size))
+    ys, xs = np.mgrid[0:size, 0:size]
+    warp = fbm(size, size, 4, 4, 4, rng)
+    # Ripples: 16 crests across the tile (so it wraps), wavering with the noise.
+    phase = (ys / size * 16 + (warp - 0.5) * 3.0) * 2 * np.pi
+    ripple = np.sin(phase)
+    light += np.clip(ripple, 0, 1) ** 3 * 0.14
+    dark += np.clip(-ripple, 0, 1) ** 3 * 0.12
+    mottle = fbm(size, size, 5, 5, 5, rng)
+    dark += smoothstep(0.55, 0.8, mottle) * 0.22
+    light += smoothstep(0.45, 0.2, mottle) * 0.10
+    for _ in range(260):
+        radius = rng.choice([rng.uniform(1.2, 2.5), rng.uniform(2.5, 5)], p=[0.8, 0.2])
+        cx, cy = rng.uniform(0, size), rng.uniform(0, size)
+        dx, dy = wrapped_distance(size, cx, cy)
+        r = np.sqrt(dx * dx + dy * dy) / radius
+        stone = smoothstep(1.0, 0.6, r)
+        dark += stone * rng.uniform(0.35, 0.6)
+        # A highlight on the sun side (-x, -y) and a shadow past the far side.
+        light += stone * np.clip((-dx - dy) / (radius * 1.4), 0, 1) * 0.35
+        sx, sy = wrapped_distance(size, cx + radius * 0.9, cy + radius * 0.9)
+        dark += smoothstep(1.1, 0.5, np.sqrt(sx * sx + sy * sy) / radius) * 0.18
+    dark, light = np.clip(dark, 0, 1), np.clip(light, 0, 1)
+    rgba = np.zeros((size, size, 4), dtype=np.uint8)
+    lighter = light > dark
+    rgba[..., 0] = np.where(lighter, 255, 40)
+    rgba[..., 1] = np.where(lighter, 240, 14)
+    rgba[..., 2] = np.where(lighter, 220, 6)
+    rgba[..., 3] = np.clip(np.where(lighter, light - dark, dark - light) * 255, 0, 255)
+    return Image.fromarray(rgba, "RGBA")
+
+
+def mars_strata(rng):
+    """Opaque layered rock for canyon walls: beds of rust, ochre, tan and dark basalt, each
+    a little uneven, grainy, with thin pale partings between some. Tiles both ways. The
+    beds run down the image (vertical stripes): on the plain's side faces (a cylinder on
+    its side) Roblox lays a texture's U up the wall, so they come out level."""
+    size = 512
+    palette = np.array([(150, 70, 42), (182, 104, 62), (204, 142, 92), (120, 56, 38), (168, 88, 52), (96, 50, 38), (196, 124, 78)], float)
+    beds, y = [], 0
+    while y < size:
+        thickness = int(rng.uniform(14, 60))
+        beds.append((y, min(size, y + thickness), palette[rng.integers(len(palette))], rng.random() < 0.35))
+        y += thickness
+    ys = np.arange(size)
+    wobble = (fbm(size, size, 6, 2, 3, rng) - 0.5) * 10
+    grain = fbm(size, size, 32, 32, 3, rng) - 0.5
+    streak = fbm(size, size, 24, 2, 2, rng) - 0.5
+    rgb = np.zeros((size, size, 3))
+    row = (ys[:, None] + wobble) % size
+    for top, bottom, colour, parting in beds:
+        inside = (row >= top) & (row < bottom)
+        rgb[inside] = colour
+        if parting:
+            edge = (row >= bottom - 2.5) & (row < bottom)
+            rgb[edge] = np.minimum(colour * 1.35, 255)
+    rgb *= (1 + grain[..., None] * 0.35 + streak[..., None] * 0.25)
+    return Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8), "RGB").transpose(Image.Transpose.TRANSPOSE)
+
+
+def phobos():
+    """Mars's moons: the pack's cratered Barren map, greyed toward dark dusty brown."""
+    image = np.asarray(Image.open(os.path.join(PACK, "Barren", "Barren_04-1024x512.png")).convert("RGB")).astype(float)
+    grey = image.mean(axis=2, keepdims=True)
+    tinted = grey * 0.75 * np.array([1.0, 0.86, 0.76]) + image * 0.25
+    return Image.fromarray(np.clip(tinted * 0.85, 0, 255).astype(np.uint8), "RGB")
+
+
+def mars_sky(rng):
+    """An equirectangular daytime Mars sky: deep dusty rose overhead fading to butterscotch
+    and a pale haze on the horizon, faint dust streaks, and below the horizon ground that
+    matches the plain (Roblox shortens the draw distance at times; the sky then shows
+    more ground, not sky). Cut into cube faces by tools/sky/cubemap.py's projection."""
+    w, h = 2048, 1024
+    lat = (0.5 - (np.arange(h) + 0.5) / h) * 180  # degrees, +90 up
+    zenith, mid, horizon = np.array((128, 74, 60)), np.array((206, 146, 100)), np.array((232, 196, 156))
+    # Below the horizon: the far plain as the haze leaves it, darkening further down.
+    ground_near, ground_far = np.array((176, 96, 62)), np.array((214, 146, 104))
+    rgb = np.zeros((h, w, 3))
+    for i, a in enumerate(lat):
+        if a >= 0:
+            t = min(1, a / 70)
+            colour = horizon * (1 - smoothstep(0, 0.25, t)) + mid * smoothstep(0, 0.25, t)
+            colour = colour * (1 - smoothstep(0.25, 1, t)) + zenith * smoothstep(0.25, 1, t)
+        else:
+            colour = ground_far * (1 - smoothstep(0, 12, -a)) + ground_near * smoothstep(0, 12, -a)
+        rgb[i] = colour
+    streaks = fbm(w, h, 6, 24, 4, rng) - 0.5
+    upper = (lat[:, None] > 0) * (1 - np.clip(lat[:, None] / 80, 0, 1))
+    rgb *= 1 + streaks[..., None] * 0.12 * upper[..., None]
+    return np.clip(rgb, 0, 255).astype(np.uint8)
+
+
 def preview(images):
     tiles = []
     for name, image in images.items():
@@ -192,7 +298,14 @@ def main():
         "earth": surface.convert("RGB"),
         "moon_regolith": moon_regolith(rng),
         "moon_maria": moon_maria(rng),
+        # Mars: each from its own seed, so adding one never changes another.
+        "mars_ground": mars_ground(np.random.default_rng(21)),
+        "mars_strata": mars_strata(np.random.default_rng(22)),
+        "phobos": phobos(),
     }
+    sky = mars_sky(np.random.default_rng(23))
+    for key, axes in cubemap.FACES.items():
+        images["mars_sky_" + key] = Image.fromarray(cubemap.face(sky, *axes))
     for name, image in images.items():
         image.save(os.path.join(OUT, name + ".png"))
         print("wrote", os.path.join(OUT, name + ".png"))
@@ -200,7 +313,7 @@ def main():
             os.makedirs(os.path.join(studio, "rocket-planets"), exist_ok=True)
             shutil.copy(os.path.join(OUT, name + ".png"), os.path.join(studio, "rocket-planets", name + ".png"))
     if args.preview:
-        preview(images).save(os.path.join(OUT, "preview.png"))
+        preview({k: v for k, v in images.items() if not k.startswith("mars_sky_")}).save(os.path.join(OUT, "preview.png"))
 
 
 if __name__ == "__main__":

@@ -12,6 +12,9 @@
     Roblox's moon (standing on the Moon, there shouldn't be another in the sky).
     The Moon's set is the galaxy under a low, hard sun: dark fill and sharp shadows, so
     every crater rim and rock throws a long shadow and the Earth shows a terminator.
+    Mars has its own daytime sky (tools/planets/textures.py: dusty rose overhead to a pale
+    butterscotch horizon), warm afternoon light and a thin dust haze that fades the far
+    mesas into the sky.
 ]]
 local Lighting = game:GetService("Lighting")
 local Skies = {}
@@ -37,15 +40,25 @@ Skies.Sets = table.freeze({
         lighting = { ClockTime = 7.3, GeographicLatitude = 42, Brightness = 3.2, Ambient = Color3.fromRGB(26, 28, 36),
             OutdoorAmbient = Color3.fromRGB(62, 66, 82), EnvironmentDiffuseScale = 0.2, EnvironmentSpecularScale = 0.4, ShadowSoftness = 0.04 },
     },
+    Mars = {
+        faces = faces(116733246444349, 112767906081295, 96691941054366, 134366695000385, 77374313685282, 139021632660213),
+        sun = true,
+        moon = false,
+        -- Afternoon: the sun in the west (-X), left of anyone facing the canyon.
+        lighting = { ClockTime = 15.6, GeographicLatitude = 42, Brightness = 2.6, Ambient = Color3.fromRGB(74, 48, 38),
+            OutdoorAmbient = Color3.fromRGB(150, 104, 80), EnvironmentDiffuseScale = 0.35, EnvironmentSpecularScale = 0.3,
+            ShadowSoftness = 0.2, ColorShift_Top = Color3.fromRGB(255, 214, 170) },
+        atmosphere = { Density = 0.22, Offset = 0, Color = Color3.fromRGB(205, 150, 110), Decay = Color3.fromRGB(190, 120, 84), Glare = 0, Haze = 0.6 },
+    },
     Band = {
         faces = faces(87670783189823, 84277202571331, 136923449858016, 100857173953889, 106596975936954, 96253202128209),
     },
 })
 -- Which set each destination (Config.Destinations id) and the cabin use.
-Skies.ByPlace = table.freeze({ Moon = "Moon", Mars = "Space", Europa = "Space", Saturn = "Space", BlackHole = "Band", RocketCabin = "Space" })
+Skies.ByPlace = table.freeze({ Moon = "Moon", Mars = "Mars", Europa = "Space", Saturn = "Space", BlackHole = "Band", RocketCabin = "Space" })
 
 local LIGHTING_KEYS = { "ClockTime", "GeographicLatitude", "Brightness", "Ambient", "OutdoorAmbient",
-    "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "ShadowSoftness" }
+    "EnvironmentDiffuseScale", "EnvironmentSpecularScale", "ShadowSoftness", "ColorShift_Top" }
 local sky, atmosphere, current, defaults
 function Skies.apply(name)
     if name == current then return end
