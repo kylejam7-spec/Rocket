@@ -1,4 +1,37 @@
-# Latest session: 2026-10-19 (7), loading screen
+# Latest session: 2026-10-19 (8), visual tidy pass
+
+- `claude/visual-tidy`. Earth: `tools/site/textures.py` builds dirt, asphalt, concrete,
+  grass and gym-floor overlays (uploaded, ids in Planets TEXTURES; need experience
+  access), laid on the ground, roads, apron, pad, plain and Gym District, each with a big
+  tinted maria blotch layer so the tiling doesn't show from afar. `UpgradeShop` replaces
+  the green box: a garage (brick and plank walls, pitched roof with the sign on the
+  gable, open roll-up door, awning, lit interior; the tagged UpgradesHut part is now the
+  counter, and the prompt and panel still work: checked). `SiteDetails` adds puddles,
+  gravel, ruts, weeds, kerbs, manholes, crosswalks, road patches, pad hazard lines and
+  stains (none collide; scatter keeps off roads, stations, huts, spawn, apron, District).
+  The Gym District has brick walls with caps, trimmed rubber bays, a textured walkway,
+  chevrons, lamps, planters and benches. UFO shops (all six) got blinking pad lights, a
+  rounded kiosk and pet eggs. The plain got broadleaf trees, bushes, rocks and flowers.
+- Destinations: the arrival spot is a dark landing pad with a ring, chevrons and a
+  beacon in the destination colour (was a glaring neon disc); the bonus gyms sit on
+  gold-trimmed outpost mats with lamp posts, on dark plates. The cabin got panelled,
+  ribbed walls, sloped ceiling corners, padded seats with headrests and harnesses,
+  framed starry portholes, an aisle runner with lights, consoles, a bezel, pipes and
+  vents, and a striped exit hatch with a wheel and EXIT light.
+- Gotcha: `Enum.Material.CorrugatedSteel` doesn't exist; the error stopped the build
+  half way (the workshop came out with no roof). WedgeParts rise toward +Z.
+- Uploads needing access: dirt 84661666848501, asphalt 93816747599509, concrete
+  90203920386352, grass 95172590517271, gym floor 100327531950364.
+- Studio: RunChecks 12/12 (DestinationCheck covers the cabin aisle and walls).
+- Second round: the Salvage Yard floor is textured, with oil slicks, floodlights in the
+  back corners, hazard sleeves on the gate posts and warning plates on the fence; the
+  Fuel Depot pad is textured, with a hazard kerb, painted bays round the dispenser
+  islands, fuel stains and bollards. Standing signs (`Signs.board` with ground: the
+  welcome signs and the COMING SOON boards) got concrete footings, back braces and a
+  lamp bar. The gravel patches are Slate (Pebble rendered bright beige). The user
+  granted the five site textures; merged as #42.
+
+# Earlier session: 2026-10-19 (7), loading screen
 
 - `claude/loading-screen`. `src/ReplicatedFirst/LoadingScreen.client.luau` (the project's
   ReplicatedFirst now maps to `src/ReplicatedFirst`; the empty world/ReplicatedFirst.rbxm
@@ -20,6 +53,8 @@
 - Verified in Play: no character until ClientReady (11.5 s in Studio), spawned 0.4 s
   after, standing on the spawn (never below y = 4); respawn 5.5 s after death; RunChecks
   12/12; no asset-type spam.
+- The user granted the art access; merged as #41. The art's load check goes through the
+  ImageLabel: `PreloadAsync` on the bare id string reported Failure even with access.
 
 # Earlier session: 2026-10-19 (6), music
 

@@ -2,6 +2,7 @@
 -- clients can find anchors by tag (WorldService.Tags) so art can be swapped later.
 local CollectionService = game:GetService("CollectionService")
 local Signs = require(script.Parent.SignService)
+local Planets = require(script.Parent.Planets)
 local World = {}
 World.Tags = table.freeze({
     Spawn = "SpawnPoint",
@@ -114,6 +115,8 @@ function World.new(ctx)
     for material, station in service.materialStations do tag(station.zone, World.Tags.MaterialSource, { Material = material }) end
     -- Roads, cranes, floodlights, containers, offices and buildings going up.
     require(script.Parent.SiteDressingService).build(world)
+    -- Puddles, gravel, ruts and weeds; kerbs, manholes and crosswalks; pad markings.
+    require(script.Parent.SiteDetails).build(world)
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }
     -- Glowing ring at the rocket's lowest unfinished point. Players climb the ramp and
     -- the finished hull to reach it, then hold E to pour their scrap ball in.
@@ -208,19 +211,33 @@ function World.new(ctx)
     local floorColor = Color3.fromRGB(58, 64, 78)
     -- Floor slab from the end of the ground (Layout.Ground.z1) to past the last bay, plus a
     -- painted walkway and an entrance arch facing back toward spawn.
-    part("GymDistrictFloor", Vector3.new(0, -1, (groundEnd + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - groundEnd), floorColor)
-    part("GymWalkway", Vector3.new(0, 0.03, (groundEnd - 8 + districtZ1) / 2), Vector3.new(16, 0.06, districtZ1 - groundEnd + 8), Color3.fromRGB(245, 182, 71)).CanCollide = false
+    local districtFloor = part("GymDistrictFloor", Vector3.new(0, -1, (groundEnd + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - groundEnd), floorColor)
+    districtFloor.Material = Enum.Material.Rubber
+    Planets.overlay(districtFloor, Enum.NormalId.Top, "GymFloor", 16, 0.2)
+    local walkway = part("GymWalkway", Vector3.new(0, 0.03, (groundEnd - 8 + districtZ1) / 2), Vector3.new(16, 0.06, districtZ1 - groundEnd + 8), Color3.fromRGB(232, 172, 66))
+    walkway.CanCollide, walkway.Material = false, Enum.Material.Concrete
+    Planets.overlay(walkway, Enum.NormalId.Top, "Concrete", 16, 0.45)
+    for _, side in {-1, 1} do
+        local edge = part("GymWalkwayEdge", Vector3.new(side * 7.7, 0.04, walkway.Position.Z), Vector3.new(0.6, 0.07, walkway.Size.Z), Color3.fromRGB(46, 42, 52))
+        edge.CanCollide, edge.CanQuery, edge.CanTouch = false, false, false
+    end
     for _, side in {-1, 1} do
         part("GymArchPost", Vector3.new(side * 10, 7, archZ), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
     end
     Signs.decorate(part("GymArchSign", Vector3.new(0, 15.5, archZ), Vector3.new(24, 4.4, 1), Signs.Backing), Enum.NormalId.Front,
         { title = "GYM DISTRICT", subtitle = "TRAIN STRENGTH & SPEED", icon = "💪", accent = Color3.fromRGB(255, 204, 40) })
     -- Low walls on the open sides and back so nobody walks off the plaza.
-    local wallColor = Color3.fromRGB(81, 91, 107)
-    for _, side in {-1, 1} do
-        part("GymDistrictWall", Vector3.new(side * 55, 1.5, (groundEnd + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - groundEnd), wallColor)
+    -- Brick, with a pale cap.
+    local wallColor = Color3.fromRGB(150, 84, 66)
+    local function districtWall(center, size)
+        part("GymDistrictWall", center, size, wallColor).Material = Enum.Material.Brick
+        local cap = part("GymWallCap", center + Vector3.new(0, size.Y / 2 + 0.15, 0), size + Vector3.new(0.6, 0.3 - size.Y, 0.6), Color3.fromRGB(205, 200, 190))
+        cap.Material, cap.CanCollide = Enum.Material.Concrete, false
     end
-    part("GymDistrictWall", Vector3.new(0, 1.5, districtZ1), Vector3.new(111, 3, 1), wallColor)
+    for _, side in {-1, 1} do
+        districtWall(Vector3.new(side * 55, 1.5, (groundEnd + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - groundEnd))
+    end
+    districtWall(Vector3.new(0, 1.5, districtZ1), Vector3.new(111, 3, 1))
     -- Hoarding and barrier round the site and the District; the land beyond.
     surrounds = require(script.Parent.SiteSurroundsService).build(world, { x = 56, z1 = districtZ1 + 1 })
     surrounds.fit(service.siteEdge)
@@ -242,7 +259,16 @@ function World.new(ctx)
         local side = slot % 2 == 1 and -1 or 1
         local x, z = side * BAY_X, DISTRICT_Z0 + (slot - 1) * BAY_STEP
         local color = tierColors[slot] or tierColors[#tierColors]
-        part("GymBay" .. slot, Vector3.new(x, 0.05, z), Vector3.new(30, 0.1, 24), color)
+        local bay = part("GymBay" .. slot, Vector3.new(x, 0.05, z), Vector3.new(30, 0.1, 24), color)
+        bay.Material = Enum.Material.Rubber
+        Planets.overlay(bay, Enum.NormalId.Top, "GymFloor", 12, 0.35)
+        -- A darker trim round the bay's edge.
+        local trim = color:Lerp(Color3.new(0, 0, 0), 0.35)
+        for _, edge in { { Vector3.new(0, 0, 11.6), Vector3.new(30, 0.14, 0.8) }, { Vector3.new(0, 0, -11.6), Vector3.new(30, 0.14, 0.8) },
+            { Vector3.new(14.6, 0, 0), Vector3.new(0.8, 0.14, 24) }, { Vector3.new(-14.6, 0, 0), Vector3.new(0.8, 0.14, 24) } } do
+            local strip = part("GymBayTrim", Vector3.new(x, 0.07, z) + edge[1], edge[2], trim)
+            strip.CanCollide, strip.CanQuery, strip.CanTouch = false, false, false
+        end
         -- The sign's face is drawn per player (GymSignController: lock status); the part
         -- itself is invisible, so only the rounded panel shows.
         local sign = tag(part("GymSign" .. slot, Vector3.new(side * (BAY_X + 15), 8, z), Vector3.new(0.5, 7, 22), Color3.fromRGB(35, 40, 50)),
@@ -260,15 +286,86 @@ function World.new(ctx)
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = gain, required = required })
         end
     end
+    -- District dressing: chevrons down the walkway, lamp posts either side of it, and in
+    -- the gaps between same-side bays a planter and a bench. None of it collides except
+    -- the planters' and benches' bodies, which stand clear of every walking line.
+    local dressing = Instance.new("Folder")
+    dressing.Name = "GymDistrictDressing"
+    dressing.Parent = world
+    local function decor(name, position, size, color, material, solid, cframe)
+        local item = part(name, position, size, color)
+        if cframe then item.CFrame = cframe end
+        item.Material = material or Enum.Material.SmoothPlastic
+        if not solid then item.CanCollide, item.CanQuery, item.CanTouch = false, false, false end
+        item.Parent = dressing
+        return item
+    end
+    for z = groundEnd + 4, districtZ1 - 8, 14 do
+        for _, side in { -1, 1 } do
+            local at = Vector3.new(side * 1.6, 0.1, z)
+            decor("WalkwayChevron", at, Vector3.new(0.7, 0.03, 4.4), Color3.fromRGB(205, 140, 40), nil, false, CFrame.new(at) * CFrame.Angles(0, side * math.rad(40), 0))
+        end
+    end
+    for z = DISTRICT_Z0 - 4, districtZ1 - 10, 32 do
+        for _, side in { -1, 1 } do
+            local x = side * 10
+            decor("LampPost", Vector3.new(x, 5, z), Vector3.new(0.45, 10, 0.45), Color3.fromRGB(46, 50, 60), Enum.Material.Metal, true)
+            decor("LampArm", Vector3.new(x - side * 0.9, 9.9, z), Vector3.new(2, 0.25, 0.25), Color3.fromRGB(46, 50, 60), Enum.Material.Metal)
+            decor("LampHousing", Vector3.new(x - side * 1.8, 10, z), Vector3.new(1.6, 0.5, 1.6), Color3.fromRGB(46, 50, 60), Enum.Material.Metal)
+            local lamp = decor("Lamp", Vector3.new(x - side * 1.8, 9.65, z), Vector3.new(1.2, 0.3, 1.2), Color3.fromRGB(255, 176, 90), Enum.Material.Neon)
+            local light = Instance.new("PointLight")
+            light.Color, light.Range, light.Brightness = Color3.fromRGB(255, 214, 160), 18, 1
+            light.Parent = lamp
+        end
+    end
+    for slot = 1, slots - 2 do
+        -- The gap after this bay, before the next one on the same side.
+        local side = slot % 2 == 1 and -1 or 1
+        local z = DISTRICT_Z0 + (slot - 1) * BAY_STEP + 16
+        local planterAt = Vector3.new(side * 33, 0.9, z)
+        decor("Planter", planterAt, Vector3.new(8, 1.8, 3), Color3.fromRGB(176, 170, 160), Enum.Material.Concrete, true)
+        decor("PlanterSoil", planterAt + Vector3.new(0, 0.85, 0), Vector3.new(7.4, 0.2, 2.4), Color3.fromRGB(80, 58, 40), Enum.Material.Ground)
+        for index = -1, 1 do
+            Planets.blob(dressing, "Shrub", CFrame.new(planterAt + Vector3.new(index * 2.4, 2.2, 0)), Vector3.new(2.6, 2.6, 2.4),
+                Color3.fromRGB(70, 140, 64):Lerp(Color3.fromRGB(110, 160, 70), (index + 1) / 2), Enum.Material.Grass)
+        end
+        local benchAt = Vector3.new(side * 21, 0, z)
+        decor("BenchSeat", benchAt + Vector3.new(0, 1.3, 0), Vector3.new(5, 0.35, 1.4), Color3.fromRGB(160, 110, 66), Enum.Material.WoodPlanks, true)
+        decor("BenchBack", benchAt + Vector3.new(0, 2.2, side * 0.6), Vector3.new(5, 1.2, 0.25), Color3.fromRGB(160, 110, 66), Enum.Material.WoodPlanks)
+        for _, dx in { -2, 2 } do decor("BenchLeg", benchAt + Vector3.new(dx, 0.6, 0), Vector3.new(0.3, 1.2, 1.2), Color3.fromRGB(46, 50, 60), Enum.Material.Metal) end
+    end
+
     -- Each destination's own bench and treadmill: double that destination's per-second
     -- reward, usable only there during the reward stay (Main's phaseAllowed).
     for tier, place in service.destinations do
         for _, kind in { "bench", "treadmill" } do
             local treadmill = kind == "treadmill"
-            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(255, 190, 40))
+            -- Dark plate on the gold-trimmed mat (TierColor stays gold for the signs).
+            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(74, 78, 92))
             equipment(base, treadmill)
+            base.Material = Enum.Material.DiamondPlate
             base:SetAttribute("Destination", place.id)
             base:SetAttribute("TierColor", Color3.fromRGB(255, 190, 40))
+            -- An outpost mat under it: rubber with a gold trim, posts at the back corners
+            -- carrying lamps (decor, no collision).
+            local ground = place.gym[kind] - Vector3.new(0, 1, 0)
+            local mat = part("OutpostMat", ground + Vector3.new(0, 0.06, 0), Vector3.new(12, 0.12, 14), Color3.fromRGB(46, 50, 62))
+            mat.Material, mat.CanCollide, mat.CanQuery, mat.CanTouch = Enum.Material.Rubber, false, false, false
+            Planets.overlay(mat, Enum.NormalId.Top, "GymFloor", 10, 0.3)
+            for _, edge in { { Vector3.new(0, 0, 6.7), Vector3.new(12, 0.16, 0.6) }, { Vector3.new(0, 0, -6.7), Vector3.new(12, 0.16, 0.6) },
+                { Vector3.new(5.7, 0, 0), Vector3.new(0.6, 0.16, 14) }, { Vector3.new(-5.7, 0, 0), Vector3.new(0.6, 0.16, 14) } } do
+                local trim = part("OutpostTrim", ground + Vector3.new(0, 0.08, 0) + edge[1], edge[2], Color3.fromRGB(255, 190, 40))
+                trim.Material, trim.CanCollide, trim.CanQuery, trim.CanTouch = Enum.Material.Neon, false, false, false
+            end
+            for _, x in { -5.4, 5.4 } do
+                local post = part("OutpostPost", ground + Vector3.new(x, 3, 6.4), Vector3.new(0.4, 6, 0.4), Color3.fromRGB(46, 50, 62))
+                post.Material, post.CanCollide = Enum.Material.Metal, false
+                local lamp = part("OutpostLamp", ground + Vector3.new(x, 6.2, 6.4), Vector3.new(0.8, 0.8, 0.8), Color3.fromRGB(255, 190, 40))
+                lamp.Shape, lamp.Material, lamp.CanCollide = Enum.PartType.Ball, Enum.Material.Neon, false
+                local glow = Instance.new("PointLight")
+                glow.Color, glow.Range, glow.Brightness = Color3.fromRGB(255, 210, 140), 12, 1
+                glow.Parent = lamp
+            end
             local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
             table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
                 stat = treadmill and "speedLevel" or "strengthLevel", gain = 2 * bonus * place.reward, required = 0 })
@@ -276,15 +373,10 @@ function World.new(ctx)
     end
     service.stations = stations
 
-    -- Upgrades hut beside the lane between spawn and the launch pad, door facing the
-    -- lane. Its prompt only opens the panel (client); purchases go through BuyUpgrade.
-    local hutColor, roofColor = Color3.fromRGB(70, 175, 95), Color3.fromRGB(255, 204, 40)
-    local h = Layout.Upgrades
-    local hut = tag(part("UpgradesHut", h + Vector3.new(0, 4, 0), Vector3.new(12, 8, 14), hutColor), World.Tags.Upgrades)
-    part("UpgradesRoof", h + Vector3.new(0, 8.6, 0), Vector3.new(14, 1.2, 16), roofColor)
-    part("UpgradesDoor", h + Vector3.new(6.1, 3, 0), Vector3.new(0.2, 6, 4), Color3.fromRGB(40, 32, 60))
-    Signs.decorate(part("UpgradesSign", h + Vector3.new(6.4, 10.8, 0), Vector3.new(0.4, 3.4, 12), Signs.Backing), Enum.NormalId.Right,
-        { title = "UPGRADES", subtitle = "SPEND YOUR COINS", icon = "⚡", accent = roofColor })
+    -- The Upgrades workshop beside the lane between spawn and the launch pad, its door
+    -- facing the lane (UpgradeShop). The tagged part is its service counter; the prompt
+    -- only opens the panel (client); purchases go through BuyUpgrade.
+    local hut = tag(require(script.Parent.UpgradeShop).build(world, Layout.Upgrades), World.Tags.Upgrades)
     local hutPrompt = service.prompt(hut, "Open Upgrades")
     hutPrompt.ObjectText = "Upgrades"
     hutPrompt.MaxActivationDistance = 14
@@ -308,12 +400,47 @@ function World.new(ctx)
             return object
         end
         local upright = CFrame.Angles(0, 0, math.rad(90))
-        piece("ShopPad", frame * CFrame.new(0, 0.2, 0) * upright, Vector3.new(0.4, 12, 12), shopColor, Enum.PartType.Cylinder)
+        local metal = Color3.fromRGB(165, 175, 190)
+        piece("ShopPad", frame * CFrame.new(0, 0.2, 0) * upright, Vector3.new(0.4, 12, 12), shopColor, Enum.PartType.Cylinder).Material = Enum.Material.DiamondPlate
         local ring = piece("ShopRing", frame * CFrame.new(0, 0.15, 0) * upright, Vector3.new(0.3, 12.8, 12.8), shopGlow, Enum.PartType.Cylinder)
         ring.Material, ring.CanCollide = Enum.Material.Neon, false
+        -- Landing lights round the pad's rim, blinking in turn.
+        for index = 1, 12 do
+            local angle = index / 12 * math.pi * 2
+            local light = piece("PadLight", frame * CFrame.new(math.cos(angle) * 5.5, 0.45, math.sin(angle) * 5.5), Vector3.new(0.5, 0.25, 0.5), shopGlow)
+            light.Material = Enum.Material.Neon
+            light:SetAttribute("Period", 1.2 + (index % 3) * 0.15)
+            CollectionService:AddTag(light, "Blinker")
+        end
+        -- The counter: a rounded kiosk body with a glowing band and a sloped glass top
+        -- holding a row of pet eggs on display.
         local counter = tag(piece("UfoShopCounter", frame * CFrame.new(0, 1.9, 0), Vector3.new(7, 3, 2.4), shopColor), World.Tags.UfoShop)
-        piece("CounterTop", frame * CFrame.new(0, 3.5, 0), Vector3.new(7.4, 0.3, 2.8), shopGlow).Material = Enum.Material.Neon
-        for _, x in { -4.2, 4.2 } do piece("ShopPost", frame * CFrame.new(x, 4.5, 2.5), Vector3.new(0.5, 9, 0.5), Color3.fromRGB(165, 175, 190)) end
+        counter.Material = Enum.Material.Metal
+        -- Rounded ends: upright cylinders (a Cylinder's axis is its X, so turn it up).
+        for _, x in { -3.5, 3.5 } do
+            local cap = piece("CounterEnd", frame * CFrame.new(x, 1.9, 0) * upright, Vector3.new(3, 2.4, 2.4), shopColor, Enum.PartType.Cylinder)
+            cap.Material = Enum.Material.Metal
+        end
+        piece("CounterBand", frame * CFrame.new(0, 2.4, -1.22), Vector3.new(7, 0.4, 0.1), shopGlow).Material = Enum.Material.Neon
+        piece("CounterTop", frame * CFrame.new(0, 3.5, 0), Vector3.new(8.2, 0.3, 2.8), Color3.fromRGB(40, 32, 70)).Material = Enum.Material.SmoothPlastic
+        piece("CounterTrim", frame * CFrame.new(0, 3.4, -1.42), Vector3.new(8.2, 0.12, 0.12), shopGlow).Material = Enum.Material.Neon
+        local eggColors = { Color3.fromRGB(255, 120, 200), Color3.fromRGB(120, 220, 255), Color3.fromRGB(255, 210, 80), Color3.fromRGB(150, 255, 130) }
+        for index, color in eggColors do
+            local x = -3 + (index - 1) * 2
+            local stand = piece("EggStand", frame * CFrame.new(x, 3.75, 0.2) * upright, Vector3.new(0.2, 1, 1), metal, Enum.PartType.Cylinder)
+            stand.Material = Enum.Material.Metal
+            local egg = piece("Egg", frame * CFrame.new(x, 4.45, 0.2), Vector3.new(0.9, 1.2, 0.9), color)
+            egg.Shape, egg.Material = Enum.PartType.Ball, Enum.Material.SmoothPlastic
+            for _, spot in { Vector3.new(0.25, 0.2, -0.38), Vector3.new(-0.2, -0.15, -0.38) } do
+                local dot = piece("EggSpot", frame * CFrame.new(x, 4.45, 0.2) * CFrame.new(spot), Vector3.new(0.3, 0.3, 0.1), Color3.new(1, 1, 1))
+                dot.Shape = Enum.PartType.Ball
+            end
+        end
+        for _, x in { -4.2, 4.2 } do
+            piece("ShopPost", frame * CFrame.new(x, 4.5, 2.5), Vector3.new(0.5, 9, 0.5), metal).Material = Enum.Material.Metal
+            local tip = piece("PostLight", frame * CFrame.new(x, 9.2, 2.5), Vector3.new(0.7, 0.7, 0.7), shopGlow)
+            tip.Shape, tip.Material = Enum.PartType.Ball, Enum.Material.Neon
+        end
         Signs.decorate(piece("ShopSign", frame * CFrame.new(0, 8, 2.5), Vector3.new(10, 3, 0.5), Signs.Backing), Enum.NormalId.Front,
             { title = "UFO SHOP", subtitle = "HATCH ALIEN PETS", icon = "🛸", accent = shopGlow })
         local beam = piece("ShopBeam", frame * CFrame.new(0, 7, 2.5) * upright, Vector3.new(11, 3.4, 3.4), shopGlow, Enum.PartType.Cylinder)

@@ -11,6 +11,7 @@
       close the horizon all round, well inside the draw distance (Roblox shortens it when
       the frame rate dips, as in a launch); Earth's sky carries matching land behind them.
 ]]
+local Planets = require(script.Parent.Planets)
 local Layout = require(script.Parent.SiteLayout)
 local Signs = require(script.Parent.SignService)
 local Mountains = require(script.Parent.Mountains)
@@ -114,6 +115,8 @@ local function plain(parent, edge, district)
     for _, r in Surrounds.plainPieces(edge, district) do
         local piece = make(parent, "Plain", Vector3.new(r.x1 - r.x0, 4, r.z1 - r.z0),
             CFrame.new((r.x0 + r.x1) / 2, -Surrounds.PlainDepth - 2, (r.z0 + r.z1) / 2), Color3.fromRGB(104, 124, 82), Enum.Material.Grass)
+        Planets.overlay(piece, Enum.NormalId.Top, "Grass", 34, 0.1)
+        Planets.overlay(piece, Enum.NormalId.Top, "MoonMaria", 640, 0.45, Color3.fromRGB(56, 74, 38))
         piece.CanCollide = true
     end
 end
@@ -128,6 +131,39 @@ local function tree(parent, at, random)
         make(parent, "Canopy", Vector3.one * size,
             CFrame.new(at + Vector3.new(0, height * (0.55 + index * 0.17), 0)) * CFrame.Angles(random:NextNumber(0, 1), random:NextNumber(0, 6.28), random:NextNumber(0, 1)),
             green, Enum.Material.Grass)
+    end
+end
+
+-- A broadleaf tree: a trunk and a round canopy of three overlapping soft blobs.
+local function roundTree(parent, at, random)
+    local height = random:NextNumber(12, 22)
+    make(parent, "Trunk", Vector3.new(1.4, height * 0.55, 1.4), CFrame.new(at + Vector3.new(0, height * 0.27, 0)), Color3.fromRGB(104, 76, 54), Enum.Material.Wood)
+    local green = Color3.fromRGB(78, 128, 60):Lerp(Color3.fromRGB(128, 156, 70), random:NextNumber())
+    for index = 1, 3 do
+        local size = height * random:NextNumber(0.42, 0.6)
+        local offset = index == 1 and Vector3.zero or Vector3.new(random:NextNumber(-0.25, 0.25), random:NextNumber(-0.1, 0.1), random:NextNumber(-0.25, 0.25)) * height
+        Planets.blob(parent, "Canopy", CFrame.new(at + Vector3.new(0, height * 0.72, 0) + offset), Vector3.new(size, size * 0.85, size),
+            green:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.12)), Enum.Material.Grass)
+    end
+end
+-- Low clutter on the plain: a bush, a grey rock, or a patch of flowers.
+local function clutter(parent, at, random)
+    local kind = random:NextNumber()
+    if kind < 0.45 then
+        local size = random:NextNumber(3, 7)
+        Planets.blob(parent, "Bush", CFrame.new(at + Vector3.new(0, size * 0.25, 0)), Vector3.new(size * 1.3, size * 0.75, size),
+            Color3.fromRGB(72, 116, 56):Lerp(Color3.fromRGB(120, 140, 64), random:NextNumber()), Enum.Material.Grass)
+    elseif kind < 0.7 then
+        local size = random:NextNumber(3, 9)
+        Planets.blob(parent, "Rock", CFrame.new(at + Vector3.new(0, size * 0.15, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
+            Vector3.new(size * 1.4, size * 0.7, size), Color3.fromRGB(130, 128, 122):Lerp(Color3.fromRGB(100, 96, 90), random:NextNumber()), Enum.Material.Slate)
+    else
+        local colors = { Color3.fromRGB(250, 220, 60), Color3.fromRGB(245, 245, 240), Color3.fromRGB(230, 110, 190), Color3.fromRGB(160, 140, 250) }
+        local color = colors[random:NextInteger(1, #colors)]
+        for _ = 1, random:NextInteger(5, 9) do
+            local flower = make(parent, "Flower", Vector3.new(0.9, 0.5, 0.9), CFrame.new(at + Vector3.new(random:NextNumber(-4, 4), 0.25, random:NextNumber(-4, 4))), color, Enum.Material.SmoothPlastic)
+            flower.Shape = Enum.PartType.Ball
+        end
     end
 end
 
@@ -156,6 +192,32 @@ function Surrounds.build(world, district)
                 tree(land, at + Vector3.new(random:NextNumber(-18, 18), -Surrounds.PlainDepth, random:NextNumber(-18, 18)), random)
                 placed += 1
             end
+        end
+    end
+    -- Broadleaf clumps, and bushes, rocks and flowers, nearer in (still outside the
+    -- widest site), on their own seed so the faceted trees stay where they were.
+    local extra = Random.new(2024)
+    local function outsideSite(at)
+        return math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
+    end
+    local broadleaf = 0
+    while broadleaf < 60 do
+        local angle, distance = extra:NextNumber(0, math.pi * 2), extra:NextNumber(690, 1250)
+        local at = center + Vector3.new(math.cos(angle) * distance, -Surrounds.PlainDepth, math.sin(angle) * distance)
+        if outsideSite(at) then
+            for _ = 1, extra:NextInteger(2, 5) do
+                roundTree(land, at + Vector3.new(extra:NextNumber(-22, 22), 0, extra:NextNumber(-22, 22)), extra)
+                broadleaf += 1
+            end
+        end
+    end
+    local scattered = 0
+    while scattered < 140 do
+        local angle, distance = extra:NextNumber(0, math.pi * 2), extra:NextNumber(680, 1100)
+        local at = center + Vector3.new(math.cos(angle) * distance, -Surrounds.PlainDepth, math.sin(angle) * distance)
+        if outsideSite(at) then
+            clutter(land, at, extra)
+            scattered += 1
         end
     end
 

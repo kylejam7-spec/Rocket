@@ -57,6 +57,12 @@ local TEXTURES = {
     Enceladus = { id = 84183449209134, file = "enceladus" },
     Titan = { id = 95534044250868, file = "titan" },
     RingSpeckle = { id = 118246725794362, file = "ring_speckle" },
+    -- The Earth site's surfaces (tools/site/textures.py).
+    SiteDirt = { id = 84661666848501, file = "site_dirt" },
+    Asphalt = { id = 93816747599509, file = "asphalt" },
+    Concrete = { id = 90203920386352, file = "concrete" },
+    Grass = { id = 95172590517271, file = "grass" },
+    GymFloor = { id = 100327531950364, file = "gym_floor" },
     RingRock = { id = 97315882149044, file = "ring_rock" },
 }
 

@@ -6,7 +6,9 @@
     Signs.decorate(part, face, props) turns an existing part's face into one.
     Signs.board(parent, name, cframe, size, props) stands a new one: a dark backing slab
     with the panel on its front (cframe's look direction) and, given props.ground (a y),
-    two steel posts down to it; props.back (more props) puts a second panel on the back.
+    two steel posts down to it on concrete footings, a brace behind, and a lamp bar along
+    the top shining down on the panel; props.back (more props) puts a second panel on the
+    back (and then no brace).
     props: { title, subtitle?, icon?, accent? (Color3), ground?, back? }.
 ]]
 local CollectionService = game:GetService("CollectionService")
@@ -53,7 +55,26 @@ function Signs.board(parent, name, cframe, size, props)
                 local foot = cframe * CFrame.new(x, 0, 0)
                 block(model, "SignPost", Vector3.new(0.8, height + size.Y * 0.5, 0.6),
                     CFrame.new(foot.Position.X, props.ground + (height + size.Y * 0.5) / 2, foot.Position.Z) * cframe.Rotation, STEEL, Enum.Material.Metal).CanCollide = true
+                block(model, "SignFooting", Vector3.new(1.8, 1, 1.6),
+                    CFrame.new(foot.Position.X, props.ground + 0.4, foot.Position.Z) * cframe.Rotation, Color3.fromRGB(160, 158, 152), Enum.Material.Concrete)
+                if not props.back then
+                    -- A diagonal brace from high on the post down to the ground behind it.
+                    local top = Vector3.new(foot.Position.X, props.ground + height * 0.8, foot.Position.Z)
+                    local base = top + cframe.LookVector * -height * 0.6 - Vector3.new(0, height * 0.8, 0)
+                    block(model, "SignBrace", Vector3.new(0.3, 0.3, (top - base).Magnitude), CFrame.lookAt((top + base) / 2, top), STEEL, Enum.Material.Metal)
+                end
             end
+        end
+        -- The lamp bar: a dark housing along the top edge, three lamps on short arms
+        -- leaning out over the panel, and their light.
+        local lampColor = Color3.fromRGB(255, 226, 170)
+        block(model, "LampBar", Vector3.new(size.X * 0.8, 0.35, 0.6), cframe * CFrame.new(0, size.Y / 2 + 0.75, 0), Color3.fromRGB(40, 42, 50), Enum.Material.Metal)
+        for _, x in { -size.X * 0.3, 0, size.X * 0.3 } do
+            block(model, "LampArm", Vector3.new(0.2, 0.2, 1.4), cframe * CFrame.new(x, size.Y / 2 + 0.75, -0.9), Color3.fromRGB(40, 42, 50), Enum.Material.Metal)
+            local lamp = block(model, "SignLamp", Vector3.new(0.9, 0.3, 0.6), cframe * CFrame.new(x, size.Y / 2 + 0.6, -1.6) * CFrame.Angles(math.rad(30), 0, 0), lampColor, Enum.Material.Neon)
+            local light = Instance.new("SpotLight")
+            light.Face, light.Angle, light.Range, light.Brightness, light.Color = Enum.NormalId.Bottom, 70, 10, 1.5, lampColor
+            light.Parent = lamp
         end
     end
     -- The panel's surface: a face just in front of the backing, so nothing z-fights it.
