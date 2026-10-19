@@ -110,11 +110,12 @@ gui.Parent = player:WaitForChild("PlayerGui")
 
 -- The art appears as soon as it has loaded (Studio falls back to its local copy).
 task.spawn(function()
+    -- Through the label, not the bare id (a bare id's fetch reports failure here).
     local result
-    ContentProvider:PreloadAsync({ ART }, function(_, fetched) result = fetched end)
+    ContentProvider:PreloadAsync({ art }, function(_, fetched) result = fetched end)
     if result ~= Enum.AssetFetchStatus.Success and RunService:IsStudio() then
         art.Image = ART_STUDIO
-        ContentProvider:PreloadAsync({ ART_STUDIO })
+        ContentProvider:PreloadAsync({ art })
     end
     TweenService:Create(art, TweenInfo.new(0.5), { ImageTransparency = 0 }):Play()
     TweenService:Create(zoom, TweenInfo.new(40, Enum.EasingStyle.Linear), { Scale = 1.12 }):Play()
