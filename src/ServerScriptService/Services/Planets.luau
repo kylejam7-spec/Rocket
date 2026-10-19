@@ -31,6 +31,8 @@
       ellipsoid (the underside of a floating rock, say).
     - Planets.overlay(part, face, key, studs, transparency?, tint?) lays a tiling texture
       over one face.
+
+    Planets.rings(parent, name, frame, radius, bands) gives a globe its ring system.
 ]]
 local AssetService = game:GetService("AssetService")
 local CollectionService = game:GetService("CollectionService")
@@ -51,10 +53,10 @@ local TEXTURES = {
     Jupiter = { id = 138703120001562, file = "jupiter" },
     Io = { id = 92758180219133, file = "io" },
     EuropaIce = { id = 124873466873497, file = "europa_ice" },
-    Saturn = { id = 92757706712119, file = "saturn" },
+    Saturn = { id = 72973342803379, file = "saturn" },
     Enceladus = { id = 84183449209134, file = "enceladus" },
     Titan = { id = 95534044250868, file = "titan" },
-    RingSheet = { id = 79775712039680, file = "ring_sheet" },
+    RingSpeckle = { id = 118246725794362, file = "ring_speckle" },
     RingRock = { id = 97315882149044, file = "ring_rock" },
 }
 
@@ -117,12 +119,13 @@ end
 
 -- spec = { center = Vector3, diameter, size = Vector3? (instead of diameter), texture = key,
 -- color = Color3 (tint, and the fallback), tilt = degrees (axial tilt), spin = rad/s,
--- atmosphere = Color3?, glow = 0..1 (atmosphere transparency), orbit = { center, axis, rate }? }
+-- atmosphere = Color3?, glow = 0..1 (atmosphere transparency), orbit = { center, axis, rate }?,
+-- rotation = CFrame? (the whole orientation, instead of tilt) }
 function Planets.globe(parent, name, spec)
     local model = Instance.new("Model")
     model.Name = name
     model.Parent = parent
-    local frame = CFrame.new(spec.center) * CFrame.Angles(0, 0, math.rad(spec.tilt or 0))
+    local frame = CFrame.new(spec.center) * (spec.rotation or CFrame.Angles(0, 0, math.rad(spec.tilt or 0)))
     local surface = shell(model, "Surface", frame, spec.size or Vector3.one * spec.diameter, { Color = spec.color or Color3.new(1, 1, 1), TextureID = Planets.texture(spec.texture) })
     surface:SetAttribute("SpinRate", spec.spin or 0.02)
     CollectionService:AddTag(surface, Planets.SpinTag)
@@ -219,11 +222,22 @@ function Planets.subtract(ground, cutters, walkable, lips, envelope)
 end
 
 -- A ball sunk so a cap `height` tall and `radius` wide at its base shows above `at.Y`.
+-- It is an ellipsoid of the sphere mesh sunk half its height (smooth at any size: big
+-- Ball parts are drawn with few facets, and a low cap of one reads as a flat polygon),
+-- or a sunk Ball if the mesh didn't load.
 function Planets.mound(parent, name, at, radius, height, color, material, collide)
-    local diameter = radius * radius / height + height
-    local item = part(parent, name, { Shape = Enum.PartType.Ball, Size = Vector3.one * diameter,
-        CFrame = CFrame.new(at + Vector3.new(0, height - diameter / 2, 0)), Color = color, Material = material or Enum.Material.Slate })
-    if not collide then decor(item) item.CastShadow = true end
+    local item
+    if sphereTemplate() then
+        item = shell(parent, name, CFrame.new(at - Vector3.new(0, height, 0)), Vector3.new(radius / 0.866 * 2, height * 4, radius / 0.866 * 2),
+            { Color = color, Material = material or Enum.Material.Slate })
+        if collide then item.CanCollide, item.CanQuery, item.CanTouch = true, true, true end
+    else
+        local diameter = radius * radius / height + height
+        item = part(parent, name, { Shape = Enum.PartType.Ball, Size = Vector3.one * diameter,
+            CFrame = CFrame.new(at + Vector3.new(0, height - diameter / 2, 0)), Color = color, Material = material or Enum.Material.Slate })
+        if not collide then decor(item) end
+    end
+    item.CastShadow = true
     return item
 end
 
@@ -246,6 +260,56 @@ function Planets.dune(parent, at, length, width, height, yaw, color, material)
         Vector3.new(length, height * 2.4, width), { Color = color, Material = material or Enum.Material.Sand })
     item.CastShadow = true
     return item
+end
+
+-- A planet's rings: flat annuli in the XZ plane of `frame` (its centre and pole), each band
+-- { inner, outer (in planet radii), color, transparency, material? }, cut from discs by CSG (a disc
+-- can't have a hole otherwise). Bands whose cut fails are left out. Parts can be at most
+-- 2048 across, so outer * radius must stay under 1024. Each band costs one cut (about half
+-- a second on the server).
+function Planets.rings(parent, name, frame, radius, bands)
+    local model = Instance.new("Model")
+    model.Name = name
+    model.Parent = parent
+    -- Cut from flattened sphere meshes (96 segments round, so the edges stay smooth); from
+    -- cylinders, which come out faceted, only if the mesh didn't load.
+    local template = sphereTemplate()
+    local upright = frame * CFrame.Angles(0, 0, math.rad(90))
+    for index, band in bands do
+        local disc, hole
+        if template then
+            disc = template:Clone()
+            disc.Anchored = true
+            disc.Size = Vector3.new(band[2] * radius * 2, 3, band[2] * radius * 2)
+            disc.CFrame = frame
+            hole = disc:Clone()
+            hole.Size = Vector3.new(band[1] * radius * 2, 80, band[1] * radius * 2)
+        else
+            disc = Instance.new("Part")
+            disc.Shape = Enum.PartType.Cylinder
+            disc.Anchored = true
+            disc.Size = Vector3.new(1.5, band[2] * radius * 2, band[2] * radius * 2)
+            disc.CFrame = upright
+            hole = disc:Clone()
+            hole.Size = Vector3.new(4, band[1] * radius * 2, band[1] * radius * 2)
+        end
+        local ok, result = pcall(function()
+            return GeometryService:SubtractAsync(disc, { hole }, { CollisionFidelity = Enum.CollisionFidelity.Box, RenderFidelity = Enum.RenderFidelity.Precise, SplitApart = false })
+        end)
+        disc:Destroy()
+        hole:Destroy()
+        if ok and result and result[1] then
+            local ring = decor(result[1])
+            ring.Name = "Ring" .. index
+            ring.Anchored = true
+            if ring:IsA("UnionOperation") then ring.UsePartColor = true end
+            ring.Color, ring.Transparency, ring.Material = band[3], band[4], band[5] or Enum.Material.SmoothPlastic
+            ring.Parent = model
+        else
+            warn("Planets: a ring band of " .. name .. " failed to cut: " .. tostring(result))
+        end
+    end
+    return model
 end
 
 -- An ellipsoid `size` across centred on `center`, scenery only.

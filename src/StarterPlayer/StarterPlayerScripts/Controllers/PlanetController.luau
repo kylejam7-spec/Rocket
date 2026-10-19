@@ -3,6 +3,7 @@
 --   PlanetOrbit also travel round their OrbitCenter about OrbitAxis at OrbitRate.
 -- - Ring chunks (tag RingDrift) slide along X at their Speed, wrapping round within Span
 --   of their Origin x.
+-- - Textures tagged TextureDrift slide along U at their Speed (studs a second).
 -- - Models tagged Hover bob up and down (Amplitude studs, every Period seconds).
 -- - Dust devils (tag DustDevil) wander within Roam studs of their Home.
 -- - Lights tagged Blinker flash on and off every Period seconds; glows tagged Pulse
@@ -45,6 +46,11 @@ local function animate(dt)
             local x = part.Position.X + (part:GetAttribute("Speed") or 0) * dt
             if x > origin + span then x -= span * 2 elseif x < origin - span then x += span * 2 end
             part.CFrame += Vector3.new(x - part.Position.X, 0, 0)
+        end
+    end
+    for _, texture in CollectionService:GetTagged("TextureDrift") do
+        if texture:IsDescendantOf(workspace) then
+            texture.OffsetStudsU = (texture.OffsetStudsU + (texture:GetAttribute("Speed") or 0) * dt) % texture.StudsPerTileU
         end
     end
     local now = os.clock()

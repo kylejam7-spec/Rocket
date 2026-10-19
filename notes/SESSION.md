@@ -1,4 +1,28 @@
-# Latest session: 2026-10-19 (4), Saturn's Rings
+# Latest session: 2026-10-19 (5), Saturn rework, then the Black Hole
+
+- Saturn rework on `claude/planet-saturn` (PR #37), after the user's feedback: the ring
+  plane is no longer an opaque banded floor. Three see-through layers of ring particles
+  (`ring_speckle`, alpha) lie at 46, 60 and 76 below the platform, each a 4 x 4 grid of
+  invisible 2048-stud tiles (out to the horizon), scaled 256/512/1024, their textures
+  drifting at different speeds (tag TextureDrift, PlanetController). The sky shows the
+  rings edge on as a glowing horizon line with stars below.
+- Saturn now hangs fully above the horizon at (-1500, 400, -1700), 41 degrees left of the
+  arrival so a landed Tier 4-5 rocket doesn't hide it, its pole tipped 28 degrees toward
+  the player so `Planets.rings` (six annuli cut by CSG from the flattened sphere mesh:
+  smooth, unlike CSG cylinders) open into a wide ellipse. The rings are dark Neon, since
+  the low sun left SmoothPlastic rings a dull grey-brown. The ring shadow is painted onto
+  the Saturn texture. Each ring band costs about 0.45 s of CSG, so Saturn builds in
+  about 2 s.
+- Tried and dropped: one annulus wearing a radial ringlet texture (the cut keeps the
+  sphere's UVs, latitude = radius) came out stair-stepped: too few latitude rows.
+- `Planets.mound` is now a sunk ellipsoid of the sphere mesh: big sunk Ball parts showed
+  as flat polygons (Saturn's frost drifts looked like white squares). This smooths the
+  crater walls, talus and drifts on every destination.
+- New uploads needing access: Saturn 72973342803379, ring speckle 118246725794362, sky Bk
+  96836179595217, Dn 70901967949717, Ft 111141752494092, Lf 94514358915591, Rt
+  117806823065119 (Up unchanged). `ring_sheet` is gone.
+
+# Earlier session: 2026-10-19 (4), Saturn's Rings
 
 - `claude/planet-saturn`, stacked on Europa (PR #36). Europa's images have access.
 - Saturn (`DestinationService` builder 4): the platform is one big ring particle:

@@ -14,8 +14,8 @@
     every crater rim and rock throws a long shadow and the Earth shows a terminator.
     Europa wears the dark navy sky under a small cold sun, with Jupiter's orange glow as
     fill from below (ColorShift_Bottom), and glossy ice.
-    Saturn's rings have their own sky (textures.py `saturn_sky`): stars above, and below
-    the horizon the ring plane running on to infinity; the rings light things from below.
+    Saturn's rings have their own sky (textures.py `saturn_sky`): stars all round and the
+    rings edge on as a glowing line along the horizon; they light things from below.
     Mars has its own daytime sky (tools/planets/textures.py: dusty rose overhead to a pale
     butterscotch horizon), warm afternoon light and a thin dust haze that fades the far
     mesas into the sky.
@@ -64,7 +64,7 @@ Skies.Sets = table.freeze({
             ShadowSoftness = 0.08, ColorShift_Top = Color3.fromRGB(205, 228, 255), ColorShift_Bottom = Color3.fromRGB(120, 76, 44) },
     },
     Saturn = {
-        faces = faces(128681954064565, 121094191642894, 114895300719628, 117925321081193, 73948970098985, 125914376227514),
+        faces = faces(96836179595217, 70901967949717, 111141752494092, 94514358915591, 117806823065119, 125914376227514),
         sun = true,
         moon = false,
         -- Sun low from -X: Saturn (beyond the landing site) is half lit from the left.

@@ -921,12 +921,15 @@ end
 -- 4 (Epic): a chunk of Saturn's rings. The platform is a big ring particle of frosted
 -- rock (its lumpy underside shows past the edge) with glowing ice crystals, a lighthouse
 -- beacon sweeping two beams, an ice harvester with a sled of glowing blocks, and a crew
--- pod tethered down so it can't drift off. No ground beyond: the ring plane spreads out
--- below as a glittering banded sheet to the horizon (the sky carries it on), chunks of
--- ice float all round at every size, sliding past in opposite directions on either side
--- (ring particles nearer Saturn orbit faster) and tumbling, and Saturn rises out of its
--- own rings beyond the landing site, with Enceladus crossing the sky and hazy Titan far
--- off. The rings light everything a little from below (Shared.Skies "Saturn").
+-- pod tethered down so it can't drift off. No ground beyond: below lie three see-through
+-- layers of glittering ring particles drifting at different speeds, with space showing
+-- between them, and on the horizon the rings narrow to a bright edge-on line (the sky).
+-- Chunks of ice float all round at every size, sliding past in opposite directions on
+-- either side (ring particles nearer Saturn orbit faster) and tumbling. Beyond the
+-- landing site Saturn hangs tilted with its whole ring system (C ring, bright B ring,
+-- the Cassini division, A ring, thin F ring) wide open to view, their shadow across it;
+-- Enceladus crosses the sky and hazy Titan hangs far off. The rings light everything a
+-- little from below (Shared.Skies "Saturn").
 local SATURN = { rock = Color3.fromRGB(146, 150, 162), frost = Color3.fromRGB(226, 232, 240), ice = Color3.fromRGB(208, 226, 244), dark = Color3.fromRGB(96, 100, 112),
     glow = Color3.fromRGB(120, 230, 255), metal = Color3.fromRGB(196, 198, 206), paint = Color3.fromRGB(236, 176, 60), hull = Color3.fromRGB(232, 234, 238) }
 -- The ring plane lies this far below the platform's top.
@@ -1023,12 +1026,19 @@ builders[4] = function(folder, c)
     -- The rest of the ring particle: lumpy rock and ice below and round the platform, its
     -- tops just under the surface, bulging out past the edge.
     Planets.blob(folder, "ChunkBody", CFrame.new(c - Vector3.new(0, 40, 0)), Vector3.new(156, 70, 146), SATURN.rock, Enum.Material.Slate)
-    for index = 1, 9 do
-        local angle = index / 9 * math.pi * 2 + random:NextNumber(-0.2, 0.2)
+    for index = 1, 14 do
+        local angle = index / 14 * math.pi * 2 + random:NextNumber(-0.2, 0.2)
         local size = Vector3.new(random:NextNumber(40, 80), random:NextNumber(30, 60), random:NextNumber(40, 80))
         local at = c + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(45, 72) - Vector3.new(0, size.Y / 2 + random:NextNumber(2, 25), 0)
-        Planets.blob(folder, "ChunkLump", CFrame.new(at) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), 0), size,
-            index % 3 == 0 and SATURN.ice or SATURN.rock:Lerp(SATURN.dark, random:NextNumber(0, 0.4)), index % 3 == 0 and Enum.Material.Glacier or Enum.Material.Slate)
+        local pose = CFrame.new(at) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), 0)
+        local color = index % 3 == 0 and SATURN.ice or SATURN.rock:Lerp(SATURN.dark, random:NextNumber(0, 0.4))
+        local material = index % 3 == 0 and Enum.Material.Glacier or Enum.Material.Slate
+        if index % 2 == 0 then
+            -- Angular slabs between the rounded lumps, so the underside reads as broken rock.
+            decor(folder, "ChunkSlab", { Size = size * 0.7, CFrame = pose * CFrame.Angles(random:NextNumber(0, 6.28), 0, random:NextNumber(0, 6.28)), Color = color, Material = material }).CastShadow = true
+        else
+            Planets.blob(folder, "ChunkLump", pose, size, color, material)
+        end
     end
     -- A rough lip of frosted boulders round the edge, so it isn't a cut disc.
     for index = 1, 30 do
@@ -1057,12 +1067,19 @@ builders[4] = function(folder, c)
     lighthouse(folder, c)
     harvester(folder, c)
     tetheredPod(folder, c)
-    -- The ring plane: four tiles of banded, glittering ring stuff (the bands run across the
-    -- way to Saturn), RING_PLANE below the platform; the sky carries it on past their edge.
-    for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
-        local tile = decor(folder, "RingSheet", { Size = Vector3.new(2048, 1, 2048), CFrame = CFrame.new(c + corner * 1024 - Vector3.new(0, RING_PLANE, 0)), Color = Color3.new(1, 1, 1), Material = Enum.Material.SmoothPlastic })
-        local texture = Planets.overlay(tile, Enum.NormalId.Top, "RingSheet", 900)
-        texture.StudsPerTileU = 300
+    -- The ring plane: three see-through layers of ring particles round RING_PLANE (each a
+    -- 4 x 4 grid of invisible 2048-stud tiles carrying the texture, out to the horizon
+    -- line), at different scales, drifting along at different speeds (tag TextureDrift;
+    -- PlanetController moves the textures), so they read as a deep, moving swarm.
+    for _, layer in { { -RING_PLANE + 14, 256, 5 }, { -RING_PLANE, 512, -2.5 }, { -RING_PLANE - 16, 1024, 1 } } do
+        for gx = -1.5, 1.5 do
+            for gz = -1.5, 1.5 do
+                local tile = decor(folder, "RingLayer", { Size = Vector3.new(2048, 1, 2048), CFrame = CFrame.new(c + Vector3.new(gx * 2048, layer[1], gz * 2048)), Transparency = 1 })
+                local texture = Planets.overlay(tile, Enum.NormalId.Top, "RingSpeckle", layer[2])
+                texture:SetAttribute("Speed", layer[3])
+                CollectionService:AddTag(texture, "TextureDrift")
+            end
+        end
     end
     -- Chunks of ice everywhere, sliding along X at a speed set by how far they are toward
     -- or away from Saturn (tag RingDrift; PlanetController wraps them round), tumbling.
@@ -1113,13 +1130,28 @@ builders[4] = function(folder, c)
     glitter.LightEmission, glitter.LightInfluence = 0.8, 0.3
     glitter.Color = ColorSequence.new(Color3.fromRGB(240, 246, 255))
     glitter.Parent = glitterBox
-    -- Saturn rises out of its rings beyond the landing site: its equator lies in the ring
-    -- plane, so the sheet cuts across it.
-    Planets.globe(folder, "Saturn", { center = c + Vector3.new(-160, -RING_PLANE, -1850), diameter = 1700, texture = "Saturn", spin = 0.004,
+    -- Saturn off to the left of the landing site (41 degrees from the arrival, so even a
+    -- Tier 5 rocket hides no more than its rings' tip), its pole tipped 28 degrees toward
+    -- us and leaning a little, so its rings open into a wide ellipse above the horizon.
+    local saturnAt, pose = c + Vector3.new(-1500, 400, -1700), CFrame.Angles(0, 0, math.rad(-12)) * CFrame.Angles(math.rad(28), 0, 0)
+    Planets.globe(folder, "Saturn", { center = saturnAt, diameter = 860, rotation = pose, texture = "Saturn", spin = 0.004,
         atmosphere = Color3.fromRGB(240, 220, 180), glow = 0.4, color = Color3.fromRGB(225, 195, 140) })
+    -- The faint C ring, the B ring (brighter outside), the Cassini division, the A ring
+    -- split by the Encke gap, and the thin F ring. Neon, darkened: the sun lights the rings
+    -- at a low angle, which left them a dull grey-brown; this keeps them glowing warm.
+    local glow = Enum.Material.Neon
+    Planets.rings(folder, "SaturnRings", CFrame.new(saturnAt) * pose, 430, {
+        { 1.24, 1.52, Color3.fromRGB(96, 88, 74), 0.5, glow },
+        { 1.52, 1.68, Color3.fromRGB(150, 136, 110), 0.1, glow },
+        { 1.68, 1.95, Color3.fromRGB(178, 164, 134), 0, glow },
+        { 2.03, 2.2, Color3.fromRGB(146, 134, 110), 0.12, glow },
+        { 2.215, 2.27, Color3.fromRGB(128, 118, 98), 0.2, glow },
+        { 2.31, 2.33, Color3.fromRGB(160, 150, 130), 0.3, glow },
+    })
     orbitingMoon(folder, c, "Enceladus", { size = Vector3.one * 46, radius = 1300, axis = Vector3.new(-0.3, 0.9, 1), rate = 0.01, lead = 0.5, spin = 0.02,
         texture = "Enceladus", color = SATURN.frost })
-    Planets.globe(folder, "Titan", { center = c + Vector3.new(1100, 520, -1150), diameter = 80, texture = "Titan", spin = 0.005,
+    -- Titan high above Saturn, on the sunward side, so its day side faces us.
+    Planets.globe(folder, "Titan", { center = c + Vector3.new(-900, 1100, -1400), diameter = 80, texture = "Titan", spin = 0.005,
         atmosphere = Color3.fromRGB(230, 170, 90), glow = 0.3, color = Color3.fromRGB(214, 150, 70) })
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
