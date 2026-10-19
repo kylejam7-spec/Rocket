@@ -173,13 +173,6 @@ Destinations.LandingOffset = Vector3.new(0, 0, -42)
 Destinations.ShopOffset = Vector3.new(38, 0, -4)
 local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
     { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 }, { Destinations.SignOffset, 16 } }
--- A coloured band around a planet ball: a thin disc through it at `height`, just wider
--- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
-local function band(parent, name, center, radius, height, thickness, color)
-    local width = 2 * math.sqrt(math.max(0, radius * radius - height * height)) + 6
-    return decor(parent, name, { Shape = Enum.PartType.Cylinder, Size = Vector3.new(thickness, width, width),
-        CFrame = CFrame.new(center + Vector3.new(0, height, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = color })
-end
 -- Deterministic scatter so every server builds the same destination; skips the clear spots.
 local function scatter(seed, count, radius, fn)
     local random = Random.new(seed)
@@ -207,15 +200,31 @@ Destinations.LanderOffset = Vector3.new(-18, 0, -16)
 local FLAG_OFFSET = Vector3.new(14, 0, -10)
 local EXPERIMENT_OFFSET = Vector3.new(22, 0, 4)
 -- True if a feature `reach` wide at `offset` keeps off every clear spot, the given props
--- ({ offset, radius }) and the platform's edge.
-local function isClear(offset, reach, props)
+-- ({ offset, radius }) and the platform's edge (`edge` from the centre, 72 by default).
+local function isClear(offset, reach, props, edge)
     for _, spot in CLEAR do
         if (offset - spot[1]).Magnitude < spot[2] + reach then return false end
     end
     for _, prop in props do
         if (offset - prop[1]).Magnitude < prop[2] + reach then return false end
     end
-    return offset.Magnitude + reach < 72
+    return offset.Magnitude + reach < (edge or 72)
+end
+-- A small moon on a tilted circle round a point below the centre `c`, so it rises and
+-- sets, starting `spec.lead` radians before its highest point (orbits only run while the
+-- destination is drawn, so a first visit sees it there). spec = { size, radius, axis,
+-- rate, lead, spin, texture, color }.
+local function orbitingMoon(folder, c, name, spec)
+    local axis = spec.axis.Unit
+    local center = c - Vector3.new(0, spec.radius * 0.32, 0)
+    local up = (Vector3.yAxis - axis * axis:Dot(Vector3.yAxis)).Unit
+    local peak, height = 0, -math.huge
+    for degree = 0, 359 do
+        local y = (CFrame.fromAxisAngle(axis, math.rad(degree)) * up).Y
+        if y > height then peak, height = math.rad(degree), y end
+    end
+    return Planets.globe(folder, name, { center = center + CFrame.fromAxisAngle(axis, peak - spec.lead) * (up * spec.radius), size = spec.size,
+        texture = spec.texture, spin = spec.spin, color = spec.color, orbit = { center = center, axis = axis, rate = spec.rate } })
 end
 local MOON_PROPS = { { Destinations.LanderOffset, 8 }, { FLAG_OFFSET, 4 }, { EXPERIMENT_OFFSET, 5 } }
 local function moonClear(offset, reach)
@@ -649,24 +658,11 @@ builders[2] = function(folder, c)
             math.pi / 2 + random:NextNumber(-0.35, 0.35), MARS.dust:Lerp(MARS.sand, random:NextNumber(0.2, 0.6)))
     end
     -- Phobos sails across the sky in a few minutes, peaking 37 degrees up over the canyon,
-    -- and sets behind the mesas; Deimos, small and far, peaks lower and barely moves. Both
-    -- orbit a point below the ground on tilted circles, so they rise and set. Each starts
-    -- `lead` radians before its highest point (orbits only run while Mars is drawn, so a
-    -- first visit sees Phobos climb; Deimos starts past its peak, apart from it).
-    local function moon(name, size, radius, axis, rate, lead, spin)
-        axis = axis.Unit
-        local center = c - Vector3.new(0, radius * 0.32, 0)
-        local up = (Vector3.yAxis - axis * axis:Dot(Vector3.yAxis)).Unit
-        local peak, height = 0, -math.huge
-        for degree = 0, 359 do
-            local y = (CFrame.fromAxisAngle(axis, math.rad(degree)) * up).Y
-            if y > height then peak, height = math.rad(degree), y end
-        end
-        Planets.globe(folder, name, { center = center + CFrame.fromAxisAngle(axis, peak - lead) * (up * radius), size = size, texture = "Phobos",
-            spin = spin, color = Color3.fromRGB(150, 120, 100), orbit = { center = center, axis = axis, rate = rate } })
-    end
-    moon("Phobos", Vector3.new(64, 46, 52), 1250, Vector3.new(0.25, 0.8, 1), 0.012, 0.6, 0.03)
-    moon("Deimos", Vector3.new(28, 22, 24), 1500, Vector3.new(-0.4, 1.1, 1), 0.004, -0.7, 0.02)
+    -- and sets behind the mesas (a first visit sees it climb); Deimos, small and far, peaks
+    -- lower and barely moves, starting past its peak, apart from Phobos.
+    local dusty = Color3.fromRGB(150, 120, 100)
+    orbitingMoon(folder, c, "Phobos", { size = Vector3.new(64, 46, 52), radius = 1250, axis = Vector3.new(0.25, 0.8, 1), rate = 0.012, lead = 0.6, spin = 0.03, texture = "Phobos", color = dusty })
+    orbitingMoon(folder, c, "Deimos", { size = Vector3.new(28, 22, 24), radius = 1500, axis = Vector3.new(-0.4, 1.1, 1), rate = 0.004, lead = -0.7, spin = 0.02, texture = "Phobos", color = dusty })
     surroundings(folder, c, 75, { seed = 12, reach = 1000, plainDepth = 130, keep = offCanyon, cut = canyonCut(c), horizon = mesas(c),
         ridge = { color = MARS.dust:Lerp(MARS.sand, 0.4), material = Enum.Material.Sand }, round = true,
         overlays = { { "MoonMaria", 600, 0.2, Color3.fromRGB(150, 60, 36) }, { "MarsGround", 50, 0.3 } },
@@ -922,23 +918,209 @@ builders[3] = function(folder, c)
     fence(folder, c, 75, 70)
     return ground, Vector3.new(0, 0, 20)
 end
--- 4 (Epic): an icy chunk of Saturn's rings under the giant ringed planet.
+-- 4 (Epic): a chunk of Saturn's rings. The platform is a big ring particle of frosted
+-- rock (its lumpy underside shows past the edge) with glowing ice crystals, a lighthouse
+-- beacon sweeping two beams, an ice harvester with a sled of glowing blocks, and a crew
+-- pod tethered down so it can't drift off. No ground beyond: the ring plane spreads out
+-- below as a glittering banded sheet to the horizon (the sky carries it on), chunks of
+-- ice float all round at every size, sliding past in opposite directions on either side
+-- (ring particles nearer Saturn orbit faster) and tumbling, and Saturn rises out of its
+-- own rings beyond the landing site, with Enceladus crossing the sky and hazy Titan far
+-- off. The rings light everything a little from below (Shared.Skies "Saturn").
+local SATURN = { rock = Color3.fromRGB(146, 150, 162), frost = Color3.fromRGB(226, 232, 240), ice = Color3.fromRGB(208, 226, 244), dark = Color3.fromRGB(96, 100, 112),
+    glow = Color3.fromRGB(120, 230, 255), metal = Color3.fromRGB(196, 198, 206), paint = Color3.fromRGB(236, 176, 60), hull = Color3.fromRGB(232, 234, 238) }
+-- The ring plane lies this far below the platform's top.
+local RING_PLANE = 60
+local BEACON, HARVESTER, TETHERED = Vector3.new(-40, 0, -20), Vector3.new(42, 0, -26), Vector3.new(-24, 0, 46)
+local SATURN_PROPS = { { BEACON, 6 }, { HARVESTER, 8 }, { TETHERED, 7 } }
+-- The lighthouse: a lattice mast whose head carries one long beam through it, so it
+-- sweeps two beams round as it turns (PlanetSpin), a spotlight at each end.
+local function lighthouse(parent, c)
+    local at = c + BEACON
+    local head = at + Vector3.new(0, 18, 0)
+    for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+        strut(parent, "MastLeg", at + corner * 2.4, head + corner * 0.6 - Vector3.new(0, 1, 0), 0.3, SATURN.metal)
+    end
+    for height = 4, 14, 5 do
+        local s = 2.4 - height / 18 * 1.8
+        for _, edge in { { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1) }, { Vector3.new(-1, 0, 1), Vector3.new(-1, 0, -1) }, { Vector3.new(-1, 0, -1), Vector3.new(1, 0, -1) }, { Vector3.new(1, 0, -1), Vector3.new(1, 0, 1) } } do
+            strut(parent, "MastBrace", at + edge[1] * s + Vector3.new(0, height, 0), at + edge[2] * s + Vector3.new(0, height, 0), 0.15, SATURN.metal)
+        end
+    end
+    make(parent, "MastBase", { Size = Vector3.new(6, 1, 6), CFrame = CFrame.new(at + Vector3.new(0, 0.5, 0)), Color = SATURN.dark, Material = Enum.Material.DiamondPlate })
+    make(parent, "LampHouse", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.4, 2.6, 2.6), CFrame = CFrame.new(head) * CFrame.Angles(0, 0, math.rad(90)), Color = SATURN.paint, Material = Enum.Material.Metal })
+    local beam = decor(parent, "Beam", { Size = Vector3.new(70, 1.4, 1.4), CFrame = CFrame.new(head + Vector3.new(0, 0.2, 0)), Color = Color3.fromRGB(255, 244, 200), Material = Enum.Material.Neon, Transparency = 0.82 })
+    for _, face in { Enum.NormalId.Left, Enum.NormalId.Right } do
+        local spot = Instance.new("SpotLight")
+        spot.Face, spot.Angle, spot.Range, spot.Brightness, spot.Color = face, 25, 60, 3, beam.Color
+        spot.Parent = beam
+    end
+    beam:SetAttribute("SpinRate", 0.9)
+    CollectionService:AddTag(beam, Planets.SpinTag)
+    local beacon = decor(parent, "Beacon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.8, CFrame = CFrame.new(head + Vector3.new(0, 1.8, 0)), Color = Color3.fromRGB(255, 70, 50), Material = Enum.Material.Neon })
+    local red = Instance.new("PointLight")
+    red.Color, red.Range, red.Brightness = beacon.Color, 12, 2
+    red.Parent = beacon
+    beacon:SetAttribute("Period", 1.4)
+    CollectionService:AddTag(beacon, "Blinker")
+end
+-- The ice harvester: a machine with a drill arm in the rock, a conveyor, and a sled of
+-- cut ice blocks glowing from within.
+local function harvester(parent, c)
+    local turn = CFrame.Angles(0, math.rad(-35), 0)
+    local frame = CFrame.new(c + HARVESTER) * turn
+    make(parent, "Harvester", { Size = Vector3.new(6, 3.4, 4.4), CFrame = frame * CFrame.new(0, 1.7, 0), Color = SATURN.paint, Material = Enum.Material.Metal })
+    make(parent, "HarvesterCab", { Size = Vector3.new(2.6, 2, 3.6), CFrame = frame * CFrame.new(-1.6, 4.4, 0), Color = SATURN.hull, Material = Enum.Material.SmoothPlastic })
+    decor(parent, "CabWindow", { Size = Vector3.new(0.15, 1, 2.8), CFrame = frame * CFrame.new(-2.95, 4.5, 0), Color = Color3.fromRGB(255, 214, 150), Material = Enum.Material.Neon })
+    strut(parent, "DrillArm", (frame * CFrame.new(3, 2.6, 0)).Position, (frame * CFrame.new(5.6, -0.2, 0)).Position, 0.7, SATURN.metal)
+    decor(parent, "DrillBit", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = frame * CFrame.new(5.6, 0, 0), Color = SATURN.dark, Material = Enum.Material.Metal })
+    decor(parent, "Conveyor", { ClassName = "WedgePart", Size = Vector3.new(1.6, 2.6, 4), CFrame = frame * CFrame.new(0, 1.3, -4.2) * CFrame.Angles(0, math.pi, 0), Color = SATURN.dark, Material = Enum.Material.DiamondPlate })
+    make(parent, "Sled", { Size = Vector3.new(5, 0.5, 4), CFrame = frame * CFrame.new(0, 0.25, -8.4), Color = SATURN.metal, Material = Enum.Material.Metal })
+    for index, offset in { Vector3.new(-1.2, 1.1, -7.6), Vector3.new(1.2, 1.1, -7.6), Vector3.new(-1.2, 1.1, -9.2), Vector3.new(1.2, 1.1, -9.2), Vector3.new(0, 2.7, -8.4) } do
+        local block = decor(parent, "IceBlock", { Size = Vector3.one * 1.6, CFrame = frame * CFrame.new(offset) * CFrame.Angles(0, index * 0.2, 0), Color = SATURN.glow, Material = Enum.Material.Glass, Transparency = 0.25 })
+        if index == 5 then
+            local light = Instance.new("PointLight")
+            light.Color, light.Range, light.Brightness = SATURN.glow, 12, 1.5
+            light.Parent = block
+        end
+    end
+end
+-- The crew pod: a dome tied down to pegs in the rock with four cables.
+local function tetheredPod(parent, c)
+    local at = c + TETHERED
+    decor(parent, "PodDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 9, CFrame = CFrame.new(at), Color = SATURN.hull, Material = Enum.Material.SmoothPlastic }).CastShadow = true
+    make(parent, "PodRing", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 9.6, 9.6), CFrame = CFrame.new(at + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = SATURN.paint, Material = Enum.Material.Metal })
+    for index = 1, 4 do
+        local angle = index / 4 * math.pi * 2 + 0.4
+        local out = Vector3.new(math.cos(angle), 0, math.sin(angle))
+        decor(parent, "PodWindow", { Size = Vector3.new(1.6, 0.7, 0.15), CFrame = CFrame.lookAt(at + out * 4.25 + Vector3.new(0, 1.7, 0), at + out * 10 + Vector3.new(0, 0.6, 0)), Color = Color3.fromRGB(255, 214, 150), Material = Enum.Material.Neon })
+        local peg = at + out * 8.5
+        make(parent, "TetherPeg", { Size = Vector3.new(0.6, 1, 0.6), CFrame = CFrame.new(peg + Vector3.new(0, 0.5, 0)), Color = SATURN.dark, Material = Enum.Material.Metal })
+        strut(parent, "Tether", at + out * 3.4 + Vector3.new(0, 2.6, 0), peg + Vector3.new(0, 0.9, 0), 0.1, SATURN.paint)
+    end
+end
+-- A cluster of ice crystals splaying from a glowing core (the core breathes: Pulse).
+local function crystals(parent, at, random)
+    local core = decor(parent, "CrystalCore", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)), Color = SATURN.glow, Material = Enum.Material.Neon })
+    core:SetAttribute("Period", random:NextNumber(2, 4))
+    CollectionService:AddTag(core, "Pulse")
+    local light = Instance.new("PointLight")
+    light.Color, light.Range = SATURN.glow, 9
+    light.Parent = core
+    for _ = 1, random:NextInteger(4, 7) do
+        local height = random:NextNumber(2, 5)
+        local lean = CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * CFrame.Angles(random:NextNumber(0.2, 0.6), 0, 0)
+        make(parent, "Crystal", { Size = Vector3.new(0.6, height, 0.6), CFrame = CFrame.new(at) * lean * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, math.rad(45), 0),
+            Color = SATURN.ice, Material = Enum.Material.Glass, Transparency = 0.3 })
+    end
+end
 builders[4] = function(folder, c)
-    local ground = disc(folder, "RingRock", c - Vector3.new(0, 2, 0), 65, 4, Color3.fromRGB(205, 195, 170), Enum.Material.Rock)
-    scatter(4, 10, 60, function(index, offset, random)
-        local size = random:NextNumber(3, 7)
-        make(folder, "IceChunk", { Size = Vector3.one * size, CFrame = CFrame.new(c + offset + Vector3.new(0, size / 2 - 0.6, 0)) * CFrame.Angles(random:NextNumber(0, 1), random:NextNumber(0, 6.28), 0), Color = Color3.fromRGB(225, 235, 245), Material = Enum.Material.Ice })
-    end)
-    local saturn = c + Vector3.new(0, 220, -900)
-    decor(folder, "Saturn", { Shape = Enum.PartType.Ball, Size = Vector3.one * 640, CFrame = CFrame.new(saturn), Color = Color3.fromRGB(225, 195, 140) })
-    band(folder, "SaturnBand", saturn, 320, 90, 70, Color3.fromRGB(200, 160, 105))
-    band(folder, "SaturnBand2", saturn, 320, -60, 40, Color3.fromRGB(240, 215, 165))
-    decor(folder, "SaturnRings", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 1500, 1500), CFrame = CFrame.new(saturn) * CFrame.Angles(math.rad(14), 0, math.rad(90)), Color = Color3.fromRGB(215, 200, 165), Transparency = 0.45 })
-    scatter(40, 12, 260, function(index, offset, random)
-        local size = random:NextNumber(6, 18)
-        decor(folder, "FloatingRock", { Size = Vector3.one * size, CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(30, 90), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0), Color = Color3.fromRGB(190, 180, 160), Material = Enum.Material.Rock })
-    end)
-    surroundings(folder, c, 65, { seed = 14, reach = 650, ring = { radius = 440, spread = 40, count = 20, size = { 180, 300 }, rock = Color3.fromRGB(200, 190, 165), rockAlt = Color3.fromRGB(225, 232, 240), seed = 24 },  ground = Color3.fromRGB(185, 175, 150), material = Enum.Material.Rock, crag = Color3.fromRGB(220, 230, 240), cragMaterial = Enum.Material.Ice })
+    local random = Random.new(4)
+    folder:SetAttribute("Dust", Color3.fromRGB(230, 236, 246))
+    folder:SetAttribute("Meteors", true)
+    local ground = disc(folder, "RingRock", c - Vector3.new(0, 3, 0), 65, 6, SATURN.rock, Enum.Material.Slate)
+    Planets.overlay(ground, Enum.NormalId.Right, "RingRock", 40)
+    -- The rest of the ring particle: lumpy rock and ice below and round the platform, its
+    -- tops just under the surface, bulging out past the edge.
+    Planets.blob(folder, "ChunkBody", CFrame.new(c - Vector3.new(0, 40, 0)), Vector3.new(156, 70, 146), SATURN.rock, Enum.Material.Slate)
+    for index = 1, 9 do
+        local angle = index / 9 * math.pi * 2 + random:NextNumber(-0.2, 0.2)
+        local size = Vector3.new(random:NextNumber(40, 80), random:NextNumber(30, 60), random:NextNumber(40, 80))
+        local at = c + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(45, 72) - Vector3.new(0, size.Y / 2 + random:NextNumber(2, 25), 0)
+        Planets.blob(folder, "ChunkLump", CFrame.new(at) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), 0), size,
+            index % 3 == 0 and SATURN.ice or SATURN.rock:Lerp(SATURN.dark, random:NextNumber(0, 0.4)), index % 3 == 0 and Enum.Material.Glacier or Enum.Material.Slate)
+    end
+    -- A rough lip of frosted boulders round the edge, so it isn't a cut disc.
+    for index = 1, 30 do
+        local angle = index / 30 * math.pi * 2 + random:NextNumber(-0.08, 0.08)
+        local at = c + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(66, 70)
+        if (at - c - Destinations.SignOffset).Magnitude > 10 then
+            Planets.boulder(folder, at - Vector3.new(0, 2, 0), random:NextNumber(5, 10), SATURN.rock:Lerp(SATURN.frost, random:NextNumber(0, 0.6)), Enum.Material.Slate, random, false)
+        end
+    end
+    -- Frost drifts, ice lumps and crystal clusters where there's room.
+    for _ = 1, 50 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 60)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local kind, size = random:NextNumber(), random:NextNumber(1.2, 3.5)
+        if isClear(offset, size + 1, SATURN_PROPS, 62) then
+            if kind < 0.15 then
+                crystals(folder, c + offset, random)
+            elseif kind < 0.45 then
+                Planets.mound(folder, "FrostDrift", c + offset, size * 2.5, size * 0.3, SATURN.frost, Enum.Material.Snow, true)
+            else
+                make(folder, "IceLump", { Size = Vector3.new(size * 1.2, size * 0.8, size), Color = SATURN.ice:Lerp(SATURN.rock, random:NextNumber(0, 0.5)), Material = Enum.Material.Ice,
+                    CFrame = CFrame.new(c + offset + Vector3.new(0, size * 0.1, 0)) * CFrame.Angles(random:NextNumber(0, 6.28), random:NextNumber(0, 6.28), random:NextNumber(0, 6.28)) })
+            end
+        end
+    end
+    lighthouse(folder, c)
+    harvester(folder, c)
+    tetheredPod(folder, c)
+    -- The ring plane: four tiles of banded, glittering ring stuff (the bands run across the
+    -- way to Saturn), RING_PLANE below the platform; the sky carries it on past their edge.
+    for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
+        local tile = decor(folder, "RingSheet", { Size = Vector3.new(2048, 1, 2048), CFrame = CFrame.new(c + corner * 1024 - Vector3.new(0, RING_PLANE, 0)), Color = Color3.new(1, 1, 1), Material = Enum.Material.SmoothPlastic })
+        local texture = Planets.overlay(tile, Enum.NormalId.Top, "RingSheet", 900)
+        texture.StudsPerTileU = 300
+    end
+    -- Chunks of ice everywhere, sliding along X at a speed set by how far they are toward
+    -- or away from Saturn (tag RingDrift; PlanetController wraps them round), tumbling.
+    -- Within reach of the landing camera's line and the rocket's descent (z from -120 to
+    -- 260) they keep below the platform.
+    local field = Random.new(44)
+    for _ = 1, 150 do
+        local offset = Vector3.new(field:NextNumber(-1400, 1400), 0, field:NextNumber(-1400, 1400))
+        local flat = offset.Magnitude
+        if flat > 95 then
+            local low = offset.Z > -120 and offset.Z < 260
+            local y = low and field:NextNumber(-RING_PLANE + 4, -14) or field:NextNumber(-RING_PLANE + 4, 120)
+            local size = field:NextNumber(0.6, 1.4) * (3 + flat * 0.025)
+            local spot = c + offset + Vector3.new(0, y, 0)
+            local spin = CFrame.Angles(field:NextNumber(0, 6.28), field:NextNumber(0, 6.28), field:NextNumber(0, 6.28))
+            -- Mostly lumpy ellipsoids of dirty ice; now and then a flat shard.
+            local chunk
+            if field:NextNumber() < 0.8 then
+                chunk = Planets.blob(folder, "RingChunk", CFrame.new(spot) * spin, Vector3.new(size, size * field:NextNumber(0.45, 0.85), size * field:NextNumber(0.55, 0.95)),
+                    SATURN.frost:Lerp(SATURN.rock, field:NextNumber(0, 0.7)), field:NextNumber() < 0.5 and Enum.Material.Ice or Enum.Material.Glacier)
+            else
+                chunk = decor(folder, "RingChunk", { Size = Vector3.new(size, size * field:NextNumber(0.15, 0.3), size * field:NextNumber(0.4, 0.7)), CFrame = CFrame.new(spot) * spin,
+                    Material = Enum.Material.Ice, Color = SATURN.ice:Lerp(SATURN.rock, field:NextNumber(0, 0.4)) })
+                chunk.CastShadow = true
+            end
+            chunk:SetAttribute("Speed", -offset.Z * 0.012)
+            chunk:SetAttribute("Origin", c.X)
+            chunk:SetAttribute("Span", 1400)
+            CollectionService:AddTag(chunk, "RingDrift")
+            if size < 14 then
+                chunk:SetAttribute("SpinRate", field:NextNumber(-0.4, 0.4))
+                CollectionService:AddTag(chunk, Planets.SpinTag)
+            end
+        end
+    end
+    -- Glitter: fine ice drifting past the platform.
+    local glitterBox = decor(folder, "RingGlitter", { Size = Vector3.new(260, 60, 260), CFrame = CFrame.new(c + Vector3.new(0, 10, 0)), Transparency = 1 })
+    local glitter = Instance.new("ParticleEmitter")
+    glitter.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    glitter.Shape = Enum.ParticleEmitterShape.Box
+    glitter.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+    glitter.EmissionDirection = Enum.NormalId.Right
+    glitter.Rate, glitter.Lifetime = 30, NumberRange.new(6, 10)
+    glitter.Speed, glitter.SpreadAngle = NumberRange.new(0.5, 2), Vector2.new(30, 30)
+    glitter.Size = NumberSequence.new(0.18, 0.3)
+    glitter.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, 0.2), NumberSequenceKeypoint.new(0.8, 0.3), NumberSequenceKeypoint.new(1, 1) })
+    glitter.Rotation, glitter.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-60, 60)
+    glitter.LightEmission, glitter.LightInfluence = 0.8, 0.3
+    glitter.Color = ColorSequence.new(Color3.fromRGB(240, 246, 255))
+    glitter.Parent = glitterBox
+    -- Saturn rises out of its rings beyond the landing site: its equator lies in the ring
+    -- plane, so the sheet cuts across it.
+    Planets.globe(folder, "Saturn", { center = c + Vector3.new(-160, -RING_PLANE, -1850), diameter = 1700, texture = "Saturn", spin = 0.004,
+        atmosphere = Color3.fromRGB(240, 220, 180), glow = 0.4, color = Color3.fromRGB(225, 195, 140) })
+    orbitingMoon(folder, c, "Enceladus", { size = Vector3.one * 46, radius = 1300, axis = Vector3.new(-0.3, 0.9, 1), rate = 0.01, lead = 0.5, spin = 0.02,
+        texture = "Enceladus", color = SATURN.frost })
+    Planets.globe(folder, "Titan", { center = c + Vector3.new(1100, 520, -1150), diameter = 80, texture = "Titan", spin = 0.005,
+        atmosphere = Color3.fromRGB(230, 170, 90), glow = 0.3, color = Color3.fromRGB(214, 150, 70) })
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end

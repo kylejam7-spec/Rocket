@@ -27,7 +27,8 @@
       canyon from boxes, say), with the same fallback.
     - Planets.mound(...) is a ball sunk until only a low cap shows: a smooth hill.
       Planets.boulder heaps a few balls into a rounded rock. Planets.dune is a stretched
-      sphere sunk the same way: a long, smooth drift of sand.
+      sphere sunk the same way: a long, smooth drift of sand. Planets.blob is a free
+      ellipsoid (the underside of a floating rock, say).
     - Planets.overlay(part, face, key, studs, transparency?, tint?) lays a tiling texture
       over one face.
 ]]
@@ -50,6 +51,11 @@ local TEXTURES = {
     Jupiter = { id = 138703120001562, file = "jupiter" },
     Io = { id = 92758180219133, file = "io" },
     EuropaIce = { id = 124873466873497, file = "europa_ice" },
+    Saturn = { id = 92757706712119, file = "saturn" },
+    Enceladus = { id = 84183449209134, file = "enceladus" },
+    Titan = { id = 95534044250868, file = "titan" },
+    RingSheet = { id = 79775712039680, file = "ring_sheet" },
+    RingRock = { id = 97315882149044, file = "ring_rock" },
 }
 
 function Planets.texture(key)
@@ -238,6 +244,13 @@ end
 function Planets.dune(parent, at, length, width, height, yaw, color, material)
     local item = shell(parent, "Dune", CFrame.new(at + Vector3.new(0, -0.2 * height, 0)) * CFrame.Angles(0, yaw, 0),
         Vector3.new(length, height * 2.4, width), { Color = color, Material = material or Enum.Material.Sand })
+    item.CastShadow = true
+    return item
+end
+
+-- An ellipsoid `size` across centred on `center`, scenery only.
+function Planets.blob(parent, name, center, size, color, material)
+    local item = shell(parent, name, center, size, { Color = color, Material = material or Enum.Material.Slate })
     item.CastShadow = true
     return item
 end
