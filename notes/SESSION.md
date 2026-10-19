@@ -20,6 +20,8 @@
 - Verified in Play: no character until ClientReady (11.5 s in Studio), spawned 0.4 s
   after, standing on the spawn (never below y = 4); respawn 5.5 s after death; RunChecks
   12/12; no asset-type spam.
+- The user granted the art access; merged as #41. The art's load check goes through the
+  ImageLabel: `PreloadAsync` on the bare id string reported Failure even with access.
 
 # Earlier session: 2026-10-19 (6), music
 
