@@ -1,4 +1,26 @@
-# Latest session: 2026-10-18 (5), touches on the Earth site
+# Latest session: 2026-10-18 (6), Kenney props on the Earth site
+
+- Branch `claude/earth-props` from master (bfce87f). The user imported the staged
+  factory and station FBX files and uploaded their palettes: Factory 96315897677106,
+  Station 109349449591065.
+- Space kit: its FBX files are ASCII with flat material colours, and Studio dropped the
+  colours, so everything came in grey. `tools/map/bake_space.py` runs Blender headless
+  (`F:\blender.exe`; the MCP isn't needed). It reads the GLB files, bakes the 9
+  colours into a palette and writes binary FBX files with the palette embedded.
+  Studio's importer uploaded the palette once per model; `prepare.luau` points every
+  copy at one id (`SiteProps.Palettes.Space`).
+- `tools/map/prepare.luau` builds `ServerStorage.SiteModels`: pivot at the base, 10
+  studs per kit metre, box collision. It's saved to
+  `src/ServerScriptService/SiteModels.rbxm`.
+- `SiteProps.place` stands a model at a given studs-per-metre scale.
+  `SiteDressingService.Props` lists the placements. `SitePropsCheck` keeps them on
+  the site and off the lane, spawn, huts, stations and Tier 5's footprint (|x| <= 245
+  on the apron).
+- Studio: RunChecks all pass except MaterialInteractionCheck, which already failed on
+  master. #28 put Tier 5's FloodPole at x = 234, outside the 380-wide pad. Left for
+  whoever owns the 3x rockets.
+
+# Earlier session: 2026-10-18 (5), touches on the Earth site
 
 - Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The
   first attempt (PR #27, on master) would have undone it and was closed.
