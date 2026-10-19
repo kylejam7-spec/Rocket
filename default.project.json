@@ -31,7 +31,7 @@
     },
     "$ignoreUnknownInstances": true,
     "ReplicatedFirst": {
-      "$path": "world/ReplicatedFirst.rbxm"
+      "$path": "src/ReplicatedFirst"
     },
     "Teams": {
       "$path": "world/Teams.rbxm"

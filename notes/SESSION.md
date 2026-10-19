@@ -1,4 +1,27 @@
-# Latest session: 2026-10-19 (6), music
+# Latest session: 2026-10-19 (7), loading screen
+
+- `claude/loading-screen`. `src/ReplicatedFirst/LoadingScreen.client.luau` (the project's
+  ReplicatedFirst now maps to `src/ReplicatedFirst`; the empty world/ReplicatedFirst.rbxm
+  is gone). It removes Roblox's screen and shows the user's title art (uploaded
+  133247550435220; needs experience access, Studio falls back to
+  content/textures/rocket-loading/loading.png; the source is assets/loading/loading.png)
+  with a slow zoom, a shuffled tip card (20 tips and jokes, every third badged FUN FACT),
+  a status line, and a gradient progress bar with a rocket riding its tip.
+- Steps: game loaded, then RocketWorld's Built attribute (the bar creeps meanwhile: in
+  Studio the server takes ~10 s to build the destinations), then PreloadAsync of every
+  textured, meshed or sounded instance in the world and PetModels plus the SFX (by
+  instance, one per file: bare id strings get fetched as images and spam "asset type
+  does not match"), capped at 25 s, then ClientReady and holding the root anchored until
+  a ray finds ground. At least 5 s on screen, then a 0.6 s fade.
+- Server (Main): `Players.CharacterAutoLoads = false`; ClientReady spawns the character
+  (LoadCharacter, guarded); a 45 s fallback spawn; respawn after death (RespawnTime),
+  since auto-respawn went with auto-loading. World sets `RocketWorld.Built` once every
+  service is built. RemoteService adds ClientReady.
+- Verified in Play: no character until ClientReady (11.5 s in Studio), spawned 0.4 s
+  after, standing on the spawn (never below y = 4); respawn 5.5 s after death; RunChecks
+  12/12; no asset-type spam.
+
+# Earlier session: 2026-10-19 (6), music
 
 - Planet PRs #34-#38 squash-merged into master. Music on `claude/music`.
 - The user's MP3s (HoliznaCC0 lofi, CC0) sit in `assets/sounds/Earth Music` and
