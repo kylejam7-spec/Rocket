@@ -140,14 +140,16 @@ local function play(vehicle)
             air.MidGain = -math.clamp(distance / 100, 0, 12)
         end
         -- Read live: attribute replication order is not guaranteed relative to LaunchAt.
-        -- Two shots: alongside as it clears the tower, then a high, wide view from the
+        -- Two shots: alongside as it clears the pad, then a high, wide view from the
         -- other side of the pad looking up as it shrinks into the sky. That one sits well
         -- above everything on the ground (the UFO Shop, the hut, players on the apron),
-        -- so nothing walks into the frame.
+        -- so nothing walks into the frame. For the big rockets both stand out past the
+        -- site's hoarding (SiteSurroundsService), so the first starts high enough to see
+        -- the pad over it.
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            local view = origin.Position + Vector3.new(height * 0.9, 12 + rise * 0.85, height * 1.2)
+            local view = origin.Position + Vector3.new(height * 0.9, 12 + height * 0.1 + rise * 0.85, height * 1.2)
             if lift > (duration - ignition) * 0.45 then
                 view = origin.Position + Vector3.new(-height * 0.7, 40 + height * 0.5, height * 1.3)
             end

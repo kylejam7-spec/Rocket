@@ -95,7 +95,13 @@ function World.new(ctx)
 
     local Layout = require(script.Parent.SiteLayout)
     local MaterialStations = require(script.Parent.MaterialStationService)
-    service.expandMap = require(script.Parent.MapExpansionService).build(part, label, MaterialStations.Reserved)
+    -- The perimeter (SiteSurroundsService, built with the Gym District below) follows
+    -- the ground's edge out as the site expands.
+    local expand, surrounds = require(script.Parent.MapExpansionService).build(part, label, MaterialStations.Reserved), nil
+    function service.expandMap(cycle)
+        service.siteEdge = expand(cycle)
+        if surrounds then surrounds.fit(service.siteEdge) end
+    end
     service.expandMap(1)
     local spawn = tag(part("Spawn", Layout.Spawn, Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
     -- Invisible: players just appear on the ground, with no pad or label.
@@ -244,6 +250,9 @@ function World.new(ctx)
         part("GymDistrictWall", Vector3.new(side * 55, 1.5, (groundEnd + districtZ1) / 2), Vector3.new(1, 3, districtZ1 - groundEnd), wallColor)
     end
     part("GymDistrictWall", Vector3.new(0, 1.5, districtZ1), Vector3.new(111, 3, 1), wallColor)
+    -- Hoarding and barrier round the site and the District; the land beyond.
+    surrounds = require(script.Parent.SiteSurroundsService).build(world, { x = 56, z1 = districtZ1 + 1 })
+    surrounds.fit(service.siteEdge)
 
     local stations = {}
     local tierColors = {

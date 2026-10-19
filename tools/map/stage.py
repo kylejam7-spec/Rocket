@@ -4,7 +4,8 @@ Copies each chosen FBX to assets/models-textures/Map/import/<Kit>_<name>.fbx (so
 from different kits can't collide and imports say where they came from), plus each
 kit's palette texture as <Kit>_colormap.png. The factory and space-station kits colour
 their models from that palette (like the pets' atlases): upload the two PNGs as Images
-and their ids go in the map code. The space kit uses plain material colours.
+and their ids go in SiteProps.Palettes. The space kit uses flat material colours that
+Studio drops, so its picks are baked by bake_space.py instead of staged here.
 
     python tools/map/stage.py
 """
@@ -43,6 +44,8 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     staged, missing = 0, []
     for (kit, folder), names in PICKS.items():
+        if kit == "Space":
+            continue
         models = os.path.join(KITS, folder, "Models", "FBX format")
         for name in names:
             source = os.path.join(models, name + ".fbx")

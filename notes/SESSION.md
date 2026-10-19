@@ -1,4 +1,77 @@
-# Latest session: 2026-10-18 (5), touches on the Earth site
+# Latest session: 2026-10-18 (6), Kenney props on the Earth site
+
+- Branch `claude/earth-props` from master (bfce87f). The user imported the staged
+  factory and station FBX files and uploaded their palettes: Factory 96315897677106,
+  Station 109349449591065.
+- Space kit: its FBX files are ASCII with flat material colours, and Studio dropped the
+  colours, so everything came in grey. `tools/map/bake_space.py` runs Blender headless
+  (`F:\blender.exe`; the MCP isn't needed). It reads the GLB files, bakes the 9
+  colours into a palette and writes binary FBX files with the palette embedded.
+  Studio's importer uploaded the palette once per model; `prepare.luau` points every
+  copy at one id (`SiteProps.Palettes.Space`).
+- `tools/map/prepare.luau` builds `ServerStorage.SiteModels`: pivot at the base, 10
+  studs per kit metre, box collision. It's saved to
+  `src/ServerScriptService/SiteModels.rbxm`.
+- `SiteProps.place` stands a model at a given studs-per-metre scale.
+  `SiteDressingService.Props` lists the placements. `SitePropsCheck` keeps them on
+  the site and off the lane, spawn, huts, stations and Tier 5's footprint (|x| <= 245
+  on the apron).
+- Studio: RunChecks all pass except MaterialInteractionCheck, which already failed on
+  master. #28 put Tier 5's FloodPole at x = 234, outside the 380-wide pad. Left for
+  whoever owns the 3x rockets.
+
+## Same session, part 2: sky, perimeter, surroundings, liftoff
+
+- Skies: `tools/sky/cubemap.py` cuts the Kenney equirectangular skyboxes into Roblox's
+  six faces. Face orientation was checked in Studio with `--test`: Rt covers -X, and Up
+  and Dn are turned a quarter. Earth uses "day" (purple dusk) with a matching
+  Atmosphere haze. Destinations and the cabin use "galaxy"; the Black Hole uses "band".
+  `Shared/Skies` holds the ids, and DestinationController picks one each frame.
+  - The 18 faces were uploaded with the Studio MCP `upload_image` to k_b4nd0. They're
+    approved, but the experience (universe 10770732428, owner user 1502038929) still
+    can't load them. Studio reports "User is not authorized", so the experience needs
+    permission to use them. Until then the default sky shows.
+- Earth perimeter (`SiteSurroundsService`): hoarding (10 tall, hazard rail, posts,
+  notices) on a closed loop round the ground and the Gym District, with a 120-stud
+  invisible barrier. `fit(edge)` rebuilds it whenever map expansion widens the ground
+  (`expandMap` now returns the half-width).
+- Land beyond: a grass plain to +-5120, 0.35 under the site, so expansion strips cover
+  it; 70 low-poly trees; and 22 faceted mountains at 2600-4200 (snow caps on the big
+  ones). DestinationController hides this land more than 7000 from Earth.
+- Destinations: a rim of faceted crags just outside each fence, and a plain 3 below the
+  platform with boulders, reaching 1000 on the Moon and Mars, 650 on Europa and Saturn,
+  and 800 on the Black Hole. The Black Hole backdrop moved up 70 so its disk clears the
+  plain. Each reach clears its giant planet and covers the arrival camera's spot.
+- Liftoff: the tilted ramps stayed up when the rocket swung upright, so the hull seemed
+  to cut through them. `Build:erect` now fades the ramps, rails, posts and beacons
+  (no collision), and `beginBoarding` lifts anyone on a ramp down beside the hatch
+  (`Build:isOnRamps`). Shot 1 starts 0.1h higher, to see the pad over the hoarding. A
+  numeric check over all 5 tiers: the whole rocket stays in frame in both shots.
+- PerimeterCheck added. RunChecks: all pass except the pre-existing
+  MaterialInteractionCheck (Tier 5 FloodPole off the pad).
+
+## Same session, part 3: skies load, launch background fixed
+
+- After the Studio restart the 18 sky faces load: the user granted the experience access.
+- What flickered during the launch:
+  - The grass plain lay 0.35 under the whole site, so from a climbing camera the two
+    z-fought. It now has a hole for the site and the District (`Surrounds.plainPieces`,
+    refitted on expansion; PerimeterCheck covers it).
+  - The snow caps were flush with their peaks' faces. They now stand 1.2% proud.
+  - The Atmosphere haze thickened with camera height and swallowed the ground during the
+    shots, so Earth has no haze now.
+- Mountains: 24 at 2200-3100, all well clear of the fully expanded site (checked).
+- The Earth sky is cut with `--land`: ground matching the plain below the horizon and a
+  low faceted far range. Where Roblox drops distant geometry (lower draw distance when
+  the frame rate dips), the sky behind still reads as land.
+  - The 5 changed Earth faces are new uploads (k_b4nd0) and need experience access like
+    the first set. Until then the Earth sky falls back to the default.
+  - Painting a tall range into the sky was tried and dropped: it was stair-stepped on
+    the cube faces and washed out by the haze.
+- Studio MCP screen captures right after a big camera move often return a stale frame;
+  a second capture after a wait is reliable.
+
+# Earlier session: 2026-10-18 (5), touches on the Earth site
 
 - Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The
   first attempt (PR #27, on master) would have undone it and was closed.

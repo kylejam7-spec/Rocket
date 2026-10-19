@@ -136,7 +136,7 @@ end
 -- Replace whatever is on the pad with `tier` (variant = 1st/2nd/3rd cycle of that tier).
 function Build:load(tier, variant)
     self.site:ClearAllChildren()
-    self.filling, self.frontierItem, self.arms = nil, nil, {}
+    self.filling, self.frontierItem, self.arms, self.ramps = nil, nil, {}, {}
     local data = Models[tier]()
     local complex = Instance.new("Model")
     complex.Name = "LaunchComplex"
@@ -194,14 +194,15 @@ function Build:load(tier, variant)
     local y0 = low.Y - (low.Y + (surface - low.Z) * s) / c - 2
     local y1 = high.Y - 8
     local steel, dark = Models.Colors.tower, Models.Colors.dark
+    self.rampTop = y1
     for _, side in { -1, 1 } do
-        create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
-            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex)
-        create({ name = "RampRail", shape = "Block", size = Vector3.new(0.6, y1 - y0, 1.4), color = dark, material = "Metal" },
-            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, surface + 0.2), complex)
-        create({ name = "RampBeacon", shape = "Block", size = Vector3.new(1.5, 1, 1.5), color = Color3.fromRGB(255, 70, 60), material = "Neon",
+        table.insert(self.ramps, create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
+            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex))
+        table.insert(self.ramps, create({ name = "RampRail", shape = "Block", size = Vector3.new(0.6, y1 - y0, 1.4), color = dark, material = "Metal" },
+            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, surface + 0.2), complex))
+        table.insert(self.ramps, create({ name = "RampBeacon", shape = "Block", size = Vector3.new(1.5, 1, 1.5), color = Color3.fromRGB(255, 70, 60), material = "Neon",
             light = { color = Color3.fromRGB(255, 80, 60), range = 24, brightness = 2 } },
-            tilted * CFrame.new(side * rampX, y1, surface + 0.75), complex)
+            tilted * CFrame.new(side * rampX, y1, surface + 0.75), complex))
     end
     local up = self.origin.Rotation
     for y = low.Y + 10, y1, ARM_SPACING do
@@ -216,8 +217,8 @@ function Build:load(tier, variant)
             local top = tilted * Vector3.new(x, y, surface - 1)
             local height = top.Y - self.origin.Y
             if height > 2 then
-                create({ name = "RampPost", shape = "Block", size = Vector3.new(1, height, 1), color = steel, material = "Metal" },
-                    CFrame.new(top.X, self.origin.Y + height / 2, top.Z) * up, complex)
+                table.insert(self.ramps, create({ name = "RampPost", shape = "Block", size = Vector3.new(1, height, 1), color = steel, material = "Metal" },
+                    CFrame.new(top.X, self.origin.Y + height / 2, top.Z) * up, complex))
             end
         end
     end
@@ -323,8 +324,17 @@ function Build:isAboard(position)
         and point.Z > b.low.Z - 2 and point.Z < b.high.Z + 6
 end
 
+-- True for points on (or just over) either ramp.
+function Build:isOnRamps(position)
+    local point = self.pivot:PointToObjectSpace(position)
+    return math.abs(point.X) >= self.rampInner - 1 and math.abs(point.X) <= self.rampOuter + 1
+        and point.Y < (self.rampTop or 0) + 4 and point.Z > self.rampSurface - 2 and point.Z < self.rampSurface + 9
+end
+
 -- Swing the finished rocket upright about its hinge. Clients animate it; the server
--- snaps to the upright pose afterwards. The arms retract so the hull clears them.
+-- snaps to the upright pose afterwards. The arms and the ramps (which lean at the build
+-- angle, so the upright hull would seem to cut through them) retract first: they fade out
+-- and stop colliding. The next load builds fresh ones.
 function Build:erect(serverTime, seconds)
     local vehicle = self.vehicle
     if self.filling then self.filling.part:Destroy() end
@@ -332,6 +342,14 @@ function Build:erect(serverTime, seconds)
     for _, arm in self.arms do
         arm.CanCollide, arm.CanQuery = false, false
         TweenService:Create(arm, reveal, { Transparency = 1 }):Play()
+    end
+    local fold = TweenInfo.new(math.min(seconds, 1.5), Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+    for _, piece in self.ramps do
+        piece.CanCollide, piece.CanQuery = false, false
+        for _, light in piece:GetChildren() do
+            if light:IsA("Light") then light.Enabled = false end
+        end
+        TweenService:Create(piece, fold, { Transparency = 1 }):Play()
     end
     vehicle:SetAttribute("ErectSeconds", seconds)
     vehicle:SetAttribute("ErectAt", serverTime)

@@ -10,6 +10,7 @@
     (tools/map).
 ]]
 local Layout = require(script.Parent.SiteLayout)
+local Props = require(script.Parent.SiteProps)
 local Dressing = {}
 
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
@@ -263,6 +264,7 @@ local function skeleton(parent, base, facing, width, depth, floors, name)
 end
 
 local function cone(parent, at)
+    if Props.place(parent, "Factory_cone", CFrame.new(at), 7) then return end
     make(parent, "Cone", Vector3.new(1.2, 0.2, 1.2), CFrame.new(at + Vector3.new(0, 0.1, 0)), Color3.fromRGB(30, 30, 30), Enum.Material.Rubber)
     make(parent, "ConeBody", Vector3.new(1.4, 0.7, 0.7), CFrame.new(at + Vector3.new(0, 0.85, 0)) * UPRIGHT, Color3.fromRGB(250, 110, 30), Enum.Material.SmoothPlastic, false, "Cylinder")
     make(parent, "ConeStripe", Vector3.new(0.3, 0.75, 0.75), CFrame.new(at + Vector3.new(0, 1, 0)) * UPRIGHT, Color3.new(1, 1, 1), Enum.Material.SmoothPlastic, false, "Cylinder")
@@ -289,6 +291,74 @@ local function arch(parent, z)
         local light = Instance.new("PointLight")
         light.Color, light.Range = Color3.fromRGB(255, 140, 60), 10
         light.Parent = lamp
+    end
+end
+
+-- Kenney props: { model, x, z, yaw (degrees), studs per kit metre, solid }. They fill
+-- the open ground outside the stations and along the apron's edges (|x| >= 250, clear
+-- of Tier 5's launch complex at |x| <= 240), so none is on a walk players need.
+Dressing.Props = {
+    -- Recycling line beside the Salvage Yard: conveyors out of the yard, under a
+    -- hopper, into the crushers; skips of sorted rock and crates of salvage by them.
+    { "Factory_conveyor-long", -188, 50, 0, 15, true },
+    { "Factory_conveyor-long", -218, 50, 0, 15, true },
+    { "Factory_hopper-high-square", -218, 50, 0, 15, true },
+    { "Factory_machine-fortified", -248, 50, 180, 15, true },
+    { "Factory_machine", -272, 50, 180, 15, true },
+    { "Factory_robot-arm-a", -200, 70, 200, 10, false },
+    { "Station_skip-rocks", -222, 90, 90, 18, true },
+    { "Station_skip", -256, 92, 90, 18, true },
+    { "Factory_box-large", -264, -24, 10, 16, true },
+    { "Factory_box-long", -242, -32, -5, 16, true },
+    { "Factory_box-wide", -266, -44, 0, 16, true },
+    { "Factory_warning-traffic", -177, 66, 0, 10, false },
+    -- Fuel farm beside the Fuel Depot: a pipe run out to the tanks, a generator and
+    -- drum stores, and a dish keeping in touch with the launch.
+    { "Factory_pipe-large-long", 182, 55, 0, 6, true },
+    { "Factory_pipe-large-long", 194, 55, 0, 6, true },
+    { "Factory_pipe-large-valve", 203, 55, 0, 6, true },
+    { "Factory_pipe-large-long", 212, 55, 0, 6, true },
+    { "Factory_pipe-large-long", 224, 55, 0, 6, true },
+    { "Space_machine_barrelLarge", 237, 55, 0, 26, true },
+    { "Space_machine_barrelLarge", 237, 28, 0, 26, true },
+    { "Space_machine_barrelLarge", 264, 28, 0, 26, true },
+    { "Space_machine_generatorLarge", 266, 60, -90, 22, true },
+    { "Space_barrels", 218, 84, 20, 22, true },
+    { "Space_barrels_rail", 240, 88, 0, 22, true },
+    { "Space_satelliteDish_large", 268, 92, 200, 26, false },
+    { "Factory_warning-orange", 176, 64, 0, 8, false },
+    { "Station_container-tall", 230, -20, 0, 14, true },
+    { "Station_container-wide", 244, -20, 0, 14, true },
+    { "Station_container", 237, -20, 0, 14, true },
+    -- Spawn: astronaut statues by the Gym District entrance and a parked rover.
+    { "Space_astronautA", -18, 98, 180, 14, true },
+    { "Space_astronautB", 18, 98, 180, 14, true },
+    { "Space_rover", 34, 52, 35, 20, true },
+    -- Apron edges: hangars with their doors toward spawn, cargo craft and service
+    -- kit between them, container stacks and dishes.
+    { "Space_hangar_largeA", -268, -190, 0, 17, true },
+    { "Space_craft_cargoA", -268, -290, 180, 18, true },
+    { "Space_hangar_roundGlass", -268, -400, 90, 13, true },
+    { "Space_machine_wireless", -268, -470, 90, 22, false },
+    { "Space_satelliteDish_detailed", -268, -620, 160, 26, false },
+    { "Space_hangar_largeB", -268, -720, 0, 17, true },
+    { "Space_structure_detailed", -268, -820, 0, 26, true },
+    { "Space_hangar_largeB", 268, -190, 0, 17, true },
+    { "Space_craft_cargoB", 268, -300, 180, 18, true },
+    { "Station_container-tall", 262, -380, 0, 14, true },
+    { "Station_container-wide", 274, -380, 0, 14, true },
+    { "Station_container", 268, -392, 0, 14, true },
+    { "Space_satelliteDish_large", 268, -470, 200, 26, false },
+    { "Space_hangar_roundA", 268, -640, -90, 13, true },
+    { "Space_supports_high", 268, -740, 0, 22, true },
+    { "Space_chimney_detailed", 268, -820, 0, 22, true },
+}
+
+local function kenney(parent)
+    local model = folder(parent, "KenneyProps")
+    for _, spot in Dressing.Props do
+        local name, x, z, yaw, scale, solid = table.unpack(spot)
+        Props.place(model, name, CFrame.new(x, 0, z) * CFrame.Angles(0, math.rad(yaw), 0), scale, solid)
     end
 end
 
@@ -328,6 +398,7 @@ function Dressing.build(world)
         barrier(barriers, CFrame.new(spot[1], 0, spot[2]) * CFrame.Angles(0, math.rad(spot[3]), 0))
     end
     arch(site, Layout.Spawn.Z - 30)
+    kenney(site)
     return site
 end
 

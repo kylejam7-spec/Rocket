@@ -167,10 +167,16 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 ramps and pad are 1.35x bigger, the stations are remodelled, the construction-site
 dressing is built from primitives, and planets are hidden from Earth.
 
-- **Next:** import the staged Kenney models (`tools/map/README.md`) and swap them in
-  (cranes, containers, hangars, satellite dishes, catwalks); connect the Blender MCP
-  for custom pieces; add terrain or edge treatment so the site doesn't end at a floating
-  edge; a skybox or atmosphere pass; and a part-count and performance check on phones.
+- **Done (`claude/earth-props`):** 67 Kenney models imported into `SiteModels.rbxm`.
+  The site places 47 of them, about 57 parts: a recycling line by the Salvage Yard, a
+  fuel farm by the Fuel Depot, hangars and cargo craft along the apron edges, astronaut
+  statues at the Gym District, and Kenney cones on the lane.
+- **Done:** Kenney skies with an Earth haze, a hoarding and barrier perimeter that
+  follows expansion, a grass plain with trees and mountains round Earth, crag rims and
+  plains at every destination, and ramps that retract at liftoff.
+- **Next:** grant the experience access to the sky images; use the remaining models
+  (rocket parts, rocks and craters, catwalks, screens) here or on the destinations;
+  check part count and performance on phones.
 
 ### Phase 6: Meta and social
 
