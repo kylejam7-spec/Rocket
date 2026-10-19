@@ -13,6 +13,7 @@
     Stations.Reserved lists the footprints map expansion must leave alone.
 ]]
 local Layout = require(script.Parent.SiteLayout)
+local Planets = require(script.Parent.Planets)
 local Stations = {}
 
 local FOOTPRINT = Layout.StationFootprint
@@ -187,7 +188,17 @@ local function buildSalvageYard(parent)
     local half = FOOTPRINT / 2
     local random = Random.new(1957)
     local yellow, steel, dark = Color3.fromRGB(222, 170, 40), Color3.fromRGB(70, 74, 80), Color3.fromRGB(40, 42, 46)
-    make(model, "YardFloor", "Block", Vector3.new(FOOTPRINT.X, 1.4, FOOTPRINT.Y), CFrame.new(c.X, -0.5, c.Z), Color3.fromRGB(96, 88, 80), Enum.Material.Pebble)
+    local floor = make(model, "YardFloor", "Block", Vector3.new(FOOTPRINT.X, 1.4, FOOTPRINT.Y), CFrame.new(c.X, -0.5, c.Z), Color3.fromRGB(96, 88, 80), Enum.Material.Pebble)
+    Planets.overlay(floor, Enum.NormalId.Top, "SiteDirt", 24, 0.35, Color3.fromRGB(150, 150, 150))
+    Planets.overlay(floor, Enum.NormalId.Top, "MoonMaria", 140, 0.4, Color3.fromRGB(60, 46, 36))
+    -- Oil slicks and rust stains on the gravel (flat, decor).
+    for _ = 1, 10 do
+        local radius = random:NextNumber(1.5, 4.5)
+        local slick = make(model, "OilSlick", "Cylinder", Vector3.new(0.05, radius * 2, radius * 2),
+            CFrame.new(c.X + random:NextNumber(-half.X + 6, half.X - 6), 0.23, c.Z + random:NextNumber(-half.Y + 6, half.Y - 6)) * UPRIGHT,
+            random:NextNumber() < 0.6 and Color3.fromRGB(24, 22, 26) or Color3.fromRGB(110, 54, 30), Enum.Material.SmoothPlastic, true)
+        slick.Transparency, slick.Reflectance = random:NextNumber(0.2, 0.5), 0.08
+    end
     -- Fencing on the back (-X) and both ends, with a gap toward the launch pad (-Z).
     local x0, x1, z0, z1 = c.X - half.X, c.X + half.X, c.Z - half.Y, c.Z + half.Y
     sheetFence(model, Vector3.new(x0, 0, z0), Vector3.new(x0, 0, z1), 7)
@@ -261,6 +272,28 @@ local function buildSalvageYard(parent)
     end
     -- Entrance gantry on the lane side, signed.
     local sign = gantry(model, Vector3.new(x1, 0, c.Z), Vector3.new(1, 0, 0), 28, 16, yellow)
+    -- Hazard sleeves round the gate posts.
+    for _, side in { -1, 1 } do
+        for index = 0, 3 do
+            make(model, "GateStripe", "Block", Vector3.new(1.35, 0.9, 1.35), CFrame.new(x1, 0.45 + index * 0.9, c.Z + side * 14), index % 2 == 0 and yellow or dark, Enum.Material.SmoothPlastic, true)
+        end
+    end
+    -- Floodlights in the back corners, aimed into the yard.
+    for _, corner in { Vector3.new(x0 + 2, 0, z0 + 2), Vector3.new(x0 + 2, 0, z1 - 22) } do
+        make(model, "FloodPost", "Block", Vector3.new(0.6, 18, 0.6), CFrame.new(corner + Vector3.new(0, 9, 0)), steel, Enum.Material.Metal, true)
+        local head = make(model, "FloodHead", "Block", Vector3.new(2.4, 1.4, 0.6),
+            CFrame.lookAt(corner + Vector3.new(0, 18, 0), Vector3.new(c.X, 0, c.Z)), dark, Enum.Material.Metal, true)
+        local lens = make(model, "FloodLens", "Block", Vector3.new(2.1, 1.1, 0.1), head.CFrame * CFrame.new(0, 0, -0.32), Color3.fromRGB(255, 240, 210), Enum.Material.Neon, true)
+        local light = Instance.new("SpotLight")
+        light.Face, light.Angle, light.Range, light.Brightness = Enum.NormalId.Front, 60, 50, 1.2
+        light.Parent = lens
+    end
+    -- Warning plates along the outside of the fence.
+    for along = 12, FOOTPRINT.Y - 12, 24 do
+        local plate = CFrame.new(x0 - 0.35, 5, z0 + along) * CFrame.Angles(0, math.rad(-90), 0)
+        make(model, "WarningPlate", "Block", Vector3.new(2.6, 2.6, 0.1), plate, yellow, Enum.Material.SmoothPlastic, true)
+        make(model, "WarningMark", "Wedge", Vector3.new(0.12, 1.4, 1.6), plate * CFrame.new(0, 0, -0.06) * CFrame.Angles(0, math.rad(90), 0), dark, Enum.Material.SmoothPlastic, true)
+    end
     local pickup, points = zone(model, "Salvage Yard",
         CFrame.new(c.X - 2, 7, c.Z), Vector3.new(FOOTPRINT.X - 14, 16, FOOTPRINT.Y - 10), 2)
     banner(sign, Vector3.new(0, 6, 0), "SALVAGE YARD", "Pick up METAL here", Color3.fromRGB(175, 205, 230))
@@ -277,8 +310,30 @@ local function buildFuelDepot(parent)
     local white, orange, amber, cyan = Color3.fromRGB(236, 238, 240), Color3.fromRGB(232, 120, 40), Color3.fromRGB(255, 165, 55), Color3.fromRGB(90, 220, 255)
     local hazardA, hazardB = Color3.fromRGB(245, 200, 40), Color3.fromRGB(30, 30, 34)
     local padTop = 0.3
-    make(model, "DepotPad", "Block", Vector3.new(FOOTPRINT.X, 2.3, FOOTPRINT.Y), CFrame.new(c.X, padTop - 1.15, c.Z), concrete, Enum.Material.Concrete)
+    local padPart = make(model, "DepotPad", "Block", Vector3.new(FOOTPRINT.X, 2.3, FOOTPRINT.Y), CFrame.new(c.X, padTop - 1.15, c.Z), concrete, Enum.Material.Concrete)
+    Planets.overlay(padPart, Enum.NormalId.Top, "Concrete", 18, 0.1)
+    Planets.overlay(padPart, Enum.NormalId.Top, "MoonMaria", 160, 0.55, Color3.fromRGB(80, 76, 70))
     local function at(x, y, z) return Vector3.new(c.X + x, padTop + y, c.Z + z) end
+    local function paint(name, size, position, color)
+        return make(model, name, "Block", Vector3.new(size.X, 0.04, size.Y), CFrame.new(position + Vector3.new(0, 0.02, 0)), color, Enum.Material.SmoothPlastic, true)
+    end
+    -- A hazard kerb round the pad's edge: yellow and black blocks, flush and walk-over.
+    for _, edge in { { Vector3.new(0, 0, half.Y - 0.6), FOOTPRINT.X, true }, { Vector3.new(0, 0, -half.Y + 0.6), FOOTPRINT.X, true },
+        { Vector3.new(half.X - 0.6, 0, 0), FOOTPRINT.Y, false }, { Vector3.new(-half.X + 0.6, 0, 0), FOOTPRINT.Y, false } } do
+        for index = 0, math.floor(edge[2] / 4) - 1 do
+            local offset = -edge[2] / 2 + 2 + index * 4
+            local position = at(0, 0, 0) + edge[1] + (edge[3] and Vector3.new(offset, 0, 0) or Vector3.new(0, 0, offset))
+            paint("HazardKerb", edge[3] and Vector2.new(4, 1.2) or Vector2.new(1.2, 4), position, index % 2 == 0 and Color3.fromRGB(245, 200, 40) or Color3.fromRGB(30, 30, 34))
+        end
+    end
+    -- Yellow bollards at the pad's corners on the lane side.
+    for _, z in { -half.Y + 3, half.Y - 3 } do
+        for _, x in { -half.X + 3, -half.X + 7 } do
+            local base = at(x, 0, z)
+            make(model, "Bollard", "Cylinder", Vector3.new(3, 1, 1), CFrame.new(base + Vector3.new(0, 1.5, 0)) * UPRIGHT, Color3.fromRGB(245, 200, 40), Enum.Material.SmoothPlastic, true)
+            make(model, "BollardBand", "Cylinder", Vector3.new(0.4, 1.05, 1.05), CFrame.new(base + Vector3.new(0, 2.4, 0)) * UPRIGHT, Color3.fromRGB(240, 240, 240), Enum.Material.Neon, true)
+        end
+    end
 
     -- Fuelling gantry along the lane side (-X): the pickup. A steel roof with a
     -- hazard-striped edge over two rows of tall dispensers.
@@ -306,6 +361,13 @@ local function buildFuelDepot(parent)
         for z = -36, 36, 12 do
             local base = at(gantryX + dx, 0, z)
             make(model, "DispenserBase", "Block", Vector3.new(3.4, 0.6, 5), CFrame.new(base + Vector3.new(0, 0.3, 0)), Color3.fromRGB(190, 192, 196), Enum.Material.Concrete)
+            -- A painted bay round each island, and a fuel stain beside it.
+            for _, side in { -1, 1 } do
+                paint("BayLine", Vector2.new(0.35, 9), base + Vector3.new(side * 3.2, 0, 0), Color3.fromRGB(240, 240, 235))
+            end
+            local stain = make(model, "FuelStain", "Cylinder", Vector3.new(0.05, 2.6, 2.6), CFrame.new(base + Vector3.new(-dx / 5.5 * 2.2, 0.05, (z % 7) - 3)) * UPRIGHT,
+                Color3.fromRGB(40, 38, 44), Enum.Material.SmoothPlastic, true)
+            stain.Transparency = 0.55
             make(model, "Dispenser", "Block", Vector3.new(2.4, 7, 3), CFrame.new(base + Vector3.new(0, 4.1, 0)), white, Enum.Material.SmoothPlastic)
             make(model, "DispenserPanel", "Block", Vector3.new(2.45, 2.2, 1.8), CFrame.new(base + Vector3.new(0, 5.4, 0)), z % 24 == 0 and cyan or amber, Enum.Material.Neon, true)
             make(model, "DispenserCap", "Block", Vector3.new(2.6, 0.8, 3.2), CFrame.new(base + Vector3.new(0, 8, 0)), orange, Enum.Material.SmoothPlastic, true)

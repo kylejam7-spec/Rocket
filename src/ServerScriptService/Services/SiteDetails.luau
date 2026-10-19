@@ -80,13 +80,13 @@ local function dirtDetails(parent, random, zones)
             end
         end
     end
-    -- Gravel patches: low grey mounds.
+    -- Gravel patches: low grey mounds (Slate: Pebble rendered bright beige).
     for _ = 1, 22 do
         local radius = random:NextNumber(4, 9)
         local x, z = spot(radius)
         if x then
             local mound = Planets.mound(parent, "Gravel", Vector3.new(x, 0, z), radius, random:NextNumber(0.2, 0.45),
-                Color3.fromRGB(150, 146, 138):Lerp(Color3.fromRGB(120, 108, 92), random:NextNumber()), Enum.Material.Pebble)
+                Color3.fromRGB(104, 98, 90):Lerp(Color3.fromRGB(88, 78, 66), random:NextNumber()), Enum.Material.Slate)
             mound.CastShadow = false
         end
     end

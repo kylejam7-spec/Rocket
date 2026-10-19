@@ -23,6 +23,13 @@
 - Uploads needing access: dirt 84661666848501, asphalt 93816747599509, concrete
   90203920386352, grass 95172590517271, gym floor 100327531950364.
 - Studio: RunChecks 12/12 (DestinationCheck covers the cabin aisle and walls).
+- Second round: the Salvage Yard floor is textured, with oil slicks, floodlights in the
+  back corners, hazard sleeves on the gate posts and warning plates on the fence; the
+  Fuel Depot pad is textured, with a hazard kerb, painted bays round the dispenser
+  islands, fuel stains and bollards. Standing signs (`Signs.board` with ground: the
+  welcome signs and the COMING SOON boards) got concrete footings, back braces and a
+  lamp bar. The gravel patches are Slate (Pebble rendered bright beige). The user
+  granted the five site textures; merged as #42.
 
 # Earlier session: 2026-10-19 (7), loading screen
 
