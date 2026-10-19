@@ -50,6 +50,35 @@
 - PerimeterCheck added. RunChecks: all pass except the pre-existing
   MaterialInteractionCheck (Tier 5 FloodPole off the pad).
 
+## Same session, part 4: closed horizons, accurate gym badges, signs, launch fixes
+
+- Horizons: `Mountains.ring` builds continuous rings of faceted peaks (neighbours'
+  bases overlap). Earth has two rows (2350 and 2850 studs out, 34 + 32 peaks). Every
+  destination has one inside its plain, low enough to keep its backdrop planet in view.
+  PerimeterCheck asserts the rows have no gaps and clear the site.
+- Gym badges: a station's badge is now its live `TrainingGain / TrainingBaseGain`
+  (destination gyms said x2 while paying +12 to +30). The fixed `Multiplier` attribute
+  on destination stations is gone.
+- Cabin: it sat at (-3000, 200, 0), inside Earth's mountain ring, and a peak came
+  through its back wall. It moved to (-12000, 200, 0) (PerimeterCheck keeps the cabin and
+  destinations outside Earth's land). Its walls now overlap at the corners.
+- Launch camera: the wide shot used to hold still, so the Tier 4-5 rockets climbed to
+  ~5000 studs away, past the draw distance Roblox drops to under the launch's load, and
+  vanished. It now rises at 0.75 x the rocket's climb, so the rocket stays within ~1800.
+- Big-rocket sound: ignition and liftoff pitched down with size, roar bass up to +10 dB,
+  plus a sub-rumble layer (the engine an octave down, highs cut). The rest is on the
+  roadmap (Phase 5, Audio).
+- Signs: SignService (server) and WorldSignController (client) draw every world sign in
+  the gym-sign style: dark rounded panel, accent border and sheen, a pulsing icon badge,
+  outlined title and subtitle. Converted: destination welcome signs (now on posts at
+  SignOffset, left of the arrival and kept clear of scatter, so they no longer cut
+  through landed rockets), the spaceport arch (both faces), the Gym District arch, the
+  Upgrades hut, UFO shops, site offices, the building-site hoardings and the perimeter
+  notices.
+- Studio MCP tip: a Scriptable debug camera far from the character should also set
+  `Camera.Focus`. Otherwise Roblox takes 20-40 s to draw that area, which looks like
+  missing geometry.
+
 ## Same session, part 3: skies load, launch background fixed
 
 - After the Studio restart the 18 sky faces load: the user granted the experience access.

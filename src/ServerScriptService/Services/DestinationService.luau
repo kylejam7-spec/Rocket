@@ -6,6 +6,9 @@
 -- (WorldService builds it, right of the arrival facing it) and a landing spot
 -- behind the welcome sign, where the rocket touches down (LaunchService).
 local CollectionService = game:GetService("CollectionService")
+local Signs = require(script.Parent.SignService)
+local Mountains = require(script.Parent.Mountains)
+local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
 local Destinations = {}
 Destinations.ArrivalTag = "DestinationArrival"
 Destinations.CabinTag = "RocketCabin"
@@ -47,7 +50,9 @@ local function fence(parent, center, radius, height)
 end
 -- What surrounds a destination's platform (radius `radius`), so it reads as a place on
 -- a world rather than a disc in space: a rim of crags just outside the invisible fence,
--- and a plain a few studs lower out to `look.reach`, strewn with boulders.
+-- a plain a few studs lower out to `look.reach`, strewn with boulders, and a continuous
+-- ring of mountains (look.ring, Mountains.ring) closing the horizon inside the plain's
+-- edge, low enough to leave the backdrop planet in view.
 local function surroundings(parent, center, radius, look)
     local random = Random.new(look.seed)
     local corner = CFrame.fromAxisAngle(Vector3.new(-1, 0, 1).Unit, math.acos(1 / math.sqrt(3)))
@@ -60,6 +65,9 @@ local function surroundings(parent, center, radius, look)
             CFrame = CFrame.new(at - Vector3.new(0, size * 0.25, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner })
     end
     disc(parent, "Plain", center - Vector3.new(0, 5, 0), look.reach, 4, look.ground, look.material).CanCollide = false
+    Mountains.ring(parent, center - Vector3.new(0, 3, 0), look.ring, function(folder, name, size, cframe, color, material)
+        return decor(folder, name, { Size = size, CFrame = cframe, Color = color, Material = material })
+    end)
     for _ = 1, 14 do
         local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(radius + 60, look.reach * 0.8)
         local size = random:NextNumber(14, 40)
@@ -67,23 +75,18 @@ local function surroundings(parent, center, radius, look)
             CFrame = CFrame.new(center + Vector3.new(math.cos(angle) * distance, size * 0.15 - 3, math.sin(angle) * distance)) * CFrame.Angles(random:NextNumber(-0.3, 0.3), random:NextNumber(0, 6.28), random:NextNumber(-0.3, 0.3)) })
     end
 end
-local function sign(parent, position, facing, text, color)
-    local board = make(parent, "WelcomeSign", { Size = Vector3.new(30, 7, 0.6), CFrame = CFrame.lookAt(position, position + facing), Color = color })
-    local surface = Instance.new("SurfaceGui")
-    surface.Face = Enum.NormalId.Front
-    surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-    surface.PixelsPerStud = 30
-    surface.Parent = board
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextScaled = true
-    label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = Color3.new(1, 1, 1)
-    label.TextStrokeTransparency = 0.2
-    label.Parent = surface
-    return board
+-- The welcome sign stands on posts out to the left of the arrival pad, turned toward it:
+-- clear of the landed rocket (behind the pad, up to 68 studs wide), the gym, the UFO shop
+-- and every destination's set pieces (scatter keeps off it too, CLEAR).
+Destinations.SignOffset = Vector3.new(-56, 0, 18)
+local ICONS = { Moon = "🌕", Mars = "🔴", Europa = "🧊", Saturn = "🪐", BlackHole = "🌀" }
+local function sign(parent, center, arrivalOffset, spec, rarity)
+    local at = center + Destinations.SignOffset + Vector3.new(0, 10, 0)
+    local toward = center + arrivalOffset + Vector3.new(0, 10, 0)
+    return Signs.board(parent, "WelcomeSign", CFrame.lookAt(at, toward), Vector2.new(24, 7), {
+        title = "WELCOME TO " .. spec.name .. "!", subtitle = rarity and rarity:upper() .. " DESTINATION" or nil,
+        icon = ICONS[spec.id], accent = spec.color, ground = center.Y,
+    })
 end
 local function arrival(parent, position, tier, color)
     local pad = make(parent, "ArrivalPad", {
@@ -103,7 +106,7 @@ Destinations.GymOffsets = { bench = Vector3.new(-28, 0, 24), treadmill = Vector3
 Destinations.LandingOffset = Vector3.new(0, 0, -42)
 Destinations.ShopOffset = Vector3.new(38, 0, -4)
 local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
-    { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 } }
+    { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 }, { Destinations.SignOffset, 16 } }
 -- A coloured band around a planet ball: a thin disc through it at `height`, just wider
 -- than the planet there. (Ball parts are always round, so bands can't be squashed balls.)
 local function band(parent, name, center, radius, height, thickness, color)
@@ -141,7 +144,7 @@ builders[1] = function(folder, c)
         make(folder, "LanderLeg", { Size = Vector3.new(0.6, 5, 0.6), CFrame = CFrame.new(c + Vector3.new(-18, 2.5, -16) + corner), Color = Color3.fromRGB(160, 160, 165) })
     end
     decor(folder, "Earth", { Shape = Enum.PartType.Ball, Size = Vector3.one * 160, CFrame = CFrame.new(c + Vector3.new(250, 260, -520)), Color = Color3.fromRGB(50, 120, 220) })
-    surroundings(folder, c, 75, { seed = 11, reach = 1000, ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = Color3.fromRGB(135, 135, 142), cragMaterial = Enum.Material.Slate })
+    surroundings(folder, c, 75, { seed = 11, reach = 1000, ring = { radius = 700, spread = 60, count = 22, size = { 260, 420 }, rock = Color3.fromRGB(140, 140, 148), rockAlt = Color3.fromRGB(108, 108, 116), material = Enum.Material.Slate, seed = 21 },  ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = Color3.fromRGB(135, 135, 142), cragMaterial = Enum.Material.Slate })
     fence(folder, c, 75, 60)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -161,7 +164,7 @@ builders[2] = function(folder, c)
     for _, w in { Vector3.new(3, 0, 3), Vector3.new(-3, 0, 3), Vector3.new(3, 0, -3), Vector3.new(-3, 0, -3) } do
         make(folder, "RoverWheel", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 2.4, 2.4), CFrame = CFrame.new(c + Vector3.new(24, 1.2, -18) + w) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(50, 50, 55) })
     end
-    surroundings(folder, c, 75, { seed = 12, reach = 1000, ground = Color3.fromRGB(180, 84, 48), material = Enum.Material.Sand, crag = Color3.fromRGB(140, 64, 42), cragMaterial = Enum.Material.Rock })
+    surroundings(folder, c, 75, { seed = 12, reach = 1000, ring = { radius = 700, spread = 60, count = 22, size = { 260, 420 }, rock = Color3.fromRGB(150, 70, 45), rockAlt = Color3.fromRGB(118, 54, 38), seed = 22 },  ground = Color3.fromRGB(180, 84, 48), material = Enum.Material.Sand, crag = Color3.fromRGB(140, 64, 42), cragMaterial = Enum.Material.Rock })
     fence(folder, c, 75, 45)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -195,7 +198,7 @@ builders[3] = function(folder, c)
     local facing = (c - jupiter).Unit
     decor(folder, "GreatRedSpot", { Shape = Enum.PartType.Ball, Size = Vector3.one * 130,
         CFrame = CFrame.new(jupiter + facing * 405 + Vector3.new(0, -150, 0)), Color = Color3.fromRGB(200, 80, 50) })
-    surroundings(folder, c, 75, { seed = 13, reach = 650, ground = Color3.fromRGB(205, 220, 235), material = Enum.Material.Glacier, crag = Color3.fromRGB(185, 215, 240), cragMaterial = Enum.Material.Ice })
+    surroundings(folder, c, 75, { seed = 13, reach = 750, ring = { radius = 520, spread = 40, count = 20, size = { 200, 320 }, rock = Color3.fromRGB(190, 215, 240), rockAlt = Color3.fromRGB(160, 195, 230), material = Enum.Material.Ice, seed = 23 },  ground = Color3.fromRGB(205, 220, 235), material = Enum.Material.Glacier, crag = Color3.fromRGB(185, 215, 240), cragMaterial = Enum.Material.Ice })
     fence(folder, c, 75, 70)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -215,7 +218,7 @@ builders[4] = function(folder, c)
         local size = random:NextNumber(6, 18)
         decor(folder, "FloatingRock", { Size = Vector3.one * size, CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(30, 90), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0), Color = Color3.fromRGB(190, 180, 160), Material = Enum.Material.Rock })
     end)
-    surroundings(folder, c, 65, { seed = 14, reach = 650, ground = Color3.fromRGB(185, 175, 150), material = Enum.Material.Rock, crag = Color3.fromRGB(220, 230, 240), cragMaterial = Enum.Material.Ice })
+    surroundings(folder, c, 65, { seed = 14, reach = 650, ring = { radius = 440, spread = 40, count = 20, size = { 180, 300 }, rock = Color3.fromRGB(200, 190, 165), rockAlt = Color3.fromRGB(225, 232, 240), seed = 24 },  ground = Color3.fromRGB(185, 175, 150), material = Enum.Material.Rock, crag = Color3.fromRGB(220, 230, 240), cragMaterial = Enum.Material.Ice })
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end
@@ -245,7 +248,7 @@ builders[5] = function(folder, c)
     decor(folder, "LensedArc", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 900, 900),
         CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(80), 0, math.rad(90)), Color = Color3.fromRGB(255, 170, 80), Material = Enum.Material.Neon, Transparency = 0.45 })
     decor(folder, "EventHorizon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 500, CFrame = CFrame.new(hole), Color = Color3.new(0, 0, 0), Material = Enum.Material.Neon })
-    surroundings(folder, c, 70, { seed = 15, reach = 800, ground = Color3.fromRGB(22, 18, 32), material = Enum.Material.Basalt, crag = Color3.fromRGB(40, 32, 60), cragMaterial = Enum.Material.Basalt })
+    surroundings(folder, c, 70, { seed = 15, reach = 800, ring = { radius = 630, spread = 30, count = 32, size = { 150, 220 }, rock = Color3.fromRGB(40, 32, 60), rockAlt = Color3.fromRGB(28, 22, 40), material = Enum.Material.Basalt, seed = 25 },  ground = Color3.fromRGB(22, 18, 32), material = Enum.Material.Basalt, crag = Color3.fromRGB(40, 32, 60), cragMaterial = Enum.Material.Basalt })
     fence(folder, c, 70, 60)
     return ground, Vector3.new(0, 0, 20)
 end
@@ -267,8 +270,8 @@ function Destinations.build(world, config)
         ground:SetAttribute("Destination", spec.id)
         local arrivalAt = center + arrivalOffset
         arrival(folder, arrivalAt + Vector3.new(0, 0.2, 0), tier, spec.color)
-        -- Players arrive facing -Z (the main map's view toward the rocket): sign ahead, facing them.
-        sign(folder, center + Vector3.new(0, 22, arrivalOffset.Z - 40), Vector3.new(0, 0, 1), "WELCOME TO " .. spec.name .. "!", spec.color)
+        local mission = Missions.get(tier)
+        sign(folder, center, arrivalOffset, spec, mission and mission.Rarity)
         built[tier] = { id = spec.id, name = spec.name, gravity = spec.gravity, reward = spec.reward, folder = folder,
             arrival = arrivalAt + Vector3.new(0, 4, 0), center = center, landing = center + Destinations.LandingOffset,
             shop = center + Destinations.ShopOffset, shopFacing = (arrivalOffset - Destinations.ShopOffset).Unit,
@@ -287,8 +290,10 @@ function Destinations.build(world, config)
     floor:SetAttribute("CabinSize", size)
     make(cabinFolder, "CabinCeiling", { Size = Vector3.new(size.X, 1, size.Z), CFrame = CFrame.new(cc + Vector3.new(0, size.Y + 0.5, 0)), Color = hull })
     for _, side in { -1, 1 } do
-        make(cabinFolder, "CabinWall", { Size = Vector3.new(size.X, size.Y, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y / 2, side * (size.Z / 2 + 0.5))), Color = hull })
-        make(cabinFolder, "CabinWall", { Size = Vector3.new(1, size.Y, size.Z), CFrame = CFrame.new(cc + Vector3.new(side * (size.X / 2 + 0.5), size.Y / 2, 0)), Color = hull })
+        -- The long walls run past the end walls so the corners are closed (flush, they
+        -- left a 1-stud gap at each corner that showed the outside through it).
+        make(cabinFolder, "CabinWall", { Size = Vector3.new(size.X + 2, size.Y + 2, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y / 2, side * (size.Z / 2 + 0.5))), Color = hull })
+        make(cabinFolder, "CabinWall", { Size = Vector3.new(1, size.Y + 2, size.Z), CFrame = CFrame.new(cc + Vector3.new(side * (size.X / 2 + 0.5), size.Y / 2, 0)), Color = hull })
         decor(cabinFolder, "LightStrip", { Size = Vector3.new(size.X - 4, 0.3, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.2, side * 8)), Color = light, Material = Enum.Material.Neon })
         for x = -16, 16, 8 do
             decor(cabinFolder, "Porthole", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 5, 5), CFrame = CFrame.new(cc + Vector3.new(x, 9, side * size.Z / 2)) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(20, 30, 70), Material = Enum.Material.Neon })

@@ -157,6 +157,15 @@ Build these with the `UI/` library. Use stroked heavy fonts, and scale for phone
 6. **Animations:** carry, bench rep and treadmill run.
 7. **VFX:** coin burst, `+N` icons, place sparkle. Launch smoke and fire already exist.
 8. **Audio:** pickup, place, coin, training rep, level-up, countdown and launch roar, plus an ambient track.
+   - **Epic launches (started 2026-10-18):** big rockets already get a lower-pitched ignition and liftoff boom, a bass-boosted roar and a sub-rumble layer (the engine an octave down) that grow with the rocket's size (`LaunchEffectsController`, from `ExhaustScale`).
+   - **Next:** dedicated layers per tier, made with `tools/sounds/build.py`:
+     - a deep ignition "thump" and crackle for Tiers 3–5
+     - a sustained low drone under the Tier 5 roar
+     - distant rolling thunder as it clears the tower
+     - a pressure-wave whoosh when the camera cuts to the wide shot
+     - a short music sting on legendary liftoff
+
+     Also duck the music and ambience while the engine burns, and make the boom arrive slightly late for players far from the pad (the speed of sound).
 9. **UI icons** for coin, speed, strength, shop, pets and upgrades in the chunky outlined style.
 
 - **Accept:** side-by-side screenshots with the reference, and 60 FPS on a mid-range phone emulator with 8 players at Tier 5.

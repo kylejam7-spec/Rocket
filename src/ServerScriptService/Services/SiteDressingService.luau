@@ -11,6 +11,7 @@
 ]]
 local Layout = require(script.Parent.SiteLayout)
 local Props = require(script.Parent.SiteProps)
+local Signs = require(script.Parent.SignService)
 local Dressing = {}
 
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
@@ -39,26 +40,6 @@ local function folder(parent, name)
     item.Parent = parent
     return item
 end
-local function signText(part, face, text, color)
-    local surface = Instance.new("SurfaceGui")
-    surface.Face = face
-    surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-    surface.PixelsPerStud = 30
-    surface.Parent = part
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.fromScale(1, 1)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextScaled = true
-    label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = color or Color3.new(1, 1, 1)
-    label.Parent = surface
-    local stroke = Instance.new("UIStroke")
-    stroke.Thickness = 4
-    stroke.Color = Color3.fromRGB(22, 14, 32)
-    stroke.Parent = label
-end
-
 -- Roads: the lane from the Gym District to the apron, spurs to each station's gate,
 -- and a cross road along the front of the pad. Flat, so they never trip anyone.
 local function roads(parent)
@@ -214,13 +195,13 @@ local function siteOffices(parent, base, facing)
     end
     make(model, "CabinBlocks", Vector3.new(26, 1.6, 6.4), frame * CFrame.new(0, 0.8, 0), CONCRETE, Enum.Material.Concrete, true)
     make(model, "Stair", Vector3.new(2.6, 4.9, 8), frame * CFrame.new(7.5, 2.45 + 1.6, -6.6) * CFrame.Angles(0, math.pi / 2, 0), DARK, Enum.Material.DiamondPlate, true, "Wedge")
-    local board = make(model, "OfficeSign", Vector3.new(10, 1.6, 0.2), frame * CFrame.new(-6.5, 9.3, -3.1), Color3.fromRGB(30, 60, 120), Enum.Material.SmoothPlastic)
-    signText(board, Enum.NormalId.Front, "SITE OFFICE")
+    Signs.board(model, "OfficeSign", frame * CFrame.new(-6.5, 9.7, -3.6), Vector2.new(11, 2.6),
+        { title = "SITE OFFICE", subtitle = "VISITORS REPORT HERE", icon = "📋", accent = Color3.fromRGB(90, 170, 255) })
 end
 
 -- A building going up: a steel frame (columns, beams per floor), a part-poured slab,
 -- scaffolding with planks on one face, and a hoarding board naming it.
-local function skeleton(parent, base, facing, width, depth, floors, name)
+local function skeleton(parent, base, facing, width, depth, floors, name, icon)
     local model = folder(parent, "Skeleton")
     local frame = CFrame.lookAt(base, base + facing)
     local red, scaffold = Color3.fromRGB(176, 64, 44), Color3.fromRGB(190, 196, 204)
@@ -259,8 +240,8 @@ local function skeleton(parent, base, facing, width, depth, floors, name)
     for y = 2, top - 3, 6 do
         beam(model, "ScaffoldBrace", (frame * CFrame.new(-width / 2, y, front)).Position, (frame * CFrame.new(-width / 2 + 8, y + 6, front)).Position, 0.2, scaffold, Enum.Material.Metal)
     end
-    local hoarding = make(model, "Hoarding", Vector3.new(width * 0.8, 4, 0.3), frame * CFrame.new(0, 3, front - 2), Color3.fromRGB(30, 60, 120), Enum.Material.SmoothPlastic, true)
-    signText(hoarding, Enum.NormalId.Front, name)
+    Signs.board(model, "Hoarding", frame * CFrame.new(0, 4, front - 2.4), Vector2.new(width * 0.8, 4.6),
+        { title = name, subtitle = "COMING SOON", icon = icon, accent = Color3.fromRGB(255, 150, 50), ground = 0 })
 end
 
 local function cone(parent, at)
@@ -283,9 +264,12 @@ local function arch(parent, z)
         make(model, "ArchFoot", Vector3.new(4, 1.2, 4), CFrame.new(side * span / 2, 0.6, z), CONCRETE, Enum.Material.Concrete, true)
     end
     make(model, "ArchBeam", Vector3.new(span + 4, 2, 2), CFrame.new(0, 20, z), YELLOW, Enum.Material.Metal)
-    local board = make(model, "ArchSign", Vector3.new(span + 2, 5, 0.6), CFrame.new(0, 23.5, z), Color3.fromRGB(30, 34, 44), Enum.Material.Metal)
-    signText(board, Enum.NormalId.Back, "SPACEPORT EARTH", Color3.fromRGB(255, 210, 60))
-    signText(board, Enum.NormalId.Front, "GROUND ZERO", Color3.fromRGB(255, 210, 60))
+    -- Toward spawn (+Z) it names the place; toward the pad, what it is.
+    local gold = Color3.fromRGB(255, 204, 40)
+    Signs.board(model, "ArchSign", CFrame.lookAt(Vector3.new(0, 24, z), Vector3.new(0, 24, z + 1)), Vector2.new(span + 2, 5.4), {
+        title = "SPACEPORT EARTH", subtitle = "GROUND ZERO", icon = "🚀", accent = gold,
+        back = { title = "LAUNCH SITE", subtitle = "BUILD • FUEL • BOARD", icon = "🛠️", accent = gold },
+    })
     for _, side in { -1, 1 } do
         local lamp = make(model, "ArchLamp", Vector3.one * 0.8, CFrame.new(side * (span / 2 + 2), 21.5, z), Color3.fromRGB(255, 120, 40), Enum.Material.Neon, false, "Ball")
         local light = Instance.new("PointLight")
@@ -386,8 +370,8 @@ function Dressing.build(world)
     siteOffices(site, Vector3.new(-50, 0, 80), Vector3.new(1, 0, 0))
     siteOffices(site, Vector3.new(50, 0, 80), Vector3.new(-1, 0, 0))
     -- Buildings going up behind the stations.
-    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4, "MISSION CONTROL - COMING SOON")
-    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3, "ASSEMBLY HANGAR - COMING SOON")
+    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4, "MISSION CONTROL", "🛰️")
+    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3, "ASSEMBLY HANGAR", "🔧")
     -- Cones along the lane, barriers at the forecourt corners.
     local cones = folder(site, "Cones")
     for z = Layout.Lane.z0 + 20, Layout.Spawn.Z - 16, 24 do

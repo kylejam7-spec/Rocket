@@ -26,14 +26,29 @@ return function()
     end
     assert(Surrounds.BarrierHeight >= 60 and Surrounds.BarrierHeight > Surrounds.WallHeight, "barrier too low")
     assert(Surrounds.PlainDepth > 0 and Surrounds.PlainDepth < 1, "the plain's top must sit just under the site's ground")
-    -- No mountain (a cube up to `size` across, a second one up to 0.35 size off centre)
-    -- reaches the fully expanded site or the District.
-    local spec = Surrounds.Mountains
+    -- No mountain reaches the fully expanded site or the District, none stands past the
+    -- plain, and each row is continuous: neighbours' bases overlap, so the horizon is
+    -- closed (Mountains: base radius 0.6 x size, second cube up to 0.35 x size off).
+    local Mountains = require(script.Parent.Mountains)
     local centerZ = (Layout.Ground.z0 + Layout.Ground.z1) / 2
     local widest = Layout.Ground.x + 4 * 80
     local corner = math.max(Vector2.new(widest, Layout.Ground.z0 - centerZ).Magnitude, Vector2.new(widest, district.z1 - centerZ).Magnitude)
-    assert(spec.near - spec.size[2] * 1.2 > corner, "mountains too close to the site")
-    assert(spec.far + spec.size[2] < Surrounds.PlainReach, "mountains past the plain")
+    -- The rocket cabin and every destination stand well outside Earth's land and mountains.
+    local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
+    local earth = Vector3.new(0, 0, centerZ)
+    local places = { Config.CabinPosition }
+    for _, spec in Config.Destinations do table.insert(places, spec.position) end
+    for _, at in places do
+        local flat = Vector3.new(at.X, 0, at.Z)
+        assert((flat - earth).Magnitude > Surrounds.PlainReach * math.sqrt(2) + 500, ("%s is inside Earth's land"):format(tostring(at)))
+    end
+    for _, row in Surrounds.Mountains do
+        local inner, outer = row.radius - row.spread / 2, row.radius + row.spread / 2
+        assert(inner - row.size[2] * (Mountains.Base + 0.5) > corner, "mountains too close to the site")
+        assert(outer + row.size[2] * (Mountains.Base + 0.5) < Surrounds.PlainReach, "mountains past the plain")
+        local gap = 2 * math.pi * outer / row.count * 1.3
+        assert(2 * Mountains.Base * row.size[1] > gap, "a mountain row leaves gaps in the horizon")
+    end
     -- The plain never lies under the site or the District (the two would flicker through
     -- each other from a distance), its pieces fit in a part, and together with the holes
     -- they cover the whole square.

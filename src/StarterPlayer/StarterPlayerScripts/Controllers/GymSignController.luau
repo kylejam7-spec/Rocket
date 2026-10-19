@@ -2,11 +2,15 @@
 -- from the attributes WorldService sets (Title, Multiplier, Gain, TierColor,
 -- RequiredCycles; stations add TrainingStat and TrainingGain). Each shows its tier's
 -- "x3" multiplier as a pulsing badge; locked ones grey out with the launches still
--- needed for this player. Placeholder styling until real sign art arrives.
+-- needed for this player. A station's badge is its live gain over the base gain, so it
+-- always matches its "+N / SEC" (destination gyms change gain per mission).
+-- Placeholder styling until real sign art arrives.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local State = require(script.Parent.State)
+local Config = require(ReplicatedStorage.Shared.Config)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -23,7 +27,7 @@ local STAT = {
 }
 
 local function multiplierText(multiplier)
-    return "x" .. multiplier
+    return ("x%g"):format(multiplier)
 end
 
 -- A round tier-coloured badge with a big gold "x3" that gently pulses and sways.
@@ -151,7 +155,8 @@ local function buildStation(station, playerGui)
         rate.Text = locked and lockLabel(required, launches) or ("+" .. (station:GetAttribute("TrainingGain") or 0) .. " " .. stat.name .. " / SEC")
         rate.TextColor3 = locked and Theme.color.Locked or stat.color
         border.Color = locked and LOCKED or tierColor
-        mark.set(locked, tierColor, multiplierText(station:GetAttribute("Multiplier") or 1))
+        local gain = station:GetAttribute("TrainingGain") or 0
+        mark.set(locked, tierColor, multiplierText(gain / Config.TrainingBaseGain))
     end
 end
 

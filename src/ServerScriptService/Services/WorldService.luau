@@ -1,6 +1,7 @@
 -- Builds the generated map and tags its gameplay anchors. Other services and
 -- clients can find anchors by tag (WorldService.Tags) so art can be swapped later.
 local CollectionService = game:GetService("CollectionService")
+local Signs = require(script.Parent.SignService)
 local World = {}
 World.Tags = table.freeze({
     Spawn = "SpawnPoint",
@@ -205,36 +206,6 @@ function World.new(ctx)
     local slots = 1 + #config.TrainingTiers
     local districtZ1 = DISTRICT_Z0 + (slots - 1) * BAY_STEP + 22
     local floorColor = Color3.fromRGB(58, 64, 78)
-    local function signText(sign, face, lines)
-        local surface = Instance.new("SurfaceGui")
-        surface.Name = "SignText"
-        surface.Face = face
-        surface.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-        surface.PixelsPerStud = 40
-        surface.Parent = sign
-        local layout = Instance.new("UIListLayout")
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.VerticalAlignment = Enum.VerticalAlignment.Center
-        layout.Padding = UDim.new(0.03, 0)
-        layout.Parent = surface
-        for order, line in lines do
-            local textLabel = Instance.new("TextLabel")
-            textLabel.Name = line.name
-            textLabel.LayoutOrder = order
-            textLabel.Size = UDim2.fromScale(1, line.height)
-            textLabel.BackgroundTransparency = 1
-            textLabel.Text = line.text
-            textLabel.TextScaled = true
-            textLabel.TextColor3 = Color3.new(1, 1, 1)
-            textLabel.Font = Enum.Font.FredokaOne
-            textLabel.Parent = surface
-            local stroke = Instance.new("UIStroke")
-            stroke.Thickness = 6
-            stroke.Color = Color3.fromRGB(22, 14, 32)
-            stroke.LineJoinMode = Enum.LineJoinMode.Round
-            stroke.Parent = textLabel
-        end
-    end
     -- Floor slab from the end of the ground (Layout.Ground.z1) to past the last bay, plus a
     -- painted walkway and an entrance arch facing back toward spawn.
     part("GymDistrictFloor", Vector3.new(0, -1, (groundEnd + districtZ1) / 2), Vector3.new(110, 2, districtZ1 - groundEnd), floorColor)
@@ -242,8 +213,8 @@ function World.new(ctx)
     for _, side in {-1, 1} do
         part("GymArchPost", Vector3.new(side * 10, 7, archZ), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
     end
-    signText(part("GymArchSign", Vector3.new(0, 15.5, archZ), Vector3.new(24, 4, 1), Color3.fromRGB(35, 40, 50)),
-        Enum.NormalId.Front, { { name = "Title", text = "GYM DISTRICT", height = 0.8 } })
+    Signs.decorate(part("GymArchSign", Vector3.new(0, 15.5, archZ), Vector3.new(24, 4.4, 1), Signs.Backing), Enum.NormalId.Front,
+        { title = "GYM DISTRICT", subtitle = "TRAIN STRENGTH & SPEED", icon = "💪", accent = Color3.fromRGB(255, 204, 40) })
     -- Low walls on the open sides and back so nobody walks off the plaza.
     local wallColor = Color3.fromRGB(81, 91, 107)
     for _, side in {-1, 1} do
@@ -297,7 +268,6 @@ function World.new(ctx)
             local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(255, 190, 40))
             equipment(base, treadmill)
             base:SetAttribute("Destination", place.id)
-            base:SetAttribute("Multiplier", 2)
             base:SetAttribute("TierColor", Color3.fromRGB(255, 190, 40))
             local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
             table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
@@ -313,8 +283,8 @@ function World.new(ctx)
     local hut = tag(part("UpgradesHut", h + Vector3.new(0, 4, 0), Vector3.new(12, 8, 14), hutColor), World.Tags.Upgrades)
     part("UpgradesRoof", h + Vector3.new(0, 8.6, 0), Vector3.new(14, 1.2, 16), roofColor)
     part("UpgradesDoor", h + Vector3.new(6.1, 3, 0), Vector3.new(0.2, 6, 4), Color3.fromRGB(40, 32, 60))
-    local hutSign = part("UpgradesSign", h + Vector3.new(6.4, 10.6, 0), Vector3.new(0.4, 3, 12), roofColor)
-    signText(hutSign, Enum.NormalId.Right, { { name = "Title", text = "UPGRADES", height = 0.8 } })
+    Signs.decorate(part("UpgradesSign", h + Vector3.new(6.4, 10.8, 0), Vector3.new(0.4, 3.4, 12), Signs.Backing), Enum.NormalId.Right,
+        { title = "UPGRADES", subtitle = "SPEND YOUR COINS", icon = "⚡", accent = roofColor })
     local hutPrompt = service.prompt(hut, "Open Upgrades")
     hutPrompt.ObjectText = "Upgrades"
     hutPrompt.MaxActivationDistance = 14
@@ -344,8 +314,8 @@ function World.new(ctx)
         local counter = tag(piece("UfoShopCounter", frame * CFrame.new(0, 1.9, 0), Vector3.new(7, 3, 2.4), shopColor), World.Tags.UfoShop)
         piece("CounterTop", frame * CFrame.new(0, 3.5, 0), Vector3.new(7.4, 0.3, 2.8), shopGlow).Material = Enum.Material.Neon
         for _, x in { -4.2, 4.2 } do piece("ShopPost", frame * CFrame.new(x, 4.5, 2.5), Vector3.new(0.5, 9, 0.5), Color3.fromRGB(165, 175, 190)) end
-        local board = piece("ShopSign", frame * CFrame.new(0, 8, 2.5), Vector3.new(9, 2.6, 0.5), shopColor)
-        signText(board, Enum.NormalId.Front, { { name = "Title", text = "🛸 UFO SHOP", height = 0.8 } })
+        Signs.decorate(piece("ShopSign", frame * CFrame.new(0, 8, 2.5), Vector3.new(10, 3, 0.5), Signs.Backing), Enum.NormalId.Front,
+            { title = "UFO SHOP", subtitle = "HATCH ALIEN PETS", icon = "🛸", accent = shopGlow })
         local beam = piece("ShopBeam", frame * CFrame.new(0, 7, 2.5) * upright, Vector3.new(11, 3.4, 3.4), shopGlow, Enum.PartType.Cylinder)
         beam.Material, beam.Transparency, beam.CanCollide, beam.CastShadow = Enum.Material.Neon, 0.85, false, false
         local display = PetModels.ufo(3)
