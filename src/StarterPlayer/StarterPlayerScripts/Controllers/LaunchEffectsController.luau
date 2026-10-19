@@ -22,9 +22,21 @@ local function emitter(parent, props)
     return item
 end
 
--- Fire, and a light, out of every engine nozzle of a rocket model.
-local function engineFire(model, exhaust)
-    local emitters, nozzle = {}, nil
+-- Fire, and a light, out of every engine nozzle of a rocket model (`height` tall).
+-- Each nozzle gets a flame plume sized to the nozzle and the rocket: a deep orange
+-- outer flame and a pale hot core, each stepped narrower toward the tip so it tapers,
+-- flickering, plus particles round it. A 1000-stud rocket filmed from far off still has
+-- a clear column of fire, and plumes stay visible at any graphics level (particles are
+-- thinned out on low settings). Returns the emitters/lights and `burn(power, reach)`,
+-- which sets every flame (0 = out, 1 = full), no longer than `reach` if given (a landing
+-- rocket's height above the ground, so flames never sink into it).
+local OUTER, CORE = Color3.fromRGB(255, 96, 24), Color3.fromRGB(255, 226, 150)
+-- Flame layers: name, colour, width (x nozzle), length (x plume), opacity at the nozzle.
+local LAYERS = { { "FlamePlume", OUTER, 0.9, 1, 0.35 }, { "FlameCore", CORE, 0.5, 0.5, 0.1 } }
+-- Each layer is three segments: share of its length, width, and extra transparency.
+local SEGMENTS = { { 0.4, 1, 0 }, { 0.33, 0.72, 0.2 }, { 0.27, 0.42, 0.42 } }
+local function engineFire(model, exhaust, height)
+    local emitters, nozzle, plumes = {}, nil, {}
     for _, part in model:GetDescendants() do
         if part:IsA("BasePart") and part:GetAttribute("Engine") then
             -- Cylinders are rotated upright: local -X points down out of the nozzle.
@@ -33,22 +45,59 @@ local function engineFire(model, exhaust)
             attachment.Parent = part
             nozzle = nozzle or attachment
             local d = part.Size.Y
+            local length = math.min(d * (2.5 + 1.5 * exhaust), height * 0.25)
             table.insert(emitters, emitter(attachment, {
                 Texture = FIRE, EmissionDirection = Enum.NormalId.Left, LightEmission = 1, Rate = 0,
                 Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 250, 200)),
                     ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255, 160, 50)), ColorSequenceKeypoint.new(1, Color3.fromRGB(200, 60, 30)) }),
-                Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, d * 0.5 * exhaust), NumberSequenceKeypoint.new(1, d * 1.3 * exhaust) }),
+                Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, math.min(100, d * 0.7)), NumberSequenceKeypoint.new(1, math.min(100, d * 1.6)) }),
                 Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(1, 1) }),
-                Lifetime = NumberRange.new(0.35 * exhaust, 0.6 * exhaust), Speed = NumberRange.new(20 * exhaust, 30 * exhaust),
+                Lifetime = NumberRange.new(0.5, 0.8), Speed = NumberRange.new(length * 1.6, length * 2.2),
                 SpreadAngle = Vector2.new(6, 6),
             }))
             local light = Instance.new("PointLight")
-            light.Color, light.Range, light.Brightness, light.Enabled = Color3.fromRGB(255, 160, 70), math.min(60, 12 * exhaust), 0, true
+            -- Lights the ground and smoke under the nozzle, not the whole hull (with bloom,
+            -- brighter lights washed the boosters white).
+            light.Color, light.Range, light.Brightness, light.Enabled = Color3.fromRGB(255, 160, 70), math.min(60, d * 3), 0, true
             light.Parent = attachment
             table.insert(emitters, light)
+            local seed = math.random() * 10
+            for _, layer in LAYERS do
+                local start = 0
+                for _, segment in SEGMENTS do
+                    local flame = Instance.new("Part")
+                    flame.Name, flame.Shape, flame.Color, flame.Material = layer[1], Enum.PartType.Cylinder, layer[2], Enum.Material.Neon
+                    flame.Anchored, flame.CanCollide, flame.CanQuery, flame.CanTouch, flame.CastShadow = true, false, false, false, false
+                    flame.Transparency = 1
+                    flame.Parent = model
+                    table.insert(plumes, { part = flame, engine = part, length = length * layer[4], from = start, share = segment[1],
+                        width = d * layer[3] * segment[2], opacity = layer[5] + (1 - layer[5]) * segment[3], seed = seed })
+                    start += segment[1]
+                end
+            end
         end
     end
-    return emitters, nozzle
+    local function burn(power, reach)
+        local now = os.clock()
+        for _, plume in plumes do
+            local engine = plume.engine
+            if power <= 0.02 then
+                plume.part.Transparency = 1
+            else
+                local flicker = 1 + 0.12 * math.sin(now * 23 + plume.seed) + 0.06 * math.sin(now * 41 + plume.seed * 3)
+                local total = math.max(1, math.min(plume.length * power * flicker, reach or math.huge))
+                local length = math.max(0.5, total * plume.share)
+                local width = plume.width * (0.7 + 0.3 * power)
+                plume.part.Size = Vector3.new(length, width, width)
+                plume.part.CFrame = engine.CFrame * CFrame.new(-engine.Size.X / 2 - total * plume.from - length / 2, 0, 0)
+                plume.part.Transparency = 1 - (1 - plume.opacity) * math.min(1, power * 1.5)
+            end
+        end
+        for _, item in emitters do
+            if item:IsA("ParticleEmitter") then item.Rate = 60 * power else item.Brightness = 2 * power end
+        end
+    end
+    return emitters, nozzle, burn
 end
 
 -- A ring of smoke emitters on an invisible part at `cframe` (launch pad or landing spot).
@@ -93,7 +142,7 @@ local function play(vehicle)
     local climb = 900 + height * 4
     local accel = 2 * climb / math.max(1, duration - ignition) ^ 2
 
-    local emitters, nozzle = engineFire(vehicle, exhaust)
+    local emitters, nozzle, burn = engineFire(vehicle, exhaust, height)
     -- Smoke stays on the pad while the rocket climbs away.
     local pad, smoke = smokeRing("LaunchSmoke", origin, smokeScale)
 
@@ -139,9 +188,8 @@ local function play(vehicle)
         local power = math.clamp(t / math.max(0.1, ignition), 0, 1)
         local lift = math.max(0, t - ignition)
         local rise = 0.5 * accel * lift * lift
-        for _, item in emitters do
-            if item:IsA("ParticleEmitter") then item.Rate = 60 * power else item.Brightness = 4 * power end
-        end
+        vehicle:PivotTo(origin + Vector3.new(0, rise, 0))
+        burn(power)
         for _, item in smoke do item.Rate = (t < duration * 0.8 and 8 or 0) * power * smokeScale end
         if engine then engine.Volume = roar * power end
         if sub then sub.Volume = subVolume * power end
@@ -149,7 +197,6 @@ local function play(vehicle)
             lifted = true
             if lift < 0.5 then Sfx.playAt("liftoff", pad, { volume = math.min(1.5, exhaust), pitch = 1 - 0.25 * heavy }) end
         end
-        vehicle:PivotTo(origin + Vector3.new(0, rise, 0))
         local rocketMid = origin.Position + Vector3.new(0, rise + height * 0.5, 0)
         if air then
             local distance = (camera.CFrame.Position - rocketMid).Magnitude
@@ -166,15 +213,21 @@ local function play(vehicle)
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            local view = origin.Position + Vector3.new(height * 0.9, 12 + height * 0.1 + rise * 0.85, height * 1.2)
+            -- Both shots stand about one rocket height off (the rocket fills the frame and
+            -- stays well inside the draw distance, even Tier 5).
+            local view = origin.Position + Vector3.new(height * 0.62, 12 + height * 0.1 + rise * 0.85, height * 0.85)
             if lift > (duration - ignition) * 0.45 then
-                -- Rises at three quarters of the rocket's pace: it still pulls away and
-                -- shrinks, but stays within ~2000 studs. Held still, the big rockets got
+                -- Rises at 0.82 of the rocket's pace: it still pulls away and
+                -- shrinks, but stays within ~1400 studs. Held still, the big rockets got
                 -- ~5000 away, past the draw distance Roblox drops to when a launch's
                 -- smoke and fire cut the frame rate, and vanished mid-shot.
-                view = origin.Position + Vector3.new(-height * 0.7, 40 + height * 0.5 + rise * 0.75, height * 1.3)
+                view = origin.Position + Vector3.new(-height * 0.55, 40 + height * 0.5 + rise * 0.82, height * 1.0)
             end
-            camera.CFrame = CFrame.lookAt(view, rocketMid)
+            -- Aimed a little below the middle, so the flames clear the HUD at the bottom.
+            camera.CFrame = CFrame.lookAt(view, rocketMid - Vector3.new(0, height * 0.12, 0))
+            -- Roblox draws and lights in detail around Focus, which otherwise stays on the
+            -- passenger in the far-off cabin: the pad would load late and drop out.
+            camera.Focus = CFrame.new(rocketMid)
         end
         local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
         local distance = root and (root.Position - origin.Position).Magnitude or 0
@@ -197,6 +250,7 @@ local function play(vehicle)
             camera:SetAttribute("Cinematic", nil)
             camera.CameraType = Enum.CameraType.Custom
         end
+        burn(0)
         for _, item in emitters do if item:IsA("ParticleEmitter") then item.Enabled = false end end
         -- Park the departed rocket out of sight until the server builds the next one.
         if vehicle.Parent then vehicle:PivotTo(origin + Vector3.new(0, 20000, 0)) end
@@ -270,9 +324,9 @@ local function land(rocket)
     local ground = rocket:GetAttribute("Ground") or rest.Position
     local height = rocket:GetAttribute("Height") or 60
     local exhaust = rocket:GetAttribute("ExhaustScale") or 1
-    local drop = 120 + height * 1.2
+    local drop = 80 + height * 0.9
     -- Braking burns hard: bigger flames than the ascent.
-    local emitters, nozzle = engineFire(rocket, exhaust * 1.4)
+    local emitters, nozzle, burn = engineFire(rocket, exhaust * 1.4, height)
     local dust, plumes = smokeRing("LandingDust", CFrame.new(ground), 1 + exhaust)
     local engine = Sfx.attach("engine", nozzle or dust)
     local roar = engine and engine.Volume
@@ -284,14 +338,21 @@ local function land(rocket)
     local camera = workspace.CurrentCamera
     local fade, fadeGui
     local touched, cinematic = false, false
-    -- Far enough back to keep both the falling rocket and the ground in frame.
-    local shot = Vector3.new(0.45, 0, 1).Unit * (height * 2.4 + 80)
+    -- About a rocket height back (the rocket fills the frame), and never more than 220,
+    -- so the camera stays inside every destination's ring of mountains. Where that is
+    -- too close for the whole rocket and its flames (the big ones), the lens widens.
+    local distance = math.min(height * 1.1 + 40, 220)
+    local shot = Vector3.new(0.45, 0, 1).Unit * distance
+    local fov = math.clamp(math.deg(2 * math.atan(height * 1.35 * 1.3 / 2 / distance)), 70, 90)
+    local normalFov
     launches += 1
     local name = "RocketLanding" .. launches
     local function cleanup()
         RunService:UnbindFromRenderStep(name)
+        if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
         if fadeGui then fadeGui:Destroy() end
         if engine then engine:Destroy() end
+        burn(0)
         for _, item in emitters do if item:IsA("ParticleEmitter") then item.Enabled = false end end
         task.delay(6, dust.Destroy, dust)
         landing[rocket] = nil
@@ -304,9 +365,8 @@ local function land(rocket)
         local h = drop * (1 - progress) ^ 2.2
         rocket:PivotTo(t < 0 and rest + Vector3.new(0, 20000, 0) or rest + Vector3.new(0, h, 0))
         local burning = t >= 0 and progress < 1
-        for _, item in emitters do
-            if item:IsA("ParticleEmitter") then item.Rate = burning and 60 or 0 else item.Brightness = burning and 4 or 0 end
-        end
+        -- Full burn high up, easing off as it settles.
+        burn(burning and math.clamp(0.45 + h / drop, 0.45, 1) or 0, h + 1)
         for _, item in plumes do item.Rate = (burning and h < 40 + height * 0.3) and 12 * (1 + exhaust) or 0 end
         if engine then engine.Volume = roar * (burning and math.min(1, t / 0.5) or 0) end
         if progress >= 1 and not touched then
@@ -321,11 +381,17 @@ local function land(rocket)
             cinematic = true
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            local view = ground + shot + Vector3.new(0, 20 + h * 0.3, 0)
-            camera.CFrame = CFrame.lookAt(view, ground + Vector3.new(0, (h + height * 0.45) * 0.45, 0))
+            normalFov = normalFov or camera.FieldOfView
+            camera.FieldOfView = fov
+            -- Low, riding down with it, aimed a little below its middle so the nose and
+            -- the flames under it both stay in frame all the way down (checked per tier).
+            local view = ground + shot + Vector3.new(0, height * 0.2 + h * 0.6, 0)
+            camera.CFrame = CFrame.lookAt(view, ground + Vector3.new(0, h + height * 0.35, 0))
+            camera.Focus = CFrame.new(ground)
         elseif cinematic and now >= finish then
             -- Under the black: hand the camera back as the server moves us out.
             cinematic = false
+            if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
             camera:SetAttribute("Cinematic", nil)
             camera.CameraType = Enum.CameraType.Custom
         end
