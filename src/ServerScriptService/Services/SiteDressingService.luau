@@ -12,6 +12,7 @@
 local Layout = require(script.Parent.SiteLayout)
 local Props = require(script.Parent.SiteProps)
 local Signs = require(script.Parent.SignService)
+local Planets = require(script.Parent.Planets)
 local Dressing = {}
 
 local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
@@ -47,7 +48,8 @@ local function roads(parent)
     local asphalt, line = Color3.fromRGB(78, 80, 86), Color3.fromRGB(250, 205, 60)
     local lane = Layout.Lane
     local length = lane.z1 - lane.z0
-    make(model, "LaneRoad", Vector3.new(lane.width, 0.2, length), CFrame.new(0, 0.1, (lane.z0 + lane.z1) / 2), asphalt, Enum.Material.Asphalt)
+    local laneRoad = make(model, "LaneRoad", Vector3.new(lane.width, 0.2, length), CFrame.new(0, 0.1, (lane.z0 + lane.z1) / 2), asphalt, Enum.Material.Asphalt)
+    Planets.overlay(laneRoad, Enum.NormalId.Top, "Asphalt", 18)
     for z = lane.z0 + 6, lane.z1 - 6, 12 do
         make(model, "LaneDash", Vector3.new(0.6, 0.05, 6), CFrame.new(0, 0.22, z), line, Enum.Material.SmoothPlastic)
     end
@@ -56,10 +58,12 @@ local function roads(parent)
         local station = side < 0 and Layout.Metal or Layout.Fuel
         local gate = station.X - side * Layout.StationFootprint.X / 2
         local spur = math.abs(gate) - lane.width / 2
-        make(model, "StationRoad", Vector3.new(spur, 0.18, 16), CFrame.new(side * (lane.width / 2 + spur / 2), 0.09, station.Z), asphalt, Enum.Material.Asphalt)
+        Planets.overlay(make(model, "StationRoad", Vector3.new(spur, 0.18, 16), CFrame.new(side * (lane.width / 2 + spur / 2), 0.09, station.Z), asphalt, Enum.Material.Asphalt),
+            Enum.NormalId.Top, "Asphalt", 18)
     end
     local front = Layout.Apron.z1 + 14
-    make(model, "PadRoad", Vector3.new(Layout.Apron.x * 2, 0.18, 18), CFrame.new(0, 0.09, front), asphalt, Enum.Material.Asphalt)
+    Planets.overlay(make(model, "PadRoad", Vector3.new(Layout.Apron.x * 2, 0.18, 18), CFrame.new(0, 0.09, front), asphalt, Enum.Material.Asphalt),
+        Enum.NormalId.Top, "Asphalt", 18)
 end
 
 -- A lattice tower crane: mast, slewing cab, jib with trolley and hook, counter-jib

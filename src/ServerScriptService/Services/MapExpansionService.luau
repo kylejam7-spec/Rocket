@@ -29,6 +29,19 @@ end
 
 -- `reserved` lists x/z footprints (the material stations) that expansion must not cover.
 -- Sizes and positions come from SiteLayout.
+-- Surfaces: a tiling overlay for the close-up detail and a big tinted blotch layer
+-- (the Moon's maria texture) so the tiling never reads as a grid from afar.
+local Planets = require(script.Parent.Planets)
+local function dirt(piece)
+    Planets.overlay(piece, Enum.NormalId.Top, "SiteDirt", 36, 0.1)
+    Planets.overlay(piece, Enum.NormalId.Top, "MoonMaria", 420, 0.35, Color3.fromRGB(110, 78, 52))
+end
+local function concrete(piece, studs)
+    Planets.overlay(piece, Enum.NormalId.Top, "Concrete", studs or 24, 0.15)
+    Planets.overlay(piece, Enum.NormalId.Top, "MoonMaria", 360, 0.55, Color3.fromRGB(70, 66, 60))
+end
+Map.dirt, Map.concrete = dirt, concrete
+
 function Map.build(part, label, reserved)
     local Layout = require(script.Parent.SiteLayout)
     local dirt = Color3.fromRGB(150, 122, 92)
@@ -41,6 +54,7 @@ function Map.build(part, label, reserved)
             local piece = part(name, Vector3.new((r.x0 + r.x1) / 2, center.Y, (r.z0 + r.z1) / 2),
                 Vector3.new(r.x1 - r.x0, size.Y, r.z1 - r.z0), color)
             if material then piece.Material = material end
+            if material == Enum.Material.Ground then Map.dirt(piece) elseif material == Enum.Material.Concrete then Map.concrete(piece) end
             if (r.x1 - r.x0) * (r.z1 - r.z0) > area then largest, area = piece, (r.x1 - r.x0) * (r.z1 - r.z0) end
         end
         return largest
@@ -51,11 +65,14 @@ function Map.build(part, label, reserved)
     local length = ground.z1 - ground.z0
     slab("Ground", Vector3.new(0, -1, (ground.z0 + ground.z1) / 2), Vector3.new(ground.x * 2, 2, length), dirt, Enum.Material.Ground)
     local apron = Layout.Apron
-    part("LaunchApron", Vector3.new(0, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(apron.x * 2, 0.5, apron.z1 - apron.z0), concrete).Material = Enum.Material.Concrete
+    local apronPart = part("LaunchApron", Vector3.new(0, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(apron.x * 2, 0.5, apron.z1 - apron.z0), concrete)
+    apronPart.Material = Enum.Material.Concrete
+    Map.concrete(apronPart, 30)
     -- Permanent pad sized for the scaled Tier 5 complex (mount and both ramps); its top
     -- surface (y = 0.58) is the origin every tier is built from.
     local pad = part("LaunchPad", Layout.Pad.center, Layout.Pad.size, Color3.fromRGB(96, 104, 118))
     pad.Material = Enum.Material.Concrete
+    Map.concrete(pad, 20)
     -- Each expansion adds a strip of ground outside the base on both sides, and a
     -- concrete construction bay alongside the apron. Returns the ground's half-width.
     local stage = 0
