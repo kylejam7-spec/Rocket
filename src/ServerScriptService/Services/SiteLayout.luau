@@ -20,9 +20,10 @@ local Layout = {}
 -- The rocket's upright build frame on the pad top (RocketBuildService origin).
 -- Far enough back that Tier 5's boarding hatch (+168) stops short of the forecourt.
 Layout.PadOrigin = CFrame.new(0, 0.58, -265)
--- The permanent pad under every tier (scaled Tier 5 mount, ramps out to |x| = 182 and
--- boarding hatch: |x| <= 190, |z| <= 175).
-Layout.Pad = { center = Vector3.new(0, 0.33, -265), size = Vector3.new(380, 0.5, 350) }
+-- The permanent pad under every tier's launch complex: the scaled Tier 5 mount, ramps
+-- out to |x| = 182, boarding hatch, and the floodlights outside the ramps (Tier 5's
+-- poles at |x| = 232, lamps to 240): |x| <= 245, |z| <= 175.
+Layout.Pad = { center = Vector3.new(0, 0.33, -265), size = Vector3.new(490, 0.5, 350) }
 -- Concrete apron under the tilted rockets (Tier 5's farthest part reaches z = -984,
 -- its floodlights x = +/-234).
 Layout.Apron = { x = 270, z0 = -1000, z1 = -88 }
