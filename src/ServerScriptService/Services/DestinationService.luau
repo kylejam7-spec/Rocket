@@ -173,20 +173,6 @@ Destinations.LandingOffset = Vector3.new(0, 0, -42)
 Destinations.ShopOffset = Vector3.new(38, 0, -4)
 local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets.treadmill, 14 }, { Vector3.new(0, 0, 18), 14 },
     { Destinations.LandingOffset, 30 }, { Destinations.ShopOffset, 14 }, { Destinations.SignOffset, 16 } }
--- Deterministic scatter so every server builds the same destination; skips the clear spots.
-local function scatter(seed, count, radius, fn)
-    local random = Random.new(seed)
-    for index = 1, count do
-        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0.25, 0.9) * radius
-        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
-        local blocked = false
-        for _, spot in CLEAR do
-            if (offset - spot[1]).Magnitude < spot[2] then blocked = true end
-        end
-        if not blocked then fn(index, offset, random) end
-    end
-end
-
 local builders = {}
 -- 1 (Common): the floor of an old crater on the Moon. Bowl craters carved into the
 -- ground with soft raised rims, rounded boulders, an Apollo-style lander with a blinking
@@ -751,11 +737,11 @@ local function europaPod(parent, c)
         make(parent, "Crate", { Size = Vector3.new(1.8, 1.4, 1.4), CFrame = CFrame.new(at + turn * offset + Vector3.new(0, 0.7, 0)) * turn * CFrame.Angles(0, index * 0.3, 0), Color = index == 2 and EUROPA.rig or EUROPA.metal, Material = Enum.Material.Metal })
     end
 end
--- A pointed blade of ice: two wedges back to back make a tall thin triangle, standing on
--- `frame` (its base centre).
-local function iceBlade(parent, frame, width, height, thickness, color)
+-- A pointed blade (of ice, by default): two wedges back to back make a tall thin
+-- triangle, standing on `frame` (its base centre).
+local function iceBlade(parent, frame, width, height, thickness, color, material)
     for _, side in { -1, 1 } do
-        decor(parent, "IceBlade", { ClassName = "WedgePart", Size = Vector3.new(thickness, height, width / 2), Material = Enum.Material.Glacier, Color = color,
+        decor(parent, "IceBlade", { ClassName = "WedgePart", Size = Vector3.new(thickness, height, width / 2), Material = material or Enum.Material.Glacier, Color = color,
             CFrame = frame * CFrame.new(0, height / 2, side * width / 4) * CFrame.Angles(0, side == 1 and math.pi or 0, 0) }).CastShadow = true
     end
 end
@@ -1002,19 +988,21 @@ local function tetheredPod(parent, c)
         strut(parent, "Tether", at + out * 3.4 + Vector3.new(0, 2.6, 0), peg + Vector3.new(0, 0.9, 0), 0.1, SATURN.paint)
     end
 end
--- A cluster of ice crystals splaying from a glowing core (the core breathes: Pulse).
-local function crystals(parent, at, random)
-    local core = decor(parent, "CrystalCore", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)), Color = SATURN.glow, Material = Enum.Material.Neon })
+-- A cluster of crystals (ice, by default) splaying from a glowing core (the core
+-- breathes: Pulse).
+local function crystals(parent, at, random, glow, glass)
+    glow, glass = glow or SATURN.glow, glass or SATURN.ice
+    local core = decor(parent, "CrystalCore", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, CFrame = CFrame.new(at + Vector3.new(0, 0.4, 0)), Color = glow, Material = Enum.Material.Neon })
     core:SetAttribute("Period", random:NextNumber(2, 4))
     CollectionService:AddTag(core, "Pulse")
     local light = Instance.new("PointLight")
-    light.Color, light.Range = SATURN.glow, 9
+    light.Color, light.Range = glow, 9
     light.Parent = core
     for _ = 1, random:NextInteger(4, 7) do
         local height = random:NextNumber(2, 5)
         local lean = CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * CFrame.Angles(random:NextNumber(0.2, 0.6), 0, 0)
         make(parent, "Crystal", { Size = Vector3.new(0.6, height, 0.6), CFrame = CFrame.new(at) * lean * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, math.rad(45), 0),
-            Color = SATURN.ice, Material = Enum.Material.Glass, Transparency = 0.3 })
+            Color = glass, Material = Enum.Material.Glass, Transparency = 0.3 })
     end
 end
 builders[4] = function(folder, c)
@@ -1156,33 +1144,261 @@ builders[4] = function(folder, c)
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end
--- 5 (Legendary): an obsidian shard at the edge of a black hole. Purple fissures and
--- floating debris; above, the hole itself (neon black, so lighting never greys it)
--- with its tilted accretion disk and the lensed far side as a halo behind it.
+-- 5 (Legendary): a shard of obsidian adrift at the edge of a black hole. The shard has
+-- fissures glowing violet (cut into it, breathing), a rim and an underside of jagged
+-- obsidian blades, crystal clusters, an observatory scope trained on the hole, and
+-- shards floating and turning over it. No ground: the shard hangs in the void among
+-- debris that wheels slowly round the hole. The hole, off to the right of the landing
+-- site: a black horizon ringed by a thin photon ring and a lensed halo (the far side
+-- of the disk bent into view over and under it; both face the player), an accretion
+-- disk seen nearly edge on, white-hot inside to deep red out, with hot clumps whirling
+-- round it (faster the closer in), twin jets from its poles, and streams of matter
+-- (from the debris and from the shard's own edge) spiralling in. The disk is the light:
+-- the sun stands behind it, hidden (Shared.Skies "BlackHole").
+local VOID = { rock = Color3.fromRGB(26, 20, 38), shard = Color3.fromRGB(46, 36, 66), glass = Color3.fromRGB(130, 70, 210), glow = Color3.fromRGB(180, 90, 255),
+    hot = Color3.fromRGB(255, 214, 160), metal = Color3.fromRGB(150, 150, 172), jet = Color3.fromRGB(176, 166, 255) }
+-- The hole, relative to the centre, and its horizon's radius.
+local HOLE, HORIZON = Vector3.new(700, 330, -1100), 210
+local SCOPE = Vector3.new(-40, 0, -22)
+local VOID_PROPS = { { SCOPE, 8 } }
+-- Puts `part` in orbit round `center` about `axis` (tag PlanetOrbit; PlanetController).
+local function orbit(part, center, axis, rate)
+    part:SetAttribute("OrbitCenter", center)
+    part:SetAttribute("OrbitAxis", axis.Unit)
+    part:SetAttribute("OrbitRate", rate)
+    CollectionService:AddTag(part, Planets.OrbitTag)
+end
+local function spin(part, rate)
+    part:SetAttribute("SpinRate", rate)
+    CollectionService:AddTag(part, Planets.SpinTag)
+end
+-- An obsidian shard: a pointed blade, or a tumbled slab, or a rounded lump.
+local function shard(parent, at, size, random)
+    local kind = random:NextNumber()
+    local color = VOID.shard:Lerp(VOID.rock, random:NextNumber())
+    local tumble = CFrame.new(at) * CFrame.Angles(random:NextNumber(0, 6.28), random:NextNumber(0, 6.28), random:NextNumber(0, 6.28))
+    if kind < 0.45 then
+        return decor(parent, "Shard", { ClassName = "WedgePart", Size = Vector3.new(size * 0.3, size, size * 0.6), CFrame = tumble, Color = color, Material = Enum.Material.Glass })
+    elseif kind < 0.8 then
+        return decor(parent, "Shard", { Size = Vector3.new(size, size * 0.4, size * 0.7), CFrame = tumble, Color = color, Material = Enum.Material.Basalt })
+    end
+    return Planets.blob(parent, "Shard", tumble, Vector3.new(size, size * 0.6, size * 0.8), color, Enum.Material.Basalt)
+end
+-- The scope: a tripod, a long tube aimed at the hole, a sunshade, and a dish beside it.
+local function observatory(parent, c, hole)
+    local at = c + SCOPE
+    local mount = at + Vector3.new(0, 5, 0)
+    for index = 1, 3 do
+        local angle = index / 3 * math.pi * 2
+        strut(parent, "TripodLeg", mount, at + Vector3.new(math.cos(angle) * 3.4, 0, math.sin(angle) * 3.4), 0.3, VOID.metal)
+    end
+    local aim = CFrame.lookAt(mount, hole)
+    make(parent, "ScopeTube", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(9, 1.8, 1.8), CFrame = aim * CFrame.new(0, 0.8, -2) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(230, 230, 236), Material = Enum.Material.SmoothPlastic })
+    decor(parent, "ScopeShade", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.6, 2.3, 2.3), CFrame = aim * CFrame.new(0, 0.8, -6.8) * CFrame.Angles(0, math.rad(90), 0), Color = VOID.rock, Material = Enum.Material.Metal })
+    decor(parent, "ScopeLens", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.1, 1.9, 1.9), CFrame = aim * CFrame.new(0, 0.8, -7.65) * CFrame.Angles(0, math.rad(90), 0), Color = VOID.hot, Material = Enum.Material.Neon })
+    make(parent, "ScopeMount", { Size = Vector3.new(1.4, 1.4, 1.4), CFrame = CFrame.new(mount), Color = VOID.metal, Material = Enum.Material.Metal })
+    local console = at + Vector3.new(4.5, 0, 3)
+    make(parent, "Console", { Size = Vector3.new(2.6, 2.4, 1.4), CFrame = CFrame.lookAt(console + Vector3.new(0, 1.2, 0), at + Vector3.new(0, 1.2, 0)), Color = Color3.fromRGB(60, 58, 74), Material = Enum.Material.Metal })
+    local screen = decor(parent, "ConsoleScreen", { Size = Vector3.new(2, 1.1, 0.1), CFrame = CFrame.lookAt(console + Vector3.new(0, 2.1, 0), at + Vector3.new(0, 2.6, 0)) * CFrame.new(0, 0, -0.72), Color = VOID.glow, Material = Enum.Material.Neon })
+    screen:SetAttribute("Period", 2.4)
+    CollectionService:AddTag(screen, "Pulse")
+    strut(parent, "DishMast", at + Vector3.new(-5, 0, 3), at + Vector3.new(-5, 4.5, 3), 0.2, VOID.metal)
+    decor(parent, "Dish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 3.6, 3.6), CFrame = CFrame.lookAt(at + Vector3.new(-5, 5, 3), hole) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(230, 230, 236), Material = Enum.Material.SmoothPlastic })
+end
+-- A stream of matter flowing from `from` into the disk at `to`, arcing (a Beam whose
+-- texture scrolls along it).
+local function stream(parent, from, to, width, curve)
+    local anchor = decor(parent, "StreamAnchor", { Size = Vector3.one, CFrame = CFrame.new(from), Transparency = 1 })
+    local a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
+    a0.Parent = anchor
+    a1.Parent = anchor
+    a1.WorldPosition = to
+    local beam = Instance.new("Beam")
+    beam.Attachment0, beam.Attachment1 = a0, a1
+    beam.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    beam.TextureMode, beam.TextureLength, beam.TextureSpeed = Enum.TextureMode.Wrap, 60, 0.6
+    beam.Width0, beam.Width1 = width, width * 0.25
+    beam.CurveSize0, beam.CurveSize1 = curve, -curve * 0.5
+    beam.FaceCamera = true
+    beam.LightEmission, beam.LightInfluence = 1, 0
+    beam.Segments = 40
+    beam.Color = ColorSequence.new(VOID.glow, Color3.fromRGB(255, 170, 90))
+    beam.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.9), NumberSequenceKeypoint.new(0.3, 0.45), NumberSequenceKeypoint.new(1, 0.2) })
+    beam.Parent = anchor
+    return beam
+end
 builders[5] = function(folder, c)
-    local ground = disc(folder, "Obsidian", c - Vector3.new(0, 2, 0), 70, 4, Color3.fromRGB(28, 22, 40), Enum.Material.Basalt)
-    disc(folder, "EdgeGlow", c - Vector3.new(0, 2.6, 0), 72, 0.6, Color3.fromRGB(170, 80, 255), Enum.Material.Neon).CanCollide = false
-    scatter(51, 14, 66, function(index, offset, random)
-        decor(folder, "VoidFissure", { Size = Vector3.new(random:NextNumber(12, 30), 0.12, random:NextNumber(0.4, 0.8)),
-            CFrame = CFrame.new(c + offset + Vector3.new(0, 0.05, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0),
-            Color = Color3.fromRGB(180, 90, 255), Material = Enum.Material.Neon })
-    end)
-    scatter(52, 16, 240, function(index, offset, random)
-        local size = random:NextNumber(5, 16)
-        decor(folder, "Debris", { Size = Vector3.new(size, size * 0.6, size * 0.8),
-            CFrame = CFrame.new(c + offset + Vector3.new(0, random:NextNumber(20, 110), 0)) * CFrame.Angles(random:NextNumber(0, 3), random:NextNumber(0, 3), 0),
-            Color = Color3.fromRGB(40, 32, 60), Material = Enum.Material.Basalt })
-    end)
-    -- High enough that the tilted disk's near rim stays above the plain round the shard.
-    local hole = c + Vector3.new(0, 330, -1100)
-    decor(folder, "AccretionDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 1500, 1500),
-        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(25), 0, math.rad(90)), Color = Color3.fromRGB(255, 130, 40), Material = Enum.Material.Neon, Transparency = 0.3 })
-    decor(folder, "InnerDisk", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2.4, 820, 820),
-        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(25), 0, math.rad(90)), Color = Color3.fromRGB(255, 225, 160), Material = Enum.Material.Neon, Transparency = 0.2 })
-    decor(folder, "LensedArc", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 900, 900),
-        CFrame = CFrame.new(hole) * CFrame.Angles(math.rad(80), 0, math.rad(90)), Color = Color3.fromRGB(255, 170, 80), Material = Enum.Material.Neon, Transparency = 0.45 })
-    decor(folder, "EventHorizon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 500, CFrame = CFrame.new(hole), Color = Color3.new(0, 0, 0), Material = Enum.Material.Neon })
-    surroundings(folder, c, 70, { seed = 15, reach = 800, ring = { radius = 630, spread = 30, count = 32, size = { 150, 220 }, rock = Color3.fromRGB(40, 32, 60), rockAlt = Color3.fromRGB(28, 22, 40), material = Enum.Material.Basalt, seed = 25 },  ground = Color3.fromRGB(22, 18, 32), material = Enum.Material.Basalt, crag = Color3.fromRGB(40, 32, 60), cragMaterial = Enum.Material.Basalt })
+    local random = Random.new(51)
+    folder:SetAttribute("Dust", Color3.fromRGB(140, 100, 200))
+    local hole = c + HOLE
+    -- Glossy black glass (Basalt went sandy under the warm light).
+    local ground = disc(folder, "Obsidian", c - Vector3.new(0, 3, 0), 70, 6, Color3.fromRGB(16, 12, 24), Enum.Material.Glass)
+    -- Fissures cut into the shard, glowing violet in their depths.
+    local cracks, glows = {}, {}
+    for _ = 1, 160 do
+        if #cracks >= 10 then break end
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 60)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local length = random:NextNumber(14, 30)
+        if isClear(offset, length / 2 + 1, VOID_PROPS) then
+            local frame = CFrame.new(c + offset) * CFrame.Angles(0, random:NextNumber(0, math.pi), 0)
+            local cut = Instance.new("Part")
+            cut.Anchored = true
+            cut.Size = Vector3.new(1.4, 4.4, length)
+            cut.CFrame = frame * CFrame.new(0, 0.2, 0)
+            table.insert(cracks, cut)
+            table.insert(glows, { frame = frame, length = length })
+        end
+    end
+    ground = Planets.subtract(ground, cracks, true)
+    -- Faint veins over the glassy rock (Europa's lineae, tinted violet).
+    Planets.overlay(ground, Enum.NormalId.Right, "EuropaIce", 60, 0.35, Color3.fromRGB(190, 120, 255))
+    for index, crack in glows do
+        local strip = decor(folder, "VoidFissure", { Size = Vector3.new(1.1, 0.2, crack.length - 0.6), CFrame = crack.frame * CFrame.new(0, -1.9, 0), Color = VOID.glow, Material = Enum.Material.Neon })
+        strip:SetAttribute("Period", 2 + index % 3 * 0.7)
+        CollectionService:AddTag(strip, "Pulse")
+    end
+    -- A rim of obsidian blades leaning outward (clear of the landing spot and the sign),
+    -- and the underside: blades hanging point down round a lumpy core.
+    for index = 1, 34 do
+        local angle = index / 34 * math.pi * 2 + random:NextNumber(-0.06, 0.06)
+        local out = Vector3.new(math.cos(angle), 0, math.sin(angle))
+        local at = c + out * random:NextNumber(67, 71)
+        local height = random:NextNumber(5, 16)
+        local frame = CFrame.lookAt(at - Vector3.new(0, 1.5, 0), at - Vector3.new(0, 1.5, 0) + out) * CFrame.Angles(math.rad(-random:NextNumber(10, 30)), 0, 0)
+        if (at - c - Destinations.LandingOffset).Magnitude > 38 and (at - c - Destinations.SignOffset).Magnitude > 12 then
+            iceBlade(folder, frame, height * 0.55, height, random:NextNumber(1.5, 3), VOID.shard:Lerp(VOID.rock, random:NextNumber()), Enum.Material.Glass)
+        end
+    end
+    Planets.blob(folder, "ShardBody", CFrame.new(c - Vector3.new(0, 30, 0)), Vector3.new(150, 50, 140), VOID.rock, Enum.Material.Basalt)
+    for _ = 1, 22 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0, 62)
+        local height = random:NextNumber(30, 95)
+        local at = c + Vector3.new(math.cos(angle) * distance, -4, math.sin(angle) * distance)
+        iceBlade(folder, CFrame.new(at) * CFrame.Angles(math.pi + random:NextNumber(-0.2, 0.2), random:NextNumber(0, 6.28), random:NextNumber(-0.2, 0.2)),
+            height * random:NextNumber(0.35, 0.55), height, random:NextNumber(5, 12), VOID.rock:Lerp(VOID.shard, random:NextNumber()), Enum.Material.Basalt)
+    end
+    -- Crystal clusters and loose shards where there's room.
+    for _ = 1, 40 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 62)
+        local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+        local size = random:NextNumber(1.2, 3)
+        local free = isClear(offset, size + 1, VOID_PROPS)
+        for _, crack in glows do
+            if ((crack.frame.Position - c) - offset).Magnitude < crack.length / 2 + size + 1 then free = false end
+        end
+        if free then
+            if random:NextNumber() < 0.3 then
+                crystals(folder, c + offset, random, VOID.glow, VOID.glass)
+            else
+                make(folder, "Obsidian", { ClassName = "WedgePart", Size = Vector3.new(size * 0.6, size * 1.4, size), Color = VOID.shard, Material = Enum.Material.Glass,
+                    CFrame = CFrame.new(c + offset + Vector3.new(0, size * 0.5, 0)) * CFrame.Angles(random:NextNumber(-0.4, 0.4), random:NextNumber(0, 6.28), random:NextNumber(-0.4, 0.4)) })
+            end
+        end
+    end
+    observatory(folder, c, hole)
+    -- Shards floating over the platform, turning slowly (clear of the rocket's descent).
+    for _ = 1, 30 do
+        local offset = Vector3.new(random:NextNumber(-220, 220), random:NextNumber(18, 110), random:NextNumber(-220, 220))
+        if (offset * Vector3.new(1, 0, 1) - Destinations.LandingOffset).Magnitude > 95 then
+            spin(shard(folder, c + offset, random:NextNumber(3, 12), random), random:NextNumber(-0.3, 0.3))
+        end
+    end
+    -- Violet motes drifting up off the shard toward the hole.
+    local motesBox = decor(folder, "VoidMotes", { Size = Vector3.new(140, 2, 140), CFrame = CFrame.new(c + Vector3.new(0, 1, 0)), Transparency = 1 })
+    local motes = Instance.new("ParticleEmitter")
+    motes.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+    motes.Shape = Enum.ParticleEmitterShape.Box
+    motes.EmissionDirection = Enum.NormalId.Top
+    motes.Rate, motes.Lifetime = 18, NumberRange.new(8, 12)
+    motes.Speed, motes.SpreadAngle = NumberRange.new(0.5, 1.5), Vector2.new(20, 20)
+    motes.Acceleration = HOLE.Unit * 0.6
+    motes.Size = NumberSequence.new(0.3, 0.15)
+    motes.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, 0.2), NumberSequenceKeypoint.new(1, 1) })
+    motes.LightEmission = 1
+    motes.Color = ColorSequence.new(VOID.glow, VOID.hot)
+    motes.Parent = motesBox
+    -- The hole. `view` faces the platform: the photon ring and the lensed halo lie square
+    -- to it; the disk is tipped 12 degrees off edge on (so its top shows) and rolled a
+    -- little.
+    local view = CFrame.lookAt(hole, c)
+    local diskFrame = view * CFrame.Angles(0, 0, math.rad(8)) * CFrame.Angles(math.rad(-12), 0, 0)
+    local glow = Enum.Material.Neon
+    decor(folder, "EventHorizon", { Shape = Enum.PartType.Ball, Size = Vector3.one * HORIZON * 2, CFrame = CFrame.new(hole), Color = Color3.new(0, 0, 0), Material = Enum.Material.Neon })
+    -- The disk and the lensed halo are nested flattened spheres, not cut rings (server-
+    -- made CSG rings drew unreliably here on clients). Each smaller layer is thicker, so it
+    -- bulges through the one round it: graded bands, white-hot inside to deep red out,
+    -- with the horizon covering the middle.
+    local function layers(name, frame, bands)
+        local model = Instance.new("Model")
+        model.Name = name
+        model.Parent = folder
+        for index, band in bands do
+            local part = Planets.blob(model, "Layer" .. index, frame, Vector3.new(band[1] * HORIZON * 2, band[2], band[1] * HORIZON * 2), band[3], glow)
+            part.Transparency, part.CastShadow = band[4], false
+        end
+    end
+    -- (Darker than they look: Neon blooms, and full orange read as yellow.)
+    layers("AccretionDisk", diskFrame, {
+        { 4.8, 4, Color3.fromRGB(140, 36, 28), 0.5 },
+        { 3.3, 8, Color3.fromRGB(230, 96, 40), 0.1 },
+        { 2.2, 14, Color3.fromRGB(255, 222, 176), 0 },
+    })
+    layers("Lensing", view * CFrame.Angles(math.rad(90), 0, 0), {
+        { 2.3, 6, Color3.fromRGB(220, 110, 60), 0.85 },
+        { 1.45, 12, Color3.fromRGB(255, 176, 96), 0.5 },
+        { 1.09, 20, Color3.fromRGB(255, 248, 230), 0 },
+    })
+    -- Hot clumps whirling round the disk, faster the closer in.
+    for _ = 1, 26 do
+        local r = random:NextNumber(1.6, 4.4) * HORIZON
+        local angle = random:NextNumber(0, math.pi * 2)
+        local at = hole + diskFrame:VectorToWorldSpace(Vector3.new(math.cos(angle), random:NextNumber(-0.01, 0.01), math.sin(angle))) * r
+        local size = random:NextNumber(16, 40)
+        local clump = Planets.blob(folder, "HotClump", CFrame.new(at), Vector3.new(size, size * 0.4, size), VOID.hot:Lerp(Color3.fromRGB(255, 120, 60), (r / HORIZON - 1.6) / 2.8), glow)
+        clump.CastShadow = false
+        orbit(clump, hole, diskFrame.UpVector, 0.25 * (2 / (r / HORIZON)) ^ 1.5)
+    end
+    -- Twin jets from the poles, tapering and fading out.
+    for _, side in { 1, -1 } do
+        local axis = diskFrame.UpVector * side
+        for index = 1, 4 do
+            local length = 400
+            local mid = hole + axis * (HORIZON * 0.6 + length * (index - 0.5))
+            local width = 70 - index * 12
+            -- A bright core inside a wide, faint sheath.
+            decor(folder, "Jet", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(length, width * 0.3, width * 0.3), CFrame = CFrame.lookAt(mid, mid + axis) * CFrame.Angles(0, math.rad(90), 0),
+                Color = VOID.jet, Material = glow, Transparency = 0.3 + index * 0.14 })
+            decor(folder, "JetSheath", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(length, width, width), CFrame = CFrame.lookAt(mid, mid + axis) * CFrame.Angles(0, math.rad(90), 0),
+                Color = Color3.fromRGB(110, 120, 255), Material = glow, Transparency = 0.8 + index * 0.04 })
+        end
+    end
+    -- Streams spiralling in: from three far shards, and one torn off the platform's edge.
+    local edge = diskFrame:VectorToWorldSpace(Vector3.new(-1, 0, 0.3)).Unit * HORIZON * 4.2
+    stream(folder, c + Vector3.new(60, -8, -55), hole + edge, 16, 260)
+    stream(folder, c + Vector3.new(-700, 160, -900), hole + diskFrame:VectorToWorldSpace(Vector3.new(-0.6, 0, -0.8)) * HORIZON * 4.4, 36, 420)
+    stream(folder, c + Vector3.new(1600, -120, -700), hole + diskFrame:VectorToWorldSpace(Vector3.new(0.9, 0, 0.4)) * HORIZON * 4.4, 40, -380)
+    stream(folder, c + Vector3.new(500, 520, -400), hole + diskFrame:VectorToWorldSpace(Vector3.new(0.2, 0, 1)) * HORIZON * 4, 30, 300)
+    -- The debris field: shards of every size all round, wheeling slowly about the hole
+    -- (about the disk's axis). Ones whose path would come near the platform only turn.
+    local field = Random.new(53)
+    local axis = diskFrame.UpVector
+    for _ = 1, 140 do
+        local offset = Vector3.new(field:NextNumber(-1500, 1500), field:NextNumber(-260, 320), field:NextNumber(-1500, 1300))
+        local at = c + offset
+        if (offset * Vector3.new(1, 0, 1)).Magnitude > 180 and (at - hole).Magnitude > HORIZON * 5.2 then
+            local size = field:NextNumber(0.6, 1.4) * (6 + (offset * Vector3.new(1, 0, 1)).Magnitude * 0.03)
+            local piece = shard(folder, at, size, field)
+            local rate = 0.004 * (1100 / math.max(400, (at - hole).Magnitude)) ^ 1.5
+            local clear = true
+            for step = 1, 36 do
+                local point = hole + CFrame.fromAxisAngle(axis, step / 36 * math.pi * 2) * (at - hole)
+                if (point - c).Magnitude < 260 then clear = false break end
+            end
+            if clear then orbit(piece, hole, axis, rate) end
+            if size < 30 then spin(piece, field:NextNumber(-0.25, 0.25)) end
+        end
+    end
     fence(folder, c, 70, 60)
     return ground, Vector3.new(0, 0, 20)
 end

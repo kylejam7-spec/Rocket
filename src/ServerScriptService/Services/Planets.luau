@@ -265,8 +265,9 @@ end
 -- A planet's rings: flat annuli in the XZ plane of `frame` (its centre and pole), each band
 -- { inner, outer (in planet radii), color, transparency, material? }, cut from discs by CSG (a disc
 -- can't have a hole otherwise). Bands whose cut fails are left out. Parts can be at most
--- 2048 across, so outer * radius must stay under 1024. Each band costs one cut (about half
--- a second on the server).
+-- 2048 across, so outer * radius must stay under 1024. Each band costs one cut, about half
+-- a second. Clients have sometimes failed to draw server-made CSG meshes (the Black Hole's
+-- disk); check a new use in Play.
 function Planets.rings(parent, name, frame, radius, bands)
     local model = Instance.new("Model")
     model.Name = name
