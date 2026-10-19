@@ -4,9 +4,12 @@
     - A perimeter: construction hoarding round the site and the Gym District, with an
       invisible barrier on the same line that nobody can jump or climb over. `fit(edge)`
       rebuilds it whenever map expansion widens the site (ground half-width `edge`).
-    - The land beyond: a grass plain out past the horizon (just under the site's ground,
-      so expansion strips cover it), trees outside the fence and a ring of low-poly
-      mountains. Earth's sky haze (Shared.Skies) fades them into the distance.
+    - The land beyond: a grass plain out past the horizon and trees outside the fence.
+      The plain has a hole where the site is (refitted with the perimeter), never lying
+      under the site's ground: seen from a launching rocket, two surfaces that close
+      flicker through each other. A ring of low-poly mountains stands well inside the
+      draw distance (Roblox shortens it when the frame rate dips, as in a launch), and
+      Earth's sky haze (Shared.Skies) fades it into the distance.
 ]]
 local Layout = require(script.Parent.SiteLayout)
 local Surrounds = {}
@@ -16,7 +19,8 @@ Surrounds.BarrierHeight = 120
 -- The plain's top sits this far under the site's ground (y = 0).
 Surrounds.PlainDepth = 0.35
 Surrounds.PlainReach = 5120
-Surrounds.Mountains = { count = 22, near = 2600, far = 4200 }
+Surrounds.Tile = 2048
+Surrounds.Mountains = { count = 24, near = 2200, far = 3100, size = { 500, 950 } }
 
 local HOARDING = Color3.fromRGB(52, 58, 74)
 local HAZARD = Color3.fromRGB(240, 180, 30)
@@ -95,15 +99,32 @@ local function run(parent, a, b, inside)
     end
 end
 
-local function plain(parent)
-    local tile, reach = 2048, Surrounds.PlainReach
+-- The plain as x/z rectangles no bigger than a part can be: the square round the site
+-- with the site (ground half-width `edge`) and the Gym District cut out.
+function Surrounds.plainPieces(edge, district)
+    local carve = require(script.Parent.MapExpansionService).carve
     local centerZ = (Layout.Ground.z0 + Layout.Ground.z1) / 2
-    for x = -reach, reach - 1, tile do
-        for z = -reach, reach - 1, tile do
-            local piece = make(parent, "Plain", Vector3.new(tile, 4, tile),
-                CFrame.new(x + tile / 2, -Surrounds.PlainDepth - 2, centerZ + z + tile / 2), Color3.fromRGB(104, 124, 82), Enum.Material.Grass)
-            piece.CanCollide = true
+    local reach, tile = Surrounds.PlainReach, Surrounds.Tile
+    local holes = {
+        { x0 = -edge, x1 = edge, z0 = Layout.Ground.z0, z1 = Layout.Ground.z1 },
+        { x0 = -district.x, x1 = district.x, z0 = Layout.Ground.z1, z1 = district.z1 },
+    }
+    local pieces = {}
+    for _, r in carve({ x0 = -reach, x1 = reach, z0 = centerZ - reach, z1 = centerZ + reach }, holes) do
+        for x = r.x0, r.x1 - 0.01, tile do
+            for z = r.z0, r.z1 - 0.01, tile do
+                table.insert(pieces, { x0 = x, x1 = math.min(x + tile, r.x1), z0 = z, z1 = math.min(z + tile, r.z1) })
+            end
         end
+    end
+    return pieces
+end
+
+local function plain(parent, edge, district)
+    for _, r in Surrounds.plainPieces(edge, district) do
+        local piece = make(parent, "Plain", Vector3.new(r.x1 - r.x0, 4, r.z1 - r.z0),
+            CFrame.new((r.x0 + r.x1) / 2, -Surrounds.PlainDepth - 2, (r.z0 + r.z1) / 2), Color3.fromRGB(104, 124, 82), Enum.Material.Grass)
+        piece.CanCollide = true
     end
 end
 
@@ -128,13 +149,14 @@ local function mountain(parent, at, size, random)
     local rock = Color3.fromRGB(112, 104, 128):Lerp(Color3.fromRGB(140, 120, 110), random:NextNumber())
     for index = 1, random:NextInteger(1, 2) do
         local s = size * (index == 1 and 1 or random:NextNumber(0.5, 0.75))
-        local offset = index == 1 and Vector3.zero or Vector3.new(random:NextNumber(-0.6, 0.6) * size, 0, random:NextNumber(-0.6, 0.6) * size)
+        local offset = index == 1 and Vector3.zero or Vector3.new(random:NextNumber(-0.35, 0.35) * size, 0, random:NextNumber(-0.35, 0.35) * size)
         local peak = CFrame.new(at + offset + Vector3.new(0, -s * math.sqrt(3) / 2 * 0.45, 0)) * CFrame.Angles(0, random:NextNumber(0, 6.28), 0) * corner
         make(parent, "Mountain", Vector3.one * s, peak, rock, Enum.Material.Rock)
-        if index == 1 and size > 1100 then
-            -- The cap: a smaller cube sharing the top corner.
+        if index == 1 and size > 750 then
+            -- The cap: a smaller cube at the top corner, standing a little proud of the
+            -- peak's faces (flush, the two flicker through each other from afar).
             local cap = s * 0.3
-            make(parent, "SnowCap", Vector3.one * cap, peak * CFrame.new(Vector3.one * (s - cap) / 2), Color3.fromRGB(236, 236, 248), Enum.Material.Snow)
+            make(parent, "SnowCap", Vector3.one * cap, peak * CFrame.new(Vector3.one * ((s - cap) / 2 + s * 0.012)), Color3.fromRGB(236, 236, 248), Enum.Material.Snow)
         end
     end
 end
@@ -146,7 +168,6 @@ function Surrounds.build(world, district)
     local land = Instance.new("Folder")
     land.Name = "Land"
     land.Parent = model
-    plain(land)
     local random = Random.new(1969)
     local centerZ = (Layout.Ground.z0 + Layout.Ground.z1) / 2
     local center = Vector3.new(0, 0, centerZ)
@@ -154,13 +175,13 @@ function Surrounds.build(world, district)
     for index = 1, spec.count do
         local angle = (index + random:NextNumber(-0.3, 0.3)) / spec.count * math.pi * 2
         local distance = random:NextNumber(spec.near, spec.far)
-        mountain(land, center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), random:NextNumber(700, 1500), random)
+        mountain(land, center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), random:NextNumber(spec.size[1], spec.size[2]), random)
     end
     -- Trees in loose clumps outside the widest the site ever gets (4 expansions).
     local widest = Layout.Ground.x + 4 * 80 + 60
     local placed = 0
     while placed < 70 do
-        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(700, 1900)
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(700, 1350)
         local at = center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
         local outside = math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
         if outside then
@@ -171,10 +192,15 @@ function Surrounds.build(world, district)
         end
     end
 
-    local perimeter
+    local perimeter, plainFolder
     local service = {}
     function service.fit(edge)
         if perimeter then perimeter:Destroy() end
+        if plainFolder then plainFolder:Destroy() end
+        plainFolder = Instance.new("Folder")
+        plainFolder.Name = "Plain"
+        plainFolder.Parent = land
+        plain(plainFolder, edge, district)
         perimeter = Instance.new("Folder")
         perimeter.Name = "Perimeter"
         perimeter.Parent = model

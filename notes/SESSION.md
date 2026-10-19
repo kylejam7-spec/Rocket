@@ -50,6 +50,27 @@
 - PerimeterCheck added. RunChecks: all pass except the pre-existing
   MaterialInteractionCheck (Tier 5 FloodPole off the pad).
 
+## Same session, part 3: skies load, launch background fixed
+
+- After the Studio restart the 18 sky faces load: the user granted the experience access.
+- What flickered during the launch:
+  - The grass plain lay 0.35 under the whole site, so from a climbing camera the two
+    z-fought. It now has a hole for the site and the District (`Surrounds.plainPieces`,
+    refitted on expansion; PerimeterCheck covers it).
+  - The snow caps were flush with their peaks' faces. They now stand 1.2% proud.
+  - The Atmosphere haze thickened with camera height and swallowed the ground during the
+    shots, so Earth has no haze now.
+- Mountains: 24 at 2200-3100, all well clear of the fully expanded site (checked).
+- The Earth sky is cut with `--land`: ground matching the plain below the horizon and a
+  low faceted far range. Where Roblox drops distant geometry (lower draw distance when
+  the frame rate dips), the sky behind still reads as land.
+  - The 5 changed Earth faces are new uploads (k_b4nd0) and need experience access like
+    the first set. Until then the Earth sky falls back to the default.
+  - Painting a tall range into the sky was tried and dropped: it was stair-stepped on
+    the cube faces and washed out by the haze.
+- Studio MCP screen captures right after a big camera move often return a stale frame;
+  a second capture after a wait is reliable.
+
 # Earlier session: 2026-10-18 (5), touches on the Earth site
 
 - Built on the partner's `claude/earth-map` (6d9623f) and kept all of his work. The

@@ -1,9 +1,13 @@
 --[[
     Skyboxes (Kenney Skyboxes Space, CC0), cut into Roblox's six faces by
-    tools/sky/cubemap.py, and the haze that goes with each. Earth wears the dusk sky with
-    a purple haze that melts the far ground into the horizon; space destinations get the
-    galaxy (the Black Hole the bright band) with no haze, so their giant planets stay crisp.
-    Skies.apply(name) swaps the local Lighting (DestinationController picks the name).
+    tools/sky/cubemap.py. Earth wears the dusk sky with land and a far mountain range
+    painted below and on its horizon (--land), matching the grass plain: when Roblox
+    shortens the draw distance (it does when the frame rate dips, as in a launch) the
+    distant world gives way to more of the same land, not purple sky. No haze: it thickened
+    with the camera's height and swallowed the ground during the launch shots. Space
+    destinations get the galaxy, the Black Hole the bright band.
+    Skies.apply(name) swaps the local Lighting (DestinationController picks the name). A set
+    may give `atmosphere` (Atmosphere properties).
 ]]
 local Lighting = game:GetService("Lighting")
 local Skies = {}
@@ -14,9 +18,8 @@ end
 
 Skies.Sets = table.freeze({
     Earth = {
-        faces = faces(71940586335526, 111587257160763, 83331280995710, 115758681144593, 134531220958872, 83836347376752),
+        faces = faces(114916478202084, 78986771335343, 119047115779431, 128101403518562, 96105877986502, 83836347376752),
         sun = true,
-        atmosphere = { Density = 0.24, Offset = 0.15, Color = Color3.fromRGB(150, 120, 225), Decay = Color3.fromRGB(96, 70, 170), Glare = 0, Haze = 1.6 },
     },
     Space = {
         faces = faces(134664654153944, 128519848611002, 122380106257368, 111516135636938, 88118147567612, 131930288039490),
