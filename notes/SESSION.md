@@ -1,3 +1,20 @@
+# Latest session: 2026-10-20 (9), Robux SHOP
+
+- `claude/frosty-goldstine-93fa70` (from master f117d18). `Config.Shop` (IDs nil until the
+  user sends them; recommended prices), `Shared/Shop.luau` (catalog, `available`, pet
+  slots), `ShopService` (BuyShop remote, pass sync on join + PromptGamePassPurchaseFinished,
+  ProcessReceipt with the `RocketReceipts` journal, server effects), `ShopCheck`.
+- Hooks: TrainingService (`unlocked` for gym passes, `multiplier` for the boost; stations
+  and signs carry `GymTier`), CargoService (2x coins via `Profiles.credit` multiplier),
+  LaunchService (stay is a growing `while` loop; a guaranteed mission replaces the spin),
+  PetService (slots, hatch rate, `count` pets per UFO), `Rocket:fill`, Cycle snapshot `shop`.
+- Client: ShopController (🛒 SHOP under the stat stack, 2x TRAINING chip, panel with
+  passes / gym access / boosts; fill row above the pill; destination side panel), UFO shop
+  x3 switch, backpack slots from `state.shop.petSlots`, gym signs unlock by pass. Toasts
+  moved up (-132 / -168) to clear the fill row.
+- Studio debug: `RocketDebug:Invoke("own", key, on)` and `("receipt", key, purchaseId)`.
+- Not yet verified in Studio (no place was open); IDs not set, so real prompts untested.
+
 # Latest session: 2026-10-19 (8), visual tidy pass
 
 - `claude/visual-tidy`. Earth: `tools/site/textures.py` builds dirt, asphalt, concrete,

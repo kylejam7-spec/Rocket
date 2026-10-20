@@ -50,14 +50,31 @@ function Rocket:deliver(userId, limit)
     if cargo.count == 0 then self.cargo[userId] = nil end
     self.contributions[userId] = (self.contributions[userId] or 0) + amount
     if self.totals[material] < self.required[material] then return amount, false end
-    -- Leftover cargo of the finished material is useless now; drop it.
+    self:finishPhase(material)
+    return amount, true
+end
+
+-- Leftover cargo of the finished material is useless now; drop it and move on.
+function Rocket:finishPhase(material)
     for id, held in self.cargo do
         held.count -= held.materials[material] or 0
         held.materials[material] = nil
         if held.count <= 0 then self.cargo[id] = nil end
     end
     self.phase = self.phase == "Building" and "Fueling" or "Boarding"
-    return amount, true
+end
+
+-- Adds up to `amount` units straight into the current phase (a Robux fill: nobody's
+-- contribution). Returns accepted units and whether the phase advanced.
+function Rocket:fill(amount)
+    local material = Rocket.PhaseMaterial[self.phase]
+    if not material or type(amount) ~= "number" then return 0, false end
+    local added = math.max(0, math.min(math.floor(amount), self.required[material] - self.totals[material]))
+    if added == 0 then return 0, false end
+    self.totals[material] += added
+    if self.totals[material] < self.required[material] then return added, false end
+    self:finishPhase(material)
+    return added, true
 end
 
 function Rocket:lockPassengers(eligible)

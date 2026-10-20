@@ -1,5 +1,35 @@
 # Decisions
 
+## 2026-10-20: Robux SHOP (passes and server products)
+
+- The user asked for a SHOP button (server training boosts, +1/+2 pet slots, faster
+  hatching, multi-hatch, 2x coins, access to any gym), rocket-fill buttons above the
+  progress bar (5/10/15/20/25%), and at destinations, extra stay time and a guaranteed
+  next mission. IDs come later: `Config.Shop` holds `id = nil` (offer shows SOON) and the
+  recommended R$ prices.
+- Recommended prices: 2x Coins 199, Fast Hatch 149, Triple Hatch 249, +1 slot 99,
+  +2 slots 179 (they stack to 6), gyms 25/49/79/129/199/299/449 (3X..13X); products:
+  server 2x training 10 min 79, fill 25/45/65/85/99, +60 s stay 39, next mission
+  Moon 19 / Mars 39 / Europa 69 / Saturn 119 / Black Hole 179.
+- Every Developer Product is a server-wide effect, so nothing repeatable depends on
+  profile saving (still off). ProcessReceipt: journal (DataStore `RocketReceipts`, key
+  per PurchaseId) checked, grant, record, then PurchaseGranted; a failed record is
+  NotProcessedYet and the retry won't regrant on this server. Server death between grant
+  and record means a regrant elsewhere: the buyer's favour, never a lost purchase. In
+  Studio without DataStore access the journal falls back to memory.
+- Late receipts are banked, never refused: fill waits for the next delivery phase (and
+  overflow carries into Fuel, then the next rocket), stay time for the next stay, a
+  mission for the next spin. Prompts only open when the offer makes sense
+  (`Shop.available`), and stay extensions stop prompting at +300 s per stay.
+- Fills add to the rocket totals only: no coins, deliveries or contribution for the
+  buyer. Boarding stays open to everyone, so nobody buys a seat or keeps others off.
+- Triple Hatch = one UFO with 3 pets for 3x coins (a x3 switch in the UFO shop); the
+  extra pets are granted at landing and each gets its own landing 6 s apart. Fast Hatch
+  = the countdown runs 2x. Profile UFO gains optional `extra` (no schema bump: older
+  servers' validate would reject a 3-pet UFO; fine while persistence is off).
+- Passes live only in ShopService memory, re-checked each join (failed checks are
+  "unknown": no trimming of pets on a throttled check).
+
 ## 2026-10-18: Rockets 3x on the Earth site
 
 - `Models.SiteScale` is 1.35 * 3, so one player's small delivery still visibly grows

@@ -231,6 +231,8 @@ uploading (`tools/sounds/upload.py`).
 
 ### Phase 7: Monetization (after the journal in Phase 8 exists)
 
+**Status (2026-10-20):** Robux SHOP built on `claude/frosty-goldstine-93fa70` (ShopService, Shared.Shop, ShopController, ShopCheck): 12 passes and 12 products with a receipt journal; IDs pending from the user (see DECISIONS 2026-10-20).
+
 **Status (2026-10-16):** Robux upgrade levels built on `claude/robux-upgrades` as Game Passes (10 levels per track, one pass per level, ownership re-applied on join, RobuxCheck). A non-owner test purchase is still to do; the receipt journal for repeatable products is not built. Gamepasses and "+N units" products not started.
 
 - **Gamepasses:** 2x Strength, 1.5x Speed, Quick Pickup, Quick Place and VIP.

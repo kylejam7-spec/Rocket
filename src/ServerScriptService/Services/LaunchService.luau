@@ -24,6 +24,9 @@ function Launch.new(ctx)
     local function spinWheel(rocket)
         local weights = Missions.weights(Cycle.misses)
         local result, pity = Missions.spin(random, Cycle.misses)
+        -- A guaranteed mission (ShopService) replaces the roll; the pity counter moves as usual.
+        local guaranteed = ctx.Shop and ctx.Shop.takeGuarantee()
+        if guaranteed then result, pity = guaranteed, false end
         Cycle.misses = Missions.afterSpin(Cycle.misses, result)
         rocket.nextMission = result
         local mission = Missions.get(result)
@@ -146,7 +149,9 @@ function Launch.new(ctx)
                     station.part:SetAttribute("TrainingGain", station.gain)
                 end
             end
-            Cycle.deadline = workspace:GetServerTimeNow() + rewardSeconds
+            -- The stay can grow while it runs (ShopService ExtraStay moves the deadline too).
+            local stay = ctx.Shop and ctx.Shop.beginStay(rewardSeconds) or { total = rewardSeconds, extra = 0 }
+            Cycle.deadline = workspace:GetServerTimeNow() + stay.total
             for userId in rocket.passengers do
                 local player = Players:GetPlayerByUserId(userId)
                 if player then
@@ -158,16 +163,22 @@ function Launch.new(ctx)
             Cycle.broadcast()
             -- Cumulative tick counts are idempotent even when a save retries; the
             -- multiplier scales the ticks so the ledger stays an integer total.
-            for tick = 1, rewardSeconds do
+            local tick, spun = 0, false
+            while tick < stay.total do
                 task.wait(1)
+                tick += 1
                 for userId in rocket.passengers do
                     ctx.profiles:queueReward(userId, cycle, tick * multiplier)
                     local player = Players:GetPlayerByUserId(userId)
-                    if player then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier .. " strength / +" .. config.Planet.SpeedBonus * multiplier .. " speed (" .. tick .. "/" .. rewardSeconds .. ")") end
+                    if player then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier .. " strength / +" .. config.Planet.SpeedBonus * multiplier .. " speed (" .. tick .. "/" .. stay.total .. ")") end
                 end
-                if rewardSeconds - tick == config.WheelLeadSeconds then spinWheel(rocket) end
+                if not spun and stay.total - tick <= config.WheelLeadSeconds then
+                    spun = true
+                    spinWheel(rocket)
+                end
                 Cycle.broadcast()
             end
+            if ctx.Shop then ctx.Shop.endStay() end
             rocket.phase = "Resetting"
             Cycle.deadline = 0
             Cycle.broadcast()

@@ -1,8 +1,8 @@
 -- The small round 🎒 button (top bar, left of ⚙) and the PET BACKPACK: every pet you
 -- own as a card (posed 3D preview, rarity rim, copies owned), rarest first, each with
 -- an EQUIP / UNEQUIP button, plus UNEQUIP ALL. Pets are only for show: they follow
--- you, up to Pets.MaxEquipped at once (EquipPet; the server checks ownership and the
--- limit). The header shows how many follow you, your collection and the UFO on its way.
+-- you, up to Pets.MaxEquipped at once, more with the SHOP's slot passes (state.shop.petSlots;
+-- EquipPet: the server checks ownership and the limit). The header shows how many follow you, your collection and the UFO on its way.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Pets = require(ReplicatedStorage.Shared.Pets)
@@ -124,6 +124,8 @@ function PetsController.start()
         Font = Theme.font.Display, TextSize = 24, TextWrapped = true, stroke = 2, Parent = panel,
     })
 
+    -- Pets that can follow you: 3, more with the SHOP's slot passes.
+    local slots = Pets.MaxEquipped
     local cards = {} -- id -> { frame, count, badge, action }
     local function equippedCount(profile, id)
         local count = 0
@@ -158,7 +160,7 @@ function PetsController.start()
                 local profile = current and current.profile
                 if not profile then return end
                 local equipped = equippedCount(profile, id)
-                local room = #(profile.equippedPets or {}) < Pets.MaxEquipped
+                local room = #(profile.equippedPets or {}) < slots
                 if equipped == 0 and not room then return Sfx.play("error") end
                 Sfx.play(equipped == 0 and "confirm" or "click")
                 Tween.bounce(frame, 1.06, 0.25)
@@ -172,8 +174,9 @@ function PetsController.start()
     local function render(state)
         local profile = state.profile
         if not profile or not profile.pets then return end
+        slots = state.shop and state.shop.petSlots or Pets.MaxEquipped
         local equippedTotal = #(profile.equippedPets or {})
-        following.Text = "Following " .. equippedTotal .. "/" .. Pets.MaxEquipped
+        following.Text = "Following " .. equippedTotal .. "/" .. slots
         unequipAll.BackgroundColor3 = equippedTotal > 0 and Theme.color.Danger or FULL
         local found = 0
         for _, entry in Pets.Catalog do
@@ -188,7 +191,7 @@ function PetsController.start()
                 view.frame.BackgroundColor3 = equipped > 0 and Theme.lighten(Theme.color.Track, 0.18) or Theme.color.Track
                 view.action.Label.Text = equipped > 0 and "UNEQUIP" or "EQUIP"
                 view.action.BackgroundColor3 = equipped > 0 and Theme.color.Danger
-                    or (equippedTotal < Pets.MaxEquipped and Theme.color.Go or FULL)
+                    or (equippedTotal < slots and Theme.color.Go or FULL)
             elseif view then
                 view.frame:Destroy()
                 cards[entry.Id] = nil

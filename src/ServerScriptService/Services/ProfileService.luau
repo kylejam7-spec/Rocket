@@ -23,6 +23,7 @@ local function copy(profile)
     result.pets = table.clone(profile.pets)
     result.equippedPets = table.clone(profile.equippedPets)
     result.ufo = profile.ufo and table.clone(profile.ufo)
+    if result.ufo and result.ufo.extra then result.ufo.extra = table.clone(result.ufo.extra) end
     return result
 end
 
@@ -97,13 +98,16 @@ local function validate(raw, config)
     for id, count in raw.pets do
         if type(id) ~= "string" or type(count) ~= "number" or count < 1 or count % 1 ~= 0 or count > Pets.MaxCount then error("Invalid pets") end
     end
-    if #raw.equippedPets > Pets.MaxEquipped then error("Invalid equipped pets") end
+    -- Slot passes (Shared.Shop) raise the limit; ShopService trims if a pass is gone.
+    if #raw.equippedPets > Pets.MaxEquipped + 3 then error("Invalid equipped pets") end
     for _, id in raw.equippedPets do if type(id) ~= "string" then error("Invalid equipped pets") end end
     local ufo = raw.ufo
     if ufo ~= nil and (type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
-        or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400) then
+        or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400
+        or (ufo.extra ~= nil and (type(ufo.extra) ~= "table" or #ufo.extra > 2))) then
         error("Invalid UFO")
     end
+    for _, id in ufo and ufo.extra or {} do if type(id) ~= "string" then error("Invalid UFO") end end
     local result = copy(raw)
     -- Pets that left the catalog are dropped, not refused; so is an equip of a pet not owned.
     for id in raw.pets do if not Pets.get(id) then result.pets[id] = nil end end
@@ -114,6 +118,9 @@ local function validate(raw, config)
     end
     result.equippedPets = equipped
     if ufo and not Pets.get(ufo.pet) then result.ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
+    for index, id in result.ufo and result.ufo.extra or {} do
+        if not Pets.get(id) then result.ufo.extra[index] = result.ufo.pet end
+    end
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
     end
@@ -134,9 +141,10 @@ end
 
 -- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
-function Profiles.credit(profile, delivered, config)
+function Profiles.credit(profile, delivered, config, multiplier)
     if type(delivered) ~= "number" or delivered <= 0 or delivered % 1 ~= 0 then return 0 end
-    local coins = delivered * config.CoinsPerUnit
+    -- `multiplier`: 2x Coins (ShopService), 1 otherwise.
+    local coins = delivered * config.CoinsPerUnit * (multiplier or 1)
     profile.lifetimeDeliveries += delivered
     profile.coins += coins
     return coins

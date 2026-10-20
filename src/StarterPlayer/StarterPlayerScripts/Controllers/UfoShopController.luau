@@ -2,7 +2,8 @@
 -- and price. Any UFO Shop counter's "Open UFO Shop" prompt opens it; walking away or ✖
 -- closes it. Buying sends BuyUfo with a fresh request ID (the server charges once per
 -- ID); when the UFO shows up in the state the panel closes so you can watch it arrive.
--- Epic and Legendary UFOs are Robux-only and not on sale yet ("SOON").
+-- Epic and Legendary UFOs are Robux-only and not on sale yet ("SOON"). With the SHOP's
+-- Triple Hatch pass a x3 switch appears: one UFO brings 3 pets, for 3x the coins.
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -93,8 +94,20 @@ function UfoShopController.start()
         sound = false, onActivated = close, Parent = panel,
     })
 
-    local current
+    local current, render
     local rows, pending = {}, {}
+    -- Triple Hatch (state.shop.owned.MultiHatch): pets per UFO while the switch is on.
+    local triple = false
+    local function count()
+        local owned = current and current.shop and current.shop.owned or {}
+        return (triple and owned.MultiHatch) and 3 or 1
+    end
+    local tripleButton = Button.new({
+        Name = "Triple", Text = "🛸 x3: OFF", TextSize = 16, color = Theme.color.Purple, radius = 10, stroke = 2,
+        AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -40, 0, 18), Size = UDim2.fromOffset(120, 32),
+        Visible = false, Parent = panel,
+        onActivated = function() triple = not triple; if current then render(current) end end,
+    })
     for tier, ufo in Pets.Ufos do
         local color = Theme.rarity[ufo.Rarity]
         local row = Create.new("Frame", {
@@ -124,17 +137,18 @@ function UfoShopController.start()
             onActivated = function()
                 local profile = current and current.profile
                 if not profile or pending[tier] then return end
-                if not ufo.Price or profile.ufo or profile.coins < ufo.Price then return Sfx.play("error") end
+                local n = count()
+                if not ufo.Price or profile.ufo or profile.coins < ufo.Price * n then return Sfx.play("error") end
                 Sfx.play("click")
                 pending[tier] = true
-                State.remote("BuyUfo"):FireServer(tier, HttpService:GenerateGUID(false))
+                State.remote("BuyUfo"):FireServer(tier, HttpService:GenerateGUID(false), n)
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
         rows[tier] = { buy = buy }
     end
 
-    local function render(state)
+    function render(state)
         local profile = state.profile
         if not profile then return end
         coinsLabel.Text = Theme.icon.Coin .. " " .. Theme.number(profile.coins)
@@ -145,10 +159,16 @@ function UfoShopController.start()
         else
             status.Text = "Each UFO follows you while you play, then lands as a random pet!"
         end
+        local owned = state.shop and state.shop.owned or {}
+        tripleButton.Visible = owned.MultiHatch == true
+        local n = count()
+        tripleButton.Label.Text = "🛸 x3: " .. (n == 3 and "ON" or "OFF")
+        tripleButton.BackgroundColor3 = n == 3 and Theme.color.Go or Theme.color.Purple
         for tier, row in rows do
             local price = Pets.Ufos[tier].Price
             if price then
-                row.buy.BackgroundColor3 = (not active and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
+                row.buy.Label.Text = Theme.icon.Coin .. " " .. Theme.short(price * n) .. (n > 1 and " x" .. n or "")
+                row.buy.BackgroundColor3 = (not active and profile.coins >= price * n) and Theme.color.Go or CANT_AFFORD
             end
         end
     end

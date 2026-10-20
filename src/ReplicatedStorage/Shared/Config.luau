@@ -66,6 +66,51 @@ return table.freeze({
             PlacementRange = table.freeze({ 2039762544, 2036090762, 2039702563, 2036288776, 2037332789, 2037314800, 2036072766, 2040734288, 2038064735, 2036804806 }),
         }),
     }),
+    -- The Robux SHOP (ShopService; names, icons and rules in Shared.Shop). `id` is the
+    -- Creator Dashboard Game Pass / Developer Product ID: nil means not set up yet, and
+    -- that offer shows "SOON" and can't be bought. `price` mirrors the dashboard's R$
+    -- (the UI shows it). Never invent IDs: copy them from the dashboard.
+    Shop = table.freeze({
+        -- Game Passes: bought once, ownership re-checked on every join.
+        passes = table.freeze({
+            DoubleCoins = table.freeze({ id = nil, price = 199 }),
+            FastHatch = table.freeze({ id = nil, price = 149 }),
+            MultiHatch = table.freeze({ id = nil, price = 249 }),
+            PetSlot1 = table.freeze({ id = nil, price = 99 }),
+            PetSlot2 = table.freeze({ id = nil, price = 179 }),
+            -- Gym<n> unlocks TrainingTiers[n] without its launches.
+            Gym1 = table.freeze({ id = nil, price = 25 }),
+            Gym2 = table.freeze({ id = nil, price = 49 }),
+            Gym3 = table.freeze({ id = nil, price = 79 }),
+            Gym4 = table.freeze({ id = nil, price = 129 }),
+            Gym5 = table.freeze({ id = nil, price = 199 }),
+            Gym6 = table.freeze({ id = nil, price = 299 }),
+            Gym7 = table.freeze({ id = nil, price = 449 }),
+        }),
+        -- Developer Products: repeatable; each receipt is granted once (receipt journal).
+        products = table.freeze({
+            ServerTraining = table.freeze({ id = nil, price = 79 }),
+            Fill5 = table.freeze({ id = nil, price = 25 }),
+            Fill10 = table.freeze({ id = nil, price = 45 }),
+            Fill15 = table.freeze({ id = nil, price = 65 }),
+            Fill20 = table.freeze({ id = nil, price = 85 }),
+            Fill25 = table.freeze({ id = nil, price = 99 }),
+            ExtraStay = table.freeze({ id = nil, price = 39 }),
+            NextMoon = table.freeze({ id = nil, price = 19 }),
+            NextMars = table.freeze({ id = nil, price = 39 }),
+            NextEuropa = table.freeze({ id = nil, price = 69 }),
+            NextSaturn = table.freeze({ id = nil, price = 119 }),
+            NextBlackHole = table.freeze({ id = nil, price = 179 }),
+        }),
+        DoubleCoinsMultiplier = 2,
+        FastHatchRate = 2, -- UFOs count down this many times faster
+        MultiHatchCount = 3, -- pets per UFO with Triple Hatch (and coins x this)
+        ServerTrainingMultiplier = 2,
+        ServerTrainingSeconds = 600, -- each purchase adds this much (stacks)
+        ExtraStaySeconds = 60,
+        ExtraStayMax = 300, -- per stay; prompts stop opening past it
+        ReceiptStore = "RocketReceipts",
+    }),
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({
         table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),

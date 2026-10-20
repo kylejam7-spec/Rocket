@@ -1,0 +1,62 @@
+--[[
+    Shop — the Robux SHOP catalog and the rules both sides share. IDs and prices live
+    in Config.Shop; this module adds names, icons and when each offer can be bought.
+    The server (ShopService) owns every grant; the client (ShopController) only draws.
+
+    Passes (Game Passes, owned for good): 2x Coins, Fast Hatch, Triple Hatch, +1 and +2
+    Pet Slots, and access to each Gym District tier without its launches.
+    Products (Developer Products, repeatable):
+        ServerTraining  2x training for the whole server, 10 minutes, stacks
+        Fill<n>         n% of what the current phase needs (5/10/15/20/25), into the shared rocket
+        ExtraStay       +60 s at the destination for everyone there
+        Next<Id>        the next mission wheel lands on that destination
+    Paying never decides who flies: boarding stays open to everyone.
+]]
+local Pets = require(script.Parent.Pets)
+local Missions = require(script.Parent.Missions)
+local Shop = {}
+
+Shop.Passes = table.freeze({
+    table.freeze({ key = "DoubleCoins", name = "2x Coins", icon = "💰", text = "Double coins from every delivery" }),
+    table.freeze({ key = "FastHatch", name = "Fast Hatch", icon = "⚡", text = "Your UFOs land 2x faster" }),
+    table.freeze({ key = "MultiHatch", name = "Triple Hatch", icon = "🛸", text = "Summon 3 pets in one UFO" }),
+    table.freeze({ key = "PetSlot1", name = "+1 Pet Slot", icon = "🐾", text = "One more pet follows you" }),
+    table.freeze({ key = "PetSlot2", name = "+2 Pet Slots", icon = "🐾", text = "Two more pets follow you" }),
+})
+Shop.Fills = table.freeze({ 5, 10, 15, 20, 25 })
+Shop.MaxPetSlots = Pets.MaxEquipped + 3
+
+function Shop.gymKey(tier) return "Gym" .. tier end
+function Shop.nextKey(mission) return "Next" .. Missions.get(mission).Id end
+function Shop.fillKey(percent) return "Fill" .. percent end
+
+-- The {id, price} entry for a pass or product key, or nil.
+function Shop.entry(config, key)
+    return config.Shop.passes[key] or config.Shop.products[key]
+end
+function Shop.isPass(config, key) return config.Shop.passes[key] ~= nil end
+-- On sale: the key exists and has a dashboard ID.
+function Shop.enabled(config, key)
+    local entry = Shop.entry(config, key)
+    return entry ~= nil and type(entry.id) == "number"
+end
+
+-- Pets that can follow you with these passes owned (`owned[key] = true`).
+function Shop.petSlots(owned)
+    return Pets.MaxEquipped + (owned.PetSlot1 and 1 or 0) + (owned.PetSlot2 and 2 or 0)
+end
+
+-- Whether a product can be offered right now. `view`: phase, passenger, wheelSpun,
+-- guaranteed (a mission is already locked), stayExtra (seconds added this stay).
+-- A receipt that lands after its moment has passed is still honoured (ShopService
+-- banks it); this only decides whether the button and the prompt open.
+function Shop.available(config, key, view)
+    if key == "ServerTraining" then return true end
+    if key:match("^Fill%d+$") then return view.phase == "Building" or view.phase == "Fueling" end
+    local atDestination = view.phase == "Rewarding" and view.passenger == true
+    if key == "ExtraStay" then return atDestination and (view.stayExtra or 0) < config.Shop.ExtraStayMax end
+    if key:match("^Next") then return atDestination and not view.wheelSpun and not view.guaranteed end
+    return false
+end
+
+return Shop
