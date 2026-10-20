@@ -2,8 +2,10 @@
 -- and price. Any UFO Shop counter's "Open UFO Shop" prompt opens it; walking away or ✖
 -- closes it. Buying sends BuyUfo with a fresh request ID (the server charges once per
 -- ID); when the UFO shows up in the state the panel closes so you can watch it arrive.
--- Epic and Legendary UFOs are Robux-only and not on sale yet ("SOON"). One UFO flies at
--- a time; the SHOP's Triple Hatch pass lets 3 (state.shop.maxUfos), each at its own price.
+-- Rare, Epic and Legendary UFOs also sell for Robux (Config.Shop UfoRare/UfoEpic/
+-- UfoLegendary; Epic and Legendary only for Robux): the purple button sends BuyShop and
+-- the server opens the prompt. One UFO flies at a time; the SHOP's Triple Hatch pass lets
+-- 3 (state.shop.maxUfos), each at its own price.
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -11,6 +13,8 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Pets = require(ReplicatedStorage.Shared.Pets)
+local Shop = require(ReplicatedStorage.Shared.Shop)
+local Config = require(ReplicatedStorage.Shared.Config)
 local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -119,13 +123,28 @@ function UfoShopController.start()
             Font = Theme.font.Display, TextSize = 24, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = row,
         })
         StrokedText.new({
-            Name = "Odds", Position = UDim2.fromOffset(66, 34), Size = UDim2.fromOffset(420, 22), Text = odds(ufo), RichText = true,
+            Name = "Odds", Position = UDim2.fromOffset(66, 34), Size = UDim2.fromOffset(330, 22), Text = odds(ufo), RichText = true,
             Font = Theme.font.Display, TextSize = 17, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
             stroke = 1.5, Parent = row,
         })
-        local buy = Button.new({
-            Name = "Buy", Text = ufo.Price and Theme.icon.Coin .. " " .. Theme.short(ufo.Price) or "R$ SOON", TextSize = 22,
-            color = ufo.Price and Theme.color.Go or Theme.color.Purple,
+        -- Robux: its own purple button (left of the coin price), or the only one.
+        local key = Shop.ufoKey(tier)
+        local robux
+        if Shop.entry(Config, key) then
+            robux = Button.new({
+                Name = "Robux", Text = "R$ " .. Shop.entry(Config, key).price, TextSize = 20, color = Theme.color.Purple,
+                AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, ufo.Price and -156 or -8, 0.5, 0),
+                Size = UDim2.fromOffset(ufo.Price and 110 or 140, 44), Parent = row, sound = false,
+                onActivated = function()
+                    if not current or not room(current) or not Shop.enabled(Config, key) then return Sfx.play("error") end
+                    Sfx.play("click")
+                    State.remote("BuyShop"):FireServer(key)
+                end,
+            })
+        end
+        local buy = ufo.Price and Button.new({
+            Name = "Buy", Text = Theme.icon.Coin .. " " .. Theme.short(ufo.Price), TextSize = 22,
+            color = Theme.color.Go,
             AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(140, 44),
             Parent = row, sound = false,
             onActivated = function()
@@ -138,7 +157,7 @@ function UfoShopController.start()
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
-        rows[tier] = { buy = buy }
+        rows[tier] = { buy = buy, robux = robux, key = key }
     end
 
     function render(state)
@@ -161,6 +180,9 @@ function UfoShopController.start()
             local price = Pets.Ufos[tier].Price
             if price then
                 row.buy.BackgroundColor3 = (free and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
+            end
+            if row.robux then
+                row.robux.BackgroundColor3 = (free and Shop.enabled(Config, row.key)) and Theme.color.Purple or CANT_AFFORD
             end
         end
     end

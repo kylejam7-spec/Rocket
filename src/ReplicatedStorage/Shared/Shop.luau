@@ -11,6 +11,7 @@
                         needs now: Metal while building, Fuel while fueling
         ExtraStay       +60 s at the destination for everyone there
         Next<Id>        the next mission wheel lands on that destination
+        Ufo<Rarity>     a Rare, Epic or Legendary UFO (one of your UFO slots: 1, Triple Hatch 3)
     Paying never decides who flies: boarding stays open to everyone.
 ]]
 local Pets = require(script.Parent.Pets)
@@ -30,6 +31,7 @@ Shop.MaxPetSlots = Pets.MaxEquipped + 3
 function Shop.gymKey(tier) return "Gym" .. tier end
 function Shop.nextKey(mission) return "Next" .. Missions.get(mission).Id end
 function Shop.fillKey(units) return "Fill" .. units end
+function Shop.ufoKey(tier) return Pets.Ufos[tier] and "Ufo" .. Pets.Ufos[tier].Rarity end
 
 -- The {id, price} entry for a pass or product key, or nil.
 function Shop.entry(config, key)
@@ -48,11 +50,13 @@ function Shop.petSlots(owned)
 end
 
 -- Whether a product can be offered right now. `view`: phase, passenger, wheelSpun,
--- guaranteed (a mission is already locked), stayExtra (seconds added this stay).
+-- guaranteed (a mission is already locked), stayExtra (seconds added this stay), ufos
+-- (UFOs flying) and maxUfos.
 -- A receipt that lands after its moment has passed is still honoured (ShopService
 -- banks it); this only decides whether the button and the prompt open.
 function Shop.available(config, key, view)
     if key == "ServerTraining" then return true end
+    if key:match("^Ufo%a+$") then return (view.ufos or 0) < (view.maxUfos or 1) end
     if key:match("^Fill%d+$") then return view.phase == "Building" or view.phase == "Fueling" end
     local atDestination = view.phase == "Rewarding" and view.passenger == true
     if key == "ExtraStay" then return atDestination and (view.stayExtra or 0) < config.Shop.ExtraStayMax end

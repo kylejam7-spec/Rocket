@@ -102,6 +102,10 @@ return table.freeze({
             NextEuropa = table.freeze({ id = 3720387434, price = 69 }),
             NextSaturn = table.freeze({ id = 3720387492, price = 119 }),
             NextBlackHole = table.freeze({ id = 3720387554, price = 179 }),
+            -- UFOs for Robux (Shared.Shop.ufoKey): Rare also sells for coins.
+            UfoRare = table.freeze({ id = 3720390200, price = 349 }),
+            UfoEpic = table.freeze({ id = 3720390071, price = 549 }),
+            UfoLegendary = table.freeze({ id = 3720390015, price = 649 }),
         }),
         DoubleCoinsMultiplier = 2,
         FastHatchRate = 2, -- UFOs count down this many times faster

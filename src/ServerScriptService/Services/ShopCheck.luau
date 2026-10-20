@@ -21,6 +21,8 @@ return function()
     for tier in config.TrainingTiers do table.insert(keys, Shop.gymKey(tier)) end
     for _, units in Shop.Fills do table.insert(keys, Shop.fillKey(units)) end
     for mission = 1, Missions.Count do table.insert(keys, Shop.nextKey(mission)) end
+    for tier = 3, #Pets.Ufos do table.insert(keys, Shop.ufoKey(tier)) end
+    assert(Shop.ufoKey(3) == "UfoRare" and Shop.ufoKey(5) == "UfoLegendary" and Shop.ufoKey(9) == nil)
     table.insert(keys, "ServerTraining")
     table.insert(keys, "ExtraStay")
     local ids = {}
@@ -53,6 +55,9 @@ return function()
     assert(not Shop.available(config, "ExtraStay", { phase = "Rewarding", passenger = true, stayExtra = config.Shop.ExtraStayMax }))
     assert(not Shop.available(config, "NextMars", { phase = "Rewarding", passenger = true, wheelSpun = true }))
     assert(not Shop.available(config, "NextMars", { phase = "Rewarding", passenger = true, guaranteed = true }))
+    -- Robux UFOs: only with a free UFO slot (1, or 3 with Triple Hatch), in any phase.
+    assert(Shop.available(config, "UfoEpic", { phase = "Launching", ufos = 0, maxUfos = 1 }))
+    assert(not Shop.available(config, "UfoEpic", { ufos = 1, maxUfos = 1 }) and Shop.available(config, "UfoRare", { ufos = 2, maxUfos = 3 }))
 
     -- Receipts: granted once, recorded before PurchaseGranted.
     local function harness()
@@ -88,6 +93,10 @@ return function()
     assert(Service.process(h.state, { PurchaseId = "p2", ProductId = 99 }, h.deps) == Service.RETRY)
     h.failRead = false
     assert(Service.process(h.state, { PurchaseId = "", ProductId = 7 }, h.deps) == Service.RETRY and h.grants == 0)
+    -- A grant that can't happen yet (a UFO for a buyer who isn't here): retried, not recorded.
+    h = harness()
+    h.deps.grant = function() return false end
+    assert(Service.process(h.state, receipt, h.deps) == Service.RETRY and not h.journal.p1 and not h.state.granted.p1)
     -- A receipt already being processed (yielding) isn't processed again meanwhile.
     h.state.busy.p3 = true
     assert(Service.process(h.state, { PurchaseId = "p3", ProductId = 7 }, h.deps) == Service.RETRY and h.grants == 0)
@@ -179,6 +188,10 @@ return function()
     local total = 0
     for _, count in profile.pets do total += count end
     assert(first and #others == 1 and total == 3 and #profile.ufos == 0 and #profile.equippedPets == 3)
+    -- Robux UFOs (PetService.add): a profile never holds more than 3.
+    local held = Profiles.validate(nil, config)
+    for index = 1, 3 do assert(PetService.add(held, 5, "r" .. index, random)) end
+    assert(not PetService.add(held, 4, "r4", random) and #held.ufos == 3 and held.ufos[1].tier == 5 and held.ufos[1].remaining == Pets.Ufos[5].Seconds)
     -- Fast Hatch is just a faster countdown: twice the seconds per tick.
     profile.coins = 500
     PetService.buy(profile, 1, "t5", random)

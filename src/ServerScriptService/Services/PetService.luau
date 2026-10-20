@@ -31,10 +31,18 @@ function PetService.buy(profile, tier, requestId, random, maxUfos)
     if #profile.ufos >= (maxUfos or 1) then return nil, "busy" end
     if profile.coins < ufo.Price then return nil, "not enough coins" end
     profile.coins -= ufo.Price
-    table.insert(profile.ufos, { id = requestId:sub(1, 8), tier = tier, pet = Pets.roll(random, tier), remaining = ufo.Seconds })
+    PetService.add(profile, tier, requestId, random)
     table.insert(profile.purchaseIds, requestId)
     while #profile.purchaseIds > UpgradeService.LedgerSize do table.remove(profile.purchaseIds, 1) end
     return ufo.Price
+end
+
+-- Puts a UFO of `tier` on its way (the pet rolled now). `id` (request or purchase ID) names
+-- it for clients. False when all 3 UFO slots any profile can hold are taken.
+function PetService.add(profile, tier, id, random)
+    if #profile.ufos >= 3 then return false end
+    table.insert(profile.ufos, { id = id:sub(1, 8), tier = tier, pet = Pets.roll(random, tier), remaining = Pets.Ufos[tier].Seconds })
+    return true
 end
 
 -- Adds a pet (capped at Pets.MaxCount copies) and equips it if one of `slots`
@@ -143,6 +151,18 @@ function PetService.new(ctx)
         service.refresh(player)
         ctx.Cycle.send(player)
     end
+    -- A Robux UFO (ShopService receipt). The prompt only opens with a free slot; a receipt
+    -- that races past it still flies (up to the 3 a profile holds). False (retried on a
+    -- later join) only with no loaded profile or 3 UFOs already up.
+    function service.grantUfo(player, tier, purchaseId)
+        local profile = profileOf(player)
+        if not profile or not PetService.add(profile, tier, purchaseId, random) then return false end
+        local ufo = Pets.Ufos[tier]
+        local minutes = ufo.Minutes / service.hatchRate(player)
+        ctx.Remote.feedback(player, ufo.Name .. " summoned! It lands in " .. (minutes % 1 == 0 and minutes or ("%.1f"):format(minutes)) .. " minutes of play.")
+        changed(player)
+        return true
+    end
     local function nearShop(player)
         local root = ctx.Movement.observed(player)
         if not root then return false end
@@ -162,7 +182,7 @@ function PetService.new(ctx)
             elseif reason == "busy" then
                 ctx.Remote.feedback(player, service.maxUfos(player) > 1 and "You already have " .. service.maxUfos(player) .. " UFOs on the way!"
                     or "Your UFO is still on its way. Triple Hatch in the SHOP lets 3 fly at once!")
-            elseif reason == "robux only" then ctx.Remote.feedback(player, "That UFO is coming soon!") end
+            elseif reason == "robux only" then ctx.Remote.feedback(player, "That UFO is bought with Robux!") end
             ctx.Cycle.send(player)
             return
         end

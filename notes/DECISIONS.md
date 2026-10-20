@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-10-20: Robux UFOs
+
+- User's Developer Products: Rare UFO 349 (3720390200), Epic 549 (3720390071),
+  Legendary 649 (3720390015). Rare keeps its 50K coin price too (both buttons); Epic and
+  Legendary are Robux-only. Keys `UfoRare` / `UfoEpic` / `UfoLegendary` (Shop.ufoKey).
+- Bought only with a free UFO slot (1, or 3 with Triple Hatch). The receipt puts the UFO
+  on the buyer's profile, so it is granted only while they're in this server with a
+  loaded profile (else NotProcessedYet; Roblox retries on their next join). A receipt
+  that races past a full slot still flies, up to the 3 a profile can hold.
+- Risk while `PersistenceEnabled` is false: a Robux UFO (and its pet) is lost when the
+  buyer leaves, like all pets. Turn saving on before selling these for real.
+
 ## 2026-10-20: Triple Hatch = 3 UFOs at once
 
 - User: Triple Hatch raises how many UFOs can hatch at once; no x3 price switch. Without

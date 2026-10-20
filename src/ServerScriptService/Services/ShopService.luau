@@ -6,8 +6,10 @@
 -- PromptGamePassPurchaseFinished, which fires on the server, for a purchase made here).
 -- Nothing about a pass is saved by us, so it can't be lost.
 --
--- Developer Products: every one is a server-wide effect (training boost, rocket fill,
+-- Developer Products: nearly all are server-wide effects (training boost, rocket fill,
 -- longer stay, the next mission), so a grant needs no saved profile and never fails.
+-- Robux UFOs go onto the buyer's profile: granted only while they're here (else
+-- NotProcessedYet, and Roblox retries on their next join).
 -- ProcessReceipt checks the receipt journal (a DataStore keyed by PurchaseId), grants,
 -- records the PurchaseId and only then returns PurchaseGranted; a failed record returns
 -- NotProcessedYet and the retry finds the in-memory mark, so nothing is granted twice
@@ -21,6 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Shop = require(ReplicatedStorage.Shared.Shop)
 local Missions = require(ReplicatedStorage.Shared.Missions)
+local Pets = require(ReplicatedStorage.Shared.Pets)
 local Rocket = require(script.Parent.RocketService)
 local ShopService = {}
 ShopService.GRANTED, ShopService.RETRY = "granted", "retry"
@@ -38,7 +41,8 @@ end
 --   key(productId)        -> shop key or nil
 --   seen(purchaseId)      -> ok, alreadyRecorded (the journal; may yield)
 --   record(purchaseId, receipt, key) -> ok
---   grant(key, receipt)   -> applies the effect (never yields)
+--   grant(key, receipt)   -> applies the effect (never yields); false = can't yet (a UFO
+--                            for a buyer who isn't here or has no free slot): retry later
 -- Returns GRANTED or RETRY.
 function ShopService.process(state, receipt, deps)
     local key = deps.key(receipt.ProductId)
@@ -54,7 +58,7 @@ function ShopService.process(state, receipt, deps)
                 state.granted[id] = true
                 return ShopService.GRANTED
             end
-            deps.grant(key, receipt)
+            if deps.grant(key, receipt) == false then return ShopService.RETRY end
             state.granted[id] = true
         end
         return deps.record(id, receipt, key) and ShopService.GRANTED or ShopService.RETRY
@@ -147,7 +151,8 @@ function ShopService.new(ctx)
     local function view(player)
         local rocket = ctx.Cycle.rocket
         return { phase = rocket.phase, passenger = rocket.passengers[player.UserId] == true,
-            wheelSpun = ctx.Cycle.wheel ~= nil, guaranteed = #effects.guarantees > 0, stayExtra = stay and stay.extra or 0 }
+            wheelSpun = ctx.Cycle.wheel ~= nil, guaranteed = #effects.guarantees > 0, stayExtra = stay and stay.extra or 0,
+            ufos = #ctx.profiles.records[player.UserId].profile.ufos, maxUfos = service.maxUfos(player) }
     end
     function service.snapshot(player)
         local mine = owned[player.UserId] or {}
@@ -178,6 +183,15 @@ function ShopService.new(ctx)
     local function grant(key, receipt)
         local player = Players:GetPlayerByUserId(receipt.PlayerId)
         local name = player and player.DisplayName or "A player"
+        -- A UFO goes onto the buyer's profile, so they must be here.
+        local rarity = key:match("^Ufo(%a+)$")
+        if rarity then
+            if not player then return false end
+            for tier, ufo in Pets.Ufos do
+                if ufo.Rarity == rarity then return ctx.Pets.grantUfo(player, tier, receipt.PurchaseId) end
+            end
+            return false
+        end
         local units = tonumber(key:match("^Fill(%d+)$"))
         if key == "ServerTraining" then
             ShopService.boost(effects, workspace:GetServerTimeNow(), config.Shop.ServerTrainingSeconds)

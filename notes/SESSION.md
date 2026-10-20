@@ -22,6 +22,10 @@
   mid-stay took the countdown 104 → 163 s; the wheel then landed on Saturn and the next
   rocket was Saturn. No script errors; the journal fell back to memory (Studio API access off).
   Not tested: real Roblox prompts (no IDs yet).
+- Robux UFOs (user IDs): Rare 349 (plus 50K coins), Epic 549, Legendary 649. GetProductInfo
+  matches. UFO shop rows show purple R$ buttons. A Legendary receipt via the debug hook gave
+  one UFO (repeat PurchaseId: no second). RunChecks 13/13. Persistence is still off, so a
+  bought UFO's pet is lost on rejoin (see DECISIONS).
 - Triple Hatch reworked (user): up to 3 UFOs at once at normal prices (was 3 pets per UFO
   for 3x coins). `profile.ufos`, `Ufos` attribute, PetController draws one saucer per UFO
   (three perches) and 6 follower slots. Studio: three debug UFOs drawn together, landed one
