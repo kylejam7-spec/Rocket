@@ -190,4 +190,13 @@ return table.freeze({
     AutosaveSeconds = 30,
     LeaseSeconds = 120,
     RecentRewardLimit = 64,
+    -- Global top-ten boards beside spawn (LeaderboardService): one OrderedDataStore per
+    -- category, `Store .. "_" .. key`; Studio writes its own.
+    Leaderboards = table.freeze({
+        Store = game:GetService("RunService"):IsStudio() and "RocketTop_studio" or "RocketTop_v1",
+        Size = 10,
+        PushSeconds = 120, -- each player's changed values go out this often (and on leaving)
+        RefreshSeconds = 120, -- each board reads its top ten this often
+        RenderSeconds = 5, -- boards redraw with this server's live values this often
+    }),
 })

@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-10-20: Global leaderboards replace the site offices
+
+- User: the two site offices beside spawn become display-only leaderboard stands, top
+  ten across all servers in six categories: Strength and Speed (points, not levels),
+  Coins (held now, so spending drops you), Rockets Delivered (lifetime launches),
+  Materials Delivered (lifetime units) and Black Holes Visited (lifetime).
+- One OrderedDataStore per category (`RocketTop_v1_<key>`, Studio `RocketTop_studio_`).
+  Values go out every 2 minutes and on leaving; boards read every 2 minutes and redraw
+  every 5 s with this server's live values over the stored ones. Sorted requests have
+  their own budget, separate from profile saves.
+- Black Hole visits are a new profile field, `blackHolesVisited`, counted with the launch
+  ledger (once per launch id). No schema bump: older profiles load with 0, and older
+  servers keep the field untouched.
+
 ## 2026-10-20: Planet stays pay double per tick, 4 ticks a second
 
 - User: stay rewards doubled per tick (Moon 3 → 6 of each stat) and tick 4 times a

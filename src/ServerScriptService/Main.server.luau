@@ -34,6 +34,7 @@ ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 ctx.Robux = require(Services.RobuxUpgradeService).new(ctx)
 ctx.Pets = require(Services.PetService).new(ctx)
 ctx.Shop = require(Services.ShopService).new(ctx)
+ctx.Leaderboards = require(Services.LeaderboardService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,
@@ -121,8 +122,10 @@ Players.PlayerRemoving:Connect(function(player)
     ctx.Cycle.forget(player)
     -- A passenger on a launched rocket still gets their stay's rewards: keep their lease.
     local rocket = ctx.Cycle.rocket
+    ctx.Leaderboards.leave(player)
     ctx.profiles:remove(player.UserId, rocket.passengers[player.UserId] == true and (rocket.phase == "Launching" or rocket.phase == "Rewarding"))
 end)
 for _, player in Players:GetPlayers() do task.spawn(joined, player) end
 ctx.Cycle.start()
 ctx.profiles:start()
+ctx.Leaderboards.start()

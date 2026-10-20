@@ -1,4 +1,20 @@
-# Latest session: 2026-10-20 (13), planet stays x2 a tick at 4 ticks a second
+# Latest session: 2026-10-20 (15), global leaderboards
+
+- `claude/leaderboards` from master 590b77b. New LeaderboardService (categories, stands,
+  merge/format, push/refresh/render loops, SurfaceGui panels) and LeaderboardCheck;
+  SiteDressingService `leaderboardStand` replaces `siteOffices` at x = +/-50, z = 80
+  (three 14x18 panels, faces tagged `Leaderboard`); Config.Leaderboards; Main wires
+  start and leave. ProfileService `blackHolesVisited` + queueReward's `blackHole` flag
+  (LaunchService passes it); PersistenceCheck covers one visit per Black Hole launch and
+  legacy profiles.
+- Studio: RunChecks 16/16; no SiteOffices left; panels west Strength/Speed/Coins, east
+  Launches/Delivered/BlackHoles, left to right from the lane. Debug Black Hole launch:
+  the board showed "fruitsalad6d9 = 1" ~33 s in, launches 5 -> 6. After the 2-minute push
+  all six RocketTop_studio stores held the player (strength 98,864, coins 12,805, ...);
+  the client sees all six 560x720 panels. No errors. Not eyeballed (MCP capture can't
+  show runtime SurfaceGuis in Play); one player only, so no cross-server ranking seen.
+
+# Earlier session: 2026-10-20 (13), planet stays x2 a tick at 4 ticks a second
 
 - `claude/planet-ticks` from master 590b77b (#46 merged). Config.Planet: StrengthBonus /
   SpeedBonus 6, TicksPerSecond 4, GymGain 6 (destination gyms unchanged);

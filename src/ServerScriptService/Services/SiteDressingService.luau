@@ -1,7 +1,7 @@
 --[[
     Dresses the Earth launch site as a spaceport under construction ("ground zero"):
     concrete roads, two tower cranes swung over the pad, floodlight towers on the apron,
-    shipping-container stacks, girder stockpiles, portacabin site offices, the steel
+    shipping-container stacks, girder stockpiles, leaderboard stands by spawn, the steel
     skeletons of Mission Control and a hangar going up in scaffolding, cones and
     barriers, and a SPACEPORT EARTH arch over the lane. Positions come from SiteLayout;
     nothing here is gameplay, so only what players could walk into collides, and every
@@ -180,27 +180,44 @@ local function girderStack(parent, base, yaw)
     end
 end
 
--- Stacked portacabin site offices with an outside stair, facing `facing`.
-local function siteOffices(parent, base, facing)
-    local model = folder(parent, "SiteOffices")
+-- A leaderboard stand: three display panels in a steel frame on a plinth, facing
+-- `facing`, one per category in `keys` (left to right as you face it). Each panel's
+-- face carries a `Leaderboard` attribute; LeaderboardService draws the top ten on it.
+local PANEL = Vector2.new(14, 18)
+local function leaderboardStand(parent, base, facing, keys)
+    local model = folder(parent, "LeaderboardStand")
     local frame = CFrame.lookAt(base, base + facing)
-    local walls, roof, window = Color3.fromRGB(226, 228, 230), Color3.fromRGB(120, 126, 134), Color3.fromRGB(110, 170, 210)
-    for floor = 0, 1 do
-        for _, x in { -6.5, 6.5 } do
-            if floor == 0 or x < 0 then
-                local cabin = frame * CFrame.new(x, 1.6 + floor * 3.4 + 1.5, 0)
-                make(model, "Portacabin", Vector3.new(12.6, 3.2, 6), cabin, walls, Enum.Material.SmoothPlastic, true)
-                make(model, "CabinRoof", Vector3.new(12.8, 0.3, 6.2), cabin * CFrame.new(0, 1.75, 0), roof, Enum.Material.Metal)
-                for _, wx in { -3.5, 0, 3.5 } do
-                    make(model, "CabinWindow", Vector3.new(2.2, 1.2, 0.1), cabin * CFrame.new(wx, 0.3, -3.05), window, Enum.Material.Glass)
-                end
-            end
-        end
+    local step, bottom = PANEL.X + 1.6, 2.4
+    local width = step * #keys + 1.6
+    local top = bottom + PANEL.Y + 1
+    make(model, "Plinth", Vector3.new(width + 2, 1, 6), frame * CFrame.new(0, 0.5, 0.6), CONCRETE, Enum.Material.Concrete, true)
+    for index = 0, #keys do
+        local x = (index - #keys / 2) * step
+        make(model, "StandLeg", Vector3.new(1.2, top, 1.2), frame * CFrame.new(x, top / 2, 0.6), STEEL, Enum.Material.Metal, true)
     end
-    make(model, "CabinBlocks", Vector3.new(26, 1.6, 6.4), frame * CFrame.new(0, 0.8, 0), CONCRETE, Enum.Material.Concrete, true)
-    make(model, "Stair", Vector3.new(2.6, 4.9, 8), frame * CFrame.new(7.5, 2.45 + 1.6, -6.6) * CFrame.Angles(0, math.pi / 2, 0), DARK, Enum.Material.DiamondPlate, true, "Wedge")
-    Signs.board(model, "OfficeSign", frame * CFrame.new(-6.5, 9.7, -3.6), Vector2.new(11, 2.6),
-        { title = "SITE OFFICE", subtitle = "VISITORS REPORT HERE", icon = "📋", accent = Color3.fromRGB(90, 170, 255) })
+    make(model, "StandBeam", Vector3.new(width, 1.2, 1.6), frame * CFrame.new(0, top + 0.6, 0.6), DARK, Enum.Material.Metal)
+    make(model, "StandSill", Vector3.new(width, 0.8, 1.6), frame * CFrame.new(0, bottom - 0.6, 0.6), DARK, Enum.Material.Metal)
+    local Leaderboards = require(script.Parent.LeaderboardService)
+    for index, key in keys do
+        local category = Leaderboards.byKey[key]
+        -- Facing the stand, the frame's +X is on your left, so index 1 goes at +X.
+        local x = ((#keys + 1) / 2 - index) * step
+        local center = frame * CFrame.new(x, bottom + PANEL.Y / 2, 0)
+        make(model, "PanelBacking", Vector3.new(PANEL.X + 0.6, PANEL.Y + 0.6, 0.8), center * CFrame.new(0, 0, 0.6), Color3.fromRGB(22, 20, 36), Enum.Material.SmoothPlastic, true)
+        make(model, "PanelTrim", Vector3.new(PANEL.X + 1, PANEL.Y + 1, 0.4), center * CFrame.new(0, 0, 0.6), category.accent, Enum.Material.Neon)
+        local face = make(model, "PanelFace", Vector3.new(PANEL.X, PANEL.Y, 0.05), center * CFrame.new(0, 0, 0.17), Color3.fromRGB(22, 20, 36))
+        face.Transparency = 1
+        face:SetAttribute("Leaderboard", key)
+    end
+    -- Lamps along the beam, shining down on the panels.
+    local lampColor = Color3.fromRGB(255, 226, 170)
+    for index = 1, #keys do
+        local x = (index - (#keys + 1) / 2) * step
+        local lamp = make(model, "StandLamp", Vector3.new(2, 0.3, 0.6), frame * CFrame.new(x, top + 0.2, -0.9) * CFrame.Angles(math.rad(30), 0, 0), lampColor, Enum.Material.Neon)
+        local light = Instance.new("SpotLight")
+        light.Face, light.Angle, light.Range, light.Brightness, light.Color = Enum.NormalId.Bottom, 80, 14, 1.2, lampColor
+        light.Parent = lamp
+    end
 end
 
 -- A building going up: a steel frame (columns, beams per floor), a part-poured slab,
@@ -370,9 +387,10 @@ function Dressing.build(world)
     containerStack(site, Vector3.new(188, 0, 30), 0, { { 0, 0 } }, 14)
     girderStack(site, Vector3.new(-112, 0, 96), math.rad(90))
     girderStack(site, Vector3.new(112, 0, 96), math.rad(80))
-    -- Site offices beside spawn, facing the lane.
-    siteOffices(site, Vector3.new(-50, 0, 80), Vector3.new(1, 0, 0))
-    siteOffices(site, Vector3.new(50, 0, 80), Vector3.new(-1, 0, 0))
+    -- Leaderboard stands beside spawn, facing the lane (where the site offices stood).
+    local Leaderboards = require(script.Parent.LeaderboardService)
+    leaderboardStand(site, Vector3.new(-50, 0, 80), Vector3.new(1, 0, 0), Leaderboards.Stands[1])
+    leaderboardStand(site, Vector3.new(50, 0, 80), Vector3.new(-1, 0, 0), Leaderboards.Stands[2])
     -- Buildings going up behind the stations.
     skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4, "MISSION CONTROL", "🛰️")
     skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3, "ASSEMBLY HANGAR", "🔧")
