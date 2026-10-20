@@ -10,6 +10,8 @@
 - User: the nameplate reads, bottom to top, the player's name just above the head, then
   the rank title with a small "🚀 N" lifetime launch count beside it. It replaces
   Roblox's own name label.
+- User: no coloured ring under Rare+ pets (PetController's GlowRing is gone); Epic+
+  sparkle and the Legendary light and trail stay.
 
 ## 2026-10-20: Gyms tick 3 times a second
 

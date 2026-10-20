@@ -6,7 +6,7 @@
 --   (PetAnimator), stepping in time with the ground and bounding along at running
 --   speed. Each wears a small name and rarity tag sized to it. Rarer pets show off more:
 --   idle emotes and tricks (hop, spin, roll, backflip, loop...) grow in variety and
---   frequency with rank (FLAIR), and Rare+ glow underfoot, Epic+ sparkle, and
+--   frequency with rank (FLAIR), Epic+ sparkle, and
 --   Legendaries carry a light and a trail. Everyone's pets jump when they jump.
 -- * On PetHatched the UFO swoops in front of its owner, beams down with rising
 --   sparkles, the pet spins into being inside the beam and pops out (shockwave, burst,
@@ -270,10 +270,6 @@ function PetController.start()
             position = at, yaw = 0, phase = math.random() * 10, speed = 0,
             animator = animator or PetAnimator.new(model, spec.Form), tag = nameTag(spec, height),
             nextShow = os.clock() + math.random(2, 6), nextMovingTrick = os.clock() + math.random(4, 8) }
-        if spec.Rank >= 3 then
-            local _, size = PetModels.bounds(model)
-            slot.ring = ringPart(Theme.rarity[spec.Rarity], math.max(size.X, size.Z) * 0.9, spec.Rank == 3 and 0.78 or 0.68)
-        end
         -- Stand-in flyers flap their wings around the inner edge.
         local pivot = model:GetPivot()
         for _, name in { "WingL", "WingR" } do
@@ -290,7 +286,6 @@ function PetController.start()
     end
     local function dropSlot(slot)
         if slot.model then slot.model:Destroy() end
-        if slot.ring then slot.ring:Destroy() end
         if slot.tag then slot.tag:Destroy() end
     end
     local function clearReveal(reveal)
@@ -448,10 +443,6 @@ function PetController.start()
         end
         local pivot = CFrame.new(slot.position + Vector3.new(0, lift, 0)) * CFrame.Angles(0, slot.yaw, 0) * CFrame.Angles(tilt, 0, roll) * turn
         slot.model:PivotTo(pivot)
-        if slot.ring then
-            slot.ring.CFrame = CFrame.new(slot.position + Vector3.new(0, 0.06, 0)) * CFrame.Angles(0, 0, math.rad(90))
-            if slot.rank == 5 then slot.ring.Transparency = 0.68 + math.sin(now * 3) * 0.08 end
-        end
         if slot.tag then slot.tag.WorldPosition = slot.position + Vector3.new(0, lift + height + 0.45, 0) end
         if slot.wings then
             local flap = math.sin(t * (12 + 6 * moving)) * 0.55

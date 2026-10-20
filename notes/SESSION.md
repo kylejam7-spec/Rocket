@@ -12,6 +12,8 @@
   "🚀 1 | INTERN", "🚀 42 | LAUNCH SPECIALIST", "🚀 100 | NASA CEO", name row
   "fruitsalad6d9"; client layout badge x82-121, title x127-198, name y30-54 in a 280x54
   tag; no client/server errors. Not eyeballed: MCP screen_capture skips BillboardGuis.
+- Pets: removed the rarity GlowRing under Rare+ pets (PetController). Studio Play with
+  Uncommon/Rare/Legendary out: 0 GlowRing parts, no client errors.
 
 # Earlier session: 2026-10-20 (11), gyms tick 3x a second, scattered popups
 
