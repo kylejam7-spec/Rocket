@@ -8,9 +8,11 @@ return function()
     local Layout = require(script.Parent.SiteLayout)
     local holder = Instance.new("Folder")
     local ok, failure = pcall(function()
-        for index, spot in Spaceport.Props do
+        local all = table.clone(Spaceport.Props)
+        for _, car in Spaceport.Train do table.insert(all, car) end
+        for index, spot in all do
             local name, x, z, yaw, scale, solid, y = table.unpack(spot)
-            local label = ("Spaceport.Props[%d] %s"):format(index, tostring(name))
+            local label = ("Spaceport prop %d %s"):format(index, tostring(name))
             assert(type(scale) == "number" and scale > 0 and type(solid) == "boolean", label .. " is malformed")
             local model = Props.place(holder, name, CFrame.new(x, y or 0, z) * CFrame.Angles(0, math.rad(yaw), 0), scale, solid)
             assert(model, label .. " is not in SiteModels")
@@ -45,5 +47,8 @@ return function()
     for name, r in Spaceport.Slabs do
         assert(r[1] > widest or r[2] < -widest or r[4] < Layout.Ground.z0 - 40, name .. " slab overlaps where the site grows")
     end
+    -- The train runs the track's length and no further.
+    local front = Spaceport.Train[1]
+    assert(front[3] + 15.75 + Spaceport.TrainTravel <= Spaceport.TrackEnd, "the train runs off the apron end of the track")
     return "Spaceport checks passed: " .. #Spaceport.Props .. " props placed, apron under the rockets' clearance, the rest on slabs"
 end

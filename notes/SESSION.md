@@ -19,7 +19,19 @@
   Modular 126762679417470.
 - Studio: RunChecks 13/13 with the new SpaceportCheck; no errors. Seen from above, the
   apron at an angle and the campus from the fence.
-- Next: animate the monorail train; furnish the Mission Control rooms; maybe signs.
+- Round two: `SpaceportController` runs the monorail train (its own MonorailTrain
+  model) from the campus station to the apron end and back on the server clock (28 s
+  each way, 10 s waits), so every client sees it in the same place. Mission Control is
+  furnished from parts: a holo table with four consoles (ops room), two rows of desks and
+  two wall screens (launch room, screens between the wall's pillars), bunks, lockers and
+  a mess table (crew quarters), a console in each front wing. Signs (SignService boards):
+  MISSION CONTROL over the gate, LANDING PADS (pads painted 1-5), HANGARS, MONORAIL,
+  SPACEPORT CAMPUS and CAMPUS STATION, COMMS ARRAY, ASSEMBLY.
+- Gotchas: Box collision made each solid room one block, so Modular_* models are stored
+  with PreciseConvexDecomposition (SiteModels re-saved); the modular corridor runs along X
+  (it walled off the doors until turned 90); gate-lasers blocks the door (plain gate now).
+  Walked spawn -> gate -> every room in Play (Humanoid:MoveTo; anti-teleport snaps
+  PivotTo moves back).
 
 # Earlier session: 2026-10-19 (8), visual tidy pass
 
