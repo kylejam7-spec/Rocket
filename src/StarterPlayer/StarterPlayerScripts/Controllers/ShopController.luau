@@ -3,7 +3,7 @@
 --   for each Gym District tier, and the server training boost (with a chip by the
 --   button while it runs);
 -- * the rocket-fill row right above the progress pill while building or fueling:
---   +5% to +25% of what the current phase needs;
+--   +2,000 / 4,000 / 7,000 / 11,000 of whatever the rocket needs now (Metal or Fuel);
 -- * at a destination, passengers get a side panel: more time there and the next mission.
 -- Every button sends BuyShop(key); the server checks it and opens the Roblox prompt.
 -- Offers without a dashboard ID show their price greyed out; prices are always on the button.
@@ -204,7 +204,7 @@ function ShopController.start()
     StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = Theme.icon.Launch .. " FILL THE ROCKET",
         Font = Theme.font.Display, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = fillCard })
     StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -20, 0, 48), TextWrapped = true,
-        Text = "Add 5-25% of the Metal or Fuel the rocket needs: the buttons above the progress bar. At a destination: more time and the next mission.",
+        Text = "Add 2,000 to 11,000 Metal or Fuel to the rocket: the buttons above the progress bar. At a destination: more time and the next mission.",
         Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = fillCard })
 
@@ -242,9 +242,9 @@ function ShopController.start()
     if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.2, Parent = fillRow }) end
     Create.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center,
         Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = fillRow })
-    for index, percent in Shop.Fills do
-        offerButton(Shop.fillKey(percent), { Name = "Fill" .. percent, Size = UDim2.fromOffset(104, 34), TextSize = 16,
-            LayoutOrder = index, radius = 10, Parent = fillRow }, "+" .. percent .. "% · ")
+    for index, units in Shop.Fills do
+        offerButton(Shop.fillKey(units), { Name = "Fill" .. units, Size = UDim2.fromOffset(134, 34), TextSize = 16,
+            LayoutOrder = index, radius = 10, Parent = fillRow }, "+" .. Theme.number(units) .. " · ")
     end
 
     ------------------------------------------------------------------ destination
@@ -273,6 +273,9 @@ function ShopController.start()
     ------------------------------------------------------------------ render
     function render(state)
         local shop = state.shop or {}
+        -- The fill buttons name the material the rocket needs right now.
+        local material = state.phase == "Fueling" and Theme.icon.Fuel or Theme.icon.Metal
+        for _, units in Shop.Fills do offers[Shop.fillKey(units)].prefix = "+" .. Theme.number(units) .. " " .. material .. " · " end
         local owned = shop.owned or {}
         for key, offer in offers do renderOffer(key, offer, state) end
         local launches = state.profile and state.profile.completedLaunches or 0

@@ -15,11 +15,11 @@ return function()
     local Rocket = require(script.Parent.RocketService)
 
     -- Config: every catalog key has a price; IDs (once set) are unique positive integers;
-    -- one gym pass per District tier, one fill per percent, one mission product per mission.
+    -- one gym pass per District tier, one product per fill size, one mission product per mission.
     local keys = {}
     for _, pass in Shop.Passes do table.insert(keys, pass.key) end
     for tier in config.TrainingTiers do table.insert(keys, Shop.gymKey(tier)) end
-    for _, percent in Shop.Fills do table.insert(keys, Shop.fillKey(percent)) end
+    for _, units in Shop.Fills do table.insert(keys, Shop.fillKey(units)) end
     for mission = 1, Missions.Count do table.insert(keys, Shop.nextKey(mission)) end
     table.insert(keys, "ServerTraining")
     table.insert(keys, "ExtraStay")
@@ -39,14 +39,14 @@ return function()
     assert(counted == #keys, "Config.Shop has keys the catalog doesn't show")
 
     -- A missing ID turns the offer off.
-    local fake = { Shop = { passes = { DoubleCoins = { price = 5 } }, products = { Fill5 = { id = 11, price = 5 } } } }
-    assert(not Shop.enabled(fake, "DoubleCoins") and Shop.enabled(fake, "Fill5") and not Shop.enabled(fake, "Nope"))
-    assert(next(Service.ids(fake, "passes")) == nil and Service.ids(fake, "products")[11] == "Fill5")
+    local fake = { Shop = { passes = { DoubleCoins = { price = 5 } }, products = { Fill2000 = { id = 11, price = 5 } } } }
+    assert(not Shop.enabled(fake, "DoubleCoins") and Shop.enabled(fake, "Fill2000") and not Shop.enabled(fake, "Nope"))
+    assert(next(Service.ids(fake, "passes")) == nil and Service.ids(fake, "products")[11] == "Fill2000")
 
     -- Availability: fills while building or fueling; stay and mission only for
     -- passengers at the destination, the mission before the spin and only once.
-    assert(Shop.available(config, "Fill5", { phase = "Building" }) and Shop.available(config, "Fill25", { phase = "Fueling" }))
-    assert(not Shop.available(config, "Fill5", { phase = "Boarding" }) and Shop.available(config, "ServerTraining", { phase = "Launching" }))
+    assert(Shop.available(config, "Fill2000", { phase = "Building" }) and Shop.available(config, "Fill11000", { phase = "Fueling" }))
+    assert(not Shop.available(config, "Fill2000", { phase = "Boarding" }) and Shop.available(config, "ServerTraining", { phase = "Launching" }))
     local there = { phase = "Rewarding", passenger = true, wheelSpun = false, guaranteed = false, stayExtra = 0 }
     assert(Shop.available(config, "ExtraStay", there) and Shop.available(config, "NextMars", there))
     assert(not Shop.available(config, "ExtraStay", { phase = "Rewarding", passenger = false }))
@@ -59,7 +59,7 @@ return function()
         local h = { journal = {}, grants = 0, failRead = false, failWrite = false }
         h.state = { granted = {}, busy = {} }
         h.deps = {
-            key = function(productId) return productId == 7 and "Fill5" or nil end,
+            key = function(productId) return productId == 7 and "Fill2000" or nil end,
             seen = function(id) if h.failRead then return false end; return true, h.journal[id] ~= nil end,
             record = function(id) if h.failWrite then return false end; h.journal[id] = true; return true end,
             grant = function() h.grants += 1 end,
@@ -102,26 +102,30 @@ return function()
     Service.boost(effects, 5000, 600)
     assert(effects.boostUntil == 5600, "an expired boost restarts from now")
 
-    -- Fill: a share of the phase; the overflow carries into Fuel, then waits for the next rocket.
+    -- Fill: flat units into whichever material the rocket needs now; Metal overflow
+    -- carries into Fuel, Fuel overflow waits for the next rocket. Nobody's contribution.
+    assert(#Shop.Fills == 4 and Shop.Fills[1] == 2000 and Shop.Fills[4] == 11000)
     local rocket = Rocket.new(config, "c1", 1, 0)
     local metal, fuel = rocket.required.Metal, rocket.required.Fuel
-    effects.fillBank = 10
+    effects.fillBank = 2000
     local added, advanced = Service.fill(rocket, effects)
-    assert(added == math.ceil(metal * 0.1) and not advanced and effects.fillBank == 0 and rocket.contributions[1] == nil)
+    assert(added == 2000 and not advanced and rocket.totals.Metal == 2000 and effects.fillBank == 0 and next(rocket.contributions) == nil)
     rocket.totals.Metal = metal - 100
     rocket.cargo[5] = { count = 3, materials = { Metal = 3 } }
-    effects.fillBank = 25
+    effects.fillBank = 7000
     added, advanced = Service.fill(rocket, effects)
     assert(added == 100 and advanced and rocket.phase == "Fueling" and rocket.cargo[5] == nil, "fill finishes the phase like a delivery")
-    assert(math.abs(effects.fillBank - (25 - 100 / metal * 100)) < 1e-6)
-    local banked = effects.fillBank
-    added = Service.fill(rocket, effects)
-    assert(math.abs(added - math.ceil(fuel * banked / 100)) <= 1 and effects.fillBank == 0)
-    rocket.totals.Fuel = fuel - 1
-    effects.fillBank = 5
+    assert(effects.fillBank == 6900)
     added, advanced = Service.fill(rocket, effects)
-    assert(added == 1 and advanced and rocket.phase == "Boarding" and effects.fillBank > 4.9)
-    assert(Service.fill(rocket, effects) == 0 and effects.fillBank > 4.9, "no fill outside delivery phases")
+    assert(added == 6900 and not advanced and rocket.totals.Fuel == 6900 and effects.fillBank == 0, "Metal overflow goes into Fuel")
+    effects.fillBank = 11000
+    added = Service.fill(rocket, effects)
+    assert(added == 11000 and rocket.totals.Fuel == 17900)
+    rocket.totals.Fuel = fuel - 1
+    effects.fillBank = 4000
+    added, advanced = Service.fill(rocket, effects)
+    assert(added == 1 and advanced and rocket.phase == "Boarding" and effects.fillBank == 3999)
+    assert(Service.fill(rocket, effects) == 0 and effects.fillBank == 3999, "no fill outside delivery phases")
     assert(rocket:fill(-5) == 0 and rocket:fill("x") == 0)
 
     -- Stay: into the running stay, else banked for the next one.

@@ -74,16 +74,13 @@ end
 function ShopService.trainingMultiplier(config, effects, now)
     return now < effects.boostUntil and config.Shop.ServerTrainingMultiplier or 1
 end
--- Pours banked fill (percent points of the phase's requirement) into the rocket's
--- current phase. What the phase doesn't need stays banked for the next one. Returns
--- the units added and whether the phase advanced.
+-- Pours banked fill (units) into the rocket's current phase, Metal or Fuel. What the
+-- phase doesn't need stays banked: Metal overflow goes into Fuel, Fuel overflow into
+-- the next rocket. Returns the units added and whether the phase advanced.
 function ShopService.fill(rocket, effects)
-    local material = Rocket.PhaseMaterial[rocket.phase]
-    if not material or effects.fillBank <= 0 then return 0, false end
-    local required = rocket.required[material]
-    local added, advanced = rocket:fill(math.ceil(required * effects.fillBank / 100 - 1e-9))
-    effects.fillBank = math.max(0, effects.fillBank - added / required * 100)
-    if effects.fillBank < 1e-6 then effects.fillBank = 0 end
+    if not Rocket.PhaseMaterial[rocket.phase] or effects.fillBank <= 0 then return 0, false end
+    local added, advanced = rocket:fill(effects.fillBank)
+    effects.fillBank -= added
     return added, advanced
 end
 -- Extra time: into the running stay if there is one (true), else banked for the next.
@@ -157,7 +154,7 @@ function ShopService.new(ctx)
         local guaranteed = effects.guarantees[1]
         return { owned = table.clone(mine), petSlots = Shop.petSlots(mine), boostUntil = effects.boostUntil,
             guaranteed = guaranteed and Missions.get(guaranteed).Id or nil, stayExtra = stay and stay.extra or 0,
-            fillBank = math.round(effects.fillBank) }
+            fillBank = effects.fillBank }
     end
 
     -- Launch calls these around the reward stay; the stay's length can grow while it runs.
@@ -181,13 +178,15 @@ function ShopService.new(ctx)
     local function grant(key, receipt)
         local player = Players:GetPlayerByUserId(receipt.PlayerId)
         local name = player and player.DisplayName or "A player"
-        local percent = tonumber(key:match("^Fill(%d+)$"))
+        local units = tonumber(key:match("^Fill(%d+)$"))
         if key == "ServerTraining" then
             ShopService.boost(effects, workspace:GetServerTimeNow(), config.Shop.ServerTrainingSeconds)
             ctx.Remote.announce(name .. " boosted training " .. config.Shop.ServerTrainingMultiplier .. "x for everyone for " .. config.Shop.ServerTrainingSeconds // 60 .. " minutes!")
-        elseif percent then
-            effects.fillBank += percent
-            ctx.Remote.announce(name .. " added " .. percent .. "% to the rocket!")
+        elseif units then
+            local material = Rocket.PhaseMaterial[ctx.Cycle.rocket.phase]
+            local amount = tostring(units):reverse():gsub("(%d%d%d)", "%1,"):reverse():gsub("^,", "")
+            effects.fillBank += units
+            ctx.Remote.announce(name .. " added " .. amount .. (material and " " .. material .. " to the rocket!" or " units to the next rocket!"))
             drainFill()
         elseif key == "ExtraStay" then
             local seconds = config.Shop.ExtraStaySeconds

@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-10-20: Rocket fills are flat units
+
+- User: flat purchases instead of percentages: +2,000 / +4,000 / +7,000 / +11,000 units of
+  whatever the rocket needs now (Metal while building, Fuel while fueling). Prices
+  (mine): 25 / 45 / 75 / 109 R$. Products `Fill2000` .. `Fill11000`.
+- The bank is in units: Metal overflow pours into Fuel, Fuel overflow (or a fill bought
+  while boarding or away) waits for the next rocket's Metal. The buttons show the
+  material icon of the current phase.
+
 ## 2026-10-20: Gyms free, 2x, 5x, 10x, 25x, 50x, 75x, 100x
 
 - User: the District goes free, 2x, 5x, 10x, 25x, 50x, 75x, 100x (unlocks unchanged:
@@ -19,7 +28,7 @@
   recommended R$ prices.
 - Recommended prices: 2x Coins 199, Fast Hatch 149, Triple Hatch 249, +1 slot 99,
   +2 slots 179 (they stack to 6), gyms (see the gym entry above); products:
-  server 2x training 10 min 79, fill 25/45/65/85/99, +60 s stay 39, next mission
+  server 2x training 10 min 79, fills (see the flat-units entry above), +60 s stay 39, next mission
   Moon 19 / Mars 39 / Europa 69 / Saturn 119 / Black Hole 179.
 - Every Developer Product is a server-wide effect, so nothing repeatable depends on
   profile saving (still off). ProcessReceipt: journal (DataStore `RocketReceipts`, key

@@ -22,6 +22,10 @@
   mid-stay took the countdown 104 → 163 s; the wheel then landed on Saturn and the next
   rocket was Saturn. No script errors; the journal fell back to memory (Studio API access off).
   Not tested: real Roblox prompts (no IDs yet).
+- Fills are flat (user): +2,000/4,000/7,000/11,000 (R$ 25/45/75/109) of Metal or Fuel. Studio:
+  Fill2000 → Metal 2,000; Fill11000 near full finished Metal and put 8,150 into Fuel; Fill7000
+  → Fuel 15,150; repeat PurchaseIds not regranted; a fill while boarding banked 4,000; fresh
+  round Fill4000 while fueling → Fuel 4,000; buttons show ⛽ while fueling. RunChecks 13/13.
 - Gyms re-tiered (user): free 1x, then 2/5/10/25/50/75/100x; passes 49/129/249/449/699/899/1099.
   Studio: signs read FREE..100X, shop cards show the new prices, RunChecks 13/13.
 - Offers without IDs show their price greyed (was "SOON"); the fill row hides under the open panel.

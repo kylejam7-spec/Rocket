@@ -91,11 +91,11 @@ return table.freeze({
         -- Developer Products: repeatable; each receipt is granted once (receipt journal).
         products = table.freeze({
             ServerTraining = table.freeze({ id = nil, price = 79 }),
-            Fill5 = table.freeze({ id = nil, price = 25 }),
-            Fill10 = table.freeze({ id = nil, price = 45 }),
-            Fill15 = table.freeze({ id = nil, price = 65 }),
-            Fill20 = table.freeze({ id = nil, price = 85 }),
-            Fill25 = table.freeze({ id = nil, price = 99 }),
+            -- Flat units into whichever material the rocket needs now (Metal or Fuel).
+            Fill2000 = table.freeze({ id = nil, price = 25 }),
+            Fill4000 = table.freeze({ id = nil, price = 45 }),
+            Fill7000 = table.freeze({ id = nil, price = 75 }),
+            Fill11000 = table.freeze({ id = nil, price = 109 }),
             ExtraStay = table.freeze({ id = nil, price = 39 }),
             NextMoon = table.freeze({ id = nil, price = 19 }),
             NextMars = table.freeze({ id = nil, price = 39 }),
