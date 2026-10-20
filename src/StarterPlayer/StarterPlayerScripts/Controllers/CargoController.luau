@@ -4,13 +4,13 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local ProximityPromptService = game:GetService("ProximityPromptService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
+local Prompts = require(script.Parent.PromptController)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
@@ -58,28 +58,33 @@ function CargoController.start()
     -- a prompt and kept down for a whole grab, place, grab, place loop.
     local materialHold = State.remote("MaterialHold")
     local KEYS = { [Enum.KeyCode.E] = true, [Enum.KeyCode.ButtonX] = true }
-    local holding, holdInput, lastTouch = false, nil, nil
+    local holding, holdInput = false, nil
     local function setHolding(down, input)
         if holding == down then return end
         holding, holdInput = down, down and input or nil
         materialHold:FireServer(down)
     end
     UserInputService.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
-            lastTouch = input
-        elseif KEYS[input.KeyCode] and not UserInputService:GetFocusedTextBox() then
-            setHolding(true, input)
-        end
+        if KEYS[input.KeyCode] and not UserInputService:GetFocusedTextBox() then setHolding(true, input) end
     end)
     -- Touch/click: holding a material prompt card counts until that finger lifts.
-    ProximityPromptService.PromptButtonHoldBegan:Connect(function(item, inputType)
-        if inputType ~= Enum.ProximityPromptInputType.Touch and inputType ~= Enum.ProximityPromptInputType.Keyboard then return end
+    local function materialPrompt(item)
         local world = workspace:FindFirstChild("RocketWorld")
-        if not world or not item:IsDescendantOf(world) then return end
-        if not (item.ActionText:match("^Pick up ") or item.ActionText:match("^Place ")) then return end
-        if not holding and lastTouch and lastTouch.UserInputState == Enum.UserInputState.Begin then
-            setHolding(true, lastTouch)
-        end
+        if not world or not item:IsDescendantOf(world) then return false end
+        return item.ActionText:match("^Pick up ") ~= nil or item.ActionText:match("^Place ") ~= nil
+    end
+    -- The card reports its own touch or click (the prompt's hold events can't: they
+    -- carry the player, not the input, and fire before UserInputService sees the finger).
+    Prompts.onPress(function(item, input)
+        if not materialPrompt(item) or input.UserInputState ~= Enum.UserInputState.Begin then return end
+        setHolding(true, input)
+        -- Lifting that finger (or the touch being cancelled) lets go, wherever it ends.
+        local changed
+        changed = input:GetPropertyChangedSignal("UserInputState"):Connect(function()
+            if input.UserInputState == Enum.UserInputState.Begin or input.UserInputState == Enum.UserInputState.Change then return end
+            changed:Disconnect()
+            if holdInput == input then setHolding(false) end
+        end)
     end)
     UserInputService.InputEnded:Connect(function(input)
         if holding and (KEYS[input.KeyCode] or input == holdInput) then setHolding(false) end

@@ -1574,7 +1574,8 @@ function Destinations.build(world, config)
     local cabinFolder = Instance.new("Folder")
     cabinFolder.Name = "RocketCabin"
     cabinFolder.Parent = root
-    local cc, size = config.CabinPosition, Vector3.new(48, 16, 34)
+    -- Three times the floor of the first cabin (48 x 34, user 2026-10-20), a little taller.
+    local cc, size = config.CabinPosition, Vector3.new(84, 20, 60)
     local hull, panel, rib = Color3.fromRGB(226, 230, 238), Color3.fromRGB(206, 212, 224), Color3.fromRGB(150, 158, 174)
     local light, accent, dark = Color3.fromRGB(150, 220, 255), Color3.fromRGB(255, 176, 40), Color3.fromRGB(40, 44, 56)
     local floor = make(cabinFolder, "CabinFloor", { Size = Vector3.new(size.X, 1, size.Z), CFrame = CFrame.new(cc - Vector3.new(0, 0.5, 0)), Color = Color3.fromRGB(70, 76, 92), Material = Enum.Material.DiamondPlate })
@@ -1594,23 +1595,23 @@ function Destinations.build(world, config)
         local z = side * (size.Z / 2 - 0.05)
         -- A dark kick panel along the bottom and an accent stripe at shoulder height.
         decor(cabinFolder, "KickPanel", { Size = Vector3.new(size.X, 2, 0.15), CFrame = CFrame.new(cc + Vector3.new(0, 1, z)), Color = dark, Material = Enum.Material.Metal })
-        decor(cabinFolder, "WallStripe", { Size = Vector3.new(size.X, 0.35, 0.15), CFrame = CFrame.new(cc + Vector3.new(0, 5.6, z)), Color = accent })
+        decor(cabinFolder, "WallStripe", { Size = Vector3.new(size.X, 0.35, 0.15), CFrame = CFrame.new(cc + Vector3.new(0, 6.2, z)), Color = accent })
         -- Sloped panels into the ceiling corners.
         decor(cabinFolder, "CeilingSlope", { Size = Vector3.new(size.X, 0.4, 6), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 1.6, side * (size.Z / 2 - 2.4))) * CFrame.Angles(side * math.rad(-35), 0, 0), Color = panel })
         -- Ribs: the hull frames, every eight studs up the wall, between the portholes.
-        for x = -20, 20, 8 do
+        for x = -size.X / 2 + 6, size.X / 2 - 6, 8 do
             decor(cabinFolder, "Rib", { Size = Vector3.new(0.6, size.Y - 3, 0.5), CFrame = CFrame.new(cc + Vector3.new(x, (size.Y - 3) / 2, z - side * 0.2)), Color = rib, Material = Enum.Material.Metal })
         end
         -- Ceiling light strip in a housing, a pipe run and vents above.
-        decor(cabinFolder, "LightHousing", { Size = Vector3.new(size.X - 4, 0.4, 1.6), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.2, side * 8)), Color = rib, Material = Enum.Material.Metal })
-        decor(cabinFolder, "LightStrip", { Size = Vector3.new(size.X - 4.4, 0.3, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.4, side * 8)), Color = light, Material = Enum.Material.Neon })
-        decor(cabinFolder, "Pipe", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(size.X, 0.5, 0.5), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.6, side * 12.5)), Color = Color3.fromRGB(180, 186, 198), Material = Enum.Material.Metal })
-        for x = -15, 15, 10 do
+        decor(cabinFolder, "LightHousing", { Size = Vector3.new(size.X - 4, 0.4, 1.6), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.2, side * size.Z * 0.24)), Color = rib, Material = Enum.Material.Metal })
+        decor(cabinFolder, "LightStrip", { Size = Vector3.new(size.X - 4.4, 0.3, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.4, side * size.Z * 0.24)), Color = light, Material = Enum.Material.Neon })
+        decor(cabinFolder, "Pipe", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(size.X, 0.5, 0.5), CFrame = CFrame.new(cc + Vector3.new(0, size.Y - 0.6, side * (size.Z / 2 - 4.5))), Color = Color3.fromRGB(180, 186, 198), Material = Enum.Material.Metal })
+        for x = -size.X / 2 + 9, size.X / 2 - 9, 10 do
             decor(cabinFolder, "Vent", { Size = Vector3.new(2, 0.15, 1.2), CFrame = CFrame.new(cc + Vector3.new(x, size.Y - 0.05, side * 3)), Color = dark, Material = Enum.Material.DiamondPlate })
         end
         -- Portholes: a thick bolted frame, a dark rim and a pane of starry space.
-        for x = -16, 16, 8 do
-            local at = cc + Vector3.new(x, 9, z)
+        for x = -size.X / 2 + 10, size.X / 2 - 10, 8 do
+            local at = cc + Vector3.new(x, 10.5, z)
             local turn = CFrame.Angles(0, math.rad(90), 0)
             decor(cabinFolder, "PortholeFrame", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.5, 6.2, 6.2), CFrame = CFrame.new(at) * turn, Color = rib, Material = Enum.Material.Metal })
             decor(cabinFolder, "PortholeRim", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.6, 5.2, 5.2), CFrame = CFrame.new(at) * turn, Color = dark, Material = Enum.Material.Metal })
@@ -1631,9 +1632,16 @@ function Destinations.build(world, config)
     -- runs from the screen to the exit hatch. Each seat: a pedestal, a padded cushion and
     -- reclined back, a headrest, armrests and a pair of harness straps.
     local seatColor, seatDark = Color3.fromRGB(70, 104, 196), Color3.fromRGB(54, 82, 160)
-    for row = 0, 3 do
-        for _, seat in { -2.4, -1.4, 1.4, 2.4 } do
-            local at = cc + Vector3.new(-8 + row * 7, 1, seat * 5.5)
+    -- Rows every 7 studs from just behind the consoles to a clear stretch before the
+    -- hatch; seats every 5.5 studs out from the aisle to the walls.
+    local seatZ = {}
+    for z = 7.7, size.Z / 2 - 4, 5.5 do
+        table.insert(seatZ, z)
+        table.insert(seatZ, -z)
+    end
+    for x = -size.X / 2 + 12, size.X / 2 - 16, 7 do
+        for _, z in seatZ do
+            local at = cc + Vector3.new(x, 1, z)
             make(cabinFolder, "SeatPedestal", { Size = Vector3.new(1.6, 0.8, 1.6), CFrame = CFrame.new(at + Vector3.new(0, -0.6, 0)), Color = dark, Material = Enum.Material.Metal })
             make(cabinFolder, "SeatBase", { Size = Vector3.new(3, 1.2, 3.4), CFrame = CFrame.new(at + Vector3.new(0, 0.5, 0)), Color = seatColor, Material = Enum.Material.SmoothPlastic })
             make(cabinFolder, "SeatBack", { Size = Vector3.new(0.8, 4, 3.4), CFrame = CFrame.new(at + Vector3.new(1.6, 2.4, 0)) * CFrame.Angles(0, 0, math.rad(-8)), Color = seatDark, Material = Enum.Material.SmoothPlastic })
@@ -1646,11 +1654,11 @@ function Destinations.build(world, config)
             end
         end
     end
-    local screen = make(cabinFolder, "CountdownScreen", { Size = Vector3.new(0.4, 8, 20), CFrame = CFrame.new(cc + Vector3.new(-size.X / 2 + 0.3, 8, 0)), Color = Color3.fromRGB(10, 14, 28), Material = Enum.Material.Neon })
-    decor(cabinFolder, "ScreenBezel", { Size = Vector3.new(0.3, 9.2, 21.2), CFrame = CFrame.new(cc + Vector3.new(-size.X / 2 + 0.1, 8, 0)), Color = dark, Material = Enum.Material.Metal })
+    local screen = make(cabinFolder, "CountdownScreen", { Size = Vector3.new(0.4, 11, 32), CFrame = CFrame.new(cc + Vector3.new(-size.X / 2 + 0.3, 10, 0)), Color = Color3.fromRGB(10, 14, 28), Material = Enum.Material.Neon })
+    decor(cabinFolder, "ScreenBezel", { Size = Vector3.new(0.3, 12.2, 33.2), CFrame = CFrame.new(cc + Vector3.new(-size.X / 2 + 0.1, 10, 0)), Color = dark, Material = Enum.Material.Metal })
     -- Consoles either side of the screen: angled desks of blinking buttons.
     for _, side in { -1, 1 } do
-        local at = cc + Vector3.new(-size.X / 2 + 2, 0, side * 13)
+        local at = cc + Vector3.new(-size.X / 2 + 2, 0, side * 20)
         make(cabinFolder, "Console", { Size = Vector3.new(3, 3.2, 6), CFrame = CFrame.new(at + Vector3.new(0, 1.6, 0)), Color = rib, Material = Enum.Material.Metal })
         local desk = CFrame.new(at + Vector3.new(0.4, 3.5, 0)) * CFrame.Angles(0, 0, math.rad(-25))
         decor(cabinFolder, "ConsoleDesk", { Size = Vector3.new(2.6, 0.3, 6), CFrame = desk, Color = dark })

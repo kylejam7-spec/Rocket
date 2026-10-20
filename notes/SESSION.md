@@ -179,6 +179,20 @@
   for the current tier; at walk 20 and 66 speed along the slope is ~kept but horizontal
   progress is cos 45 = 71%, with stutter (h dropping to ~5 for a frame).
 
+# Earlier session: 2026-10-20 (16), bigger cabin, tappable material prompts
+
+- `claude/cabin-and-tap` from master b3a96a5. DestinationService cabin 84 x 20 x 60 with
+  fittings from `size` (rows x = -30..26 step 7, seats z 7.7..24.2 step 5.5, portholes
+  every 8 along the walls). PromptController.onPress(fn); CargoController starts the
+  material hold from a card press and lets go when that input ends; the dead
+  PromptButtonHoldBegan / lastTouch path is gone.
+- Studio (phone emulation): RunChecks 16/16; cabin 84x60x20, 72 seats, nothing outside
+  the room, DestinationCheck's walk to the hatch passes; boarded a debug launch, arrival
+  (3, 3, 0), walked to x = -30 down the aisle; screenshot shows the rows, portholes and
+  screen. Tap test at the Salvage Yard: the card got Touch Begin before
+  UserInputService did (the old bug); a held tap picked up 242, a quick tap 33 and
+  stopped; after dropping, 2.5 s later still 0. No errors.
+
 # Earlier session: 2026-10-20 (15), global leaderboards
 
 - `claude/leaderboards` from master 590b77b. New LeaderboardService (categories, stands,

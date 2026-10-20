@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-20: A bigger rocket cabin; tapping a material prompt card works
+
+- User: the cabin has three times the floor (84 x 60, was 48 x 34) and a 20-stud ceiling
+  (was 16). Seats (72 in 9 rows), portholes, ribs, vents, lights and pipes are laid out
+  from the size; the screen is 11 x 32 with the consoles either side.
+- User: the "TAP" card on a pickup/place prompt now does what the GRAB/PLACE button
+  does. PromptController.onPress hands the card's touch to CargoController, which holds
+  until that finger lifts. The old path listened to PromptButtonHoldBegan, whose second
+  argument is the player (not the input type), so a tap never started the hold.
+
 ## 2026-10-20: Global leaderboards replace the site offices
 
 - User: the two site offices beside spawn become display-only leaderboard stands, top
