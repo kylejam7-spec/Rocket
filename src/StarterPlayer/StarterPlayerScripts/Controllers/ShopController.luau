@@ -3,7 +3,7 @@
 --   for each Gym District tier, and the server training boost (with a chip by the
 --   button while it runs);
 -- * the rocket-fill row right above the progress pill while building or fueling:
---   +2,000 / 4,000 / 7,000 / 11,000 of whatever the rocket needs now (Metal or Fuel);
+--   +2,000 / 4,000 / 7,000 / 11,000 / 27,500 of whatever the rocket needs now (Metal or Fuel);
 -- * at a destination, passengers get a side panel: more time there and the next mission.
 -- Every button sends BuyShop(key); the server checks it and opens the Roblox prompt.
 -- Offers without a dashboard ID show their price greyed out; prices are always on the button.
@@ -204,7 +204,7 @@ function ShopController.start()
     StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = Theme.icon.Launch .. " FILL THE ROCKET",
         Font = Theme.font.Display, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = fillCard })
     StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -20, 0, 48), TextWrapped = true,
-        Text = "Add 2,000 to 11,000 Metal or Fuel to the rocket: the buttons above the progress bar. At a destination: more time and the next mission.",
+        Text = "Add 2,000 to 27,500 Metal or Fuel to the rocket: the buttons above the progress bar. At a destination: more time and the next mission.",
         Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = fillCard })
 
@@ -236,10 +236,10 @@ function ShopController.start()
     -- Right above the progress pill group (ProgressController: 14 from the bottom, 70
     -- tall, 1.35x on touch).
     fillRow = Create.new("Frame", {
-        Name = "FillRow", AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1, Size = UDim2.fromOffset(560, 36),
+        Name = "FillRow", AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1, Size = UDim2.fromOffset(700, 36),
         Position = UDim2.new(0.5, 0, 1, Actions.touch and -(14 + 70 * 1.35 + 4) or -(14 + 70 + 4)), Visible = false, Parent = gui,
     })
-    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.2, Parent = fillRow }) end
+    -- Five buttons: 700 wide, so phones keep it at 1x to stay on screen.
     Create.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center,
         Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = fillRow })
     for index, units in Shop.Fills do

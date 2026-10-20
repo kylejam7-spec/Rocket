@@ -7,7 +7,7 @@
     Pet Slots, and access to each Gym District tier without its launches.
     Products (Developer Products, repeatable):
         ServerTraining  2x training for the whole server, 10 minutes, stacks
-        Fill<n>         n units (2,000 / 4,000 / 7,000 / 11,000) of whatever the shared rocket
+        Fill<n>         n units (2,000 / 4,000 / 7,000 / 11,000 / 27,500) of whatever the shared rocket
                         needs now: Metal while building, Fuel while fueling
         ExtraStay       +60 s at the destination for everyone there
         Next<Id>        the next mission wheel lands on that destination
@@ -25,7 +25,7 @@ Shop.Passes = table.freeze({
     table.freeze({ key = "PetSlot1", name = "+1 Pet Slot", icon = "🐾", text = "One more pet follows you" }),
     table.freeze({ key = "PetSlot2", name = "+2 Pet Slots", icon = "🐾", text = "Two more pets follow you" }),
 })
-Shop.Fills = table.freeze({ 2000, 4000, 7000, 11000 })
+Shop.Fills = table.freeze({ 2000, 4000, 7000, 11000, 27500 })
 Shop.MaxPetSlots = Pets.MaxEquipped + 3
 
 function Shop.gymKey(tier) return "Gym" .. tier end

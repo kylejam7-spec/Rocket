@@ -103,6 +103,7 @@ return table.freeze({
             Fill4000 = table.freeze({ id = 3720386845, price = 45 }),
             Fill7000 = table.freeze({ id = 3720386948, price = 75 }),
             Fill11000 = table.freeze({ id = 3720387035, price = 109 }),
+            Fill27500 = table.freeze({ id = 3720426887, price = 239 }),
             ExtraStay = table.freeze({ id = 3720387123, price = 39 }),
             NextMoon = table.freeze({ id = 3720387259, price = 19 }),
             NextMars = table.freeze({ id = 3720387367, price = 39 }),

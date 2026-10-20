@@ -14,6 +14,16 @@
   the client sees all six 560x720 panels. No errors. Not eyeballed (MCP capture can't
   show runtime SurfaceGuis in Play); one player only, so no cross-server ranking seen.
 
+# Earlier session: 2026-10-20 (14), +27,500 fill product
+
+- `claude/fill-27500` from master 590b77b. Config.Shop.products.Fill27500 (3720426887,
+  239 R$); Shop.Fills gains 27500; ShopController fill row 700 wide, no touch upscale;
+  ShopCheck asserts five fills and the new ID/price.
+- Studio: RunChecks 15/15; GetProductInfo(3720426887) = "+27,500 Materials" R$239; the
+  fill row shows five buttons, "+27,500 🔩 · R$ 239" fits (177 of 196 px). Purchase
+  prompt not opened. Rojo now serves this branch, so Studio lacks #47 (planet ticks)
+  until it merges.
+
 # Earlier session: 2026-10-20 (13), planet stays x2 a tick at 4 ticks a second
 
 - `claude/planet-ticks` from master 590b77b (#46 merged). Config.Planet: StrengthBonus /

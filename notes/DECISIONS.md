@@ -14,6 +14,12 @@
   ledger (once per launch id). No schema bump: older profiles load with 0, and older
   servers keep the field untouched.
 
+## 2026-10-20: +27,500 rocket fill for 239 R$
+
+- User: a fifth fill product, `Fill27500` (Developer Product 3720426887, 239 R$), after
+  +2,000 / 4,000 / 7,000 / 11,000. The fill row is 700 wide for five buttons and stays
+  1x on phones (it was 1.2x) so it fits on screen.
+
 ## 2026-10-20: Planet stays pay double per tick, 4 ticks a second
 
 - User: stay rewards doubled per tick (Moon 3 → 6 of each stat) and tick 4 times a
