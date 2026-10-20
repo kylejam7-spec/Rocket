@@ -16,6 +16,14 @@
   (FOV 70 -> 120, blur, desaturation) as the hole balloons, flashes white then black;
   the server's usual reset moves everyone to spawn (and unanchors them) and the black
   fades. The camera is marked Cinematic so CameraController steps aside.
+- Revised singularity (7.5 s, LaunchService.SingularityLength; the reset waits it out):
+  every ScreenGui (HUD, wheel, toasts) is off while it runs; the landed rocket is dragged
+  in first, tumbling (0-2.6 s), then the whole shard and every character on it (all
+  anchored RocketWorld parts within 320 studs, BulkMoveTo; characters PivotTo, their
+  roots held by the server) spiral into the swelling hole (1.8-6.4 s) with the camera
+  riding the shard, then white flash, black, home. The client puts the shard back once
+  the server has moved the player > 5,000 studs (the ride itself carries them ~2,000,
+  which first tripped the "still there" test and ended it early). No stand-in copies.
 - Studio: two full Black Hole runs via the debug launch (arrival, singularity, home,
   rewards credited), sampled the pull numerically; RunChecks 13/13, no errors.
   Rojo sometimes lands edits a moment after Play starts: restart Play if the server

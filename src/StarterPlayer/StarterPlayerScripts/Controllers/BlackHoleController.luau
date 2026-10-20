@@ -5,12 +5,13 @@
       ground trembles every few seconds (harder and more often as the stay runs out)
       and lightning cracks off the horizon.
     - The singularity: when the server stamps SingularityAt on the destination folder
-      (LaunchService, just after the wheel stops), everyone is pulled in: the hole
-      balloons, every character spirals into it shrinking, the camera is dragged after
-      them with the view stretching, then a white flash and black. The server moves
-      everyone to spawn as it ends; the black lifts once this player is home.
-    All local: characters are hidden and stand-in copies fall in; the server's parts are
-    only rescaled on this client.
+      (LaunchService, just after the wheel stops), the HUD and wheel go, the hole
+      balloons and drags in the landed rocket, tumbling, then the whole shard with
+      everyone on it, the camera riding it down with the view stretching, then a white
+      flash and black. The server moves everyone to spawn as it ends; the black lifts
+      once this player is home and the shard is put back.
+    All local: the server holds the passengers' roots still, and only this client moves
+    the shard, the rocket and the characters (so no anti-teleport snap).
 ]]
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -26,8 +27,10 @@ local BlackHoleController = {}
 
 local SPEC = Config.Destinations[5]
 local NEAR = 900 -- studs from the shard's centre that count as "there"
-local SINGULARITY = 4 -- LaunchService.SingularitySeconds
-local PULL = 3 -- seconds of the pull before the flash
+-- The singularity's timeline, seconds from SingularityAt (LaunchService holds the reset
+-- for SingularityLength = LENGTH): the rocket falls in first, then the shard.
+local ROCKET_END, ISLAND_START, ISLAND_END, LENGTH = 2.6, 1.8, 6.4, 7.5
+local ISLAND_RADIUS = 320 -- the shard and everything on it
 local GROWTH = 0.25 -- how much the hole swells over a whole stay
 local VIOLET = Color3.fromRGB(205, 150, 255)
 
@@ -173,34 +176,49 @@ local function ambient(dt)
     end
 end
 
--- Stand-in copies of every character on the shard, the originals hidden.
-local function standIns()
-    local copies = {}
-    for _, other in Players:GetPlayers() do
-        local character = other.Character
-        local root = character and character:FindFirstChild("HumanoidRootPart")
-        if root and (root.Position - SPEC.position).Magnitude < NEAR then
-            character.Archivable = true
-            local copy = character:Clone()
-            for _, item in copy:GetDescendants() do
-                if item:IsA("Script") or item:IsA("LocalScript") or item:IsA("Sound") or item:IsA("ModuleScript") then
-                    item:Destroy()
-                elseif item:IsA("BasePart") then
-                    item.Anchored, item.CanCollide, item.CanQuery, item.CanTouch = true, false, false, false
-                end
-            end
-            local humanoid = copy:FindFirstChildOfClass("Humanoid")
-            if humanoid then humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None end
-            copy.Parent = Workspace.CurrentCamera
-            table.insert(copies, { model = copy, original = character, start = copy:GetPivot(), spin = math.random() * 6 })
+-- Everything that falls in, gathered at the start: the landed rocket's parts, and the
+-- shard's (every anchored part of RocketWorld within ISLAND_RADIUS of the centre:
+-- the shard, its kit, gyms, shop, signs), each with its frame now.
+local function gather()
+    local rocket, island = { parts = {}, frames = {} }, { parts = {}, frames = {} }
+    local landed = folder:FindFirstChild("LandedRocket")
+    local function add(group, part)
+        table.insert(group.parts, part)
+        table.insert(group.frames, part.CFrame)
+    end
+    for _, part in landed and landed:GetDescendants() or {} do
+        if part:IsA("BasePart") then add(rocket, part) end
+    end
+    for _, part in Workspace.RocketWorld:GetDescendants() do
+        if part:IsA("BasePart") and part.Anchored and not (landed and part:IsDescendantOf(landed))
+            and (part.Position - SPEC.position).Magnitude < ISLAND_RADIUS then
+            add(island, part)
         end
     end
-    return copies
+    return rocket, island, landed and landed:GetPivot().Position or SPEC.position
 end
 
-local function hide(character, hidden)
-    for _, item in character:GetDescendants() do
-        if item:IsA("BasePart") or item:IsA("Decal") then item.LocalTransparencyModifier = hidden and 1 or 0 end
+-- Where something at `frame` is once a fall `e` (0..1) has carried it toward the hole:
+-- its group's pivot spirals in (about the hole, shrinking in radius) and tumbles.
+local function falling(pivot, e, tumble)
+    local offset = CFrame.fromAxisAngle(Vector3.yAxis, e * math.pi * 1.2) * (pivot - hole) * (1 - e)
+    return CFrame.new(hole + offset) * CFrame.Angles(e * tumble.X, e * tumble.Y, e * tumble.Z) * CFrame.new(-pivot)
+end
+
+local function move(group, motion)
+    local frames = table.create(#group.parts)
+    for index, frame in group.frames do frames[index] = motion * frame end
+    Workspace:BulkMoveTo(group.parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
+end
+
+-- Every ScreenGui but the singularity's own stays off while it runs (the wheel, the
+-- HUD, toasts); the ones that were on come back after.
+local function hideScreens(hidden)
+    for _, gui in player.PlayerGui:GetChildren() do
+        if gui:IsA("ScreenGui") and gui.Name ~= "Singularity" and gui.Enabled then
+            hidden[gui] = true
+            gui.Enabled = false
+        end
     end
 end
 
@@ -213,43 +231,69 @@ function BlackHoleController.singularity(at)
     -- CameraController steps aside while the camera is Cinematic (as for the launch ride).
     camera:SetAttribute("Cinematic", true)
     camera.CameraType = Enum.CameraType.Scriptable
+    local hidden = {}
     screen = Instance.new("ScreenGui")
     screen.Name, screen.IgnoreGuiInset, screen.DisplayOrder, screen.ResetOnSpawn = "Singularity", true, 50, false
     local cover = Instance.new("Frame")
     cover.Size, cover.BackgroundColor3, cover.BackgroundTransparency, cover.BorderSizePixel = UDim2.fromScale(1, 1), Color3.new(1, 1, 1), 1, 0
     cover.Parent = screen
-    screen.Parent = player:WaitForChild("PlayerGui")
-    local copies = standIns()
+    screen.Parent = player.PlayerGui
+    local rocket, island, rocketPivot = gather()
+    local center = SPEC.position
+    -- The characters ride the shard: their roots are held still by the server, so moving
+    -- them here is only what this player sees (no anti-teleport snap).
+    local riders = {}
+    for _, other in Players:GetPlayers() do
+        local character = other.Character
+        if character and character.PrimaryPart and (character:GetPivot().Position - center).Magnitude < ISLAND_RADIUS then
+            table.insert(riders, { model = character, frame = character:GetPivot() })
+        end
+    end
     local startScale = scale
     local whoosh = sound("game/liftoff", 0.45, 1.4)
     whoosh:Play()
-    local boomed = false
+    local groan = sound("game/engine", 0.15, 1.2)
+    local boomed, groaned = false, false
     local connection
     connection = RunService.RenderStepped:Connect(function()
+        hideScreens(hidden)
         local elapsed = Workspace:GetServerTimeNow() - at
-        local p = math.clamp(elapsed / PULL, 0, 1)
-        local e = p ^ 2.2
-        setScale(startScale + 1.6 * e)
-        for _, copy in copies do
-            hide(copy.original, true)
-            local offset = copy.start.Position - hole
-            local turned = CFrame.fromAxisAngle(Vector3.yAxis, e * math.pi * 3) * offset * (1 - 0.97 * e)
-            copy.model:PivotTo(CFrame.new(hole + turned) * copy.start.Rotation * CFrame.Angles(e * 9 + copy.spin, e * 5, e * 7))
-            copy.model:ScaleTo(math.max(0.05, 1 - 0.95 * e))
+        local total = math.clamp(elapsed / ISLAND_END, 0, 1)
+        setScale(startScale + 1.4 * total ^ 1.5)
+        -- The rocket goes first, tumbling end over end.
+        local r = math.clamp(elapsed / ROCKET_END, 0, 1) ^ 2.4
+        if r > 0 and #rocket.parts > 0 then move(rocket, falling(rocketPivot, r, Vector3.new(7, 2, 4))) end
+        -- Then the shard, everyone on it, and the camera with them.
+        local i = math.clamp((elapsed - ISLAND_START) / (ISLAND_END - ISLAND_START), 0, 1) ^ 2.2
+        local shardMotion = falling(center, i, Vector3.new(0.9, 0.5, 1.4))
+        if i > 0 then
+            if not groaned then
+                groaned = true
+                groan:Play()
+            end
+            move(island, shardMotion)
+            for _, rider in riders do
+                if rider.model.Parent then rider.model:PivotTo(shardMotion * rider.frame) end
+            end
         end
-        local camOffset = CFrame.fromAxisAngle(Vector3.yAxis, e * math.pi * 1.5) * (cameraStart.Position - hole) * (1 - 0.85 * e)
-        local shake = (0.4 + 6 * e) * (Settings.get("reducedEffects") and 0.2 or 1)
-        camera.CFrame = CFrame.lookAt(hole + camOffset, hole) * CFrame.new((math.random() - 0.5) * shake, (math.random() - 0.5) * shake, 0)
-        camera.FieldOfView = fieldOfView + 50 * e
+        -- Camera: watches the rocket go, then rides the shard down looking into the hole.
+        local ride = shardMotion * cameraStart
+        local gaze = shardMotion * (cameraStart.Position + cameraStart.LookVector * 60)
+        local turn = math.min(1, elapsed / 1.5) * 0.7 + 0.3 * i
+        local shake = (0.3 + 4 * i + 1.2 * r * (1 - i)) * (Settings.get("reducedEffects") and 0.2 or 1)
+        camera.CFrame = CFrame.lookAt(ride.Position, gaze:Lerp(hole, turn))
+            * CFrame.new((math.random() - 0.5) * shake, (math.random() - 0.5) * shake, 0)
+        camera.FieldOfView = fieldOfView + 50 * i
+        local e = math.max(total ^ 1.5, i)
         grade.Saturation, grade.Contrast = -0.45 - 0.55 * e, 0.25 + 0.6 * e
         grade.TintColor = Color3.new(1, 1, 1):Lerp(VIOLET, 0.3 + 0.5 * e)
-        blur.Size = 24 * e
+        blur.Size = 20 * i
         drone.Volume, drone.PlaybackSpeed = 0.6 + e, 0.22 + 0.5 * e
-        -- The flash, then black.
-        if elapsed > PULL then
-            local f = math.clamp((elapsed - PULL) / 0.35, 0, 1)
+        -- The flash as the shard crosses the horizon, then black.
+        if elapsed > ISLAND_END - 0.4 then
+            local f = math.clamp((elapsed - ISLAND_END + 0.4) / 0.35, 0, 1)
             cover.BackgroundTransparency = 1 - f
-            cover.BackgroundColor3 = Color3.new(1, 1, 1):Lerp(Color3.new(0, 0, 0), math.clamp((elapsed - PULL - 0.4) / 0.4, 0, 1))
+            cover.BackgroundColor3 = Color3.new(1, 1, 1):Lerp(Color3.new(0, 0, 0), math.clamp((elapsed - ISLAND_END) / 0.4, 0, 1))
             if not boomed then
                 boomed = true
                 local boom = sound("game/ignition", 0.35, 1.6)
@@ -258,19 +302,35 @@ function BlackHoleController.singularity(at)
             end
         end
     end)
-    -- Hold black until the server has moved this player home (or a moment past the end).
-    local deadline = os.clock() + SINGULARITY + 3
-    repeat task.wait(0.1) until (os.clock() > deadline) or (Workspace:GetServerTimeNow() - at > SINGULARITY and not there())
+    -- Hold black until the server has moved this player home, far from the shard (the ride
+    -- itself only carries them ~2,000 studs here), or a moment past the end.
+    local deadline = os.clock() + LENGTH + 3
+    local function home()
+        local position = rootPosition()
+        return position ~= nil and (position - SPEC.position).Magnitude > 5000
+    end
+    repeat task.wait(0.1) until os.clock() > deadline or (Workspace:GetServerTimeNow() - at > ISLAND_END and home())
     connection:Disconnect()
     whoosh:Destroy()
-    for _, copy in copies do
-        copy.model:Destroy()
-        if copy.original.Parent then hide(copy.original, false) end
+    groan:Destroy()
+    -- Put the shard and rocket back where they were (the server rebuilt nothing).
+    for _, group in { rocket, island } do
+        local parts, frames = {}, {}
+        for index, part in group.parts do
+            if part.Parent then
+                table.insert(parts, part)
+                table.insert(frames, group.frames[index])
+            end
+        end
+        Workspace:BulkMoveTo(parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
     end
     clearGrade()
     camera.FieldOfView = fieldOfView
     camera:SetAttribute("Cinematic", nil)
     camera.CameraType = Enum.CameraType.Custom
+    for gui in hidden do
+        if gui.Parent then gui.Enabled = true end
+    end
     cover.BackgroundColor3, cover.BackgroundTransparency = Color3.new(0, 0, 0), 0
     for step = 1, 20 do
         cover.BackgroundTransparency = step / 20

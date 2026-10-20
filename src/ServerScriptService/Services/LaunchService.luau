@@ -14,9 +14,12 @@ local Launch = {}
 -- The landed rocket stands this long, dust settling, before passengers step out.
 local TOUCHDOWN_HOLD = 1.5
 -- The Black Hole's stay ends in a singularity: this many seconds before the stay ends
--- (just after the wheel stops) the hole swallows everyone (BlackHoleController draws
--- it from the destination folder's SingularityAt), then they wake at spawn.
+-- (just after the wheel stops) the hole starts swallowing the rocket, then the shard
+-- with everyone on it (BlackHoleController draws it from the destination folder's
+-- SingularityAt); the reset waits for the whole SingularityLength, then they wake at
+-- spawn.
 Launch.SingularitySeconds = 4
+Launch.SingularityLength = 7.5
 local BLACK_HOLE = 5
 
 function Launch.new(ctx)
@@ -185,6 +188,7 @@ function Launch.new(ctx)
                 end
                 Cycle.broadcast()
             end
+            if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
             place.folder:SetAttribute("SingularityAt", nil)
             service.debug = nil
             rocket.phase = "Resetting"
