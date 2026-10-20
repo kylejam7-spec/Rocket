@@ -27,6 +27,8 @@
   owns every pass (Roblox gives the creator their own passes), so all show OWNED: the join sync
   works with real IDs; a real purchase needs a non-owner account. RunChecks 13/13.
   Product IDs in (user): all 11 Developer Products; GetProductInfo matches every name and price.
+  Real flow: the user clicked +2,000 in Play and bought it (Studio test purchase): ProcessReceipt
+  ran through the journal (memory fallback, Studio API access off) and Metal went 0 → 2,000, once.
 - Fills are flat (user): +2,000/4,000/7,000/11,000 (R$ 25/45/75/109) of Metal or Fuel. Studio:
   Fill2000 → Metal 2,000; Fill11000 near full finished Metal and put 8,150 into Fuel; Fill7000
   → Fuel 15,150; repeat PurchaseIds not regranted; a fill while boarding banked 4,000; fresh
