@@ -6,7 +6,7 @@
 -- - passengers: Earth music fades out at liftoff, space music fades in as the landing
 --   begins, and on the way home space music fades out and Earth music fades back in;
 -- - everyone left on Earth: the music dips while the rocket climbs, then comes back.
--- At the Black Hole, its ambience (the space hole recording) plays instead of space music.
+-- At the Black Hole, its ambience (a deep drone) plays instead of space music.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -26,7 +26,7 @@ local LAUNCH_DUCK = 0.3
 
 -- Moods with their own sound instead of a MusicTracks playlist; `volume` multiplies VOLUME.
 local AMBIENCE = {
-    blackhole = { { cue = "ambience/black-hole", title = "Black Hole", seconds = 109.7, volume = 1.6 } },
+    blackhole = { { cue = "ambience/black-hole", title = "Black Hole", seconds = 41.2, volume = 1.6 } },
 }
 local BLACK_HOLE = 5 -- Config.Destinations index
 

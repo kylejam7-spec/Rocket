@@ -13,4 +13,5 @@ All of these are CC0 (public domain), so no credit is required.
 | Pickup notification (videogame UI sound) | Pet reveal fanfare (`tools/sounds`) | nomagician | https://freesound.org/s/833635/ | CC0 | 2026-10-18 |
 | Planet Texture Pack | Destination planets and ground overlays (`Services/Planets`); built by `tools/planets/textures.py` | Screaming Brain Studios | https://screamingbrainstudios.itch.io | CC0 | 2026-10-19 |
 | Lofi tracks by HoliznaCC0 (Ode To Forgetting, Tokyo Sunset, When Time Called Me Darling, Birds, Dreamshifter, Theta Frequency) | Earth and space music (`MusicController`); built by `tools/sounds/music.py` | HoliznaCC0 | Free Music Archive (artist HoliznaCC0) | CC0 | 2026-10-19 |
-| Space hole test; Earth rumble | Black Hole ambience (`ambience/black-hole`) and the hole's rumble (`game/rumble`) | freesound_community (Pixabay) | https://pixabay.com/sound-effects/ (ids 23665, 6953) | Pixabay Content License | 2026-10-20 |
+| Earth rumble | The Black Hole's rumble (`game/rumble`) | freesound_community (Pixabay) | https://pixabay.com/sound-effects/ (id 6953) | Pixabay Content License | 2026-10-20 |
+| Deep drone | Black Hole ambience (`ambience/black-hole`) | soundreality (Pixabay) | https://pixabay.com/sound-effects/ (id 588746) | Pixabay Content License | 2026-10-20 |
