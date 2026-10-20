@@ -68,6 +68,11 @@ MANIFEST = {
     # 400 Hz. A steady 10 s of it loops, with a high-passed copy of itself on top so
     # its crackle carries on small speakers. Ignition is its first seconds swelling in
     # over a low thump.
+    # Black Hole (Pixabay downloads, copied into Sounds/freesound): its ambience, played
+    # as its music (MusicController), and the hole's rumble. (The first ambience, "space
+    # hole test", was removed by Roblox moderation on upload.)
+    "ambience/black-hole": {"layers": [{"file": "freesound/soundreality-deep-drone-588746.mp3"}], "mode": "loop"},
+    "game/rumble": {"layers": [{"file": "freesound/earth-rumble-6953.mp3"}], "mode": "loop"},
     "game/engine": {"layers": [
         {"file": NASA, "clip": [5, 15], "highpass": 30},
         {"file": NASA, "clip": [5, 15], "highpass": 700, "gain": 0.35},

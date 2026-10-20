@@ -1,4 +1,15 @@
-# Latest session: 2026-10-20 (9), Robux SHOP
+# Latest session: 2026-10-20 (9), Robux SHOP (merged with the spaceport / Black Hole / parkland work)
+
+- Merged `claude/partner-latest-f117d18` (10 unpushed commits: spaceport, launch anywhere,
+  Black Hole singularity and audio, Gym District parkland) into this branch. Audit first:
+  nothing in them deletes, clears or rewrites existing work (ParklandService and
+  SpaceportService only add non-colliding scenery; SiteModels.rbxm grows 198 KB → 720 KB).
+  Conflicts: Main.client controller list (both kept), DebugService header (both), the
+  reward loop in LaunchService: the singularity now fires once when the possibly
+  extended stay has SingularitySeconds left, and closes the shop's stay so time bought
+  during it goes to the next stay. Studio: 108 scripts identical to the branch,
+  RunChecks 15/15, no errors, ~10.9K parts; a Black Hole trip with +60 s bought on
+  arrival ran the extended stay, the singularity, the reset and the next build.
 
 - `claude/frosty-goldstine-93fa70` (from master f117d18). `Config.Shop` (IDs nil until the
   user sends them; recommended prices), `Shared/Shop.luau` (catalog, `available`, pet
@@ -54,7 +65,115 @@
   Studio: signs read FREE..100X, shop cards show the new prices, RunChecks 13/13.
 - Offers without IDs show their price greyed (was "SOON"); the fill row hides under the open panel.
 
-# Latest session: 2026-10-19 (8), visual tidy pass
+# Earlier session: 2026-10-20 (3), parkland round the Gym District
+
+- `ParklandService` (built by SiteSurroundsService into Land, so it shows to 7,000):
+  the land round the Gym District (z > 112, never covered by expansion). East: running
+  track with pitch, goals, stands, floodlights; a farm (crop strips, barn, silo, fence).
+  West: a centrifuge whose arm turns (WindTurbineRotor tag, SpaceportController) with a
+  booth; a training pool with a mock capsule and gantry; a pine wood with a campsite
+  (fire, tents, logs). Behind: a lake of overlapping glass discs on a sand shore, jetty,
+  boats, reeds, rocks, benches; 14 rolling grass hills (a near row and a bigger far row
+  toward the mountains and out to the sides), an observatory on the highest, a broadleaf
+  band and big trees in clumps over the hills (big enough to still draw from the gyms).
+  `Parkland.Clear` keeps the plain's random trees and clutter off it. About 2,260 parts.
+- Seen from the gyms at player-camera height (26 up): back (lake, hills, observatory,
+  mountains), east (track, farm, turbines, water tower) and west (pool, centrifuge,
+  pines, comms dishes). At eye height the 10-stud hoarding still hides the near ground.
+  RunChecks 13/13, no errors. Studio was reopened mid-session (new studio id).
+
+# Earlier session: 2026-10-20 (2), launch anywhere and the Black Hole's singularity
+
+- `RocketDebug` "launch" (DebugService, Studio only): from Building/Fueling, swaps in the
+  chosen mission, fills both phases, moves every player into the cabin and launches
+  after a short countdown; `stay` shortens the reward stay. Studio chat `/launch
+  blackhole [countdown] [stay]` (TextChatCommand) or `tools/debug/launch.luau` in the
+  command bar. LaunchService reads `service.debug` (cleared when that flight resets).
+- Black Hole: red warning beacons blink round the shard's rim and three more streams
+  tear off its edge (DestinationService). `BlackHoleController` (client): while on the
+  shard the hole swells 25% over the stay, the light drains violet, a drone (the engine
+  cue pitched down) rises, tremors shake the camera more often and harder toward the
+  end, and lightning cracks off the horizon (reducedEffects skips shake and bolts).
+- Singularity: LaunchService stamps `SingularityAt` on the BlackHole folder 4 s before
+  the stay ends (just after the wheel stops) and anchors passengers; each client hides
+  the characters, spirals stand-in copies into the hole shrinking, drags the camera in
+  (FOV 70 -> 120, blur, desaturation) as the hole balloons, flashes white then black;
+  the server's usual reset moves everyone to spawn (and unanchors them) and the black
+  fades. The camera is marked Cinematic so CameraController steps aside.
+- Revised singularity (7.5 s, LaunchService.SingularityLength; the reset waits it out):
+  every ScreenGui (HUD, wheel, toasts) is off while it runs; the landed rocket is dragged
+  in first, tumbling (0-2.6 s), then the whole shard and every character on it (all
+  anchored RocketWorld parts within 320 studs, BulkMoveTo; characters PivotTo, their
+  roots held by the server) spiral into the swelling hole (1.8-6.4 s) with the camera
+  riding the shard, then white flash, black, home. The client puts the shard back once
+  the server has moved the player > 5,000 studs (the ride itself carries them ~2,000,
+  which first tripped the "still there" test and ended it early). No stand-in copies.
+- Black Hole audio: the user's Pixabay downloads (freesound_community "space hole test"
+  23665 and "earth rumble" 6953). `ambience/black-hole` replaces the space music there
+  (MusicController's AMBIENCE mood "blackhole", for passengers bound for or at the Black
+  Hole); `game/rumble` is the hole's looped voice, the tremor swells and the
+  singularity's groan (BlackHoleController, SFX group). Built here with Blender's `aud`
+  (no ffmpeg on this machine) as 48 kHz mono looped OGG, and registered in build.py's
+  MANIFEST (sources expected in Sounds/freesound/<name>.mp3). NOT UPLOADED: no
+  ROBLOX_API_KEY here, so they play in Studio only (copied to Studio's
+  content/sounds/rocket) until `tools/sounds/upload.py` runs with the key.
+- Studio: two full Black Hole runs via the debug launch (arrival, singularity, home,
+  rewards credited), sampled the pull numerically; RunChecks 13/13, no errors.
+  Rojo sometimes lands edits a moment after Play starts: restart Play if the server
+  still runs old code.
+
+# Earlier session: 2026-10-20, spaceport round the launch site
+
+- Branch `claude/partner-latest-f117d18` from master f117d18 (#42). User: the apron
+  behind the rocket was empty and the land round the site was just meadow; fill it from
+  Kenney's space, modular space and space station kits with Blender, own direction.
+- Measured: every tier's 45-degree rocket clears the apron behind the pad (z < -440) by
+  230+ studs (raycasts up from a grid, all five tiers), so props there are capped at 150.
+- `SpaceportService` (built after SiteDressing): on the apron, a walk-in Mission Control
+  of modular rooms (4 studs per metre, walls 17 high, rooms meet door to door) on the
+  centre line, five landing pads with parked craft to the east, hangars and rovers to the
+  west, frames and spare stages at the far end, and a monorail down the west edge over
+  the back fence. Beyond: a campus slab past the back fence (a 270-stud display rocket,
+  hangars joined by corridor tubes, dish array, tank farm, the monorail's train), a comms
+  array west and assembly hangars east (|x| > 690, outside the widest site). Trees keep
+  off the slabs (the tree placement changed as a result).
+- Import: `tools/map/bake_spaceport.py` (Blender 5.2, CLI; the Blender MCP extension
+  wasn't loaded) baked three FBX files; the user imported them; `prepare_spaceport.luau`
+  merged 115 models into SiteModels (155 now). New palettes: Space 71738999329000,
+  Modular 126762679417470.
+- Studio: RunChecks 13/13 with the new SpaceportCheck; no errors. Seen from above, the
+  apron at an angle and the campus from the fence.
+- Round two: `SpaceportController` runs the monorail train (its own MonorailTrain
+  model) from the campus station to the apron end and back on the server clock (28 s
+  each way, 10 s waits), so every client sees it in the same place. Mission Control is
+  furnished from parts: a holo table with four consoles (ops room), two rows of desks and
+  two wall screens (launch room, screens between the wall's pillars), bunks, lockers and
+  a mess table (crew quarters), a console in each front wing. Signs (SignService boards):
+  MISSION CONTROL over the gate, LANDING PADS (pads painted 1-5), HANGARS, MONORAIL,
+  SPACEPORT CAMPUS and CAMPUS STATION, COMMS ARRAY, ASSEMBLY.
+- Gotchas: Box collision made each solid room one block, so Modular_* models are stored
+  with PreciseConvexDecomposition (SiteModels re-saved); the modular corridor runs along X
+  (it walled off the doors until turned 90); gate-lasers blocks the door (plain gate now).
+  Walked spawn -> gate -> every room in Play (Humanoid:MoveTo; anti-teleport snaps
+  PivotTo moves back).
+- Round three: Mission Control roofed (flat roofs on every room and corridor at y 18,
+  parapets, glass skylights over the bigger rooms, two ceiling lamps each; the two
+  `-variation` rooms swapped for plain ones so every footprint is a rounded rectangle,
+  listed in `Spaceport.Rooms`), with dishes, generators and vents on the roofs. Fields:
+  a solar farm west and a tank farm, container store, hangars, parked craft and water
+  tower east, on the meadow the site grows into (`Spaceport.build` returns `fit(edge)`,
+  called with the perimeter on every expansion, which clears filler the ground reaches);
+  16 wind turbines beyond everything (rotors turned by SpaceportController).
+- Render distance: nothing in the game hides the spaceport (DestinationController only
+  culls destinations and the cabin; Earth has no haze). Graphics quality is Automatic,
+  and a captured frame right after a camera jump showed only nearby geometry, filling in
+  a few seconds later; at ~2,000 studs medium meshes stayed culled while the mountains
+  drew. That's Roblox's quality-based draw distance; scripts can't set it (needs
+  RobloxScript). Studio measured 15 FPS throughout, unchanged by hiding whole areas, so
+  likely background-window throttling, not the scene. Indoor furniture no longer casts
+  shadows.
+
+# Earlier session: 2026-10-19 (8), visual tidy pass
 
 - `claude/visual-tidy`. Earth: `tools/site/textures.py` builds dirt, asphalt, concrete,
   grass and gym-floor overlays (uploaded, ids in Planets TEXTURES; need experience

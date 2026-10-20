@@ -13,11 +13,21 @@ local Missions = require(ReplicatedStorage.Shared.Missions)
 local Launch = {}
 -- The landed rocket stands this long, dust settling, before passengers step out.
 local TOUCHDOWN_HOLD = 1.5
+-- The Black Hole's stay ends in a singularity: this many seconds before the stay ends
+-- (just after the wheel stops) the hole starts swallowing the rocket, then the shard
+-- with everyone on it (BlackHoleController draws it from the destination folder's
+-- SingularityAt); the reset waits for the whole SingularityLength, then they wake at
+-- spawn.
+Launch.SingularitySeconds = 4
+Launch.SingularityLength = 7.5
+local BLACK_HOLE = 5
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
     local boarding, spawn, rocketBuild, cabin = World.boarding, World.spawn, World.rocketBuild, World.cabin
-    local service = {}
+    -- Studio playtests (DebugService "launch") may shorten the next countdown and stay:
+    -- { countdown = seconds?, stay = seconds? }, cleared when that flight resets.
+    local service = { debug = nil }
     local random = Random.new()
     -- Spins once per stay: stamps Cycle.wheel (clients animate it in sync), updates
     -- the pity counter and announces the result when the wheel stops.
@@ -88,7 +98,8 @@ function Launch.new(ctx)
         local rocket = Cycle.rocket
         local definition = rocket.definition
         local tier = definition.Tier
-        Cycle.deadline = workspace:GetServerTimeNow() + tier.BoardingSeconds
+        local countdown = service.debug and service.debug.countdown or tier.BoardingSeconds
+        Cycle.deadline = workspace:GetServerTimeNow() + countdown
         -- Lift anyone standing on the hull or the ramps down beside the hatch before it
         -- swings up (the ramps retract).
         for _, player in Players:GetPlayers() do
@@ -102,7 +113,7 @@ function Launch.new(ctx)
         Remote.announce(definition.IsLegendary and "LEGENDARY MISSION READY! Board the " .. tier.Name .. " now!" or "ROCKET READY! Board now: launch countdown started.")
         Cycle.broadcast()
         local cycle = rocket.cycle
-        task.delay(tier.BoardingSeconds, function()
+        task.delay(countdown, function()
             if Cycle.rocket.cycle ~= cycle or rocket.phase ~= "Boarding" then return end
             local passengers = {}
             for _, player in Players:GetPlayers() do
@@ -139,7 +150,7 @@ function Launch.new(ctx)
             Cycle.broadcast()
             task.wait(flight)
             rocket.phase = "Rewarding"
-            local rewardSeconds = definition.RewardSeconds or config.RewardSeconds
+            local rewardSeconds = service.debug and service.debug.stay or definition.RewardSeconds or config.RewardSeconds
             -- Rarer destinations pay more (Config.Destinations reward x the mission's multiplier).
             local multiplier = definition.RewardMultiplier * place.reward
             for _, station in World.stations do
@@ -163,7 +174,7 @@ function Launch.new(ctx)
             Cycle.broadcast()
             -- Cumulative tick counts are idempotent even when a save retries; the
             -- multiplier scales the ticks so the ledger stays an integer total.
-            local tick, spun = 0, false
+            local tick, spun, swallowed = 0, false, false
             while tick < stay.total do
                 task.wait(1)
                 tick += 1
@@ -176,9 +187,26 @@ function Launch.new(ctx)
                     spun = true
                     spinWheel(rocket)
                 end
+                -- The Black Hole's stay ends in the singularity, SingularitySeconds before
+                -- its (possibly extended) end. It closes the stay for the shop, so time
+                -- bought now goes to the next stay rather than this frozen one.
+                if definition.ModelTier == BLACK_HOLE and not swallowed and stay.total - tick <= Launch.SingularitySeconds then
+                    swallowed = true
+                    if ctx.Shop then ctx.Shop.endStay() end
+                    -- Hold everyone still while the hole takes them (their clients draw it).
+                    for userId in rocket.passengers do
+                        local player = Players:GetPlayerByUserId(userId)
+                        local root = player and Movement.body(player)
+                        if root then root.Anchored = true end
+                    end
+                    place.folder:SetAttribute("SingularityAt", workspace:GetServerTimeNow())
+                end
                 Cycle.broadcast()
             end
             if ctx.Shop then ctx.Shop.endStay() end
+            if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
+            place.folder:SetAttribute("SingularityAt", nil)
+            service.debug = nil
             rocket.phase = "Resetting"
             Cycle.deadline = 0
             Cycle.broadcast()
@@ -189,6 +217,8 @@ function Launch.new(ctx)
                     player:SetAttribute("RocketPassenger", nil)
                     ctx.Training.stop(player)
                     Movement.relocate(player, spawn.Position + Vector3.new(0, 5, 0))
+                    local root = Movement.body(player)
+                    if root then root.Anchored = false end
                 end
             end
             task.wait(1)

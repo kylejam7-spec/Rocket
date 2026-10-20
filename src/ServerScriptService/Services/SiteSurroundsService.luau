@@ -15,6 +15,8 @@ local Planets = require(script.Parent.Planets)
 local Layout = require(script.Parent.SiteLayout)
 local Signs = require(script.Parent.SignService)
 local Mountains = require(script.Parent.Mountains)
+local Spaceport = require(script.Parent.SpaceportService)
+local Parkland = require(script.Parent.ParklandService)
 local Surrounds = {}
 
 Surrounds.WallHeight = 10
@@ -182,12 +184,19 @@ function Surrounds.build(world, district)
     end
     -- Trees in loose clumps outside the widest the site ever gets (4 expansions).
     local widest = Layout.Ground.x + 4 * 80 + 60
+    -- ...and off the spaceport's slabs (with room for a clump's spread).
+    local function outsideSite(at)
+        for _, r in Spaceport.Clear do
+            if at.X > r[1] - 40 and at.X < r[2] + 40 and at.Z > r[3] - 40 and at.Z < r[4] + 40 then return false end
+        end
+        if not Parkland.clear(at) then return false end
+        return math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
+    end
     local placed = 0
     while placed < 70 do
         local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(700, 1350)
         local at = center + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
-        local outside = math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
-        if outside then
+        if outsideSite(at) then
             for _ = 1, random:NextInteger(2, 4) do
                 tree(land, at + Vector3.new(random:NextNumber(-18, 18), -Surrounds.PlainDepth, random:NextNumber(-18, 18)), random)
                 placed += 1
@@ -197,9 +206,6 @@ function Surrounds.build(world, district)
     -- Broadleaf clumps, and bushes, rocks and flowers, nearer in (still outside the
     -- widest site), on their own seed so the faceted trees stay where they were.
     local extra = Random.new(2024)
-    local function outsideSite(at)
-        return math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
-    end
     local broadleaf = 0
     while broadleaf < 60 do
         local angle, distance = extra:NextNumber(0, math.pi * 2), extra:NextNumber(690, 1250)
@@ -220,6 +226,9 @@ function Surrounds.build(world, district)
             scattered += 1
         end
     end
+
+    -- The parkland round the Gym District: track, farm, centrifuge, pool, lake, hills, woods.
+    Parkland.build(land, { make = make, tree = tree, roundTree = roundTree, clutter = clutter })
 
     local perimeter, plainFolder
     local service = {}

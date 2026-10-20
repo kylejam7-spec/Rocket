@@ -1,4 +1,11 @@
 {
+  "ambience/black-hole": {
+    "assetId": "91386870823827",
+    "creator": {
+      "userId": "1502038929"
+    },
+    "sha256": "ef5c75845fd599c564cc9b88aa9292bad50ae501cc5f3cfded9ab38c8f18cb74"
+  },
   "game/coin": {
     "assetId": "130766560947720",
     "creator": {
@@ -75,6 +82,13 @@
       "userId": "11791915499"
     },
     "sha256": "d3e6c28510c5f612e7f5a1c0786ba7733bde63418f08c86806a09a43527f556d"
+  },
+  "game/rumble": {
+    "assetId": "137135372833570",
+    "creator": {
+      "userId": "1502038929"
+    },
+    "sha256": "3e85a41beadc7421700244285f3d1977adcd047dc5bc499529af3942b90a5bee"
   },
   "music/earth/ode-to-forgetting": {
     "assetId": "80999109764444",

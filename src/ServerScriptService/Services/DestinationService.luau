@@ -1401,6 +1401,26 @@ builders[5] = function(folder, c)
     stream(folder, c + Vector3.new(-700, 160, -900), hole + diskFrame:VectorToWorldSpace(Vector3.new(-0.6, 0, -0.8)) * HORIZON * 4.4, 36, 420)
     stream(folder, c + Vector3.new(1600, -120, -700), hole + diskFrame:VectorToWorldSpace(Vector3.new(0.9, 0, 0.4)) * HORIZON * 4.4, 40, -380)
     stream(folder, c + Vector3.new(500, 520, -400), hole + diskFrame:VectorToWorldSpace(Vector3.new(0.2, 0, 1)) * HORIZON * 4, 30, 300)
+    -- Warning beacons round the rim, blinking red, and more matter torn off the shard's
+    -- own edge, close enough to watch it go (BlackHoleController adds the tremors, the
+    -- hole swelling through the stay and the singularity at its end).
+    for index = 1, 10 do
+        local angle = index / 10 * math.pi * 2 + 0.15
+        local at = c + Vector3.new(math.cos(angle) * 63, 0, math.sin(angle) * 63)
+        if (at - c - Destinations.LandingOffset).Magnitude > 40 and (at - c - Destinations.SignOffset).Magnitude > 14 then
+            strut(folder, "BeaconPost", at, at + Vector3.new(0, 7, 0), 0.25, VOID.metal)
+            local lamp = decor(folder, "WarningBeacon", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = CFrame.new(at + Vector3.new(0, 7.6, 0)),
+                Color = Color3.fromRGB(255, 40, 40), Material = Enum.Material.Neon })
+            lamp:SetAttribute("Period", 1.1 + index % 2 * 0.3)
+            CollectionService:AddTag(lamp, "Pulse")
+            local light = Instance.new("PointLight")
+            light.Color, light.Range, light.Brightness = Color3.fromRGB(255, 50, 40), 16, 1.5
+            light.Parent = lamp
+        end
+    end
+    for _, torn in { { Vector3.new(-55, -8, -38), Vector3.new(-0.9, 0, 0.5) }, { Vector3.new(28, -12, -64), Vector3.new(-0.3, 0, 1) }, { Vector3.new(68, -6, 12), Vector3.new(0.7, 0, 0.7) } } do
+        stream(folder, c + torn[1], hole + diskFrame:VectorToWorldSpace(torn[2].Unit) * HORIZON * 3.4, 12, 220)
+    end
     -- The debris field: shards of every size all round, wheeling slowly about the hole
     -- (about the disk's axis). Ones whose path would come near the platform only turn.
     local field = Random.new(53)

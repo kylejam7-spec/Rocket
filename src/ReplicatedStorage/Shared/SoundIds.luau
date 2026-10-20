@@ -2,6 +2,7 @@
 -- (assets/sounds/<cue>.ogg). Cues missing here play only in Studio, from the copy
 -- tools/sounds/build.py --studio puts in Studio's content folder (see UI/Sfx).
 return table.freeze({
+    ["ambience/black-hole"] = "rbxassetid://91386870823827",
     ["game/coin"] = "rbxassetid://130766560947720",
     ["game/countdown"] = "rbxassetid://76324808899374",
     ["game/drop"] = "rbxassetid://125085476661253",
@@ -13,6 +14,7 @@ return table.freeze({
     ["game/liftoff"] = "rbxassetid://110297361406713",
     ["game/pickup"] = "rbxassetid://135700555663023",
     ["game/place"] = "rbxassetid://75890059397165",
+    ["game/rumble"] = "rbxassetid://137135372833570",
     ["music/earth/ode-to-forgetting"] = "rbxassetid://80999109764444",
     ["music/earth/tokyo-sunset"] = "rbxassetid://85369291069099",
     ["music/earth/when-time-called-me-darling"] = "rbxassetid://136612848114541",
