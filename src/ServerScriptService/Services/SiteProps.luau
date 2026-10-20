@@ -14,8 +14,11 @@ SiteProps.Stored = 10
 SiteProps.Palettes = table.freeze({
     Factory = "rbxassetid://96315897677106",
     Station = "rbxassetid://109349449591065",
-    -- Baked by tools/map/bake_space.py; uploaded by Studio's importer.
-    Space = "rbxassetid://106979160684205",
+    -- Baked from every colour in the kit by tools/map/bake_spaceport.py; uploaded by
+    -- Studio's importer.
+    Space = "rbxassetid://71738999329000",
+    -- Kenney Modular Space Kit's colormap, embedded by bake_spaceport.py.
+    Modular = "rbxassetid://126762679417470",
 })
 
 local function models()

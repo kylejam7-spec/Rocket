@@ -66,6 +66,56 @@ return table.freeze({
             PlacementRange = table.freeze({ 2039762544, 2036090762, 2039702563, 2036288776, 2037332789, 2037314800, 2036072766, 2040734288, 2038064735, 2036804806 }),
         }),
     }),
+    -- The Robux SHOP (ShopService; names, icons and rules in Shared.Shop). `id` is the
+    -- Creator Dashboard Game Pass / Developer Product ID: nil means not set up yet, and
+    -- that offer shows its price greyed and can't be bought. `price` mirrors the dashboard's R$
+    -- (the UI shows it). Never invent IDs: copy them from the dashboard.
+    Shop = table.freeze({
+        -- Game Passes: bought once, ownership re-checked on every join.
+        passes = table.freeze({
+            DoubleCoins = table.freeze({ id = 2042720701, price = 199 }),
+            FastHatch = table.freeze({ id = 2037395515, price = 149 }),
+            MultiHatch = table.freeze({ id = 2039573122, price = 249 }),
+            PetSlot1 = table.freeze({ id = 2037017405, price = 99 }),
+            PetSlot2 = table.freeze({ id = 2039741160, price = 179 }),
+            -- Gym<n> unlocks TrainingTiers[n] without its launches.
+            -- 2x / 5x / 10x / 25x / 50x / 75x / 100x (user set 50x-100x).
+            Gym1 = table.freeze({ id = 2042480753, price = 49 }),
+            Gym2 = table.freeze({ id = 2040347000, price = 129 }),
+            Gym3 = table.freeze({ id = 2039867258, price = 249 }),
+            Gym4 = table.freeze({ id = 2041586828, price = 449 }),
+            Gym5 = table.freeze({ id = 2040706913, price = 699 }),
+            Gym6 = table.freeze({ id = 2036915437, price = 899 }),
+            Gym7 = table.freeze({ id = 2042348700, price = 1099 }),
+        }),
+        -- Developer Products: repeatable; each receipt is granted once (receipt journal).
+        products = table.freeze({
+            ServerTraining = table.freeze({ id = 3720386542, price = 79 }),
+            -- Flat units into whichever material the rocket needs now (Metal or Fuel).
+            Fill2000 = table.freeze({ id = 3720386733, price = 25 }),
+            Fill4000 = table.freeze({ id = 3720386845, price = 45 }),
+            Fill7000 = table.freeze({ id = 3720386948, price = 75 }),
+            Fill11000 = table.freeze({ id = 3720387035, price = 109 }),
+            ExtraStay = table.freeze({ id = 3720387123, price = 39 }),
+            NextMoon = table.freeze({ id = 3720387259, price = 19 }),
+            NextMars = table.freeze({ id = 3720387367, price = 39 }),
+            NextEuropa = table.freeze({ id = 3720387434, price = 69 }),
+            NextSaturn = table.freeze({ id = 3720387492, price = 119 }),
+            NextBlackHole = table.freeze({ id = 3720387554, price = 179 }),
+            -- UFOs for Robux (Shared.Shop.ufoKey): Rare also sells for coins.
+            UfoRare = table.freeze({ id = 3720390200, price = 349 }),
+            UfoEpic = table.freeze({ id = 3720390071, price = 549 }),
+            UfoLegendary = table.freeze({ id = 3720390015, price = 649 }),
+        }),
+        DoubleCoinsMultiplier = 2,
+        FastHatchRate = 2, -- UFOs count down this many times faster
+        MultiHatchCount = 3, -- UFOs that can fly at once with Triple Hatch (1 without)
+        ServerTrainingMultiplier = 2,
+        ServerTrainingSeconds = 600, -- each purchase adds this much (stacks)
+        ExtraStaySeconds = 60,
+        ExtraStayMax = 300, -- per stay; prompts stop opening past it
+        ReceiptStore = "RocketReceipts",
+    }),
     -- Rank titles above names: the highest rank whose deliveries and launches you have.
     Ranks = table.freeze({
         table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),
@@ -77,17 +127,18 @@ return table.freeze({
     -- Gym District tiers, in walking order after the free gym. Each station gains
     -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick (the free
     -- gym uses FreeGymMultiplier), and its sign's "xN" badge is that multiplier: a boost,
-    -- not the main source (the top gym, 13/s, needs ~35 s per capped level).
+    -- and the top gyms are the fast lane (user, 2026-10-20: free, 2x, 5x, 10x, 25x, 50x,
+    -- 75x, 100x; each also sells as a SHOP gym access pass).
     TrainingBaseGain = 1,
-    FreeGymMultiplier = 2,
+    FreeGymMultiplier = 1,
     TrainingTiers = table.freeze({
-        table.freeze({ cycles = 1, multiplier = 3 }),
-        table.freeze({ cycles = 3, multiplier = 4 }),
-        table.freeze({ cycles = 8, multiplier = 5 }),
-        table.freeze({ cycles = 15, multiplier = 7 }),
-        table.freeze({ cycles = 25, multiplier = 9 }),
-        table.freeze({ cycles = 50, multiplier = 11 }),
-        table.freeze({ cycles = 100, multiplier = 13 }),
+        table.freeze({ cycles = 1, multiplier = 2 }),
+        table.freeze({ cycles = 3, multiplier = 5 }),
+        table.freeze({ cycles = 8, multiplier = 10 }),
+        table.freeze({ cycles = 15, multiplier = 25 }),
+        table.freeze({ cycles = 25, multiplier = 50 }),
+        table.freeze({ cycles = 50, multiplier = 75 }),
+        table.freeze({ cycles = 100, multiplier = 100 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
@@ -115,9 +166,10 @@ return table.freeze({
     -- Far from Earth, past its mountains and land (SiteSurroundsService, drawn within
     -- 7000): at -3000 a mountain pushed through the cabin's back wall.
     CabinPosition = Vector3.new(-12000, 200, 0),
-    -- Persistence stays off for reproducible, non-production Studio tests.
-    PersistenceEnabled = false,
-    DataStoreName = "RocketProfiles_v1_test",
+    -- Player saves (ProfileService). Studio uses its own store so tests never touch live
+    -- saves; without Studio API access it falls back to unsaved progress.
+    PersistenceEnabled = true,
+    DataStoreName = game:GetService("RunService"):IsStudio() and "RocketProfiles_studio" or "RocketProfiles_v1",
     AutosaveSeconds = 30,
     LeaseSeconds = 120,
     RecentRewardLimit = 64,

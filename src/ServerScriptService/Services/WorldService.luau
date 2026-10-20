@@ -103,6 +103,7 @@ function World.new(ctx)
     function service.expandMap(cycle)
         service.siteEdge = expand(cycle)
         if surrounds then surrounds.fit(service.siteEdge) end
+        if service.spaceport then service.spaceport.fit(service.siteEdge) end
     end
     service.expandMap(1)
     local spawn = tag(part("Spawn", Layout.Spawn, Vector3.new(8, 1, 8), Color3.fromRGB(225, 230, 238), "SpawnLocation"), World.Tags.Spawn)
@@ -115,6 +116,9 @@ function World.new(ctx)
     for material, station in service.materialStations do tag(station.zone, World.Tags.MaterialSource, { Material = material }) end
     -- Roads, cranes, floodlights, containers, offices and buildings going up.
     require(script.Parent.SiteDressingService).build(world)
+    -- Spaceport: Mission Control, pads and hangars behind the pad; a campus and arrays beyond.
+    service.spaceport = require(script.Parent.SpaceportService).build(world)
+    service.spaceport.fit(service.siteEdge)
     -- Puddles, gravel, ruts and weeds; kerbs, manholes and crosswalks; pad markings.
     require(script.Parent.SiteDetails).build(world)
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }
@@ -275,7 +279,7 @@ function World.new(ctx)
             World.Tags.GymSign, { Title = title, Multiplier = multiplier, Gain = gain, TierColor = color,
                 Face = (side < 0 and Enum.NormalId.Right or Enum.NormalId.Left).Name })
         sign.Transparency, sign.CastShadow = 1, false
-        if tier then sign:SetAttribute("RequiredCycles", required) end
+        if tier then sign:SetAttribute("RequiredCycles", required); sign:SetAttribute("GymTier", slot - 1) end
         for _, treadmill in {false, true} do
             local kind = treadmill and "Treadmill" or "Bench"
             local base = part(title:gsub(" ", "") .. kind, Vector3.new(x - side * 2, 1, z + (treadmill and 6 or -6)), Vector3.new(7, 2, 7), color)
@@ -283,7 +287,7 @@ function World.new(ctx)
             base:SetAttribute("Multiplier", multiplier)
             base:SetAttribute("TierColor", color)
             table.insert(stations, { part = base, name = title:lower():gsub("^%l", string.upper) .. " " .. kind:lower(),
-                stat = treadmill and "speedLevel" or "strengthLevel", gain = gain, required = required })
+                stat = treadmill and "speedLevel" or "strengthLevel", gain = gain, required = required, tier = tier and slot - 1 or nil })
         end
     end
     -- District dressing: chevrons down the walkway, lamp posts either side of it, and in

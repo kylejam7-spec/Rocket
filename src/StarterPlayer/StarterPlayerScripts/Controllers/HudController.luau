@@ -282,7 +282,7 @@ function HudController.start()
     -- Training ticks and destination rewards already show as stat popups; everything else
     -- is a toast above the progress pill, so the objective line always stays up.
     local toasts = Toast.stack({
-        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.touch and -118 or -96),
+        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.touch and -168 or -132),
         Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
     })
     -- Rank tags over every player's head are server-made pixel billboards; shrink them

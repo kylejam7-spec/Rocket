@@ -97,6 +97,7 @@ local function buildSign(sign, playerGui)
     local border = Create.new("UIStroke", { Thickness = 12, Color = tierColor, Parent = panel })
     local multiplier = sign:GetAttribute("Multiplier") or 1
     local required = sign:GetAttribute("RequiredCycles")
+    local gymTier = sign:GetAttribute("GymTier")
     local mark = badge(panel, {
         Position = UDim2.new(0, 128, 0.5, 0), Size = UDim2.fromOffset(220, 220), color = tierColor, ring = 8, stroke = 8,
         text = multiplierText(multiplier),
@@ -116,8 +117,8 @@ local function buildSign(sign, playerGui)
         })
     end
     local setStatus = statusPill(panel, { Position = UDim2.fromOffset(262, 186), Size = UDim2.fromOffset(330, 52), ring = 4, stroke = 4 })
-    return function(launches)
-        local locked = required ~= nil and launches < required
+    return function(launches, passes)
+        local locked = required ~= nil and launches < required and not (gymTier and passes["Gym" .. gymTier])
         mark.set(locked, tierColor, multiplierText(multiplier))
         border.Color = locked and LOCKED or tierColor
         setStatus(locked, locked and lockLabel(required, launches) or (required and "✔ UNLOCKED" or "✔ OPEN TO ALL"))
@@ -146,11 +147,12 @@ local function buildStation(station, playerGui)
         TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = pill,
     })
     local mark = badge(gui, { Position = UDim2.fromOffset(246, 36), Size = UDim2.fromOffset(64, 64), color = Theme.color.Gold, ring = 3, stroke = 3, text = "" })
-    return function(launches)
+    return function(launches, passes)
         local stat = STAT[station:GetAttribute("TrainingStat")] or STAT.strengthLevel
         local tierColor = station:GetAttribute("TierColor") or Theme.color.Gold
         local required = station:GetAttribute("RequiredCycles") or 0
-        local locked = launches < required
+        local gymTier = station:GetAttribute("GymTier")
+        local locked = launches < required and not (gymTier and passes["Gym" .. gymTier])
         name.Text = stat.icon .. " " .. stat.equipment .. (station:GetAttribute("Destination") and " • BONUS" or "")
         rate.Text = locked and lockLabel(required, launches) or ("+" .. (station:GetAttribute("TrainingGain") or 0) .. " " .. stat.name .. " / SEC")
         rate.TextColor3 = locked and Theme.color.Locked or stat.color
@@ -162,23 +164,31 @@ end
 
 function GymSignController.start()
     local playerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
-    local refreshers, launches = {}, 0
+    -- Launches and owned gym access passes (state.shop.owned).
+    local refreshers, launches, passes = {}, 0, {}
     local function add(object, build)
         if refreshers[object] then return end
         local refresh = build(object, playerGui)
         refreshers[object] = refresh
-        refresh(launches)
+        refresh(launches, passes)
         -- Destination gyms change their gain per mission; TrainingService sets the rest late.
-        object.AttributeChanged:Connect(function() refresh(launches) end)
+        object.AttributeChanged:Connect(function() refresh(launches, passes) end)
     end
     for tagName, build in { GymSign = buildSign, TrainingStation = buildStation } do
         for _, object in CollectionService:GetTagged(tagName) do add(object, build) end
         CollectionService:GetInstanceAddedSignal(tagName):Connect(function(object) add(object, build) end)
     end
+    local function key(owned)
+        local list = {}
+        for name in owned do if name:match("^Gym") then table.insert(list, name) end end
+        table.sort(list)
+        return table.concat(list, ",")
+    end
     State.subscribe(function(state)
-        if not state.profile or state.profile.completedLaunches == launches then return end
-        launches = state.profile.completedLaunches
-        for _, refresh in refreshers do refresh(launches) end
+        local owned = state.shop and state.shop.owned or {}
+        if not state.profile or (state.profile.completedLaunches == launches and key(owned) == key(passes)) then return end
+        launches, passes = state.profile.completedLaunches, owned
+        for _, refresh in refreshers do refresh(launches, passes) end
     end)
 end
 

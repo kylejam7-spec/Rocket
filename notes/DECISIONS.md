@@ -1,5 +1,92 @@
 # Decisions
 
+## 2026-10-20: Profile saving on
+
+- `PersistenceEnabled = true`. Live saves use `RocketProfiles_v1`; Studio uses
+  `RocketProfiles_studio`, and with no Studio API access falls back to unsaved progress
+  (warned; HUD says so) instead of failing loads. `persistent` in the snapshot is now
+  whether a store is really in use.
+- A leaving player's last save releases the session (unless they're a passenger on a
+  launched rocket whose rewards may still come), so another server loads them at once; a
+  load that meets someone else's lock waits and retries up to the lease (+10 s) instead of
+  failing. BindToClose releases every lease. A released record never writes again; a
+  same-server rejoin loads afresh.
+- Saves and loads tag the key with the user ID (data-erasure requests).
+- Robux UFOs: the PurchaseId goes into the profile's purchase ledger with the UFO and the
+  profile is saved before PurchaseGranted; a retry after a failed save finds it in the
+  ledger and doesn't add a second.
+- PersistenceCheck runs ProfileService against an in-memory store.
+- Still to do before launch: a published private test with real accounts (rejoin,
+  server hop, shutdown).
+
+## 2026-10-20: Robux UFOs
+
+- User's Developer Products: Rare UFO 349 (3720390200), Epic 549 (3720390071),
+  Legendary 649 (3720390015). Rare keeps its 50K coin price too (both buttons); Epic and
+  Legendary are Robux-only. Keys `UfoRare` / `UfoEpic` / `UfoLegendary` (Shop.ufoKey).
+- Bought only with a free UFO slot (1, or 3 with Triple Hatch). The receipt puts the UFO
+  on the buyer's profile, so it is granted only while they're in this server with a
+  loaded profile (else NotProcessedYet; Roblox retries on their next join). A receipt
+  that races past a full slot still flies, up to the 3 a profile can hold.
+- Saving is now on (see "Profile saving on"); the UFO is saved before PurchaseGranted.
+
+## 2026-10-20: Triple Hatch = 3 UFOs at once
+
+- User: Triple Hatch raises how many UFOs can hatch at once; no x3 price switch. Without
+  it one UFO flies at a time; with it up to 3, each bought at its normal coin price, all
+  counting down together and landing one by one (same-tick landings 6 s apart).
+- Profile: `ufos` (list, max 3, each with a stable `id`) replaces `ufo`; validate turns
+  an old single `ufo` into a one-item list (no schema bump). Clients draw from the
+  `Ufos` attribute ("id:tier:hatchAt;..."), one saucer per id at three perches.
+- Pet follower slots on the client go to 6 so both slot passes show every pet.
+
+## 2026-10-20: Rocket fills are flat units
+
+- User: flat purchases instead of percentages: +2,000 / +4,000 / +7,000 / +11,000 units of
+  whatever the rocket needs now (Metal while building, Fuel while fueling). Prices
+  (mine): 25 / 45 / 75 / 109 R$. Products `Fill2000` .. `Fill11000`.
+- The bank is in units: Metal overflow pours into Fuel, Fuel overflow (or a fill bought
+  while boarding or away) waits for the next rocket's Metal. The buttons show the
+  material icon of the current phase.
+
+## 2026-10-20: Gyms free, 2x, 5x, 10x, 25x, 50x, 75x, 100x
+
+- User: the District goes free, 2x, 5x, 10x, 25x, 50x, 75x, 100x (unlocks unchanged:
+  1/3/8/15/25/50/100 launches). Free gym is 1x (was 2x), so the tutorial's bench and
+  treadmill steps take ~10 s (were ~5 s).
+- Gym access passes: the user set 50x 699, 75x 899, 100x 1099; the rest follow:
+  2x 49, 5x 129, 10x 249, 25x 449.
+- The top gym is now the fast lane (450-point capped level in 4.5 s), far past the
+  destination gyms (6-30/s); TrainingCheck now asks only >= 3 s per capped level.
+
+## 2026-10-20: Robux SHOP (passes and server products)
+
+- The user asked for a SHOP button (server training boosts, +1/+2 pet slots, faster
+  hatching, multi-hatch, 2x coins, access to any gym), rocket-fill buttons above the
+  progress bar (5/10/15/20/25%), and at destinations, extra stay time and a guaranteed
+  next mission. IDs come later: `Config.Shop` holds `id = nil` (offer shows SOON) and the
+  recommended R$ prices.
+- Recommended prices: 2x Coins 199, Fast Hatch 149, Triple Hatch 249, +1 slot 99,
+  +2 slots 179 (they stack to 6), gyms (see the gym entry above); products:
+  server 2x training 10 min 79, fills (see the flat-units entry above), +60 s stay 39, next mission
+  Moon 19 / Mars 39 / Europa 69 / Saturn 119 / Black Hole 179.
+- Every Developer Product is a server-wide effect, so nothing repeatable depends on
+  profile saving (still off). ProcessReceipt: journal (DataStore `RocketReceipts`, key
+  per PurchaseId) checked, grant, record, then PurchaseGranted; a failed record is
+  NotProcessedYet and the retry won't regrant on this server. Server death between grant
+  and record means a regrant elsewhere: the buyer's favour, never a lost purchase. In
+  Studio without DataStore access the journal falls back to memory.
+- Late receipts are banked, never refused: fill waits for the next delivery phase (and
+  overflow carries into Fuel, then the next rocket), stay time for the next stay, a
+  mission for the next spin. Prompts only open when the offer makes sense
+  (`Shop.available`), and stay extensions stop prompting at +300 s per stay.
+- Fills add to the rocket totals only: no coins, deliveries or contribution for the
+  buyer. Boarding stays open to everyone, so nobody buys a seat or keeps others off.
+- Triple Hatch: see "3 UFOs at once" above (the first version, 3 pets in one UFO for 3x
+  coins, was replaced). Fast Hatch = the countdown runs 2x.
+- Passes live only in ShopService memory, re-checked each join (failed checks are
+  "unknown": no trimming of pets on a throttled check).
+
 ## 2026-10-18: Rockets 3x on the Earth site
 
 - `Models.SiteScale` is 1.35 * 3, so one player's small delivery still visibly grows

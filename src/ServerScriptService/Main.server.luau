@@ -33,6 +33,7 @@ ctx.Tutorial = require(Services.TutorialService).new(ctx)
 ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 ctx.Robux = require(Services.RobuxUpgradeService).new(ctx)
 ctx.Pets = require(Services.PetService).new(ctx)
+ctx.Shop = require(Services.ShopService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,
@@ -40,7 +41,10 @@ ctx.Training = require(Services.TrainingService).new({
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
     -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
-    -- treadmill steps (5 s for a new player).
+    -- treadmill steps (10 s for a new player at the 1x free gym).
+    -- Gym access passes unlock a District tier; a server boost multiplies every gain.
+    unlocked = function(player, station) return ctx.Shop.gymUnlocked(player, station.tier) end,
+    multiplier = function() return ctx.Shop.trainingMultiplier() end,
     trained = function(player, station)
         if (station.required or 0) > 0 then return end
         local strength, speed = ctx.Stats.levels(ctx.profiles.records[player.UserId].profile)
@@ -98,7 +102,11 @@ local function joined(player)
     player.CharacterAdded:Connect(characterAdded)
     if player.Character then task.spawn(characterAdded, player.Character) end
     -- Robux upgrade passes live with Roblox; re-apply them once the profile is loaded.
-    if ctx.profiles:load(player.UserId) then ctx.Robux.sync(player) end
+    -- Shop passes too (gym access, pet slots, hatching, coins).
+    if ctx.profiles:load(player.UserId) then
+        task.spawn(ctx.Shop.sync, player)
+        ctx.Robux.sync(player)
+    end
 end
 Players.PlayerAdded:Connect(joined)
 Players.PlayerRemoving:Connect(function(player)
@@ -110,7 +118,9 @@ Players.PlayerRemoving:Connect(function(player)
     ctx.Interaction.forget(player)
     ctx.Remote.forget(player)
     ctx.Cycle.forget(player)
-    ctx.profiles:remove(player.UserId)
+    -- A passenger on a launched rocket still gets their stay's rewards: keep their lease.
+    local rocket = ctx.Cycle.rocket
+    ctx.profiles:remove(player.UserId, rocket.passengers[player.UserId] == true and (rocket.phase == "Launching" or rocket.phase == "Rewarding"))
 end)
 for _, player in Players:GetPlayers() do task.spawn(joined, player) end
 ctx.Cycle.start()

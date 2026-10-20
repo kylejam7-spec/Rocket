@@ -52,6 +52,7 @@ function Training.new(context)
         station.occupants = {}
         station.part:SetAttribute("TrainingStation", true)
         station.part:SetAttribute("RequiredCycles", station.required or 0)
+        station.part:SetAttribute("GymTier", station.tier)
         station.part:SetAttribute("TrainingGain", station.gain)
         station.part:SetAttribute("TrainingStat", station.stat)
         -- Just the key and "Use": the station's tag above it already says what it is.
@@ -62,7 +63,7 @@ function Training.new(context)
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
             if not context.phaseAllowed(station) then return end
             local profile = context.profiles.records[player.UserId].profile
-            if profile.completedLaunches < (station.required or 0) then
+            if profile.completedLaunches < (station.required or 0) and not (context.unlocked and context.unlocked(player, station)) then
                 context.feedback(player, "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")
                 return
             end
@@ -99,7 +100,8 @@ function Training.new(context)
                     if session.nextTick <= now then session.nextTick = now + context.config.TrainingSeconds end
                     local profile = context.profiles.records[userId].profile
                     local stat = session.station.stat
-                    local gain = session.station.gain
+                    -- A server training boost (ShopService) multiplies every station.
+                    local gain = session.station.gain * (context.multiplier and context.multiplier() or 1)
                     profile[stat] += gain
                     context.profiles:dirty(userId)
                     context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")

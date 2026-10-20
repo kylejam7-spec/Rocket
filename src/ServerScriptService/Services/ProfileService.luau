@@ -1,5 +1,6 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Pets = require(ReplicatedStorage.Shared.Pets)
 local Tutorial = require(script.Parent.TutorialService)
@@ -9,7 +10,7 @@ Profiles.__index = Profiles
 local function defaults()
     return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
         tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
-        pets = {}, equippedPets = {}, ufo = nil }
+        pets = {}, equippedPets = {}, ufos = {} }
 end
 
 local function copy(profile)
@@ -22,7 +23,8 @@ local function copy(profile)
     result.purchaseIds = table.clone(profile.purchaseIds)
     result.pets = table.clone(profile.pets)
     result.equippedPets = table.clone(profile.equippedPets)
-    result.ufo = profile.ufo and table.clone(profile.ufo)
+    result.ufos = {}
+    for index, ufo in profile.ufos or {} do result.ufos[index] = table.clone(ufo) end
     return result
 end
 
@@ -97,12 +99,21 @@ local function validate(raw, config)
     for id, count in raw.pets do
         if type(id) ~= "string" or type(count) ~= "number" or count < 1 or count % 1 ~= 0 or count > Pets.MaxCount then error("Invalid pets") end
     end
-    if #raw.equippedPets > Pets.MaxEquipped then error("Invalid equipped pets") end
+    -- Slot passes (Shared.Shop) raise the limit; ShopService trims if a pass is gone.
+    if #raw.equippedPets > Pets.MaxEquipped + 3 then error("Invalid equipped pets") end
     for _, id in raw.equippedPets do if type(id) ~= "string" then error("Invalid equipped pets") end end
-    local ufo = raw.ufo
-    if ufo ~= nil and (type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
-        or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400) then
-        error("Invalid UFO")
+    -- UFOs on their way: a list (up to 3 with Triple Hatch). Older saves held one `ufo`.
+    if raw.ufo ~= nil then
+        raw = table.clone(raw)
+        raw.ufos, raw.ufo = { raw.ufo }, nil
+    end
+    if raw.ufos ~= nil and (type(raw.ufos) ~= "table" or #raw.ufos > 3) then error("Invalid UFO") end
+    for _, ufo in raw.ufos or {} do
+        if type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
+            or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400
+            or (ufo.id ~= nil and type(ufo.id) ~= "string") then
+            error("Invalid UFO")
+        end
     end
     local result = copy(raw)
     -- Pets that left the catalog are dropped, not refused; so is an equip of a pet not owned.
@@ -113,7 +124,11 @@ local function validate(raw, config)
         if used[id] <= (result.pets[id] or 0) then table.insert(equipped, id) end
     end
     result.equippedPets = equipped
-    if ufo and not Pets.get(ufo.pet) then result.ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
+    for index, ufo in result.ufos do
+        if not Pets.get(ufo.pet) then ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
+        -- A stable id per UFO lets clients keep drawing the same saucer.
+        ufo.id = ufo.id or ("u" .. index)
+    end
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
     end
@@ -121,10 +136,14 @@ local function validate(raw, config)
 end
 Profiles.validate = validate
 
--- Same pets, equipped list and UFO (to tell whether a save left pet changes unsaved).
--- The UFO's countdown alone doesn't count: it ticks every second.
+-- Same pets, equipped list and UFOs (to tell whether a save left pet changes unsaved).
+-- A UFO's countdown alone doesn't count: it ticks every second.
 function Profiles.samePets(a, b)
-    if (a.ufo == nil) ~= (b.ufo == nil) or (a.ufo and (a.ufo.tier ~= b.ufo.tier or a.ufo.pet ~= b.ufo.pet)) then return false end
+    if #a.ufos ~= #b.ufos then return false end
+    for index, ufo in a.ufos do
+        local other = b.ufos[index]
+        if ufo.tier ~= other.tier or ufo.pet ~= other.pet then return false end
+    end
     if #a.equippedPets ~= #b.equippedPets then return false end
     for index, id in a.equippedPets do if b.equippedPets[index] ~= id then return false end end
     for id, count in a.pets do if b.pets[id] ~= count then return false end end
@@ -134,20 +153,44 @@ end
 
 -- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
-function Profiles.credit(profile, delivered, config)
+function Profiles.credit(profile, delivered, config, multiplier)
     if type(delivered) ~= "number" or delivered <= 0 or delivered % 1 ~= 0 then return 0 end
-    local coins = delivered * config.CoinsPerUnit
+    -- `multiplier`: 2x Coins (ShopService), 1 otherwise.
+    local coins = delivered * config.CoinsPerUnit * (multiplier or 1)
     profile.lifetimeDeliveries += delivered
     profile.coins += coins
     return coins
 end
 
 function Profiles.new(config, changed)
-    return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil }, Profiles)
+    return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil,
+        -- A load finding another server's lock retries every `retrySeconds` for up to
+        -- `waitSeconds` (default: the lease plus 10 s). PersistenceCheck shortens both.
+        retrySeconds = 5, waitSeconds = nil }, Profiles)
+end
+
+-- Whether progress is really saved (false in Studio without API access).
+function Profiles:persistent()
+    return self.store ~= nil
+end
+
+-- Studio without "Enable Studio Access to API Services" can't reach DataStores: drop to
+-- unsaved progress instead of failing every load. True when it did.
+function Profiles:studioFallback(err)
+    if not self.store or not RunService:IsStudio() then return false end
+    local text = tostring(err)
+    if not (text:find("Studio", 1, true) or text:find("API", 1, true) or text:find("403", 1, true)) then return false end
+    warn("Rocket profiles: no DataStore access in Studio, progress won't save:", text)
+    self.store = nil
+    return true
 end
 
 function Profiles:load(userId)
     local previous = self.records[userId]
+    if previous and previous.released then
+        while previous.busy do task.wait(0.1) end
+        previous = nil
+    end
     if previous and not string.find(previous.status, "Load failed", 1, true) then
         while previous.busy do task.wait(0.1) end
         previous.leaving = false
@@ -156,16 +199,30 @@ function Profiles:load(userId)
     end
     local record = { profile = defaults(), pending = {}, status = "Loading", busy = true, leaving = false }
     self.records[userId] = record
-    local ok, profile = pcall(function()
-        if not self.store then return defaults() end
-        local now = os.time()
-        return self.store:UpdateAsync("Player_" .. userId, function(raw)
-            local current = validate(raw, self.config)
-            if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
-            current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
-            return current
+    local function attempt()
+        return pcall(function()
+            if not self.store then return defaults() end
+            local now = os.time()
+            return self.store:UpdateAsync("Player_" .. userId, function(raw)
+                local current = validate(raw, self.config)
+                if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
+                current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
+                -- The user ID tags the key for Roblox's data-erasure requests.
+                return current, { userId }
+            end)
         end)
-    end)
+    end
+    local ok, profile = attempt()
+    if not ok and self:studioFallback(profile) then ok, profile = attempt() end
+    -- Locked by the server they just left (it saves and lets go, or the lease runs out):
+    -- wait and try again rather than fail.
+    local deadline = os.clock() + (self.waitSeconds or self.config.LeaseSeconds + 10)
+    while ok and profile == nil and os.clock() < deadline do
+        record.status = "Loading — finishing your last server's save"
+        self.changed(userId)
+        task.wait(self.retrySeconds)
+        ok, profile = attempt()
+    end
     record.busy = false
     if not ok or not profile then
         record.status = "Load failed — rejoin; progress disabled"
@@ -205,12 +262,16 @@ function Profiles:save(userId)
     record.busy = true
     local snapshot = copy(record.profile)
     local batch = {}
-    local batchCount = 0
+    local batchCount, pendingCount = 0, 0
     for id, ticks in record.pending do
-        if batchCount >= self.config.RecentRewardLimit then break end
+        pendingCount += 1
+        if batchCount >= self.config.RecentRewardLimit then continue end
         batch[id] = ticks
         batchCount += 1
     end
+    -- Leaving with nothing left to save: let go of the session so another server can
+    -- load them at once (kept for a locked passenger whose rewards may still come).
+    local release = record.leaving and not record.keepLease and batchCount == pendingCount
     local function applyRewards(profile)
         profile.rewardedLaunchTicks = profile.rewardedLaunchTicks or {}
         for id, ticks in batch do
@@ -251,10 +312,10 @@ function Profiles:save(userId)
                 current.purchaseIds = snapshot.purchaseIds
                 current.pets = snapshot.pets
                 current.equippedPets = snapshot.equippedPets
-                current.ufo = snapshot.ufo
+                current.ufos = snapshot.ufos
                 applyRewards(current)
-                current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
-                return current
+                current.session = not release and { owner = self.owner, expires = os.time() + self.config.LeaseSeconds } or nil
+                return current, { userId }
             end)
         end)
         if ok and saved then break end
@@ -272,9 +333,13 @@ function Profiles:save(userId)
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
-        if record.leaving and not next(record.pending) and not record.dirty then
-            -- Keep lease until expiry: protects a disconnected locked passenger.
-            -- Rejoining another server may wait up to LeaseSeconds.
+        if release and self.store then
+            -- Nothing more may be written for them here; a rejoin loads afresh.
+            record.released = true
+            record.status = "Saved — session released"
+        elseif record.leaving and not next(record.pending) and not record.dirty then
+            -- A locked passenger keeps the lease until it expires; rejoining another
+            -- server waits for it (Profiles:load).
             record.status = self.store and "Saved — session expires shortly" or record.status
         end
     else
@@ -288,12 +353,22 @@ function Profiles:save(userId)
     return ok and saved ~= nil
 end
 
-function Profiles:remove(userId)
+-- `keepLease`: a locked passenger whose rewards may still be queued after they leave.
+function Profiles:remove(userId, keepLease)
     local record = self.records[userId]
     if not record then return end
     record.leaving = true
+    record.keepLease = keepLease == true
     record.dirty = true
     task.spawn(function() self:save(userId) end)
+end
+
+-- Saves now, waiting out a save in progress (up to 30 s). True when it saved.
+function Profiles:saveNow(userId)
+    local record = self.records[userId]
+    local deadline = os.clock() + 30
+    while record and record.busy and os.clock() < deadline do task.wait(0.1) end
+    return self:save(userId)
 end
 
 function Profiles:start()
@@ -303,7 +378,7 @@ function Profiles:start()
         while true do
             task.wait(self.config.AutosaveSeconds)
             for userId, record in self.records do
-                if not record.leaving or record.dirty or next(record.pending) then task.spawn(function() self:save(userId) end) end
+                if not record.released and (not record.leaving or record.dirty or next(record.pending)) then task.spawn(function() self:save(userId) end) end
             end
         end
     end)
@@ -314,7 +389,9 @@ function Profiles:start()
             task.spawn(function()
                 local record = self.records[userId]
                 while record.busy do task.wait(0.1) end
-                self:save(userId)
+                -- Shutting down: no rewards can follow, so every lease is released.
+                record.leaving, record.keepLease = true, false
+                if not record.released then self:save(userId) end
                 left -= 1
             end)
         end

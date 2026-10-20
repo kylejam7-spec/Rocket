@@ -2,7 +2,10 @@
 -- and price. Any UFO Shop counter's "Open UFO Shop" prompt opens it; walking away or ✖
 -- closes it. Buying sends BuyUfo with a fresh request ID (the server charges once per
 -- ID); when the UFO shows up in the state the panel closes so you can watch it arrive.
--- Epic and Legendary UFOs are Robux-only and not on sale yet ("SOON").
+-- Rare, Epic and Legendary UFOs also sell for Robux (Config.Shop UfoRare/UfoEpic/
+-- UfoLegendary; Epic and Legendary only for Robux): the purple button sends BuyShop and
+-- the server opens the prompt. One UFO flies at a time; the SHOP's Triple Hatch pass lets
+-- 3 (state.shop.maxUfos), each at its own price.
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -10,6 +13,8 @@ local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Pets = require(ReplicatedStorage.Shared.Pets)
+local Shop = require(ReplicatedStorage.Shared.Shop)
+local Config = require(ReplicatedStorage.Shared.Config)
 local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -93,8 +98,14 @@ function UfoShopController.start()
         sound = false, onActivated = close, Parent = panel,
     })
 
-    local current
+    local current, render
     local rows, pending = {}, {}
+    -- UFOs that can fly at once (Triple Hatch: 3).
+    local function room(state)
+        local profile = state and state.profile
+        local max = state and state.shop and state.shop.maxUfos or 1
+        return profile ~= nil and #(profile.ufos or {}) < max, max
+    end
     for tier, ufo in Pets.Ufos do
         local color = Theme.rarity[ufo.Rarity]
         local row = Create.new("Frame", {
@@ -112,50 +123,73 @@ function UfoShopController.start()
             Font = Theme.font.Display, TextSize = 24, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = row,
         })
         StrokedText.new({
-            Name = "Odds", Position = UDim2.fromOffset(66, 34), Size = UDim2.fromOffset(420, 22), Text = odds(ufo), RichText = true,
+            Name = "Odds", Position = UDim2.fromOffset(66, 34), Size = UDim2.fromOffset(330, 22), Text = odds(ufo), RichText = true,
             Font = Theme.font.Display, TextSize = 17, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
             stroke = 1.5, Parent = row,
         })
-        local buy = Button.new({
-            Name = "Buy", Text = ufo.Price and Theme.icon.Coin .. " " .. Theme.short(ufo.Price) or "R$ SOON", TextSize = 22,
-            color = ufo.Price and Theme.color.Go or Theme.color.Purple,
+        -- Robux: its own purple button (left of the coin price), or the only one.
+        local key = Shop.ufoKey(tier)
+        local robux
+        if Shop.entry(Config, key) then
+            robux = Button.new({
+                Name = "Robux", Text = "R$ " .. Shop.entry(Config, key).price, TextSize = 20, color = Theme.color.Purple,
+                AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, ufo.Price and -156 or -8, 0.5, 0),
+                Size = UDim2.fromOffset(ufo.Price and 110 or 140, 44), Parent = row, sound = false,
+                onActivated = function()
+                    if not current or not room(current) or not Shop.enabled(Config, key) then return Sfx.play("error") end
+                    Sfx.play("click")
+                    State.remote("BuyShop"):FireServer(key)
+                end,
+            })
+        end
+        local buy = ufo.Price and Button.new({
+            Name = "Buy", Text = Theme.icon.Coin .. " " .. Theme.short(ufo.Price), TextSize = 22,
+            color = Theme.color.Go,
             AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(140, 44),
             Parent = row, sound = false,
             onActivated = function()
                 local profile = current and current.profile
                 if not profile or pending[tier] then return end
-                if not ufo.Price or profile.ufo or profile.coins < ufo.Price then return Sfx.play("error") end
+                if not ufo.Price or not room(current) or profile.coins < ufo.Price then return Sfx.play("error") end
                 Sfx.play("click")
                 pending[tier] = true
                 State.remote("BuyUfo"):FireServer(tier, HttpService:GenerateGUID(false))
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
-        rows[tier] = { buy = buy }
+        rows[tier] = { buy = buy, robux = robux, key = key }
     end
 
-    local function render(state)
+    function render(state)
         local profile = state.profile
         if not profile then return end
         coinsLabel.Text = Theme.icon.Coin .. " " .. Theme.number(profile.coins)
-        local active = profile.ufo
-        if active then
-            local ufo = Pets.Ufos[active.tier]
-            status.Text = "Your " .. ufo.Name .. " lands in " .. Pets.clock(active.hatchAt - workspace:GetServerTimeNow()) .. ". One UFO at a time!"
+        local ufos = profile.ufos or {}
+        local free, max = room(state)
+        -- The one landing soonest.
+        local soonest
+        for _, ufo in ufos do if not soonest or ufo.hatchAt < soonest.hatchAt then soonest = ufo end end
+        if soonest then
+            local landing = Pets.Ufos[soonest.tier].Name .. " lands in " .. Pets.clock(soonest.hatchAt - workspace:GetServerTimeNow())
+            status.Text = (max > 1 and (#ufos .. "/" .. max .. " UFOs flying · next: ") or "Your ") .. landing
+                .. (free and "" or (max > 1 and ". All slots busy!" or ". One UFO at a time!"))
         else
             status.Text = "Each UFO follows you while you play, then lands as a random pet!"
         end
         for tier, row in rows do
             local price = Pets.Ufos[tier].Price
             if price then
-                row.buy.BackgroundColor3 = (not active and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
+                row.buy.BackgroundColor3 = (free and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
+            end
+            if row.robux then
+                row.robux.BackgroundColor3 = (free and Shop.enabled(Config, row.key)) and Theme.color.Purple or CANT_AFFORD
             end
         end
     end
     State.subscribe(function(state, previous)
         current = state
-        local had = previous and previous.profile and previous.profile.ufo
-        if state.profile and state.profile.ufo and not had and previous then
+        local had = previous and previous.profile and #(previous.profile.ufos or {}) or 0
+        if state.profile and #(state.profile.ufos or {}) > had and previous then
             table.clear(pending)
             Sfx.play("confirm")
             -- Close so the player sees their UFO swoop in.

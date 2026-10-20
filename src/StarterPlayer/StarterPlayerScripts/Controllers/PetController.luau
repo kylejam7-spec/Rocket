@@ -1,8 +1,8 @@
 -- Draws every nearby player's UFO and pets on this client (local models, nothing
--- replicates but PetService's player attributes: UfoTier, UfoHatchAt, Pets).
--- * The UFO swoops in from the sky and hovers over its owner's shoulder with a
---   rarity-coloured countdown; its lights race in the last seconds.
--- * Pets trail behind in up to three slots with their own Idle / Walk / Run clips
+-- replicates but PetService's player attributes: Ufos, Pets).
+-- * Each UFO (up to 3 with Triple Hatch) swoops in from the sky and hovers over its
+--   owner's shoulders with a rarity-coloured countdown; its lights race in the last seconds.
+-- * Pets trail behind in up to six slots (slot passes) with their own Idle / Walk / Run clips
 --   (PetAnimator), stepping in time with the ground and bounding along at running
 --   speed. Each wears a small name and rarity tag sized to it. Rarer pets show off more:
 --   idle emotes and tricks (hop, spin, roll, backflip, loop...) grow in variety and
@@ -40,8 +40,11 @@ local PetController = {}
 local DRAW_DISTANCE = 220
 local ANIMATE_DISTANCE = 110
 -- Pet slots behind the owner (owner space: +X right, +Z behind) and the UFO's perch.
-local SLOTS = { Vector3.new(-3, 0, 3), Vector3.new(3, 0, 3), Vector3.new(0, 0, 5) }
-local UFO_PERCH = Vector3.new(2.2, 5.6, 1.8)
+local SLOTS = { Vector3.new(-3, 0, 3), Vector3.new(3, 0, 3), Vector3.new(0, 0, 5),
+    Vector3.new(-5.5, 0, 6), Vector3.new(5.5, 0, 6), Vector3.new(0, 0, 8.5) }
+-- Where each UFO hovers, in the order they were bought.
+local UFO_PERCHES = { Vector3.new(2.2, 5.6, 1.8), Vector3.new(-2.2, 5.6, 1.8), Vector3.new(0, 7.6, 0.6) }
+local UFO_PERCH = UFO_PERCHES[1]
 -- The following UFO is a small copy of the shop saucer.
 local UFO_SCALE = 0.55
 local FLY_HEIGHT = 2.2
@@ -123,7 +126,17 @@ function PetController.start()
     rayParams.RespectCanCollide = true
     local ignoreRefresh = 0
 
-    local entries = {} -- userId -> { pets = { slot }, petsKey, ufo, reveal, airborne }
+    -- userId -> { pets = { slot }, petsKey, ufos = { [id] = ufo }, landed = { [id] = true }, reveal, airborne }
+    local entries = {}
+    -- The owner's Ufos attribute: { id, tier, hatchAt } in purchase order.
+    local function ufoList(player)
+        local list = {}
+        for item in (player:GetAttribute("Ufos") or ""):gmatch("[^;]+") do
+            local id, tier, at = item:match("^([^:]+):(%d+):([%d%.]+)$")
+            if id and Pets.Ufos[tonumber(tier)] then table.insert(list, { id = id, tier = tonumber(tier), hatchAt = tonumber(at) }) end
+        end
+        return list
+    end
 
     local function decor(part)
         part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch, part.CastShadow = true, false, false, false, false
@@ -286,21 +299,35 @@ function PetController.start()
         for _, part in reveal.parts do part:Destroy() end
     end
     local function clear(entry)
-        if entry.ufo then entry.ufo.model:Destroy() end
+        for _, ufo in entry.ufos do ufo.model:Destroy() end
         for _, slot in entry.pets do dropSlot(slot) end
         if entry.reveal then clearReveal(entry.reveal) end
-        entry.ufo, entry.pets, entry.petsKey, entry.reveal = nil, {}, nil, nil
+        entry.ufos, entry.pets, entry.petsKey, entry.reveal = {}, {}, nil, nil
     end
 
     -- Matches the drawn followers to the owner's attributes, keeping models it can.
     local function sync(player, entry, root)
-        local tier = player:GetAttribute("UfoTier")
-        local landing = entry.reveal ~= nil
-        if not landing and entry.ufo and entry.ufo.tier ~= tier then
-            entry.ufo.model:Destroy()
-            entry.ufo = nil
+        -- UFOs by id: new ones swoop in, gone ones go; one handed to a landing stays gone.
+        local seen = {}
+        for order, item in ufoList(player) do
+            seen[item.id] = true
+            local ufo = entry.ufos[item.id]
+            if ufo and ufo.tier ~= item.tier then
+                ufo.model:Destroy()
+                ufo = nil
+            end
+            if not ufo and not entry.landed[item.id] then
+                ufo = newUfo(item.tier, root.Position + (UFO_PERCHES[order] or UFO_PERCH), true)
+            end
+            if ufo then
+                ufo.order, ufo.hatchAt = order, item.hatchAt
+                entry.ufos[item.id] = ufo
+            end
         end
-        if tier and not entry.ufo and not landing then entry.ufo = newUfo(tier, root.Position + UFO_PERCH, true) end
+        for id, ufo in entry.ufos do
+            if not seen[id] then ufo.model:Destroy(); entry.ufos[id] = nil end
+        end
+        for id in entry.landed do if not seen[id] then entry.landed[id] = nil end end
         local key = player:GetAttribute("Pets") or ""
         if key == entry.petsKey then return end
         entry.petsKey = key
@@ -452,8 +479,16 @@ function PetController.start()
             if player == localPlayer and spec then RevealCard.show(id, nil) end
             return
         end
-        local ufo = entry.ufo or newUfo(player:GetAttribute("UfoTier") or math.min(spec.Rank, #Pets.Ufos), root.Position + UFO_PERCH, false)
-        entry.ufo = nil
+        -- The UFO due first comes down (the others keep hovering).
+        local ufo, due
+        for id, candidate in entry.ufos do
+            if not ufo or (candidate.hatchAt or 0) < (ufo.hatchAt or 0) then ufo, due = candidate, id end
+        end
+        if due then
+            entry.ufos[due] = nil
+            entry.landed[due] = true
+        end
+        ufo = ufo or newUfo(math.min(spec.Rank, #Pets.Ufos), root.Position + UFO_PERCH, false)
         if entry.reveal then clearReveal(entry.reveal) end
         -- It lands a few studs in front of its owner: for your own, ahead of your camera
         -- and off to one side so your character doesn't hide it; it faces the viewer.
@@ -719,7 +754,7 @@ function PetController.start()
         for _, player in Players:GetPlayers() do
             local entry = entries[player.UserId]
             if not entry then
-                entry = { pets = {} }
+                entry = { pets = {}, ufos = {}, landed = {} }
                 entries[player.UserId] = entry
             end
             local character = player.Character
@@ -727,21 +762,19 @@ function PetController.start()
             local humanoid = character and character:FindFirstChildOfClass("Humanoid")
             local near = root and humanoid and camera and (root.Position - camera.CFrame.Position).Magnitude <= DRAW_DISTANCE
             if not near then
-                if entry.ufo or #entry.pets > 0 or entry.reveal then clear(entry) end
+                if next(entry.ufos) or #entry.pets > 0 or entry.reveal then clear(entry) end
                 continue
             end
             sync(player, entry, root)
             local base = CFrame.new(root.Position) * CFrame.Angles(0, yawOf(root.CFrame), 0)
             local feet = root.Position.Y - humanoid.HipHeight - root.Size.Y / 2
-            if entry.ufo then
-                local ufo = entry.ufo
-                local target = base * UFO_PERCH + Vector3.new(0, math.sin(now * 2) * 0.4, 0)
+            for _, ufo in entry.ufos do
+                local target = base * (UFO_PERCHES[ufo.order] or UFO_PERCH) + Vector3.new(0, math.sin(now * 2 + (ufo.order or 1)) * 0.4, 0)
                 ufo.position = (ufo.position - target).Magnitude > SNAP and target or ufo.position:Lerp(target, lerpFactor(4, dt))
                 ufo.spin += dt * 1.6
                 ufo.model:PivotTo(CFrame.new(ufo.position) * CFrame.Angles(0, ufo.spin, 0))
                 if labels then
-                    local hatchAt = player:GetAttribute("UfoHatchAt")
-                    local left = hatchAt and hatchAt - serverNow
+                    local left = ufo.hatchAt and ufo.hatchAt - serverNow
                     ufo.time.Text = left and ((left <= 10 and "LANDING " or "") .. Pets.clock(left)) or ""
                     -- The last seconds: lights race.
                     local racing = left and left <= 10
