@@ -85,7 +85,7 @@ return function()
     remotes:Destroy()
     assert(ok, failure)
     -- Levels: each costs more than the last up to StatLevels.max, then exactly max;
-    -- carry and walk start at the base and rise every level, walk gains shrink.
+    -- carry and walk start at the base and rise every level (walk until MaxSpeed), walk gains never grow.
     local StatLevels = require(game.ReplicatedStorage.Shared.StatLevels)
     local Stats = require(script.Parent.StatsService).new({ config = config })
     local curve = config.StatLevels
@@ -101,11 +101,16 @@ return function()
         assert(at == level and into == 0 and need == StatLevels.cost(config, level + 1), "Exact total reaches the level")
         assert(StatLevels.level(config, total - 0.5) == level - 1, "Half a point short stays a level below")
         local carry, walk = StatLevels.capacity(config, level), StatLevels.walk(config, level)
-        assert((carry > lastCarry or carry == config.MaxCapacity) and walk > lastWalk and walk < config.MaxSpeed)
-        assert(walk - lastWalk <= lastStep, "Walk gains shrink")
+        assert((carry > lastCarry or carry == config.MaxCapacity) and (walk > lastWalk or walk == config.MaxSpeed) and walk <= config.MaxSpeed)
+        assert(walk - lastWalk <= lastStep + 1e-9, "Walk gains never grow")
         lastCost, lastCarry, lastStep, lastWalk = cost, carry, walk - lastWalk, walk
     end
     assert(StatLevels.cost(config, 2000) == curve.max, "Late levels cost the cap")
+    -- The walk curve's shape (user, 2026-10-20): ~29 at level 1, ~121 at 100, top speed 400
+    -- reached around level 560 and never passed.
+    local function near(level, want) return math.abs(StatLevels.walk(config, level) - want) < 1.5 end
+    assert(near(1, 29) and near(8, 48.8) and near(100, 121) and near(300, 243), "Walk curve changed")
+    assert(config.MaxSpeed == 400 and StatLevels.walk(config, 555) < 400 and StatLevels.walk(config, 565) == 400 and StatLevels.walk(config, 5000) == 400)
     -- The free gym (+1/s) gives level 1 within 10 s, and the profile path matches.
     local function stats(points)
         local p = { strengthLevel = points, speedLevel = points, planetBonuses = { strength = 0, speed = 0 } }

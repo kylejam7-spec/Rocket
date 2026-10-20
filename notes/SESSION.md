@@ -1,4 +1,14 @@
-# Latest session: 2026-10-20 (9), Robux SHOP (merged with the spaceport / Black Hole / parkland work)
+# Latest session: 2026-10-20 (10), walk speed to 400
+
+- `claude/walk-speed-400` from master 85e658e. Config `SpeedEarly`/`SpeedPerLevel`/
+  `MaxSpeed = 400`, `StatLevels.walk` capped; MovementService limit per player
+  (`MoveLimitFactor` 1.5, `MinMoveLimit` 70); new `SpeedController` turns tripping off.
+  TrainingCheck pins the curve (29 / 121 / 243, 400 at ~560, never more).
+- Studio: RunChecks 15/15. At 400, before the fix the run tripped (FallingDown) and was
+  snapped back 21 times in 3 s; after, 465 studs in ~1.2 s, no snap-backs, Running.
+- Not checked: carrying up the rocket ramps at 400 (players may overshoot the ring).
+
+# Earlier session: 2026-10-20 (9), Robux SHOP (merged with the spaceport / Black Hole / parkland work)
 
 - Merged `claude/partner-latest-f117d18` (10 unpushed commits: spaceport, launch anywhere,
   Black Hole singularity and audio, Gym District parkland) into this branch. Audit first:

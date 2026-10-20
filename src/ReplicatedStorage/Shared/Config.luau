@@ -15,13 +15,18 @@ return table.freeze({
     BaseCarryCapacity = 10,
     CarryPerLevel = 3,
     MaxCapacity = 1000,
-    -- Walk = BaseSpeed + (MaxSpeed - BaseSpeed) * level / (level + SpeedHalfLevel): +5
-    -- at speed level 1, 47 at level 8, never above MaxSpeed (which MovementService also
-    -- uses as its anti-teleport limit). Early levels match strength's first levels in
-    -- delivery rate; later ones are worth less (see notes/BALANCE.md).
+    -- Walk = BaseSpeed + SpeedEarly * level / (level + SpeedHalfLevel) + SpeedPerLevel * level,
+    -- capped at MaxSpeed: the early levels give big steps (29 at level 1, ~49 at level 8),
+    -- then every level adds 0.6 (121 at 100, 243 at 300) up to 400 around level 560.
+    -- MovementService's anti-teleport limit follows each player's own walk speed.
     BaseSpeed = 24,
-    MaxSpeed = 70,
+    MaxSpeed = 400,
+    SpeedEarly = 40,
     SpeedHalfLevel = 8,
+    SpeedPerLevel = 0.6,
+    -- The anti-teleport check allows this times a player's walk speed (never below 70).
+    MoveLimitFactor = 1.5,
+    MinMoveLimit = 70,
     -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth.
     ScrapBallBaseDiameter = 2,
     ScrapBallGrowth = 0.55,

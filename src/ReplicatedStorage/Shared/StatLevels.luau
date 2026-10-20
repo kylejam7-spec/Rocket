@@ -52,9 +52,10 @@ function StatLevels.capacity(config, level)
     return math.min(config.MaxCapacity, config.BaseCarryCapacity + config.CarryPerLevel * level)
 end
 
--- Walk speed at a speed level: big early steps that shrink toward MaxSpeed.
+-- Walk speed at a speed level: big early steps, then a steady climb to MaxSpeed.
 function StatLevels.walk(config, level)
-    return config.BaseSpeed + (config.MaxSpeed - config.BaseSpeed) * level / (level + config.SpeedHalfLevel)
+    local walk = config.BaseSpeed + config.SpeedEarly * level / (level + config.SpeedHalfLevel) + config.SpeedPerLevel * level
+    return math.min(config.MaxSpeed, walk)
 end
 
 return StatLevels

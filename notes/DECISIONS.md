@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-10-20: Walk speed to 400
+
+- User: many more speed levels before the cap, and a very fast late game. Walk =
+  24 + 40 * L / (L + 8) + 0.6 * L, capped at 400 (MaxSpeed): early steps unchanged
+  (29 at level 1, ~49 at 8), then +0.6 a level: 121 at 100, 243 at 300, 400 at ~560
+  (~245K speed points: ~40 min on the 100x gym). Was 24 creeping to a 70 ceiling.
+- The anti-teleport check follows each player's own walk speed (x1.5, at least 70)
+  instead of one global 70, so a fast player isn't snapped back and a slow one can't
+  teleport 400 studs a second.
+- Humanoid tripping (FallingDown, Ragdoll) is off for your own character
+  (SpeedController): at 400 the humanoid tripped on every seam and the fling set off the
+  snap-back.
+
 ## 2026-10-20: Profile saving on
 
 - `PersistenceEnabled = true`. Live saves use `RocketProfiles_v1`; Studio uses
