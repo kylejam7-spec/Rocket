@@ -6,7 +6,7 @@
 --   +5% to +25% of what the current phase needs;
 -- * at a destination, passengers get a side panel: more time there and the next mission.
 -- Every button sends BuyShop(key); the server checks it and opens the Roblox prompt.
--- Offers without a dashboard ID show SOON; prices are always on the button.
+-- Offers without a dashboard ID show their price greyed out; prices are always on the button.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -46,7 +46,7 @@ function ShopController.start()
     local player = Players.LocalPlayer
     local gui = Create.screen("RocketShop")
     gui.DisplayOrder = 10
-    local current
+    local current, render
     -- Price buttons, redrawn on every state: key -> { button, prefix, available? }.
     local offers = {}
 
@@ -54,7 +54,9 @@ function ShopController.start()
         local state = current
         if not state then return end
         local owned = state.shop and state.shop.owned or {}
-        if owned[key] or not Shop.enabled(Config, key) then return Sfx.play("error") end
+        if owned[key] then return Sfx.play("error") end
+        -- Not on sale yet: the server says "coming soon".
+        if not Shop.enabled(Config, key) then Sfx.play("error"); return State.remote("BuyShop"):FireServer(key) end
         if not Shop.isPass(Config, key) and not Shop.available(Config, key, view(state)) then return Sfx.play("error") end
         Sfx.play("click")
         State.remote("BuyShop"):FireServer(key)
@@ -72,7 +74,8 @@ function ShopController.start()
         if owned[key] then
             text, color = "OWNED ✔", OWNED
         elseif not Shop.enabled(Config, key) then
-            text, color = offer.prefix .. "SOON", OFF
+            -- No dashboard ID yet: the price shows, greyed.
+            text, color = offer.prefix .. "R$ " .. entry.price, OFF
         else
             text = offer.prefix .. "R$ " .. entry.price
             local ok = Shop.isPass(Config, key) or Shop.available(Config, key, view(state))
@@ -110,9 +113,11 @@ function ShopController.start()
         Text = "🛒 SHOP", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12),
         Size = UDim2.fromOffset(300, 44), Font = Theme.font.Display, TextSize = 38, stroke = 3, Parent = panel,
     })
+    local fillRow
     local function close()
         if panel.Visible then Sfx.play("close") end
         panel.Visible = false
+        if current then render(current) end
     end
     Button.new({
         Name = "Close", shape = "circle", icon = Theme.icon.Leave, color = Theme.color.Danger,
@@ -214,7 +219,7 @@ function ShopController.start()
             if panel.Visible then return close() end
             fit()
             panel.Visible = true
-            if current then for key, offer in offers do renderOffer(key, offer, current) end end
+            if current then render(current) end
             Sfx.play("open")
             Tween.bounce(panel, 1.08, 0.3)
         end,
@@ -230,7 +235,7 @@ function ShopController.start()
     ------------------------------------------------------------------ fill row
     -- Right above the progress pill group (ProgressController: 14 from the bottom, 70
     -- tall, 1.35x on touch).
-    local fillRow = Create.new("Frame", {
+    fillRow = Create.new("Frame", {
         Name = "FillRow", AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1, Size = UDim2.fromOffset(560, 36),
         Position = UDim2.new(0.5, 0, 1, Actions.touch and -(14 + 70 * 1.35 + 4) or -(14 + 70 + 4)), Visible = false, Parent = gui,
     })
@@ -266,7 +271,7 @@ function ShopController.start()
         Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted, stroke = 1.5, Parent = dest })
 
     ------------------------------------------------------------------ render
-    local function render(state)
+    function render(state)
         local shop = state.shop or {}
         local owned = shop.owned or {}
         for key, offer in offers do renderOffer(key, offer, state) end
@@ -278,7 +283,8 @@ function ShopController.start()
                 gym.button.Label.Text, gym.button.BackgroundColor3 = "UNLOCKED", OWNED
             end
         end
-        fillRow.Visible = state.phase == "Building" or state.phase == "Fueling"
+        -- Hidden under the open panel.
+        fillRow.Visible = (state.phase == "Building" or state.phase == "Fueling") and not panel.Visible
         local atDestination = state.phase == "Rewarding" and state.passenger == true
         dest.Visible = atDestination
         if atDestination then

@@ -125,7 +125,8 @@ return function()
     end
     assert(bad(function(raw) raw.pets = { Blob_Cat = 0 } end) and bad(function(raw) raw.pets = { Blob_Cat = 1.5 } end))
     assert(bad(function(raw) raw.pets = { [1] = 1 } end) and bad(function(raw) raw.equippedPets = { 1 } end))
-    assert(bad(function(raw) raw.equippedPets = { "a", "b", "c", "d" } end))
+    -- Up to 6 with both slot passes (Shared.Shop); 7 never saves.
+    assert(bad(function(raw) raw.equippedPets = { "a", "b", "c", "d", "e", "f", "g" } end))
     assert(bad(function(raw) raw.ufo = { tier = 9, pet = "Blob_Cat", remaining = 1 } end))
     assert(bad(function(raw) raw.ufo = { tier = 1, pet = "Blob_Cat", remaining = -1 } end))
     local odd = Profiles.validate(nil, config)

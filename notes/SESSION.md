@@ -13,7 +13,13 @@
   x3 switch, backpack slots from `state.shop.petSlots`, gym signs unlock by pass. Toasts
   moved up (-132 / -168) to clear the fill row.
 - Studio debug: `RocketDebug:Invoke("own", key, on)` and `("receipt", key, purchaseId)`.
-- Not yet verified in Studio (no place was open); IDs not set, so real prompts untested.
+- Studio (synced on 34875, all 102 scripts identical to the branch): RunChecks 13/13 (PetCheck's
+  "too many equipped" case is now 7). Play: Fill10 receipt added 4,850/48,500 once (same PurchaseId
+  again: granted, no second fill); boost chip counts down; owned passes show OWNED, gym 5X
+  unlocked by pass; banked ExtraStay made the next stay 180 s; NextSaturn queued. Not seen yet:
+  the wheel landing on Saturn, a mid-stay extension, the passenger-only destination panel
+  (Studio dropped mid-test), real prompts (no IDs).
+- Offers without IDs show their price greyed (was "SOON"); the fill row hides under the open panel.
 
 # Latest session: 2026-10-19 (8), visual tidy pass
 

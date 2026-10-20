@@ -68,7 +68,7 @@ return table.freeze({
     }),
     -- The Robux SHOP (ShopService; names, icons and rules in Shared.Shop). `id` is the
     -- Creator Dashboard Game Pass / Developer Product ID: nil means not set up yet, and
-    -- that offer shows "SOON" and can't be bought. `price` mirrors the dashboard's R$
+    -- that offer shows its price greyed and can't be bought. `price` mirrors the dashboard's R$
     -- (the UI shows it). Never invent IDs: copy them from the dashboard.
     Shop = table.freeze({
         -- Game Passes: bought once, ownership re-checked on every join.
