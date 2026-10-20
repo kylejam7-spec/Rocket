@@ -198,9 +198,13 @@ function PetsController.start()
             end
         end
         empty.Visible = found == 0
-        local ufo = profile.ufo
+        -- The UFO landing soonest (and how many more are on the way).
+        local ufo
+        for _, other in profile.ufos or {} do if not ufo or other.hatchAt < ufo.hatchAt then ufo = other end end
+        local more = #(profile.ufos or {}) - 1
         status.Text = ("Collected %d/%d"):format(found, #Pets.Catalog)
-            .. (ufo and ("   ·   %s %s lands in %s"):format(Theme.icon.Ufo, Pets.Ufos[ufo.tier].Name, Pets.clock(ufo.hatchAt - workspace:GetServerTimeNow())) or "")
+            .. (ufo and ("   ·   %s %s lands in %s%s"):format(Theme.icon.Ufo, Pets.Ufos[ufo.tier].Name,
+                Pets.clock(ufo.hatchAt - workspace:GetServerTimeNow()), more > 0 and (" (+" .. more .. " more)") or "") or "")
             .. "   ·   Pets follow you just for fun"
     end
     State.subscribe(function(state)

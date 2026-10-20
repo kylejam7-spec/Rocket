@@ -105,7 +105,7 @@ return table.freeze({
         }),
         DoubleCoinsMultiplier = 2,
         FastHatchRate = 2, -- UFOs count down this many times faster
-        MultiHatchCount = 3, -- pets per UFO with Triple Hatch (and coins x this)
+        MultiHatchCount = 3, -- UFOs that can fly at once with Triple Hatch (1 without)
         ServerTrainingMultiplier = 2,
         ServerTrainingSeconds = 600, -- each purchase adds this much (stacks)
         ExtraStaySeconds = 60,

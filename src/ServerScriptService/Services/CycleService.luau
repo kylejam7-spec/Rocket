@@ -54,8 +54,13 @@ function Cycle.new(ctx)
                 upgrades = table.clone(profile.upgrades), rank = player:GetAttribute("Rank"),
                 -- The UFO's pet stays secret until it lands.
                 pets = table.clone(profile.pets), equippedPets = table.clone(profile.equippedPets),
-                ufo = profile.ufo and { tier = profile.ufo.tier, count = 1 + #(profile.ufo.extra or {}),
-                    hatchAt = workspace:GetServerTimeNow() + profile.ufo.remaining / (ctx.Shop and ctx.Shop.hatchRate(player) or 1) } },
+                ufos = (function()
+                    local list, rate = {}, ctx.Shop and ctx.Shop.hatchRate(player) or 1
+                    for _, ufo in profile.ufos do
+                        table.insert(list, { tier = ufo.tier, hatchAt = workspace:GetServerTimeNow() + ufo.remaining / rate })
+                    end
+                    return list
+                end)() },
             shop = ctx.Shop and ctx.Shop.snapshot(player),
             saveStatus = record and record.status or "Loading",
             persistent = config.PersistenceEnabled,

@@ -6,7 +6,7 @@
 -- Invoke("coins", n) sets everyone's coins; Invoke("upgrades") clears everyone's upgrades;
 -- Invoke("stats", strength, speed) sets everyone's trained points (destination bonuses kept);
 -- Invoke("launches", n) sets everyone's completed launches (gym tier unlocks);
--- Invoke("ufo", tier, seconds) gives everyone a UFO of that tier (rolled as bought)
+-- Invoke("ufo", tier, seconds) gives everyone another UFO of that tier (rolled as bought)
 -- landing in `seconds` (10 by default); Invoke("pets", count) gives everyone `count`
 -- (1) of every pet; Invoke("nopets") clears everyone's pets and UFO.
 -- Shop (before the dashboard IDs exist): Invoke("own", key, on) gives (or with false
@@ -62,11 +62,11 @@ function Debug.new(ctx, parent)
                 local profile = record.profile
                 if action == "ufo" then
                     local tier = value or 1
-                    profile.ufo = { tier = tier, pet = Pets.roll(random, tier), remaining = extra or 10 }
+                    table.insert(profile.ufos, { id = "d" .. math.random(1e6), tier = tier, pet = Pets.roll(random, tier), remaining = extra or 10 })
                 elseif action == "pets" then
                     for _, entry in Pets.Catalog do profile.pets[entry.Id] = value or 1 end
                 else
-                    profile.pets, profile.equippedPets, profile.ufo = {}, {}, nil
+                    profile.pets, profile.equippedPets, profile.ufos = {}, {}, {}
                 end
             end
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Pets.refresh(player) end

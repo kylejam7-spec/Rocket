@@ -2,7 +2,7 @@
 -- PurchaseId and recorded before PurchaseGranted (a failed journal read or write means
 -- NotProcessedYet and no second grant), product effects (boost stacking, fill banked
 -- across phases, stay extensions, guaranteed missions) and pass effects (pet slots,
--- Triple Hatch, 2x Coins, trims when a slot pass is gone, failed ownership checks).
+-- Triple Hatch's 3 UFOs at once, 2x Coins, trims when a slot pass is gone, failed ownership checks).
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
@@ -159,22 +159,30 @@ return function()
     assert(#profile.equippedPets == 6 and Profiles.validate(profile, config), "six equipped pets must save")
     assert(Service.trim(profile, 4) and #profile.equippedPets == 4 and not Service.trim(profile, 4))
 
-    -- Triple Hatch: 3x the coins, one UFO, three pets granted on landing.
+    -- Triple Hatch: up to 3 UFOs fly at once, each at its normal price, counting down
+    -- together; without it, one at a time.
     local random = Random.new(7)
     profile = Profiles.validate(nil, config)
-    profile.coins = 1500
-    assert(PetService.buy(profile, 1, "t1", random, 3) == 1500 and profile.coins == 0 and #profile.ufo.extra == 2)
-    assert(PetService.buy(profile, 1, "t2", random, 4) == nil, "at most 3 per UFO")
+    profile.coins = 5000
+    assert(PetService.buy(profile, 1, "t1", random) == 500 and select(2, PetService.buy(profile, 1, "t2", random)) == "busy")
+    assert(PetService.buy(profile, 1, "t2", random, 3) == 500 and PetService.buy(profile, 2, "t3", random, 3) == nil, "Uncommon costs 5K")
+    profile.coins = 1000
+    assert(PetService.buy(profile, 1, "t3", random, 3) == 500 and profile.coins == 500 and #profile.ufos == 3)
+    assert(select(2, PetService.buy(profile, 1, "t4", random, 3)) == "busy" and profile.coins == 500, "a fourth UFO")
     local saved = Profiles.validate(profile, config)
-    assert(#saved.ufo.extra == 2 and saved.ufo.extra ~= profile.ufo.extra, "extra pets survive a save")
-    local first, _, extra = PetService.advance(profile, 1e6, 3)
+    assert(#saved.ufos == 3 and saved.ufos[1] ~= profile.ufos[1] and saved.ufos[2].id == "t2", "UFOs survive a save as copies")
+    assert(PetService.advance(profile, 100, 3) == nil and profile.ufos[3].remaining == 200, "all count down together")
+    profile.ufos[2].remaining = 50
+    local first, _, others = PetService.advance(profile, 60, 3)
+    assert(first and #others == 0 and #profile.ufos == 2 and profile.ufos[2].id == "t3", "the due one lands, order kept")
+    first, _, others = PetService.advance(profile, 1e6, 3)
     local total = 0
     for _, count in profile.pets do total += count end
-    assert(first and #extra == 2 and total == 3 and #profile.equippedPets == 3)
+    assert(first and #others == 1 and total == 3 and #profile.ufos == 0 and #profile.equippedPets == 3)
     -- Fast Hatch is just a faster countdown: twice the seconds per tick.
     profile.coins = 500
-    PetService.buy(profile, 1, "t3", random)
-    assert(PetService.advance(profile, 150 * 2) and profile.ufo == nil)
+    PetService.buy(profile, 1, "t5", random)
+    assert(PetService.advance(profile, 150 * 2) and #profile.ufos == 0)
 
     -- 2x Coins: the multiplier only scales coins, not deliveries.
     profile = Profiles.validate(nil, config)

@@ -9,7 +9,7 @@ Profiles.__index = Profiles
 local function defaults()
     return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
         tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
-        pets = {}, equippedPets = {}, ufo = nil }
+        pets = {}, equippedPets = {}, ufos = {} }
 end
 
 local function copy(profile)
@@ -22,8 +22,8 @@ local function copy(profile)
     result.purchaseIds = table.clone(profile.purchaseIds)
     result.pets = table.clone(profile.pets)
     result.equippedPets = table.clone(profile.equippedPets)
-    result.ufo = profile.ufo and table.clone(profile.ufo)
-    if result.ufo and result.ufo.extra then result.ufo.extra = table.clone(result.ufo.extra) end
+    result.ufos = {}
+    for index, ufo in profile.ufos or {} do result.ufos[index] = table.clone(ufo) end
     return result
 end
 
@@ -101,13 +101,19 @@ local function validate(raw, config)
     -- Slot passes (Shared.Shop) raise the limit; ShopService trims if a pass is gone.
     if #raw.equippedPets > Pets.MaxEquipped + 3 then error("Invalid equipped pets") end
     for _, id in raw.equippedPets do if type(id) ~= "string" then error("Invalid equipped pets") end end
-    local ufo = raw.ufo
-    if ufo ~= nil and (type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
-        or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400
-        or (ufo.extra ~= nil and (type(ufo.extra) ~= "table" or #ufo.extra > 2))) then
-        error("Invalid UFO")
+    -- UFOs on their way: a list (up to 3 with Triple Hatch). Older saves held one `ufo`.
+    if raw.ufo ~= nil then
+        raw = table.clone(raw)
+        raw.ufos, raw.ufo = { raw.ufo }, nil
     end
-    for _, id in ufo and ufo.extra or {} do if type(id) ~= "string" then error("Invalid UFO") end end
+    if raw.ufos ~= nil and (type(raw.ufos) ~= "table" or #raw.ufos > 3) then error("Invalid UFO") end
+    for _, ufo in raw.ufos or {} do
+        if type(ufo) ~= "table" or not Pets.Ufos[ufo.tier] or type(ufo.pet) ~= "string"
+            or type(ufo.remaining) ~= "number" or ufo.remaining ~= ufo.remaining or ufo.remaining < 0 or ufo.remaining > 86400
+            or (ufo.id ~= nil and type(ufo.id) ~= "string") then
+            error("Invalid UFO")
+        end
+    end
     local result = copy(raw)
     -- Pets that left the catalog are dropped, not refused; so is an equip of a pet not owned.
     for id in raw.pets do if not Pets.get(id) then result.pets[id] = nil end end
@@ -117,9 +123,10 @@ local function validate(raw, config)
         if used[id] <= (result.pets[id] or 0) then table.insert(equipped, id) end
     end
     result.equippedPets = equipped
-    if ufo and not Pets.get(ufo.pet) then result.ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
-    for index, id in result.ufo and result.ufo.extra or {} do
-        if not Pets.get(id) then result.ufo.extra[index] = result.ufo.pet end
+    for index, ufo in result.ufos do
+        if not Pets.get(ufo.pet) then ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
+        -- A stable id per UFO lets clients keep drawing the same saucer.
+        ufo.id = ufo.id or ("u" .. index)
     end
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
@@ -128,10 +135,14 @@ local function validate(raw, config)
 end
 Profiles.validate = validate
 
--- Same pets, equipped list and UFO (to tell whether a save left pet changes unsaved).
--- The UFO's countdown alone doesn't count: it ticks every second.
+-- Same pets, equipped list and UFOs (to tell whether a save left pet changes unsaved).
+-- A UFO's countdown alone doesn't count: it ticks every second.
 function Profiles.samePets(a, b)
-    if (a.ufo == nil) ~= (b.ufo == nil) or (a.ufo and (a.ufo.tier ~= b.ufo.tier or a.ufo.pet ~= b.ufo.pet)) then return false end
+    if #a.ufos ~= #b.ufos then return false end
+    for index, ufo in a.ufos do
+        local other = b.ufos[index]
+        if ufo.tier ~= other.tier or ufo.pet ~= other.pet then return false end
+    end
     if #a.equippedPets ~= #b.equippedPets then return false end
     for index, id in a.equippedPets do if b.equippedPets[index] ~= id then return false end end
     for id, count in a.pets do if b.pets[id] ~= count then return false end end
@@ -259,7 +270,7 @@ function Profiles:save(userId)
                 current.purchaseIds = snapshot.purchaseIds
                 current.pets = snapshot.pets
                 current.equippedPets = snapshot.equippedPets
-                current.ufo = snapshot.ufo
+                current.ufos = snapshot.ufos
                 applyRewards(current)
                 current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
                 return current

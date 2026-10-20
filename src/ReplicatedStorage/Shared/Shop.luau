@@ -20,7 +20,7 @@ local Shop = {}
 Shop.Passes = table.freeze({
     table.freeze({ key = "DoubleCoins", name = "2x Coins", icon = "💰", text = "Double coins from every delivery" }),
     table.freeze({ key = "FastHatch", name = "Fast Hatch", icon = "⚡", text = "Your UFOs land 2x faster" }),
-    table.freeze({ key = "MultiHatch", name = "Triple Hatch", icon = "🛸", text = "Summon 3 pets in one UFO" }),
+    table.freeze({ key = "MultiHatch", name = "Triple Hatch", icon = "🛸", text = "Hatch 3 UFOs at once" }),
     table.freeze({ key = "PetSlot1", name = "+1 Pet Slot", icon = "🐾", text = "One more pet follows you" }),
     table.freeze({ key = "PetSlot2", name = "+2 Pet Slots", icon = "🐾", text = "Two more pets follow you" }),
 })

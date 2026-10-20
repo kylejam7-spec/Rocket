@@ -66,23 +66,24 @@ return function()
     -- Purchases: coins only, one UFO at a time, once per request ID; the pet is rolled
     -- then and kept on the profile.
     local profile = Profiles.validate(nil, config)
-    assert(profile.schemaVersion == 7 and next(profile.pets) == nil and #profile.equippedPets == 0 and profile.ufo == nil)
+    assert(profile.schemaVersion == 7 and next(profile.pets) == nil and #profile.equippedPets == 0 and #profile.ufos == 0)
     assert(select(2, Service.buy(profile, 1, "a", random)) == "not enough coins")
     profile.coins = 600
     assert(Service.buy(profile, 0, "a", random) == nil and Service.buy(profile, "1", "a", random) == nil)
     assert(Service.buy(profile, 1, "", random) == nil and Service.buy(profile, 1, string.rep("x", 65), random) == nil)
     assert(select(2, Service.buy(profile, 4, "a", random)) == "robux only" and select(2, Service.buy(profile, 5, "a", random)) == "robux only")
     assert(Service.buy(profile, 1, "a", random) == 500 and profile.coins == 100)
-    assert(profile.ufo and profile.ufo.tier == 1 and profile.ufo.remaining == 300 and Pets.get(profile.ufo.pet))
+    local first = profile.ufos[1]
+    assert(#profile.ufos == 1 and first.tier == 1 and first.remaining == 300 and Pets.get(first.pet) and first.id == "a")
     assert(Service.buy(profile, 1, "a", random) == 0 and profile.coins == 100, "retry charged twice")
     profile.coins = 1e6
     assert(select(2, Service.buy(profile, 2, "b", random)) == "busy" and profile.coins == 1e6)
 
     -- Countdown and landing: the rolled pet is added and equipped.
-    local rolled = profile.ufo.pet
-    assert(Service.advance(profile, 299) == nil and profile.ufo.remaining == 1)
+    local rolled = first.pet
+    assert(Service.advance(profile, 299) == nil and first.remaining == 1)
     local id, equipped = Service.advance(profile, 5)
-    assert(id == rolled and equipped and profile.ufo == nil and profile.pets[rolled] == 1 and profile.equippedPets[1] == rolled)
+    assert(id == rolled and equipped and #profile.ufos == 0 and profile.pets[rolled] == 1 and profile.equippedPets[1] == rolled)
     assert(Service.advance(profile, 5) == nil)
     -- Slots fill to Pets.MaxEquipped; later pets go to the inventory only.
     for index = 1, 3 do
@@ -115,7 +116,12 @@ return function()
     local v6 = Profiles.validate(nil, config)
     v6.schemaVersion, v6.pets, v6.equippedPets = 6, nil, nil
     local migrated = Profiles.validate(v6, config)
-    assert(migrated.schemaVersion == 7 and next(migrated.pets) == nil and #migrated.equippedPets == 0 and migrated.ufo == nil)
+    assert(migrated.schemaVersion == 7 and next(migrated.pets) == nil and #migrated.equippedPets == 0 and #migrated.ufos == 0)
+    -- A save from before the UFO list keeps its one UFO.
+    local legacy = Profiles.validate(nil, config)
+    legacy.ufos, legacy.ufo = nil, { tier = 2, pet = "Blob_Cat", remaining = 30 }
+    legacy = Profiles.validate(legacy, config)
+    assert(#legacy.ufos == 1 and legacy.ufos[1].tier == 2 and legacy.ufos[1].id and legacy.ufo == nil)
     local saved = Profiles.validate(profile, config)
     assert(Profiles.samePets(saved, profile) and saved.pets ~= profile.pets, "pets didn't round-trip as a copy")
     local function bad(change)
@@ -127,16 +133,17 @@ return function()
     assert(bad(function(raw) raw.pets = { [1] = 1 } end) and bad(function(raw) raw.equippedPets = { 1 } end))
     -- Up to 6 with both slot passes (Shared.Shop); 7 never saves.
     assert(bad(function(raw) raw.equippedPets = { "a", "b", "c", "d", "e", "f", "g" } end))
-    assert(bad(function(raw) raw.ufo = { tier = 9, pet = "Blob_Cat", remaining = 1 } end))
-    assert(bad(function(raw) raw.ufo = { tier = 1, pet = "Blob_Cat", remaining = -1 } end))
+    assert(bad(function(raw) raw.ufos = { { tier = 9, pet = "Blob_Cat", remaining = 1 } } end))
+    assert(bad(function(raw) raw.ufos = { { tier = 1, pet = "Blob_Cat", remaining = -1 } } end))
+    assert(bad(function(raw) raw.ufos = table.create(4, { tier = 1, pet = "Blob_Cat", remaining = 1 }) end), "at most 3 UFOs")
     local odd = Profiles.validate(nil, config)
     odd.pets = { Blob_Cat = 1, Retired_Pet = 2 }
     odd.equippedPets = { "Blob_Cat", "Blob_Cat", "Retired_Pet" }
     odd = Profiles.validate(odd, config)
     assert(odd.pets.Retired_Pet == nil and #odd.equippedPets == 1 and odd.equippedPets[1] == "Blob_Cat")
     local a, b = Profiles.validate(saved, config), Profiles.validate(saved, config)
-    b.ufo = { tier = 1, pet = "Blob_Cat", remaining = 10 }
-    a.ufo = { tier = 1, pet = "Blob_Cat", remaining = 5 }
+    b.ufos = { { id = "x", tier = 1, pet = "Blob_Cat", remaining = 10 } }
+    a.ufos = { { id = "x", tier = 1, pet = "Blob_Cat", remaining = 5 } }
     assert(Profiles.samePets(a, b), "countdown alone counted as a pet change")
     b.pets.Blob_Cat = (b.pets.Blob_Cat or 0) + 1
     assert(not Profiles.samePets(a, b))

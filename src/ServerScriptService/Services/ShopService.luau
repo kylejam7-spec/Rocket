@@ -139,7 +139,7 @@ function ShopService.new(ctx)
     function service.owns(player, key) return owned[player.UserId] ~= nil and owned[player.UserId][key] == true end
     function service.petSlots(player) return Shop.petSlots(owned[player.UserId] or {}) end
     function service.hatchRate(player) return service.owns(player, "FastHatch") and config.Shop.FastHatchRate or 1 end
-    function service.multiHatch(player) return service.owns(player, "MultiHatch") and config.Shop.MultiHatchCount or 1 end
+    function service.maxUfos(player) return service.owns(player, "MultiHatch") and config.Shop.MultiHatchCount or 1 end
     function service.coinMultiplier(player) return service.owns(player, "DoubleCoins") and config.Shop.DoubleCoinsMultiplier or 1 end
     function service.trainingMultiplier() return ShopService.trainingMultiplier(config, effects, workspace:GetServerTimeNow()) end
     function service.gymUnlocked(player, tier) return tier ~= nil and service.owns(player, Shop.gymKey(tier)) end
@@ -152,7 +152,7 @@ function ShopService.new(ctx)
     function service.snapshot(player)
         local mine = owned[player.UserId] or {}
         local guaranteed = effects.guarantees[1]
-        return { owned = table.clone(mine), petSlots = Shop.petSlots(mine), boostUntil = effects.boostUntil,
+        return { owned = table.clone(mine), petSlots = Shop.petSlots(mine), maxUfos = service.maxUfos(player), boostUntil = effects.boostUntil,
             guaranteed = guaranteed and Missions.get(guaranteed).Id or nil, stayExtra = stay and stay.extra or 0,
             fillBank = effects.fillBank }
     end

@@ -7,10 +7,10 @@
 - Hooks: TrainingService (`unlocked` for gym passes, `multiplier` for the boost; stations
   and signs carry `GymTier`), CargoService (2x coins via `Profiles.credit` multiplier),
   LaunchService (stay is a growing `while` loop; a guaranteed mission replaces the spin),
-  PetService (slots, hatch rate, `count` pets per UFO), `Rocket:fill`, Cycle snapshot `shop`.
+  PetService (slots, hatch rate, up to 3 UFOs at once), `Rocket:fill`, Cycle snapshot `shop`.
 - Client: ShopController (🛒 SHOP under the stat stack, 2x TRAINING chip, panel with
   passes / gym access / boosts; fill row above the pill; destination side panel), UFO shop
-  x3 switch, backpack slots from `state.shop.petSlots`, gym signs unlock by pass. Toasts
+  status shows UFOs flying (no price switch), backpack slots from `state.shop.petSlots`, gym signs unlock by pass. Toasts
   moved up (-132 / -168) to clear the fill row.
 - Studio debug: `RocketDebug:Invoke("own", key, on)`, `("receipt", key, purchaseId)` and `("board")`.
 - Studio (synced on 34875, all 102 scripts identical to the branch): RunChecks 13/13 (PetCheck's
@@ -22,6 +22,10 @@
   mid-stay took the countdown 104 → 163 s; the wheel then landed on Saturn and the next
   rocket was Saturn. No script errors; the journal fell back to memory (Studio API access off).
   Not tested: real Roblox prompts (no IDs yet).
+- Triple Hatch reworked (user): up to 3 UFOs at once at normal prices (was 3 pets per UFO
+  for 3x coins). `profile.ufos`, `Ufos` attribute, PetController draws one saucer per UFO
+  (three perches) and 6 follower slots. Studio: three debug UFOs drawn together, landed one
+  by one, three pets followed; RunChecks 13/13; no errors.
 - Pass IDs in (user): all 12 shop Game Passes. GetProductInfo in Studio: each is a Game Pass,
   for sale, name and price matching Config (Triple Hatch 249). In Play the creator's account
   owns every pass (Roblox gives the creator their own passes), so all show OWNED: the join sync

@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-20: Triple Hatch = 3 UFOs at once
+
+- User: Triple Hatch raises how many UFOs can hatch at once; no x3 price switch. Without
+  it one UFO flies at a time; with it up to 3, each bought at its normal coin price, all
+  counting down together and landing one by one (same-tick landings 6 s apart).
+- Profile: `ufos` (list, max 3, each with a stable `id`) replaces `ufo`; validate turns
+  an old single `ufo` into a one-item list (no schema bump). Clients draw from the
+  `Ufos` attribute ("id:tier:hatchAt;..."), one saucer per id at three perches.
+- Pet follower slots on the client go to 6 so both slot passes show every pet.
+
 ## 2026-10-20: Rocket fills are flat units
 
 - User: flat purchases instead of percentages: +2,000 / +4,000 / +7,000 / +11,000 units of
@@ -42,10 +52,8 @@
   (`Shop.available`), and stay extensions stop prompting at +300 s per stay.
 - Fills add to the rocket totals only: no coins, deliveries or contribution for the
   buyer. Boarding stays open to everyone, so nobody buys a seat or keeps others off.
-- Triple Hatch = one UFO with 3 pets for 3x coins (a x3 switch in the UFO shop); the
-  extra pets are granted at landing and each gets its own landing 6 s apart. Fast Hatch
-  = the countdown runs 2x. Profile UFO gains optional `extra` (no schema bump: older
-  servers' validate would reject a 3-pet UFO; fine while persistence is off).
+- Triple Hatch: see "3 UFOs at once" above (the first version, 3 pets in one UFO for 3x
+  coins, was replaced). Fast Hatch = the countdown runs 2x.
 - Passes live only in ShopService memory, re-checked each join (failed checks are
   "unknown": no trimming of pets on a throttled check).
 
