@@ -16,6 +16,7 @@ local Layout = require(script.Parent.SiteLayout)
 local Signs = require(script.Parent.SignService)
 local Mountains = require(script.Parent.Mountains)
 local Spaceport = require(script.Parent.SpaceportService)
+local Parkland = require(script.Parent.ParklandService)
 local Surrounds = {}
 
 Surrounds.WallHeight = 10
@@ -188,6 +189,7 @@ function Surrounds.build(world, district)
         for _, r in Spaceport.Clear do
             if at.X > r[1] - 40 and at.X < r[2] + 40 and at.Z > r[3] - 40 and at.Z < r[4] + 40 then return false end
         end
+        if not Parkland.clear(at) then return false end
         return math.abs(at.X) > widest or at.Z < Layout.Ground.z0 - 60 or at.Z > district.z1 + 60
     end
     local placed = 0
@@ -224,6 +226,9 @@ function Surrounds.build(world, district)
             scattered += 1
         end
     end
+
+    -- The parkland round the Gym District: track, farm, centrifuge, pool, lake, hills, woods.
+    Parkland.build(land, { make = make, tree = tree, roundTree = roundTree, clutter = clutter })
 
     local perimeter, plainFolder
     local service = {}

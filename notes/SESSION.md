@@ -1,4 +1,21 @@
-# Latest session: 2026-10-20 (2), launch anywhere and the Black Hole's singularity
+# Latest session: 2026-10-20 (3), parkland round the Gym District
+
+- `ParklandService` (built by SiteSurroundsService into Land, so it shows to 7,000):
+  the land round the Gym District (z > 112, never covered by expansion). East: running
+  track with pitch, goals, stands, floodlights; a farm (crop strips, barn, silo, fence).
+  West: a centrifuge whose arm turns (WindTurbineRotor tag, SpaceportController) with a
+  booth; a training pool with a mock capsule and gantry; a pine wood with a campsite
+  (fire, tents, logs). Behind: a lake of overlapping glass discs on a sand shore, jetty,
+  boats, reeds, rocks, benches; 14 rolling grass hills (a near row and a bigger far row
+  toward the mountains and out to the sides), an observatory on the highest, a broadleaf
+  band and big trees in clumps over the hills (big enough to still draw from the gyms).
+  `Parkland.Clear` keeps the plain's random trees and clutter off it. About 2,260 parts.
+- Seen from the gyms at player-camera height (26 up): back (lake, hills, observatory,
+  mountains), east (track, farm, turbines, water tower) and west (pool, centrifuge,
+  pines, comms dishes). At eye height the 10-stud hoarding still hides the near ground.
+  RunChecks 13/13, no errors. Studio was reopened mid-session (new studio id).
+
+# Earlier session: 2026-10-20 (2), launch anywhere and the Black Hole's singularity
 
 - `RocketDebug` "launch" (DebugService, Studio only): from Building/Fueling, swaps in the
   chosen mission, fills both phases, moves every player into the cabin and launches
