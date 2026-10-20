@@ -73,20 +73,20 @@ return table.freeze({
     Shop = table.freeze({
         -- Game Passes: bought once, ownership re-checked on every join.
         passes = table.freeze({
-            DoubleCoins = table.freeze({ id = nil, price = 199 }),
-            FastHatch = table.freeze({ id = nil, price = 149 }),
-            MultiHatch = table.freeze({ id = nil, price = 249 }),
-            PetSlot1 = table.freeze({ id = nil, price = 99 }),
-            PetSlot2 = table.freeze({ id = nil, price = 179 }),
+            DoubleCoins = table.freeze({ id = 2042720701, price = 199 }),
+            FastHatch = table.freeze({ id = 2037395515, price = 149 }),
+            MultiHatch = table.freeze({ id = 2039573122, price = 249 }),
+            PetSlot1 = table.freeze({ id = 2037017405, price = 99 }),
+            PetSlot2 = table.freeze({ id = 2039741160, price = 179 }),
             -- Gym<n> unlocks TrainingTiers[n] without its launches.
             -- 2x / 5x / 10x / 25x / 50x / 75x / 100x (user set 50x-100x).
-            Gym1 = table.freeze({ id = nil, price = 49 }),
-            Gym2 = table.freeze({ id = nil, price = 129 }),
-            Gym3 = table.freeze({ id = nil, price = 249 }),
-            Gym4 = table.freeze({ id = nil, price = 449 }),
-            Gym5 = table.freeze({ id = nil, price = 699 }),
-            Gym6 = table.freeze({ id = nil, price = 899 }),
-            Gym7 = table.freeze({ id = nil, price = 1099 }),
+            Gym1 = table.freeze({ id = 2042480753, price = 49 }),
+            Gym2 = table.freeze({ id = 2040347000, price = 129 }),
+            Gym3 = table.freeze({ id = 2039867258, price = 249 }),
+            Gym4 = table.freeze({ id = 2041586828, price = 449 }),
+            Gym5 = table.freeze({ id = 2040706913, price = 699 }),
+            Gym6 = table.freeze({ id = 2036915437, price = 899 }),
+            Gym7 = table.freeze({ id = 2042348700, price = 1099 }),
         }),
         -- Developer Products: repeatable; each receipt is granted once (receipt journal).
         products = table.freeze({
