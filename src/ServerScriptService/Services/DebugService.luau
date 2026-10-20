@@ -12,6 +12,7 @@
 -- Shop (before the dashboard IDs exist): Invoke("own", key, on) gives (or with false
 -- takes) everyone that Game Pass; Invoke("receipt", key, purchaseId) runs a product
 -- receipt for the first player through the real journal path and returns its outcome.
+-- Invoke("board") puts everyone in the rocket's cabin (during boarding, they fly).
 local RunService = game:GetService("RunService")
 local Rocket = require(script.Parent.RocketService)
 local Missions = require(game:GetService("ReplicatedStorage").Shared.Missions)
@@ -71,7 +72,9 @@ function Debug.new(ctx, parent)
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Pets.refresh(player) end
             Cycle.broadcast()
         end
-        if action == "own" then
+        if action == "board" then
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, ctx.World.cabin.arrival) end
+        elseif action == "own" then
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.debugOwn(player, value, extra) end
         elseif action == "receipt" then
             local player = game:GetService("Players"):GetPlayers()[1]
