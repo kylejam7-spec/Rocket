@@ -1,8 +1,7 @@
 -- Coin upgrades and rank titles. BuyUpgrade(track, requestId) is validated here and
 -- idempotent per request ID (a retried click never charges twice); effects are read
 -- through Shared.Upgrades by Cargo (pickup, place, reach) and the
--- tutorial. The rank tag over each character comes from lifetime deliveries and
--- completed launches.
+-- tutorial. The rank tag over each character comes from completed launches.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
 local UpgradeService = {}
@@ -54,7 +53,7 @@ function UpgradeService.new(ctx)
 
     -- Rank title over the head, visible to everyone.
     function service.showRank(player, profile)
-        local _, name = Upgrades.rank(config, profile.lifetimeDeliveries, profile.completedLaunches)
+        local _, name = Upgrades.rank(config, profile.completedLaunches)
         player:SetAttribute("Rank", name)
         local head = player.Character and player.Character:FindFirstChild("Head")
         if not head then return end
@@ -62,7 +61,7 @@ function UpgradeService.new(ctx)
         if not tag then
             tag = Instance.new("BillboardGui")
             tag.Name = "RankTag"
-            tag.Size = UDim2.fromOffset(200, 28)
+            tag.Size = UDim2.fromOffset(280, 28)
             tag.StudsOffsetWorldSpace = Vector3.new(0, 3.2, 0)
             tag.MaxDistance = 90
             tag.LightInfluence = 0

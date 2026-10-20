@@ -123,13 +123,19 @@ return table.freeze({
         ExtraStayMax = 300, -- per stay; prompts stop opening past it
         ReceiptStore = "RocketReceipts",
     }),
-    -- Rank titles above names: the highest rank whose deliveries and launches you have.
+    -- Rank titles above names: the highest rank whose completed launches you have
+    -- (user, 2026-10-20: launches only, Intern to NASA CEO at 100).
     Ranks = table.freeze({
-        table.freeze({ name = "APPRENTICE", deliveries = 0, launches = 0 }),
-        table.freeze({ name = "MECHANIC", deliveries = 250, launches = 0 }),
-        table.freeze({ name = "ENGINEER", deliveries = 1500, launches = 1 }),
-        table.freeze({ name = "FLIGHT DIRECTOR", deliveries = 6000, launches = 3 }),
-        table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
+        table.freeze({ name = "INTERN", launches = 0 }),
+        table.freeze({ name = "ROCKET TRAINEE", launches = 5 }),
+        table.freeze({ name = "MECHANIC", launches = 10 }),
+        table.freeze({ name = "ROCKET ENGINEER", launches = 20 }),
+        table.freeze({ name = "FLIGHT DIRECTOR", launches = 30 }),
+        table.freeze({ name = "LAUNCH SPECIALIST", launches = 40 }),
+        table.freeze({ name = "MISSION COMMANDER", launches = 50 }),
+        table.freeze({ name = "LAUNCH DIRECTOR", launches = 65 }),
+        table.freeze({ name = "NASA DIRECTOR", launches = 80 }),
+        table.freeze({ name = "NASA CEO", launches = 100 }),
     }),
     -- Gym District tiers, in walking order after the free gym. Each station gains
     -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick, 3 ticks a
