@@ -7,6 +7,11 @@
   4/5/10/64/65/99/100/250 gave INTERN, ROCKET TRAINEE, MECHANIC, MISSION COMMANDER,
   LAUNCH DIRECTOR, NASA DIRECTOR, NASA CEO, NASA CEO on attribute and tag; client draws
   "MISSION COMMANDER" 211 px wide. Test profile put back to 1 launch. No server errors.
+- Nameplate: RankTag is now "🚀 N" pill + rank title, display name below, and the
+  Humanoid's own name is hidden. Studio: RunChecks 15/15; at launches 1/42/100:
+  "🚀 1 | INTERN", "🚀 42 | LAUNCH SPECIALIST", "🚀 100 | NASA CEO", name row
+  "fruitsalad6d9"; client layout badge x82-121, title x127-198, name y30-54 in a 280x54
+  tag; no client/server errors. Not eyeballed: MCP screen_capture skips BillboardGuis.
 
 # Earlier session: 2026-10-20 (11), gyms tick 3x a second, scattered popups
 

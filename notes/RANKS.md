@@ -41,9 +41,13 @@ rank whose launch count you have (`Shared/Upgrades.luau:67-74`).
 
 ## Where it shows
 
-- **Overhead billboard** `RankTag` on the Head, 280x28 so the longest names fit (the client
-  draws "MISSION COMMANDER" about 211 px wide). It's made on the server and visible to
-  everyone within 90 studs (`Services/UpgradeService.luau:54-83`). The client scales it
+- **Overhead nameplate** `RankTag` on the Head (280x54, `Services/UpgradeService.luau`
+  `showRank`). The top row is a dark pill with "🚀 N" (lifetime completed launches, the
+  saved counter) next to the gold rank title. Below that is the player's DisplayName in
+  white, just above the head. Roblox's own name label is turned off
+  (`Humanoid.DisplayDistanceType = None`). With `SizeOffset (0, 0.5)` and a 1.6 stud
+  offset, the bottom edge stays about a stud above the head at any distance. It's made
+  on the server and visible to everyone within 90 studs. The client scales it
   with the screen (`Controllers/HudController.luau:302-306`). It refreshes on every
   `Stats.update`: on join, on respawn, after deliveries, purchases and profile changes.
 - **Player attribute** `Rank`, also sent to the client as `profile.rank`
