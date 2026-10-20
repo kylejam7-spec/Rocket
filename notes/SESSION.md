@@ -22,6 +22,8 @@
   mid-stay took the countdown 104 → 163 s; the wheel then landed on Saturn and the next
   rocket was Saturn. No script errors; the journal fell back to memory (Studio API access off).
   Not tested: real Roblox prompts (no IDs yet).
+- Gyms re-tiered (user): free 1x, then 2/5/10/25/50/75/100x; passes 49/129/249/449/699/899/1099.
+  Studio: signs read FREE..100X, shop cards show the new prices, RunChecks 13/13.
 - Offers without IDs show their price greyed (was "SOON"); the fill row hides under the open panel.
 
 # Latest session: 2026-10-19 (8), visual tidy pass

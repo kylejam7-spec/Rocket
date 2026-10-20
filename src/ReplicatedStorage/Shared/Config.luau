@@ -79,13 +79,14 @@ return table.freeze({
             PetSlot1 = table.freeze({ id = nil, price = 99 }),
             PetSlot2 = table.freeze({ id = nil, price = 179 }),
             -- Gym<n> unlocks TrainingTiers[n] without its launches.
-            Gym1 = table.freeze({ id = nil, price = 25 }),
-            Gym2 = table.freeze({ id = nil, price = 49 }),
-            Gym3 = table.freeze({ id = nil, price = 79 }),
-            Gym4 = table.freeze({ id = nil, price = 129 }),
-            Gym5 = table.freeze({ id = nil, price = 199 }),
-            Gym6 = table.freeze({ id = nil, price = 299 }),
-            Gym7 = table.freeze({ id = nil, price = 449 }),
+            -- 2x / 5x / 10x / 25x / 50x / 75x / 100x (user set 50x-100x).
+            Gym1 = table.freeze({ id = nil, price = 49 }),
+            Gym2 = table.freeze({ id = nil, price = 129 }),
+            Gym3 = table.freeze({ id = nil, price = 249 }),
+            Gym4 = table.freeze({ id = nil, price = 449 }),
+            Gym5 = table.freeze({ id = nil, price = 699 }),
+            Gym6 = table.freeze({ id = nil, price = 899 }),
+            Gym7 = table.freeze({ id = nil, price = 1099 }),
         }),
         -- Developer Products: repeatable; each receipt is granted once (receipt journal).
         products = table.freeze({
@@ -122,17 +123,18 @@ return table.freeze({
     -- Gym District tiers, in walking order after the free gym. Each station gains
     -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick (the free
     -- gym uses FreeGymMultiplier), and its sign's "xN" badge is that multiplier: a boost,
-    -- not the main source (the top gym, 13/s, needs ~35 s per capped level).
+    -- and the top gyms are the fast lane (user, 2026-10-20: free, 2x, 5x, 10x, 25x, 50x,
+    -- 75x, 100x; each also sells as a SHOP gym access pass).
     TrainingBaseGain = 1,
-    FreeGymMultiplier = 2,
+    FreeGymMultiplier = 1,
     TrainingTiers = table.freeze({
-        table.freeze({ cycles = 1, multiplier = 3 }),
-        table.freeze({ cycles = 3, multiplier = 4 }),
-        table.freeze({ cycles = 8, multiplier = 5 }),
-        table.freeze({ cycles = 15, multiplier = 7 }),
-        table.freeze({ cycles = 25, multiplier = 9 }),
-        table.freeze({ cycles = 50, multiplier = 11 }),
-        table.freeze({ cycles = 100, multiplier = 13 }),
+        table.freeze({ cycles = 1, multiplier = 2 }),
+        table.freeze({ cycles = 3, multiplier = 5 }),
+        table.freeze({ cycles = 8, multiplier = 10 }),
+        table.freeze({ cycles = 15, multiplier = 25 }),
+        table.freeze({ cycles = 25, multiplier = 50 }),
+        table.freeze({ cycles = 50, multiplier = 75 }),
+        table.freeze({ cycles = 100, multiplier = 100 }),
     }),
     -- Per-second stat reward unit for passengers at a destination: x the destination's
     -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).

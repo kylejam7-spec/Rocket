@@ -41,7 +41,7 @@ ctx.Training = require(Services.TrainingService).new({
     body = ctx.Movement.body, relocate = ctx.Movement.relocate, feedback = ctx.Remote.feedback,
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.send(player) end,
     -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
-    -- treadmill steps (5 s for a new player).
+    -- treadmill steps (10 s for a new player at the 1x free gym).
     -- Gym access passes unlock a District tier; a server boost multiplies every gain.
     unlocked = function(player, station) return ctx.Shop.gymUnlocked(player, station.tier) end,
     multiplier = function() return ctx.Shop.trainingMultiplier() end,

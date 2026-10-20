@@ -1,5 +1,15 @@
 # Decisions
 
+## 2026-10-20: Gyms free, 2x, 5x, 10x, 25x, 50x, 75x, 100x
+
+- User: the District goes free, 2x, 5x, 10x, 25x, 50x, 75x, 100x (unlocks unchanged:
+  1/3/8/15/25/50/100 launches). Free gym is 1x (was 2x), so the tutorial's bench and
+  treadmill steps take ~10 s (were ~5 s).
+- Gym access passes: the user set 50x 699, 75x 899, 100x 1099; the rest follow:
+  2x 49, 5x 129, 10x 249, 25x 449.
+- The top gym is now the fast lane (450-point capped level in 4.5 s), far past the
+  destination gyms (6-30/s); TrainingCheck now asks only >= 3 s per capped level.
+
 ## 2026-10-20: Robux SHOP (passes and server products)
 
 - The user asked for a SHOP button (server training boosts, +1/+2 pet slots, faster
@@ -8,7 +18,7 @@
   next mission. IDs come later: `Config.Shop` holds `id = nil` (offer shows SOON) and the
   recommended R$ prices.
 - Recommended prices: 2x Coins 199, Fast Hatch 149, Triple Hatch 249, +1 slot 99,
-  +2 slots 179 (they stack to 6), gyms 25/49/79/129/199/299/449 (3X..13X); products:
+  +2 slots 179 (they stack to 6), gyms (see the gym entry above); products:
   server 2x training 10 min 79, fill 25/45/65/85/99, +60 s stay 39, next mission
   Moon 19 / Mars 39 / Europa 69 / Saturn 119 / Black Hole 179.
 - Every Developer Product is a server-wide effect, so nothing repeatable depends on
