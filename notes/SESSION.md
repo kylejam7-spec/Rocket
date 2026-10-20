@@ -1,4 +1,14 @@
-# Latest session: 2026-10-20 (11), gyms tick 3x a second, scattered popups
+# Latest session: 2026-10-20 (12), launches-only ranks
+
+- `claude/happy-poitras-d42432` from master 0e64806. `Config.Ranks` is ten launch-only
+  tiers (Intern 0 .. NASA CEO 100); `Upgrades.rank(config, launches)`; RankTag 280 wide.
+  UpgradeCheck walks the ladder. `notes/RANKS.md` documents the system.
+- Studio (scripts matched master before Rojo on 34873): RunChecks 15/15; debug launches
+  4/5/10/64/65/99/100/250 gave INTERN, ROCKET TRAINEE, MECHANIC, MISSION COMMANDER,
+  LAUNCH DIRECTOR, NASA DIRECTOR, NASA CEO, NASA CEO on attribute and tag; client draws
+  "MISSION COMMANDER" 211 px wide. Test profile put back to 1 launch. No server errors.
+
+# Earlier session: 2026-10-20 (11), gyms tick 3x a second, scattered popups
 
 - `claude/gym-ticks` from master 86227c3. `TrainingSeconds = 1/3`; GymSignController
   shows gain / TrainingSeconds; Main's training `changed` uses Cycle.sendSoon; HudController

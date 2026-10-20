@@ -57,11 +57,14 @@ return function()
     assert(Upgrades.pickupUnits(config, top) == 11 and Upgrades.placeUnits(config, top) == 11)
     assert(math.abs(Upgrades.reach(config, top) - config.FrontierReach * 2) < 1e-9)
 
-    -- Ranks need both deliveries and launches.
-    assert(select(2, Upgrades.rank(config, 0, 0)) == "APPRENTICE")
-    assert(select(2, Upgrades.rank(config, 250, 0)) == "MECHANIC")
-    assert(select(2, Upgrades.rank(config, 1e6, 0)) == "MECHANIC", "launches gate higher ranks")
-    assert(select(2, Upgrades.rank(config, 1e6, 100)) == "COMMANDER")
+    -- Ranks count completed launches only, in rising order.
+    for i = 2, #config.Ranks do assert(config.Ranks[i].launches > config.Ranks[i - 1].launches, "ranks rise") end
+    assert(select(2, Upgrades.rank(config, 0)) == "INTERN")
+    assert(select(2, Upgrades.rank(config, 4)) == "INTERN")
+    assert(select(2, Upgrades.rank(config, 5)) == "ROCKET TRAINEE")
+    assert(select(2, Upgrades.rank(config, 64)) == "MISSION COMMANDER")
+    assert(select(2, Upgrades.rank(config, 100)) == "NASA CEO")
+    assert(select(2, Upgrades.rank(config, 1e6)) == "NASA CEO")
 
     -- v3 profiles gain empty upgrades; v4 ones lose Carry Capacity and keep the rest;
     -- bad levels are refused, not overwritten.

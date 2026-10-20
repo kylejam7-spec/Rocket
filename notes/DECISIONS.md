@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-10-20: Ranks count launches only, Intern to NASA CEO
+
+- User: ten ranks by completed rocket launches only (lifetime deliveries dropped):
+  Intern 0, Rocket Trainee 5, Mechanic 10, Rocket Engineer 20, Flight Director 30,
+  Launch Specialist 40, Mission Commander 50, Launch Director 65, NASA Director 80,
+  NASA CEO 100. Titles stay upper case over heads; the tag is 280 wide so the longest
+  names fit. Details in `notes/RANKS.md`.
+
 ## 2026-10-20: Gyms tick 3 times a second
 
 - User: gyms and treadmills pay per tick, 3 ticks a second (`TrainingSeconds = 1/3`),

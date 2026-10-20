@@ -64,11 +64,11 @@ function Upgrades.reach(config, profile)
     return config.FrontierReach * (1 + bonus(config, profile, "PlacementRange"))
 end
 
--- Rank index and name from lifetime deliveries and completed launches.
-function Upgrades.rank(config, deliveries, launches)
+-- Rank index and name from completed launches.
+function Upgrades.rank(config, launches)
     local index = 1
     for i, rank in config.Ranks do
-        if deliveries >= rank.deliveries and launches >= rank.launches then index = i end
+        if launches >= rank.launches then index = i end
     end
     return index, config.Ranks[index].name
 end
