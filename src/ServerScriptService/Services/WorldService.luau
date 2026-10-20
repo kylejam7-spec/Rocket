@@ -115,6 +115,8 @@ function World.new(ctx)
     for material, station in service.materialStations do tag(station.zone, World.Tags.MaterialSource, { Material = material }) end
     -- Roads, cranes, floodlights, containers, offices and buildings going up.
     require(script.Parent.SiteDressingService).build(world)
+    -- Spaceport: Mission Control, pads and hangars behind the pad; a campus and arrays beyond.
+    require(script.Parent.SpaceportService).build(world)
     -- Puddles, gravel, ruts and weeds; kerbs, manholes and crosswalks; pad markings.
     require(script.Parent.SiteDetails).build(world)
     service.materialColors = { Metal = Color3.fromRGB(139, 166, 185), Fuel = Color3.fromRGB(245, 182, 71) }

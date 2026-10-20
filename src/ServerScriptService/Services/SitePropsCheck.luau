@@ -10,7 +10,7 @@ return function()
     assert(models, "ServerScriptService.SiteModels is missing (src/ServerScriptService/SiteModels.rbxm)")
     for _, model in models:GetChildren() do
         local kit = model.Name:match("^(%a+)_")
-        assert(kit == "Factory" or kit == "Station" or kit == "Space", model.Name .. " has no kit prefix")
+        assert(Props.Palettes[kit] ~= nil, model.Name .. " has no kit prefix")
         assert(model:GetPivot().Position.Magnitude < 0.01, model.Name .. " is not stored at the origin")
         local box, size = model:GetBoundingBox()
         assert(math.abs(box.Position.Y - size.Y / 2) < 0.05, model.Name .. "'s pivot is not at its base")

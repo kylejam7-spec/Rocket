@@ -35,3 +35,25 @@ spawn, forecourt huts and Tier 5's launch footprint.
 6. **Save.** Serialize `ServerStorage.SiteModels` (SerializationService) to
    `src/ServerScriptService/SiteModels.rbxm`, the same way as `PetModels.rbxm`
    (`tools/pets/README.md`). Then rerun RunChecks.
+
+## Spaceport set (2026-10-20)
+
+`SpaceportService` dresses the apron behind the pad and the land beyond the fence with a
+second set: 50 more space-kit models, 27 from the Modular Space Kit and 11 more station
+pieces. They were baked into three files so the import is three clicks:
+
+1. **Bake.** `blender -b --factory-startup -P tools/map/bake_spaceport.py -- <kits> <out>`,
+   where `<kits>` holds the three Kenney kit folders as downloaded. It writes
+   `Spaceport_Space.fbx`, `Spaceport_Modular.fbx` and `Spaceport_Station.fbx`, one
+   MeshPart per model. The space kit is baked onto a palette of every colour in the kit,
+   so all Space models (the earlier picks too, rebaked) share it; `bake_space.py`'s
+   palette is retired.
+2. **Import** the three files (*File > Import 3D*, defaults) into Workspace.
+3. **Prepare.** Run `tools/map/prepare_spaceport.luau` in the command bar. It merges
+   them into `ServerScriptService.SiteModels`. Put the importer's texture ids for Space
+   and Modular in `SiteProps.Palettes`.
+4. **Save** as in step 6 above. With Rojo connected, Rojo re-adds the saved models on top
+   of the merged ones: keep one copy of each name.
+
+`SpaceportCheck` keeps apron props behind the pad (z <= -445) and under 150 studs (every
+tier's leaning rocket clears 230+ there), and everything outside on its slab.

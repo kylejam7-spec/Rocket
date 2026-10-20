@@ -1,4 +1,27 @@
-# Latest session: 2026-10-19 (8), visual tidy pass
+# Latest session: 2026-10-20, spaceport round the launch site
+
+- Branch `claude/partner-latest-f117d18` from master f117d18 (#42). User: the apron
+  behind the rocket was empty and the land round the site was just meadow; fill it from
+  Kenney's space, modular space and space station kits with Blender, own direction.
+- Measured: every tier's 45-degree rocket clears the apron behind the pad (z < -440) by
+  230+ studs (raycasts up from a grid, all five tiers), so props there are capped at 150.
+- `SpaceportService` (built after SiteDressing): on the apron, a walk-in Mission Control
+  of modular rooms (4 studs per metre, walls 17 high, rooms meet door to door) on the
+  centre line, five landing pads with parked craft to the east, hangars and rovers to the
+  west, frames and spare stages at the far end, and a monorail down the west edge over
+  the back fence. Beyond: a campus slab past the back fence (a 270-stud display rocket,
+  hangars joined by corridor tubes, dish array, tank farm, the monorail's train), a comms
+  array west and assembly hangars east (|x| > 690, outside the widest site). Trees keep
+  off the slabs (the tree placement changed as a result).
+- Import: `tools/map/bake_spaceport.py` (Blender 5.2, CLI; the Blender MCP extension
+  wasn't loaded) baked three FBX files; the user imported them; `prepare_spaceport.luau`
+  merged 115 models into SiteModels (155 now). New palettes: Space 71738999329000,
+  Modular 126762679417470.
+- Studio: RunChecks 13/13 with the new SpaceportCheck; no errors. Seen from above, the
+  apron at an angle and the campus from the fence.
+- Next: animate the monorail train; furnish the Mission Control rooms; maybe signs.
+
+# Earlier session: 2026-10-19 (8), visual tidy pass
 
 - `claude/visual-tidy`. Earth: `tools/site/textures.py` builds dirt, asphalt, concrete,
   grass and gym-floor overlays (uploaded, ids in Planets TEXTURES; need experience

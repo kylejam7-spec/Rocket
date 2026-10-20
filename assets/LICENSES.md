@@ -7,6 +7,7 @@ All of these are CC0 (public domain), so no credit is required.
 | Factory Kit 3.0 | Earth site props (`SiteModels.rbxm`) | Kenney | https://kenney.nl/assets/factory-kit | CC0 | 2026-10-18 |
 | Space Kit | Earth site props (`SiteModels.rbxm`); colours baked by `tools/map/bake_space.py` | Kenney | https://kenney.nl/assets/space-kit | CC0 | 2026-10-18 |
 | Space Station Kit | Earth site props (`SiteModels.rbxm`) | Kenney | https://kenney.nl/assets/space-station-kit | CC0 | 2026-10-18 |
+| Modular Space Kit 1.0 | Spaceport Mission Control (`SiteModels.rbxm`); baked by `tools/map/bake_spaceport.py` | Kenney | https://kenney.nl/assets/modular-space-kit | CC0 | 2026-10-20 |
 | Skyboxes Space | Earth and destination skies (`Shared/Skies`); cut into faces by `tools/sky/cubemap.py` | Kenney | https://kenney.nl/assets/skyboxes-space | CC0 | 2026-10-18 |
 | Ultimate Monsters | Alien pets (`PetModels.rbxm`) | Quaternius | https://quaternius.com | CC0 | 2026-10-18 |
 | Pickup notification (videogame UI sound) | Pet reveal fanfare (`tools/sounds`) | nomagician | https://freesound.org/s/833635/ | CC0 | 2026-10-18 |
