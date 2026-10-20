@@ -1,7 +1,7 @@
 --[[
     The Black Hole, made threatening, for whoever stands on its shard:
     - While there: the hole swells through the stay (horizon, disk and lensed halo grow
-      about its centre), the light drains and tints violet, a low drone rises, the
+      about its centre), the light drains and tints violet, the hole's rumble rises, the
       ground trembles every few seconds (harder and more often as the stay runs out)
       and lightning cracks off the horizon.
     - The singularity: when the server stamps SingularityAt on the destination folder
@@ -20,7 +20,7 @@ local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
 local Config = require(ReplicatedStorage.Shared.Config)
-local SoundIds = require(ReplicatedStorage.Shared.SoundIds)
+local Sfx = require(script.Parent.Parent:WaitForChild("UI"):WaitForChild("Sfx"))
 local State = require(script.Parent.State)
 local Settings = require(script.Parent.Settings)
 local BlackHoleController = {}
@@ -40,10 +40,13 @@ local grade, blur, screen, drone, scale = nil, nil, nil, nil, 1
 local shakeUntil, shakePower, nextTremor, nextBolt = 0, 0, 0, 0
 local inSingularity = false
 
+-- A 2D sound from a built cue (its upload, else Studio's local copy), through the SFX
+-- slider's group.
 local function sound(file, speed, volume, looped)
     local s = Instance.new("Sound")
-    s.SoundId = SoundIds[file] or ""
+    s.SoundId = Sfx.source(file) or ""
     s.PlaybackSpeed, s.Volume, s.Looped = speed, volume, looped == true
+    s.SoundGroup = Settings.group("SFX")
     s.Parent = SoundService
     return s
 end
@@ -99,7 +102,8 @@ local function ensureGrade()
     blur = Instance.new("BlurEffect")
     blur.Name, blur.Size = "BlackHoleBlur", 0
     blur.Parent = Lighting
-    drone = sound("game/engine", 0.22, 0, true)
+    -- The hole's own voice: the earth rumble (game/rumble), looped.
+    drone = sound("game/rumble", 0.85, 0, true)
     drone:Play()
 end
 
@@ -160,13 +164,14 @@ local function ambient(dt)
     setScale(1 + GROWTH * progress)
     grade.Saturation, grade.Contrast = -0.2 - 0.25 * progress, 0.1 + 0.15 * progress
     grade.TintColor = Color3.new(1, 1, 1):Lerp(VIOLET, 0.12 + 0.18 * progress)
-    drone.Volume = 0.25 + 0.35 * progress
+    drone.Volume = 0.45 + 0.55 * progress
     local now = os.clock()
     if now > nextTremor then
         shakePower = 0.25 + 0.9 * progress
         shakeUntil = now + 0.6 + progress
         nextTremor = now + math.random(30, 70) / 10 * (1 - 0.55 * progress)
-        local rumble = sound("game/engine", 0.3 + math.random() * 0.1, 0.5 + progress, false)
+        local rumble = sound("game/rumble", 1 + math.random() * 0.15, 0.8 + progress, false)
+        rumble.TimePosition = math.random() * 30
         rumble:Play()
         task.delay(2, rumble.Destroy, rumble)
     end
@@ -252,7 +257,7 @@ function BlackHoleController.singularity(at)
     local startScale = scale
     local whoosh = sound("game/liftoff", 0.45, 1.4)
     whoosh:Play()
-    local groan = sound("game/engine", 0.15, 1.2)
+    local groan = sound("game/rumble", 0.6, 2)
     local boomed, groaned = false, false
     local connection
     connection = RunService.RenderStepped:Connect(function()
@@ -288,7 +293,7 @@ function BlackHoleController.singularity(at)
         grade.Saturation, grade.Contrast = -0.45 - 0.55 * e, 0.25 + 0.6 * e
         grade.TintColor = Color3.new(1, 1, 1):Lerp(VIOLET, 0.3 + 0.5 * e)
         blur.Size = 20 * i
-        drone.Volume, drone.PlaybackSpeed = 0.6 + e, 0.22 + 0.5 * e
+        drone.Volume, drone.PlaybackSpeed = 1 + e, 0.85 - 0.35 * e
         -- The flash as the shard crosses the horizon, then black.
         if elapsed > ISLAND_END - 0.4 then
             local f = math.clamp((elapsed - ISLAND_END + 0.4) / 0.35, 0, 1)

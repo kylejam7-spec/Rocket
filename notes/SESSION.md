@@ -24,6 +24,15 @@
   riding the shard, then white flash, black, home. The client puts the shard back once
   the server has moved the player > 5,000 studs (the ride itself carries them ~2,000,
   which first tripped the "still there" test and ended it early). No stand-in copies.
+- Black Hole audio: the user's Pixabay downloads (freesound_community "space hole test"
+  23665 and "earth rumble" 6953). `ambience/black-hole` replaces the space music there
+  (MusicController's AMBIENCE mood "blackhole", for passengers bound for or at the Black
+  Hole); `game/rumble` is the hole's looped voice, the tremor swells and the
+  singularity's groan (BlackHoleController, SFX group). Built here with Blender's `aud`
+  (no ffmpeg on this machine) as 48 kHz mono looped OGG, and registered in build.py's
+  MANIFEST (sources expected in Sounds/freesound/<name>.mp3). NOT UPLOADED: no
+  ROBLOX_API_KEY here, so they play in Studio only (copied to Studio's
+  content/sounds/rocket) until `tools/sounds/upload.py` runs with the key.
 - Studio: two full Black Hole runs via the debug launch (arrival, singularity, home,
   rewards credited), sampled the pull numerically; RunChecks 13/13, no errors.
   Rojo sometimes lands edits a moment after Play starts: restart Play if the server

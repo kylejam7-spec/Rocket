@@ -6,6 +6,7 @@
 -- - passengers: Earth music fades out at liftoff, space music fades in as the landing
 --   begins, and on the way home space music fades out and Earth music fades back in;
 -- - everyone left on Earth: the music dips while the rocket climbs, then comes back.
+-- At the Black Hole, its ambience (the space hole recording) plays instead of space music.
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -23,6 +24,12 @@ local CROSSFADE, FADE_OUT, FADE_IN = 6, 3.5, 5
 -- How far the music dips for players watching a launch from Earth.
 local LAUNCH_DUCK = 0.3
 
+-- Moods with their own sound instead of a MusicTracks playlist; `volume` multiplies VOLUME.
+local AMBIENCE = {
+    blackhole = { { cue = "ambience/black-hole", title = "Black Hole", seconds = 109.7, volume = 1.6 } },
+}
+local BLACK_HOLE = 5 -- Config.Destinations index
+
 local random = Random.new()
 local folder, group
 local bags, last = {}, {}
@@ -33,7 +40,7 @@ local mood, duck, duckTarget = nil, 1, 1
 -- The next song for `mood`: a shuffled bag, refilled when empty, never repeating the
 -- song that just played.
 local function nextTrack(name)
-    local tracks = MusicTracks[name]
+    local tracks = MusicTracks[name] or AMBIENCE[name]
     if not tracks or #tracks == 0 then return nil end
     local bag = bags[name]
     if not bag or #bag == 0 then
@@ -85,10 +92,11 @@ local function wanted()
     local launching = state.phase == "Launching"
     local descent = launching and descentAt()
     local climbing = launching and (not descent or workspace:GetServerTimeNow() < descent)
+    local away = state.destinationTier == BLACK_HOLE and "blackhole" or "space"
     if state.passenger and launching then
-        return (not climbing) and "space" or nil, 1
+        return (not climbing) and away or nil, 1
     elseif state.passenger and state.phase == "Rewarding" then
-        return "space", 1
+        return away, 1
     end
     return "earth", climbing and LAUNCH_DUCK or 1
 end
@@ -107,7 +115,7 @@ local function step(dt)
         local voice = voices[index]
         local sound = voice.sound
         voice.level = voice.target > voice.level and math.min(voice.target, voice.level + voice.speed * dt) or math.max(voice.target, voice.level - voice.speed * dt)
-        sound.Volume = VOLUME * voice.level * duck
+        sound.Volume = VOLUME * (voice.track.volume or 1) * voice.level * duck
         if voice.target == 0 and voice.level <= 0 then
             sound:Stop()
             sound:Destroy()
