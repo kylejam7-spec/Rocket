@@ -117,18 +117,32 @@ function HudController.start()
         local character = player.Character
         return character and (character:FindFirstChild("Head") or character:FindFirstChild("HumanoidRootPart"))
     end
-    -- Strength and Speed often rise together (destination ticks), so each popup kind has its
-    -- own lane: gains sit left/right, level-ups stack at two heights.
+    -- Strength and Speed often rise together (gyms tick 3 times a second, destinations
+    -- once), so gains scatter: each lands somewhere new in its own half round your head
+    -- (strength left, speed right), never within MIN_GAP px of the last one. Level-ups stay
+    -- put at two heights in the middle.
     local lanes = {
-        strengthGain = { jitter = -55, shift = 0 }, speedGain = { jitter = 55, shift = 0 },
+        strengthGain = { x = { -140, 10 }, y = { -40, 90 } }, speedGain = { x = { -10, 140 }, y = { -40, 90 } },
         strengthLevel = { jitter = 0, shift = 50 }, speedLevel = { jitter = 0, shift = 100 },
     }
+    local MIN_GAP = 45
+    local function spot(lane)
+        local x, y
+        for _ = 1, 6 do
+            x, y = math.random(lane.x[1], lane.x[2]), math.random(lane.y[1], lane.y[2])
+            if not lane.last or (Vector2.new(x, y) - lane.last).Magnitude >= MIN_GAP then break end
+        end
+        lane.last = Vector2.new(x, y)
+        return x, y
+    end
     local function worldPop(text, color, lane, size)
         local adornee = head()
         if adornee then
             lane = lanes[lane]
-            Popup.world(adornee, { Text = text, TextColor3 = color, TextSize = size or 30,
-                jitter = lane.jitter + math.random(-8, 8), shift = lane.shift })
+            local jitter, shift = lane.jitter, lane.shift
+            if lane.x then jitter, shift = spot(lane) end
+            Popup.world(adornee, { Text = text, TextColor3 = color, TextSize = size or (lane.x and math.random(26, 34)) or 30,
+                jitter = jitter, shift = shift })
         end
     end
 

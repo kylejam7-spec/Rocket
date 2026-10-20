@@ -1,4 +1,13 @@
-# Latest session: 2026-10-20 (10), walk speed to 400
+# Latest session: 2026-10-20 (11), gyms tick 3x a second, scattered popups
+
+- `claude/gym-ticks` from master 86227c3. `TrainingSeconds = 1/3`; GymSignController
+  shows gain / TrainingSeconds; Main's training `changed` uses Cycle.sendSoon; HudController
+  scatters gain popups (MIN_GAP 45). TrainingCheck: 3 ticks a second, top gym 300/s.
+- Studio: RunChecks 15/15; on the 100x bench 1,000 strength in 3.4 s (~297/s), tag
+  "+300 STRENGTH / SEC", signs "+150/s" (50x) and "+15/s" (5x); popups landed at
+  (-37,56), (-127,-18), (-13,73), (-84,52). No errors.
+
+# Earlier session: 2026-10-20 (10), walk speed to 400
 
 - `claude/walk-speed-400` from master 85e658e. Config `SpeedEarly`/`SpeedPerLevel`/
   `MaxSpeed = 400`, `StatLevels.walk` capped; MovementService limit per player

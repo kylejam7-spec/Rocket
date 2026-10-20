@@ -1,5 +1,17 @@
 # Decisions
 
+## 2026-10-20: Gyms tick 3 times a second
+
+- User: gyms and treadmills pay per tick, 3 ticks a second (`TrainingSeconds = 1/3`),
+  each tick the gym's multiplier: the 100x gym gives 300 a second, 50x 150, the free
+  gym 3. Destination gyms tick the same way, so they pay 3x what they did. Signs and
+  station tags show the per-second total ("+300 STRENGTH / SEC"); the "xN" badge stays
+  the multiplier. Training state updates go through Cycle.sendSoon (batched at 5 Hz).
+- Speed 400 now takes ~245K points: ~14 min on the 100x gym (was ~40).
+- Gain popups ("+100 💪") scatter: each lands at a random spot in its half round the head
+  (strength left, speed right), at least 45 px from the last, size 26-34. Level-ups keep
+  their fixed spots.
+
 ## 2026-10-20: Walk speed to 400
 
 - User: many more speed levels before the cap, and a very fast late game. Walk =

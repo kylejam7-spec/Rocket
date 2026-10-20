@@ -107,8 +107,8 @@ local function buildSign(sign, playerGui)
         Text = sign:GetAttribute("Title") or "GYM", Font = Theme.font.Display, TextScaled = true,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 6, Parent = panel,
     })
-    -- "💪 +3/s   👟 +3/s" in the stat colours.
-    local gain = sign:GetAttribute("Gain") or 0
+    -- "💪 +3/s   👟 +3/s" in the stat colours: the per-tick gain times ticks a second.
+    local gain = math.round((sign:GetAttribute("Gain") or 0) / Config.TrainingSeconds)
     for index, stat in { STAT.strengthLevel, STAT.speedLevel } do
         StrokedText.new({
             Name = stat.name .. "Gain", Position = UDim2.new(0, 262 + (index - 1) * 270, 0, 112), Size = UDim2.fromOffset(260, 64),
@@ -154,7 +154,8 @@ local function buildStation(station, playerGui)
         local gymTier = station:GetAttribute("GymTier")
         local locked = launches < required and not (gymTier and passes["Gym" .. gymTier])
         name.Text = stat.icon .. " " .. stat.equipment .. (station:GetAttribute("Destination") and " • BONUS" or "")
-        rate.Text = locked and lockLabel(required, launches) or ("+" .. (station:GetAttribute("TrainingGain") or 0) .. " " .. stat.name .. " / SEC")
+        local perSecond = math.round((station:GetAttribute("TrainingGain") or 0) / Config.TrainingSeconds)
+        rate.Text = locked and lockLabel(required, launches) or ("+" .. Theme.short(perSecond) .. " " .. stat.name .. " / SEC")
         rate.TextColor3 = locked and Theme.color.Locked or stat.color
         border.Color = locked and LOCKED or tierColor
         local gain = station:GetAttribute("TrainingGain") or 0

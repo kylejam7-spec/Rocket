@@ -5,7 +5,9 @@ return table.freeze({
     RewardSeconds = 120,
     InteractionDistance = 10,
     ActionCooldown = 0.5,
-    TrainingSeconds = 1,
+    -- Gyms and treadmills tick 3 times a second, each tick paying the gym's multiplier
+    -- (the 100x gym: 300 a second). Signs and tags show the per-second total.
+    TrainingSeconds = 1 / 3,
     -- Strength and speed are uncapped point totals turned into levels (Shared.StatLevels):
     -- level 1 costs 10 points, each level after x1.2, never more than 450 (from level 22,
     -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
@@ -130,8 +132,8 @@ return table.freeze({
         table.freeze({ name = "COMMANDER", deliveries = 20000, launches = 8 }),
     }),
     -- Gym District tiers, in walking order after the free gym. Each station gains
-    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick (the free
-    -- gym uses FreeGymMultiplier), and its sign's "xN" badge is that multiplier: a boost,
+    -- TrainingBaseGain * multiplier strength or speed per TrainingSeconds tick, 3 ticks a
+    -- second (the free gym uses FreeGymMultiplier), and its sign's "xN" badge is that multiplier: a boost,
     -- and the top gyms are the fast lane (user, 2026-10-20: free, 2x, 5x, 10x, 25x, 50x,
     -- 75x, 100x; each also sells as a SHOP gym access pass).
     TrainingBaseGain = 1,
