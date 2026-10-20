@@ -26,8 +26,11 @@
   fallback; lease released on leave, locked loads wait and retry; user IDs on keys; Robux
   UFOs saved (PurchaseId in the ledger) before PurchaseGranted. New PersistenceCheck (fake
   store). Studio: RunChecks 14/14; with API access off the player loads unsaved and the HUD
-  says so. Not yet verified: a real DataStore round trip (needs Studio API access or a
-  published test).
+  says so. Real round trip (user enabled Studio API access): 4,321 coins, all 50 pets and two
+  UFOs (one from a Rare UFO receipt, saved before PurchaseGranted) were saved, Play stopped,
+  and the next Play loaded them straight back (HUD "Progress: Saved"; the shutdown save had
+  released the lease, so no wait). Not tested yet: a published server hop with two accounts.
+  The Studio store (`RocketProfiles_studio`) keeps this test data for the user's account.
 - Robux UFOs (user IDs): Rare 349 (plus 50K coins), Epic 549, Legendary 649. GetProductInfo
   matches. UFO shop rows show purple R$ buttons. A Legendary receipt via the debug hook gave
   one UFO (repeat PurchaseId: no second). RunChecks 13/13. Persistence is still off, so a
