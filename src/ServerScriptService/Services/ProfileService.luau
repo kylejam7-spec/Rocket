@@ -9,7 +9,7 @@ Profiles.__index = Profiles
 
 local function defaults()
     return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
-        tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
+        blackHolesVisited = 0, tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
         pets = {}, equippedPets = {}, ufos = {} }
 end
 
@@ -79,7 +79,12 @@ local function validate(raw, config)
     for _, id in raw.purchaseIds do if type(id) ~= "string" then error("Invalid purchase ledger") end end
     if type(raw.seenCallouts) ~= "table" then error("Invalid callouts") end
     for _, name in raw.seenCallouts do if type(name) ~= "string" then error("Invalid callouts") end end
-    for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins" } do
+    -- blackHolesVisited came later without a schema bump (older servers keep it untouched).
+    if raw.blackHolesVisited == nil then
+        raw = table.clone(raw)
+        raw.blackHolesVisited = 0
+    end
+    for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins", "blackHolesVisited" } do
         local value = raw[key]
         if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid profile " .. key) end
     end
@@ -265,10 +270,15 @@ function Profiles:preview(record)
     record.preview = preview
 end
 
-function Profiles:queueReward(userId, launchId, ticks)
+-- `blackHole`: this launch went to the Black Hole (its first reward counts a visit).
+function Profiles:queueReward(userId, launchId, ticks, blackHole)
     local record = self.records[userId]
     if not record or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return end
     record.pending[launchId] = math.max(record.pending[launchId] or 0, ticks or 1)
+    if blackHole then
+        record.blackHoles = record.blackHoles or {}
+        record.blackHoles[launchId] = true
+    end
     record.status = "Reward pending — saving"
     self:preview(record)
     self.changed(userId)
@@ -308,6 +318,7 @@ function Profiles:save(userId)
             local delta = math.max(0, ticks - previous)
             if not table.find(profile.rewardedLaunchIds, id) then
                 profile.completedLaunches += 1
+                if record.blackHoles and record.blackHoles[id] then profile.blackHolesVisited = (profile.blackHolesVisited or 0) + 1 end
                 table.insert(profile.rewardedLaunchIds, id)
             end
             local cap = self.config.MaxPlanetBonus
@@ -354,10 +365,16 @@ function Profiles:save(userId)
     if ok and saved then
         -- Preserve training/deliveries earned while UpdateAsync was yielding.
         record.profile.completedLaunches = saved.completedLaunches
+        record.profile.blackHolesVisited = saved.blackHolesVisited or 0
         record.profile.planetBonuses = saved.planetBonuses
         record.profile.rewardedLaunchIds = saved.rewardedLaunchIds
         record.profile.rewardedLaunchTicks = saved.rewardedLaunchTicks
-        for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
+        for id, ticks in batch do
+            if record.pending[id] <= ticks then
+                record.pending[id] = nil
+                if record.blackHoles then record.blackHoles[id] = nil end
+            end
+        end
         record.preview = nil
         self:preview(record)
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins

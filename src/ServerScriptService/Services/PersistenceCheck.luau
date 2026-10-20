@@ -95,6 +95,21 @@ return function()
     assert(rewards.writes == before + 1 and rewards.data.Player_2.planetBonuses.strength == 5 * unit)
     assert(record.profile.planetBonuses.strength == 5 * unit and record.profile.completedLaunches == 1)
 
+    -- Black Hole visits: a launch's first reward counts one, other destinations none;
+    -- profiles saved before the counter load with 0.
+    local visits = fakeStore()
+    local f = server(visits)
+    assert(f:load(3))
+    f:queueReward(3, "B1", 1, true)
+    f:queueReward(3, "B1", 2, true)
+    f:queueReward(3, "M1", 1, false)
+    assert(waitFor(function() return not next(f.records[3].pending) and not f.records[3].busy end), "visit rewards didn't save")
+    assert(visits.data.Player_3.blackHolesVisited == 1 and visits.data.Player_3.completedLaunches == 2, "one visit for the Black Hole launch")
+    assert(f.records[3].profile.blackHolesVisited == 1)
+    local legacy = deep(visits.data.Player_3)
+    legacy.blackHolesVisited = nil
+    assert(Profiles.validate(legacy, config).blackHolesVisited == 0, "older profiles start at 0 visits")
+
     -- Studio without API access: unsaved progress instead of a failed load.
     local denied = Profiles.new(config, function() end)
     denied.store = { UpdateAsync = function() error("StudioAccessToApisNotAllowed: Studio access to APIs is not allowed.") end }

@@ -181,7 +181,7 @@ function Launch.new(ctx)
                 tick += 1
                 local elapsed, second = tick / rate, tick % rate == 0
                 for userId in rocket.passengers do
-                    ctx.profiles:queueReward(userId, cycle, tick * multiplier)
+                    ctx.profiles:queueReward(userId, cycle, tick * multiplier, definition.ModelTier == BLACK_HOLE)
                     local player = Players:GetPlayerByUserId(userId)
                     if player and second then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier * rate .. " strength / +" .. config.Planet.SpeedBonus * multiplier * rate .. " speed (" .. elapsed .. "/" .. stay.total .. ")") end
                 end
