@@ -121,8 +121,10 @@ return function()
     assert(config.BaseSpeed >= 24 and config.BaseSpeed <= 32, "Base walk speed in the reference range")
     local speed1, carry1 = stats(config.TrainingBaseGain * config.FreeGymMultiplier * 10)
     assert(carry1 > carry0 and speed1 > speed0, "Ten free-gym ticks reach level 1")
-    -- The top gym (100x, 100 launches or the SHOP pass) still takes a few seconds per capped level.
-    local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier
-    assert(curve.max / top >= 3, "Top gym levels too fast")
+    -- Gyms tick 3 times a second (user, 2026-10-20). The top gym (100x: 300 a second, 100
+    -- launches or the SHOP pass) still takes over a second per capped level.
+    assert(math.abs(1 / config.TrainingSeconds - 3) < 1e-9, "Gyms tick 3 times a second")
+    local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier / config.TrainingSeconds
+    assert(math.round(top) == 300 and curve.max / top >= 1, "Top gym levels too fast")
     return "All 14 tiered gym stations (2x-100x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches and treadmills; level costs, carry and walk curves passed"
 end
