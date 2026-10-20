@@ -1,4 +1,11 @@
 {
+  "ambience/black-hole": {
+    "assetId": "91386870823827",
+    "creator": {
+      "userId": "1502038929"
+    },
+    "sha256": "ef5c75845fd599c564cc9b88aa9292bad50ae501cc5f3cfded9ab38c8f18cb74"
+  },
   "game/coin": {
     "assetId": "130766560947720",
     "creator": {
