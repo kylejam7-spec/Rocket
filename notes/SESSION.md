@@ -22,6 +22,12 @@
   mid-stay took the countdown 104 → 163 s; the wheel then landed on Saturn and the next
   rocket was Saturn. No script errors; the journal fell back to memory (Studio API access off).
   Not tested: real Roblox prompts (no IDs yet).
+- Saving on (user): live `RocketProfiles_v1`, Studio `RocketProfiles_studio` with a no-access
+  fallback; lease released on leave, locked loads wait and retry; user IDs on keys; Robux
+  UFOs saved (PurchaseId in the ledger) before PurchaseGranted. New PersistenceCheck (fake
+  store). Studio: RunChecks 14/14; with API access off the player loads unsaved and the HUD
+  says so. Not yet verified: a real DataStore round trip (needs Studio API access or a
+  published test).
 - Robux UFOs (user IDs): Rare 349 (plus 50K coins), Epic 549, Legendary 649. GetProductInfo
   matches. UFO shop rows show purple R$ buttons. A Legendary receipt via the debug hook gave
   one UFO (repeat PurchaseId: no second). RunChecks 13/13. Persistence is still off, so a

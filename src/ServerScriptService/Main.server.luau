@@ -118,7 +118,9 @@ Players.PlayerRemoving:Connect(function(player)
     ctx.Interaction.forget(player)
     ctx.Remote.forget(player)
     ctx.Cycle.forget(player)
-    ctx.profiles:remove(player.UserId)
+    -- A passenger on a launched rocket still gets their stay's rewards: keep their lease.
+    local rocket = ctx.Cycle.rocket
+    ctx.profiles:remove(player.UserId, rocket.passengers[player.UserId] == true and (rocket.phase == "Launching" or rocket.phase == "Rewarding"))
 end)
 for _, player in Players:GetPlayers() do task.spawn(joined, player) end
 ctx.Cycle.start()

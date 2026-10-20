@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-10-20: Profile saving on
+
+- `PersistenceEnabled = true`. Live saves use `RocketProfiles_v1`; Studio uses
+  `RocketProfiles_studio`, and with no Studio API access falls back to unsaved progress
+  (warned; HUD says so) instead of failing loads. `persistent` in the snapshot is now
+  whether a store is really in use.
+- A leaving player's last save releases the session (unless they're a passenger on a
+  launched rocket whose rewards may still come), so another server loads them at once; a
+  load that meets someone else's lock waits and retries up to the lease (+10 s) instead of
+  failing. BindToClose releases every lease. A released record never writes again; a
+  same-server rejoin loads afresh.
+- Saves and loads tag the key with the user ID (data-erasure requests).
+- Robux UFOs: the PurchaseId goes into the profile's purchase ledger with the UFO and the
+  profile is saved before PurchaseGranted; a retry after a failed save finds it in the
+  ledger and doesn't add a second.
+- PersistenceCheck runs ProfileService against an in-memory store.
+- Still to do before launch: a published private test with real accounts (rejoin,
+  server hop, shutdown).
+
 ## 2026-10-20: Robux UFOs
 
 - User's Developer Products: Rare UFO 349 (3720390200), Epic 549 (3720390071),
@@ -9,8 +28,7 @@
   on the buyer's profile, so it is granted only while they're in this server with a
   loaded profile (else NotProcessedYet; Roblox retries on their next join). A receipt
   that races past a full slot still flies, up to the 3 a profile can hold.
-- Risk while `PersistenceEnabled` is false: a Robux UFO (and its pet) is lost when the
-  buyer leaves, like all pets. Turn saving on before selling these for real.
+- Saving is now on (see "Profile saving on"); the UFO is saved before PurchaseGranted.
 
 ## 2026-10-20: Triple Hatch = 3 UFOs at once
 

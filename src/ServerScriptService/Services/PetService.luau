@@ -156,7 +156,13 @@ function PetService.new(ctx)
     -- later join) only with no loaded profile or 3 UFOs already up.
     function service.grantUfo(player, tier, purchaseId)
         local profile = profileOf(player)
-        if not profile or not PetService.add(profile, tier, purchaseId, random) then return false end
+        if not profile then return false end
+        -- The PurchaseId goes in the profile's purchase ledger with the UFO, so a retry
+        -- after a failed save never adds a second one.
+        if table.find(profile.purchaseIds, purchaseId) then return true end
+        if not PetService.add(profile, tier, purchaseId, random) then return false end
+        table.insert(profile.purchaseIds, purchaseId)
+        while #profile.purchaseIds > UpgradeService.LedgerSize do table.remove(profile.purchaseIds, 1) end
         local ufo = Pets.Ufos[tier]
         local minutes = ufo.Minutes / service.hatchRate(player)
         ctx.Remote.feedback(player, ufo.Name .. " summoned! It lands in " .. (minutes % 1 == 0 and minutes or ("%.1f"):format(minutes)) .. " minutes of play.")

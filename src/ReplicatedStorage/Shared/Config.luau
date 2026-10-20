@@ -166,9 +166,10 @@ return table.freeze({
     -- Far from Earth, past its mountains and land (SiteSurroundsService, drawn within
     -- 7000): at -3000 a mountain pushed through the cabin's back wall.
     CabinPosition = Vector3.new(-12000, 200, 0),
-    -- Persistence stays off for reproducible, non-production Studio tests.
-    PersistenceEnabled = false,
-    DataStoreName = "RocketProfiles_v1_test",
+    -- Player saves (ProfileService). Studio uses its own store so tests never touch live
+    -- saves; without Studio API access it falls back to unsaved progress.
+    PersistenceEnabled = true,
+    DataStoreName = game:GetService("RunService"):IsStudio() and "RocketProfiles_studio" or "RocketProfiles_v1",
     AutosaveSeconds = 30,
     LeaseSeconds = 120,
     RecentRewardLimit = 64,

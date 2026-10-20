@@ -8,8 +8,9 @@
 --
 -- Developer Products: nearly all are server-wide effects (training boost, rocket fill,
 -- longer stay, the next mission), so a grant needs no saved profile and never fails.
--- Robux UFOs go onto the buyer's profile: granted only while they're here (else
--- NotProcessedYet, and Roblox retries on their next join).
+-- Robux UFOs go onto the buyer's profile: granted only while they're here, and the
+-- profile (with the PurchaseId in its ledger) is saved before PurchaseGranted. Else
+-- NotProcessedYet, and Roblox retries on their next join.
 -- ProcessReceipt checks the receipt journal (a DataStore keyed by PurchaseId), grants,
 -- records the PurchaseId and only then returns PurchaseGranted; a failed record returns
 -- NotProcessedYet and the retry finds the in-memory mark, so nothing is granted twice
@@ -188,7 +189,11 @@ function ShopService.new(ctx)
         if rarity then
             if not player then return false end
             for tier, ufo in Pets.Ufos do
-                if ufo.Rarity == rarity then return ctx.Pets.grantUfo(player, tier, receipt.PurchaseId) end
+                if ufo.Rarity == rarity then
+                    -- Saved (with its PurchaseId) before Roblox hears it was granted.
+                    if not ctx.Pets.grantUfo(player, tier, receipt.PurchaseId) then return false end
+                    return ctx.profiles:saveNow(player.UserId)
+                end
             end
             return false
         end

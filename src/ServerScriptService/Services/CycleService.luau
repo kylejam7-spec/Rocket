@@ -63,7 +63,7 @@ function Cycle.new(ctx)
                 end)() },
             shop = ctx.Shop and ctx.Shop.snapshot(player),
             saveStatus = record and record.status or "Loading",
-            persistent = config.PersistenceEnabled,
+            persistent = ctx.profiles:persistent(),
             training = training and training.station.name,
         })
     end

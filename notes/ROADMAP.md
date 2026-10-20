@@ -46,7 +46,7 @@ on port 34873 into the *Build a Rocket* place.
 | Art/audio | All primitives, but rich ones: scrap pit, oil refinery, 5 rocket models of ~160 parts each. No sound. | Imported meshes, VFX and SFX. |
 | Code shape | `Main.server.luau` is 697 lines covering map, remotes, gyms, cargo/hold loop, launch sequence and debug hook. There are 7 focused service modules. | Split into services before features pile in. |
 | Tests | `*Check.luau` modules run inside Studio. No CLI tests, no notes folder. | Add a single check runner. |
-| Persistence | Off. `ProfileService` has a reward ledger keyed by tick. | Real data store test and a durable entitlement journal before release. |
+| Persistence | On (2026-10-20): session lock released on leave, locked loads wait, Studio store separate. | A published private test with real accounts before release. |
 
 ## 3. Decisions (confirmed 2026-10-14)
 

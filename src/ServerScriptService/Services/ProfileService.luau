@@ -1,5 +1,6 @@
 local DataStoreService = game:GetService("DataStoreService")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Pets = require(ReplicatedStorage.Shared.Pets)
 local Tutorial = require(script.Parent.TutorialService)
@@ -162,11 +163,34 @@ function Profiles.credit(profile, delivered, config, multiplier)
 end
 
 function Profiles.new(config, changed)
-    return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil }, Profiles)
+    return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil,
+        -- A load finding another server's lock retries every `retrySeconds` for up to
+        -- `waitSeconds` (default: the lease plus 10 s). PersistenceCheck shortens both.
+        retrySeconds = 5, waitSeconds = nil }, Profiles)
+end
+
+-- Whether progress is really saved (false in Studio without API access).
+function Profiles:persistent()
+    return self.store ~= nil
+end
+
+-- Studio without "Enable Studio Access to API Services" can't reach DataStores: drop to
+-- unsaved progress instead of failing every load. True when it did.
+function Profiles:studioFallback(err)
+    if not self.store or not RunService:IsStudio() then return false end
+    local text = tostring(err)
+    if not (text:find("Studio", 1, true) or text:find("API", 1, true) or text:find("403", 1, true)) then return false end
+    warn("Rocket profiles: no DataStore access in Studio, progress won't save:", text)
+    self.store = nil
+    return true
 end
 
 function Profiles:load(userId)
     local previous = self.records[userId]
+    if previous and previous.released then
+        while previous.busy do task.wait(0.1) end
+        previous = nil
+    end
     if previous and not string.find(previous.status, "Load failed", 1, true) then
         while previous.busy do task.wait(0.1) end
         previous.leaving = false
@@ -175,16 +199,30 @@ function Profiles:load(userId)
     end
     local record = { profile = defaults(), pending = {}, status = "Loading", busy = true, leaving = false }
     self.records[userId] = record
-    local ok, profile = pcall(function()
-        if not self.store then return defaults() end
-        local now = os.time()
-        return self.store:UpdateAsync("Player_" .. userId, function(raw)
-            local current = validate(raw, self.config)
-            if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
-            current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
-            return current
+    local function attempt()
+        return pcall(function()
+            if not self.store then return defaults() end
+            local now = os.time()
+            return self.store:UpdateAsync("Player_" .. userId, function(raw)
+                local current = validate(raw, self.config)
+                if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
+                current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
+                -- The user ID tags the key for Roblox's data-erasure requests.
+                return current, { userId }
+            end)
         end)
-    end)
+    end
+    local ok, profile = attempt()
+    if not ok and self:studioFallback(profile) then ok, profile = attempt() end
+    -- Locked by the server they just left (it saves and lets go, or the lease runs out):
+    -- wait and try again rather than fail.
+    local deadline = os.clock() + (self.waitSeconds or self.config.LeaseSeconds + 10)
+    while ok and profile == nil and os.clock() < deadline do
+        record.status = "Loading — finishing your last server's save"
+        self.changed(userId)
+        task.wait(self.retrySeconds)
+        ok, profile = attempt()
+    end
     record.busy = false
     if not ok or not profile then
         record.status = "Load failed — rejoin; progress disabled"
@@ -224,12 +262,16 @@ function Profiles:save(userId)
     record.busy = true
     local snapshot = copy(record.profile)
     local batch = {}
-    local batchCount = 0
+    local batchCount, pendingCount = 0, 0
     for id, ticks in record.pending do
-        if batchCount >= self.config.RecentRewardLimit then break end
+        pendingCount += 1
+        if batchCount >= self.config.RecentRewardLimit then continue end
         batch[id] = ticks
         batchCount += 1
     end
+    -- Leaving with nothing left to save: let go of the session so another server can
+    -- load them at once (kept for a locked passenger whose rewards may still come).
+    local release = record.leaving and not record.keepLease and batchCount == pendingCount
     local function applyRewards(profile)
         profile.rewardedLaunchTicks = profile.rewardedLaunchTicks or {}
         for id, ticks in batch do
@@ -272,8 +314,8 @@ function Profiles:save(userId)
                 current.equippedPets = snapshot.equippedPets
                 current.ufos = snapshot.ufos
                 applyRewards(current)
-                current.session = { owner = self.owner, expires = os.time() + self.config.LeaseSeconds }
-                return current
+                current.session = not release and { owner = self.owner, expires = os.time() + self.config.LeaseSeconds } or nil
+                return current, { userId }
             end)
         end)
         if ok and saved then break end
@@ -291,9 +333,13 @@ function Profiles:save(userId)
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
-        if record.leaving and not next(record.pending) and not record.dirty then
-            -- Keep lease until expiry: protects a disconnected locked passenger.
-            -- Rejoining another server may wait up to LeaseSeconds.
+        if release and self.store then
+            -- Nothing more may be written for them here; a rejoin loads afresh.
+            record.released = true
+            record.status = "Saved — session released"
+        elseif record.leaving and not next(record.pending) and not record.dirty then
+            -- A locked passenger keeps the lease until it expires; rejoining another
+            -- server waits for it (Profiles:load).
             record.status = self.store and "Saved — session expires shortly" or record.status
         end
     else
@@ -307,12 +353,22 @@ function Profiles:save(userId)
     return ok and saved ~= nil
 end
 
-function Profiles:remove(userId)
+-- `keepLease`: a locked passenger whose rewards may still be queued after they leave.
+function Profiles:remove(userId, keepLease)
     local record = self.records[userId]
     if not record then return end
     record.leaving = true
+    record.keepLease = keepLease == true
     record.dirty = true
     task.spawn(function() self:save(userId) end)
+end
+
+-- Saves now, waiting out a save in progress (up to 30 s). True when it saved.
+function Profiles:saveNow(userId)
+    local record = self.records[userId]
+    local deadline = os.clock() + 30
+    while record and record.busy and os.clock() < deadline do task.wait(0.1) end
+    return self:save(userId)
 end
 
 function Profiles:start()
@@ -322,7 +378,7 @@ function Profiles:start()
         while true do
             task.wait(self.config.AutosaveSeconds)
             for userId, record in self.records do
-                if not record.leaving or record.dirty or next(record.pending) then task.spawn(function() self:save(userId) end) end
+                if not record.released and (not record.leaving or record.dirty or next(record.pending)) then task.spawn(function() self:save(userId) end) end
             end
         end
     end)
@@ -333,7 +389,9 @@ function Profiles:start()
             task.spawn(function()
                 local record = self.records[userId]
                 while record.busy do task.wait(0.1) end
-                self:save(userId)
+                -- Shutting down: no rewards can follow, so every lease is released.
+                record.leaving, record.keepLease = true, false
+                if not record.released then self:save(userId) end
                 left -= 1
             end)
         end
