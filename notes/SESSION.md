@@ -32,6 +32,22 @@
   (it walled off the doors until turned 90); gate-lasers blocks the door (plain gate now).
   Walked spawn -> gate -> every room in Play (Humanoid:MoveTo; anti-teleport snaps
   PivotTo moves back).
+- Round three: Mission Control roofed (flat roofs on every room and corridor at y 18,
+  parapets, glass skylights over the bigger rooms, two ceiling lamps each; the two
+  `-variation` rooms swapped for plain ones so every footprint is a rounded rectangle,
+  listed in `Spaceport.Rooms`), with dishes, generators and vents on the roofs. Fields:
+  a solar farm west and a tank farm, container store, hangars, parked craft and water
+  tower east, on the meadow the site grows into (`Spaceport.build` returns `fit(edge)`,
+  called with the perimeter on every expansion, which clears filler the ground reaches);
+  16 wind turbines beyond everything (rotors turned by SpaceportController).
+- Render distance: nothing in the game hides the spaceport (DestinationController only
+  culls destinations and the cabin; Earth has no haze). Graphics quality is Automatic,
+  and a captured frame right after a camera jump showed only nearby geometry, filling in
+  a few seconds later; at ~2,000 studs medium meshes stayed culled while the mountains
+  drew. That's Roblox's quality-based draw distance; scripts can't set it (needs
+  RobloxScript). Studio measured 15 FPS throughout, unchanged by hiding whole areas, so
+  likely background-window throttling, not the scene. Indoor furniture no longer casts
+  shadows.
 
 # Earlier session: 2026-10-19 (8), visual tidy pass
 

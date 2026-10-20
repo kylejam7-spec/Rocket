@@ -14,6 +14,7 @@
 ]]
 local Props = require(script.Parent.SiteProps)
 local Signs = require(script.Parent.SignService)
+local CollectionService = game:GetService("CollectionService")
 local Spaceport = {}
 
 -- Tallest anything on the apron behind the pad may stand (the rockets clear 230+).
@@ -42,26 +43,45 @@ end
 -- players walk in through the gate.
 local M = 4
 add("Modular_gate", 0, -462, 0, M, true)
-add("Modular_room-large", 0, -505, 0, M, true)           -- z -545 .. -465
-add("Modular_room-small", -64, -505, 0, M, true)
-add("Modular_room-small", 64, -505, 0, M, true)
-add("Modular_corridor", 0, -553, 90, M, true)              -- -561 .. -545
-add("Modular_room-wide", 0, -585, 0, M, true)             -- -609 .. -561
-add("Modular_corridor", 0, -617, 90, M, true)              -- -625 .. -609
-add("Modular_room-large-variation", 0, -665, 0, M, true)  -- -705 .. -625
-add("Modular_room-wide", -64, -665, 90, M, true)
-add("Modular_room-wide", 64, -665, 90, M, true)
-add("Modular_corridor", 0, -713, 90, M, true)              -- -721 .. -705
-add("Modular_room-small-variation", 0, -745, 0, M, true)  -- -769 .. -721
+-- { model, x, z, footprint x, footprint z, yaw }: rooms meet door to door, corridors
+-- (turned to run along Z) between them. roof() covers each footprint.
+Spaceport.RoofTop = 18 -- the walls are 17 high
+Spaceport.Rooms = {
+    { "Modular_room-large", 0, -505, 80, 80, 0 },     -- operations: z -545 .. -465
+    { "Modular_room-small", -64, -505, 48, 48, 0 },
+    { "Modular_room-small", 64, -505, 48, 48, 0 },
+    { "Modular_corridor", 0, -553, 16, 16, 90 },
+    { "Modular_room-wide", 0, -585, 80, 48, 0 },      -- launch control: -609 .. -561
+    { "Modular_corridor", 0, -617, 16, 16, 90 },
+    { "Modular_room-large", 0, -665, 80, 80, 0 },     -- crew quarters: -705 .. -625
+    { "Modular_room-wide", -64, -665, 48, 80, 90 },
+    { "Modular_room-wide", 64, -665, 48, 80, 90 },
+    { "Modular_corridor", 0, -713, 16, 16, 90 },
+    { "Modular_room-small", 0, -745, 48, 48, 0 },     -- comms: -769 .. -721
+}
+for _, room in Spaceport.Rooms do
+    add(room[1], room[2], room[3], room[6], M, true)
+end
+-- On the roofs: dishes, generators and vents, clear of the skylights.
+local R = 18
+add("Space_satelliteDish_detailed", 28, -480, 200, 12, false, R)
+add("Space_machine_generator", -28, -530, 90, 14, true, R)
+add("Space_satelliteDish_large", -74, -520, 160, 14, false, R)
+add("Space_machine_wireless", 74, -490, 0, 12, true, R)
+add("Space_machine_wirelessCable", -30, -574, 0, 12, true, R)
+add("Station_pipe", 28, -596, 0, 20, true, R)
+add("Station_pipe", 33, -596, 0, 20, true, R)
+add("Space_machine_generatorLarge", 26, -690, 0, 9, true, R)
+add("Space_barrels", -28, -642, 30, 20, true, R)
+add("Space_satelliteDish", 14, -757, 180, 18, false, R)
 -- Kit inside (furnish() adds the desks, screens, holo table and bunks).
 add("Modular_cables", -24, -585, 0, M, false)
-add("Station_display-wall", -30, -775, 0, 20, true)
-add("Station_display-wall", 30, -775, 0, 20, true)
+add("Station_display-wall", -14, -762, 0, 20, true)
+add("Station_display-wall", 14, -762, 0, 20, true)
 add("Space_machine_wireless", -64, -505, 30, 14, true)
 add("Space_machine_generator", 64, -505, -20, 14, true)
 add("Station_container-flat", -70, -660, 0, 20, true)
 add("Station_container-flat-open", 70, -670, 0, 20, true)
-add("Space_satelliteDish", 0, -745, 180, 18, false)
 
 -- East: landing pads down the apron's edge, a craft on each, service kit between them.
 local pads = { { -500, "Space_craft_speederA", 200 }, { -585, "Space_craft_racer", 160 }, { -670, "Space_craft_miner", 215 },
@@ -328,6 +348,171 @@ local function furnish(parent)
         block(model, "Locker", Vector3.new(2.6, 7.5, 2), CFrame.new(-30 + index * 2.8, 3.75, -640),
             index % 2 == 0 and DESK or Color3.fromRGB(90, 96, 118), Enum.Material.Metal)
     end
+    -- Small kit indoors: no shadows (they cost frames and the roof shades the rooms).
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") then part.CastShadow = false end
+    end
+end
+
+-- Roofs on Mission Control: a flat roof on each room and corridor, sitting on the walls'
+-- tops, with a glass skylight over the bigger rooms and a lamp under the roof.
+local ROOF, ROOF_EDGE = Color3.fromRGB(214, 216, 228), Color3.fromRGB(116, 118, 160)
+local function roof(parent, room)
+    local _, x, z, w, d = table.unpack(room)
+    local top, inset = Spaceport.RoofTop, 1.5
+    w, d = w - 2 * inset, d - 2 * inset
+    local function slab(cx, cz, sw, sd)
+        if sw > 0.1 and sd > 0.1 then
+            block(parent, "Roof", Vector3.new(sw, 1, sd), CFrame.new(cx, top - 0.5, cz), ROOF)
+        end
+    end
+    if w >= 40 then
+        local sw, sd = math.floor(w * 0.3), math.floor(d * 0.3)
+        slab(x, z - (d + sd) / 4, w, (d - sd) / 2)
+        slab(x, z + (d + sd) / 4, w, (d - sd) / 2)
+        slab(x - (w + sw) / 4, z, (w - sw) / 2, sd)
+        slab(x + (w + sw) / 4, z, (w - sw) / 2, sd)
+        local glass = block(parent, "Skylight", Vector3.new(sw, 0.4, sd), CFrame.new(x, top - 0.6, z), Color3.fromRGB(150, 200, 255), Enum.Material.Glass)
+        glass.Transparency = 0.55
+        for _, edge in { { 0, -sd / 2, sw + 1, 0.5 }, { 0, sd / 2, sw + 1, 0.5 }, { -sw / 2, 0, 0.5, sd + 1 }, { sw / 2, 0, 0.5, sd + 1 } } do
+            block(parent, "SkylightFrame", Vector3.new(edge[3], 0.6, edge[4]), CFrame.new(x + edge[1], top + 0.3, z + edge[2]), ROOF_EDGE, Enum.Material.Metal)
+        end
+    else
+        slab(x, z, w, d)
+    end
+    -- A low parapet round the edge.
+    for _, edge in { { 0, -d / 2 + 0.6, w, 1.2 }, { 0, d / 2 - 0.6, w, 1.2 }, { -w / 2 + 0.6, 0, 1.2, d }, { w / 2 - 0.6, 0, 1.2, d } } do
+        block(parent, "RoofEdge", Vector3.new(edge[3], 0.8, edge[4]), CFrame.new(x + edge[1], top + 0.4, z + edge[2]), ROOF_EDGE, Enum.Material.Metal)
+    end
+    if w >= 40 then
+        -- Lamps under the roof either side of the skylight.
+        for _, side in { -1, 1 } do
+            local lamp = block(parent, "CeilingLamp", Vector3.new(6, 0.3, 2), CFrame.new(x + side * w * 0.3, top - 1.15, z), Color3.fromRGB(240, 246, 255), Enum.Material.Neon)
+            lamp.CanCollide, lamp.CanQuery = false, false
+            local light = Instance.new("PointLight")
+            light.Range, light.Brightness, light.Color = 32, 1, Color3.fromRGB(230, 240, 255)
+            light.Parent = lamp
+        end
+    end
+end
+
+-- The fields round the site. Two kinds:
+-- - Filler on the meadow where the site will grow (|x| from the fence out to the widest
+--   site): a solar farm to the west, a tank farm and stores to the east. Each piece notes
+--   the inner edge of its footprint; Spaceport.fit(edge) clears any the ground has
+--   reached, so expansion strips never come up through them.
+-- - Wind turbines beyond everything (their rotors turn in SpaceportController).
+local SOLAR, POST = Color3.fromRGB(34, 54, 112), Color3.fromRGB(150, 156, 166)
+local PLAIN = -0.35 -- the plain's top (SiteSurroundsService)
+
+-- A row of solar panels along Z at `x`, from z0 to z1, tilted toward +X.
+local function solarRow(parent, x, z0, z1)
+    local row = Instance.new("Model")
+    row.Name = "SolarRow"
+    row:SetAttribute("InnerX", math.abs(x) - 5)
+    row.Parent = parent
+    local tilt = CFrame.Angles(0, 0, math.rad(x < 0 and 25 or -25))
+    for z = z0, z1 - 48, 52 do
+        local panel = block(row, "SolarPanel", Vector3.new(10, 0.5, 48), CFrame.new(x, PLAIN + 4.5, z + 24) * tilt, SOLAR, Enum.Material.Glass)
+        panel.Reflectance, panel.CastShadow = 0.15, false
+        block(row, "SolarPost", Vector3.new(0.8, 4.3, 30), CFrame.new(x, PLAIN + 2.15, z + 24), POST, Enum.Material.Metal).CastShadow = false
+    end
+    return row
+end
+
+local function filler(parent)
+    local folder = Instance.new("Folder")
+    folder.Name = "FieldFiller"
+    folder.Parent = parent
+    -- West: the solar farm, rows down the field from the apron's far end to spawn's level.
+    for x = -320, -640, -40 do
+        solarRow(folder, x, -960, -40)
+    end
+    -- East: a tank farm by the apron, a container store and a water tower nearer spawn.
+    local function prop(name, x, z, yaw, scale, y)
+        local model = Props.place(folder, name, CFrame.new(x, y or PLAIN, z) * CFrame.Angles(0, math.rad(yaw), 0), scale, true)
+        if model then
+            local box, size = model:GetBoundingBox()
+            model:SetAttribute("InnerX", math.abs(box.Position.X) - math.max(size.X, size.Z) / 2)
+        end
+        return model
+    end
+    for row = 0, 3 do
+        for col = 0, 3 do
+            prop("Space_machine_barrelLarge", 340 + col * 90, -900 + row * 90, 0, 70)
+        end
+    end
+    for _, z in { -890, -800, -710, -620 } do
+        prop("Space_pipe_supportHigh", 315, z, 0, 14)
+    end
+    for index, z in { -520, -480, -440 } do
+        for _, x in { 340, 400, 460, 520, 580 } do
+            prop(index == 2 and "Station_container-tall" or "Station_container-wide", x, z, 90, 28)
+        end
+    end
+    prop("Space_hangar_largeB", 420, -330, -90, 30)
+    prop("Space_hangar_largeA", 560, -330, -90, 30)
+    for _, spot in { { 360, -200 }, { 520, -150 }, { 600, -40 } } do
+        prop("Space_craft_cargoA", spot[1], spot[2], 30, 16)
+    end
+    -- Water tower: a tank on four legs, the site's colours.
+    local tower = Instance.new("Model")
+    tower.Name = "WaterTower"
+    tower:SetAttribute("InnerX", 420 - 14)
+    tower.Parent = folder
+    for _, leg in { { -8, -8 }, { 8, -8 }, { -8, 8 }, { 8, 8 } } do
+        block(tower, "TowerLeg", Vector3.new(1.4, 46, 1.4), CFrame.new(420 + leg[1], PLAIN + 23, 40 + leg[2]), POST, Enum.Material.Metal)
+    end
+    block(tower, "TowerTank", Vector3.new(18, 26, 26), CFrame.new(420, PLAIN + 56, 40) * CFrame.Angles(0, 0, math.rad(90)), Color3.fromRGB(236, 238, 244), Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+    block(tower, "TowerBand", Vector3.new(3, 26.6, 26.6), CFrame.new(420, PLAIN + 56, 40) * CFrame.Angles(0, 0, math.rad(90)), ORANGE, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+    block(tower, "TowerCap", Vector3.new(4, 4, 4), CFrame.new(420, PLAIN + 71, 40), POST, Enum.Material.Metal, Enum.PartType.Ball)
+    for _, part in folder:GetDescendants() do
+        if part:IsA("BasePart") then part.CanCollide, part.CanQuery = false, false end
+    end
+    return folder
+end
+
+-- A wind turbine: a tapered tower, the nacelle and a three-bladed rotor (tagged so the
+-- client turns it about its hub's look axis).
+local TURBINE = Color3.fromRGB(240, 242, 246)
+local function turbine(parent, at, facing)
+    local model = Instance.new("Model")
+    model.Name = "WindTurbine"
+    model.Parent = parent
+    local height = 150
+    block(model, "TowerLow", Vector3.new(height * 0.5, 9, 9), CFrame.new(at + Vector3.new(0, height * 0.25, 0)) * UPRIGHT, TURBINE, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+    block(model, "TowerHigh", Vector3.new(height * 0.5, 6.5, 6.5), CFrame.new(at + Vector3.new(0, height * 0.75, 0)) * UPRIGHT, TURBINE, Enum.Material.SmoothPlastic, Enum.PartType.Cylinder)
+    local look = CFrame.lookAt(at + Vector3.new(0, height + 3, 0), at + Vector3.new(0, height + 3, 0) + facing)
+    block(model, "Nacelle", Vector3.new(7, 7, 18), look * CFrame.new(0, 0, 4), TURBINE)
+    block(model, "NacelleStripe", Vector3.new(7.2, 1.2, 18.2), look * CFrame.new(0, 1.5, 4), ORANGE)
+    local rotor = Instance.new("Model")
+    rotor.Name = "Rotor"
+    rotor.Parent = model
+    local hub = block(rotor, "Hub", Vector3.new(6, 6, 6), look * CFrame.new(0, 0, -6), TURBINE, Enum.Material.SmoothPlastic, Enum.PartType.Ball)
+    rotor.PrimaryPart = hub
+    for index = 0, 2 do
+        local spin = hub.CFrame * CFrame.Angles(0, 0, math.rad(index * 120))
+        block(rotor, "Blade", Vector3.new(3.2, 62, 0.8), spin * CFrame.new(0, 33, 0), TURBINE)
+        block(rotor, "BladeTip", Vector3.new(3.2, 8, 0.9), spin * CFrame.new(0, 60, 0), ORANGE)
+    end
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") then part.CanCollide, part.CanQuery = false, false end
+    end
+    CollectionService:AddTag(rotor, "WindTurbineRotor")
+    return model
+end
+
+local function turbines(parent)
+    local folder = Instance.new("Folder")
+    folder.Name = "WindFarm"
+    folder.Parent = parent
+    for _, z in { -1000, -760, -520, -280, -40, 200 } do
+        turbine(folder, Vector3.new(-1080, PLAIN, z), Vector3.new(1, 0, 0.25))
+        turbine(folder, Vector3.new(1080, PLAIN, z + 120), Vector3.new(-1, 0, 0.25))
+    end
+    for _, x in { -560, -280, 280, 560 } do
+        turbine(folder, Vector3.new(x, PLAIN, -1700), Vector3.new(0, 0, 1))
+    end
 end
 
 -- A painted number on a landing pad, read from the site end.
@@ -365,6 +550,7 @@ local function signs(parent)
     board("AssemblySign", Vector3.new(705, 14, -540), -Vector3.xAxis, Vector2.new(30, 6), { title = "ASSEMBLY", subtitle = "STAGE INTEGRATION", icon = "🏗️", accent = ORANGE }, top)
 end
 
+-- Builds it all; returns { model, fit(edge) } (fit as the site expands).
 function Spaceport.build(world)
     local model = Instance.new("Model")
     model.Name = "Spaceport"
@@ -392,8 +578,24 @@ function Spaceport.build(world)
         padNumber(model, Vector3.new(190, 3.1, pad[1] + 21), index)
     end
     signs(model)
+    local roofs = Instance.new("Model")
+    roofs.Name = "MissionControlRoofs"
+    roofs.Parent = model
+    for _, room in Spaceport.Rooms do
+        roof(roofs, room)
+    end
+    local fields = filler(model)
+    turbines(model)
     model.Parent = world
-    return model
+    local service = { model = model }
+    -- Clears field filler the site's ground (half-width `edge`) has grown over.
+    function service.fit(edge)
+        for _, piece in fields:GetChildren() do
+            local inner = piece:GetAttribute("InnerX")
+            if inner and inner < edge + 10 then piece:Destroy() end
+        end
+    end
+    return service
 end
 
 return Spaceport
