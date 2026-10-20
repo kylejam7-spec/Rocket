@@ -7,6 +7,9 @@
   Launch Specialist 40, Mission Commander 50, Launch Director 65, NASA Director 80,
   NASA CEO 100. Titles stay upper case over heads; the tag is 280 wide so the longest
   names fit. Details in `notes/RANKS.md`.
+- User: the nameplate reads, bottom to top, the player's name just above the head, then
+  the rank title with a small "🚀 N" lifetime launch count beside it. It replaces
+  Roblox's own name label.
 
 ## 2026-10-20: Gyms tick 3 times a second
 
