@@ -156,6 +156,13 @@ return function()
         return id == 2
     end)
     assert(owned.PetSlot1 and not owned.DoubleCoins and checked.DoubleCoins and checked.PetSlot1 and not checked.PetSlot2 and not checked.FastHatch)
+    -- Passes saved on the profile (bought here) are owned without asking, even when
+    -- Roblox says no or the check fails.
+    owned, checked = Service.sync(real, function(id)
+        if id == 3 then error("throttled") end
+        return false
+    end, { "DoubleCoins", "PetSlot2" })
+    assert(owned.DoubleCoins and owned.PetSlot2 and checked.PetSlot2 and not owned.PetSlot1 and checked.PetSlot1, "saved passes count as owned")
 
     -- Pet slots: 3, +1, +2, both = 6; equips and landings respect them; trims when gone.
     assert(Shop.petSlots({}) == 3 and Shop.petSlots({ PetSlot1 = true }) == 4 and Shop.petSlots({ PetSlot2 = true }) == 5)

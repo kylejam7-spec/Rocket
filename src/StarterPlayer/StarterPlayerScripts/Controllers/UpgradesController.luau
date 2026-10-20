@@ -30,6 +30,25 @@ local WIDTH, HEIGHT = 680, 70 + #Config.UpgradeOrder * ROW + 26
 local CLOSE_DISTANCE = 22
 local CANT_AFFORD = Color3.fromRGB(120, 112, 140)
 
+-- The cha-ching for reaching `level` (coins or Robux), bigger every tier: the chime
+-- climbs a major scale to the octave, more coins clink in, then a sparkle (tier 4+)
+-- and the level-up arpeggio (tier 7+) join, and the last tier lands the hit jingle
+-- and a fanfare.
+local SCALE = { 0, 2, 4, 5, 7, 9, 11, 12 }
+local function celebrate(level, max)
+    local loud = 1 + 0.04 * (level - 1)
+    Sfx.play("confirm", { pitch = 0.9 * 2 ^ (SCALE[math.min(level, #SCALE)] / 12), volume = loud })
+    for clink = 1, math.min(1 + level // 3, 4) do
+        task.delay(0.05 + 0.06 * clink, Sfx.play, "coin", { pitch = 1 + 0.04 * clink, volume = 1.6 * loud })
+    end
+    if level >= 4 then task.delay(0.1, Sfx.play, "gain", { pitch = 1 + 0.03 * (level - 4), volume = 0.8 * loud }) end
+    if level >= 7 then task.delay(0.16, Sfx.play, "levelup", { pitch = 1 + 0.04 * (level - 7), volume = 2 * loud }) end
+    if level >= max then
+        task.delay(0.3, Sfx.play, "jingle", { volume = 1.1 })
+        task.delay(0.3, Sfx.play, "fanfare4")
+    end
+end
+
 -- "now → next" for each track's effect.
 local function effect(track, level)
     local spec = Config.Upgrades[track]
@@ -163,10 +182,11 @@ function UpgradesController.start()
         local before = previous and previous.profile and previous.profile.upgrades
         if before and state.profile then
             for track, row in rows do
-                if (state.profile.upgrades[track] or 0) > (before[track] or 0) then
+                local level = state.profile.upgrades[track] or 0
+                if level > (before[track] or 0) then
                     pending[track] = nil
-                    Tween.bounce(row.title, 1.3, 0.35)
-                    Sfx.play("confirm")
+                    Tween.bounce(row.title, 1.25 + 0.3 * level / Config.Upgrades[track].max, 0.35 + 0.02 * level)
+                    celebrate(level, Config.Upgrades[track].max)
                 end
             end
         end

@@ -91,19 +91,24 @@ function ShopController.start()
         Size = UDim2.fromOffset(WIDTH, HEIGHT), BackgroundTransparency = 0.05, radius = 18,
         stroke = 4, strokeColor = ROBUX, Visible = false, Parent = gui,
     })
-    -- Same phone fit as the other panels: readable, and left of the touch buttons.
+    -- Same phone fit as the other panels: readable, and left of the touch buttons. It
+    -- never grows wider than the screen, and the touch shift stops at the left edge, so
+    -- the first column of offers always shows whole.
     local screenScale = gui:FindFirstChildOfClass("UIScale")
     local panelScale = Create.new("UIScale", { Name = "ReadableScale", Parent = panel })
     local function fit()
         local s = screenScale and screenScale.Scale or 1
-        local want = math.max(s, math.min(0.75, 0.9 * gui.AbsoluteSize.Y / HEIGHT))
+        local screen = gui.AbsoluteSize
+        local want = math.max(s, math.min(0.75, 0.9 * screen.Y / HEIGHT))
+        want = math.min(want, (screen.X - 2 * Theme.gutter) / WIDTH)
         panelScale.Scale = want / s
         local shift = 0
         if Actions.touch then
             local cluster = Actions.cluster()
-            local right = gui.AbsoluteSize.X / 2 + WIDTH * want / 2
+            local right = screen.X / 2 + WIDTH * want / 2
             shift = math.min(0, cluster.AbsolutePosition.X - 8 - right)
         end
+        shift = math.max(shift, Theme.gutter + WIDTH * want / 2 - screen.X / 2)
         panel.Position = UDim2.new(0.5, shift / s, 0.5, 0)
     end
     if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
@@ -130,6 +135,8 @@ function ShopController.start()
         ScrollingDirection = Enum.ScrollingDirection.Y, Parent = panel,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = list })
+    -- The cards' outlines draw outside their frames; this keeps the list from clipping them.
+    Create.new("UIPadding", { PaddingLeft = UDim.new(0, 4), PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 4), Parent = list })
     local order = 0
     local function section(title)
         order += 1
@@ -138,7 +145,7 @@ function ShopController.start()
             TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, LayoutOrder = order, Parent = list,
         })
         order += 1
-        local grid = Create.new("Frame", { Name = "Grid", Size = UDim2.new(1, -12, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+        local grid = Create.new("Frame", { Name = "Grid", Size = UDim2.new(1, -14, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
             BackgroundTransparency = 1, LayoutOrder = order, Parent = list })
         return grid
     end

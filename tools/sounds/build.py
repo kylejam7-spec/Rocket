@@ -51,10 +51,12 @@ MANIFEST = {
     "ui/confirm": "kenney_interface-sounds/Audio/confirmation_001.ogg",
     "ui/notify": "kenney_interface-sounds/Audio/pluck_001.ogg",
     "ui/jingle": "kenney_music-jingles/Audio/Hit jingles/jingles_HIT04.ogg",
-    # Short wooden knocks (~20 ms decay, 200-450 Hz): a soft thock, no metallic ring.
-    # Fuel plays them lower in Sfx.
-    "game/pickup": {"layers": [{"file": "kenney_impact-sounds/Audio/impactWood_light_000.ogg", "lowpass": 2500}]},
-    "game/place": {"layers": [{"file": "kenney_impact-sounds/Audio/impactWood_medium_000.ogg", "lowpass": 2000}]},
+    # Material pickup / place: el_boss's three pops (freesound 665181-665183, CC0, supplied
+    # by the user; 70 ms each, peaks ~930 / 1,010 / 1,280 Hz, pop1 the deepest).
+    # CargoController walks up them as a load fills and back down as it empties.
+    "game/pop1": "el_boss/665183__el_boss__item-or-material-pickup-pop-1-of-3.wav",
+    "game/pop2": "el_boss/665182__el_boss__item-or-material-pickup-pop-2-of-3.wav",
+    "game/pop3": "el_boss/665181__el_boss__item-or-material-pickup-pop-3-of-3.wav",
     "game/full": "kenney_interface-sounds/Audio/bong_001.ogg",
     "game/drop": "kenney_impact-sounds/Audio/impactSoft_heavy_000.ogg",
     # Mixkit's coin jingle builds for ~200 ms; start at its first strong clink (90 ms)

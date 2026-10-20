@@ -10,7 +10,7 @@ Profiles.__index = Profiles
 local function defaults()
     return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
         blackHolesVisited = 0, tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
-        pets = {}, equippedPets = {}, ufos = {} }
+        pets = {}, equippedPets = {}, ufos = {}, passes = {} }
 end
 
 local function copy(profile)
@@ -23,6 +23,7 @@ local function copy(profile)
     result.purchaseIds = table.clone(profile.purchaseIds)
     result.pets = table.clone(profile.pets)
     result.equippedPets = table.clone(profile.equippedPets)
+    result.passes = table.clone(profile.passes or {})
     result.ufos = {}
     for index, ufo in profile.ufos or {} do result.ufos[index] = table.clone(ufo) end
     return result
@@ -84,6 +85,15 @@ local function validate(raw, config)
         raw = table.clone(raw)
         raw.blackHolesVisited = 0
     end
+    -- SHOP Game Passes bought in game (ShopService), by key: also owned when Roblox's
+    -- ownership check says no (Studio test purchases never show up there). Came later
+    -- without a schema bump, like blackHolesVisited.
+    if raw.passes == nil then
+        raw = table.clone(raw)
+        raw.passes = {}
+    end
+    if type(raw.passes) ~= "table" then error("Invalid passes") end
+    for _, key in raw.passes do if type(key) ~= "string" then error("Invalid passes") end end
     for _, key in { "strengthLevel", "speedLevel", "completedLaunches", "lifetimeDeliveries", "coins", "blackHolesVisited" } do
         local value = raw[key]
         if type(value) ~= "number" or value ~= value or value == math.huge or value < 0 or value % 1 ~= 0 then error("Invalid profile " .. key) end
@@ -154,6 +164,15 @@ function Profiles.samePets(a, b)
     for id, count in a.pets do if b.pets[id] ~= count then return false end end
     for id in b.pets do if not a.pets[id] then return false end end
     return true
+end
+
+-- The pass keys in either list, `a`'s order first.
+function Profiles.mergePasses(a, b)
+    local result = table.clone(a or {})
+    for _, key in b or {} do
+        if not table.find(result, key) then table.insert(result, key) end
+    end
+    return result
 end
 
 -- Credits accepted delivery units: lifetime deliveries plus CoinsPerUnit coins each.
@@ -353,6 +372,8 @@ function Profiles:save(userId)
                 current.pets = snapshot.pets
                 current.equippedPets = snapshot.equippedPets
                 current.ufos = snapshot.ufos
+                -- Passes only ever add up: one recorded by any server stays.
+                current.passes = Profiles.mergePasses(current.passes, snapshot.passes)
                 applyRewards(current)
                 current.session = not release and { owner = self.owner, expires = os.time() + self.config.LeaseSeconds } or nil
                 return current, { userId }
@@ -380,6 +401,7 @@ function Profiles:save(userId)
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
+            or #record.profile.passes ~= #snapshot.passes
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if release and self.store then
             -- Nothing more may be written for them here; a rejoin loads afresh.
