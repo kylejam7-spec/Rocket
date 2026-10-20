@@ -1,4 +1,20 @@
-# Latest session: 2026-10-20 (12), launches-only ranks
+# Latest session: 2026-10-20 (13), planet stays x2 a tick at 4 ticks a second
+
+- `claude/planet-ticks` from master 590b77b (#46 merged). Config.Planet: StrengthBonus /
+  SpeedBonus 6, TicksPerSecond 4, GymGain 6 (destination gyms unchanged);
+  RewardSaveSeconds 1. LaunchService's stay loop ticks at 1/rate, feedback and broadcasts
+  once a second. ProfileService: `Profiles:preview(record)` adds pending ticks to
+  planetBonuses (record.preview), saves subtract it from the snapshot and recompute after;
+  queueReward schedules one save per RewardSaveSeconds. PersistenceCheck covers preview,
+  throttle and no double count; DestinationCheck 6 a tick / 4 a second; ProgressionReport
+  uses the tick rate.
+- Studio: RunChecks 15/15. Debug Moon launch (stay 12): client strength rose +6 every
+  ~0.26 s, 48 steps = 288 (24/s); feedback "+24 strength / +24 speed (n/12)" once a
+  second; stored DataStore total (98,654) matched live, launches 4 → 5. No new warnings
+  (PersistenceCheck's own negative cases only). Two test Moon launches went to the
+  Studio store (launches 3 → 5).
+
+# Earlier session: 2026-10-20 (12), launches-only ranks
 
 - `claude/happy-poitras-d42432` from master 0e64806. `Config.Ranks` is ten launch-only
   tiers (Intern 0 .. NASA CEO 100); `Upgrades.rank(config, launches)`; RankTag 280 wide.

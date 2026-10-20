@@ -19,9 +19,10 @@ return function()
             assert(built[mission.ModelTier], "mission " .. mission.Id .. " has no destination")
             assert(config.Destinations[mission.ModelTier].id == mission.Id, "mission " .. mission.Id .. " flies to the wrong destination")
         end
-        -- Rarer destinations pay more per second, in even steps from 3/s on the Moon.
+        -- Rarer destinations pay more per tick, in even steps from 6 a tick (4 a second) on the Moon.
         local destinations = config.Destinations
-        assert(config.Planet.StrengthBonus * destinations[1].reward == 3 and config.Planet.SpeedBonus * destinations[1].reward == 3, "Moon pays 3 of each stat per second")
+        assert(config.Planet.StrengthBonus * destinations[1].reward == 6 and config.Planet.SpeedBonus * destinations[1].reward == 6, "Moon pays 6 of each stat per tick")
+        assert(config.Planet.TicksPerSecond == 4, "stay rewards tick 4 times a second")
         -- Stays last about two minutes everywhere.
         for index = 1, Missions.Count do
             local seconds = Missions.get(index).RewardSeconds or config.RewardSeconds

@@ -153,13 +153,17 @@ return table.freeze({
         table.freeze({ cycles = 50, multiplier = 75 }),
         table.freeze({ cycles = 100, multiplier = 100 }),
     }),
-    -- Per-second stat reward unit for passengers at a destination: x the destination's
-    -- reward (rarer missions pay more) x the mission's RewardMultiplier (Shared.Missions).
-    -- Each destination's own bench and treadmill give double its per-second reward.
-    -- Rewards step up evenly by rarity: 3 / 6 / 9 / 12 / 15 of each stat per second
-    -- (Moon → Black Hole, reward 1-5). Standing through a Moon stay gives 360 of each,
-    -- the Black Hole 1,800; their 2x gyms (6-30/s) are the best training in the game.
-    Planet = table.freeze({ StrengthBonus = 3, SpeedBonus = 3 }),
+    -- Per-tick stat reward unit for passengers at a destination, TicksPerSecond ticks a
+    -- second: x the destination's reward (rarer missions pay more) x the mission's
+    -- RewardMultiplier (Shared.Missions). User, 2026-10-20: double per tick (3 → 6) at 4
+    -- ticks a second, so 24 / 48 / 72 / 96 / 120 of each stat per second (Moon → Black
+    -- Hole, reward 1-5); a Moon stay gives 2,880 of each, the Black Hole 14,400.
+    -- Each destination's bench and treadmill pay GymGain x reward per training tick
+    -- (unchanged by the stay rewards: 6-30 per tick, 3 ticks a second).
+    Planet = table.freeze({ StrengthBonus = 6, SpeedBonus = 6, TicksPerSecond = 4, GymGain = 6 }),
+    -- Stay rewards save to the DataStore at most this often; ticks in between show at once
+    -- (Profiles:queueReward previews them) and go out with the next save.
+    RewardSaveSeconds = 1,
     -- Mission wheel: it starts this many seconds before a reward stay ends and spins
     -- for WheelSpinSeconds; everyone sees it (WheelController).
     WheelLeadSeconds = 10,

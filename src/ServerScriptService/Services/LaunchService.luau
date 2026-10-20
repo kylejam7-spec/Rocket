@@ -155,8 +155,7 @@ function Launch.new(ctx)
             local multiplier = definition.RewardMultiplier * place.reward
             for _, station in World.stations do
                 if station.destination == definition.ModelTier then
-                    local bonus = station.stat == "speedLevel" and config.Planet.SpeedBonus or config.Planet.StrengthBonus
-                    station.gain = 2 * bonus * multiplier
+                    station.gain = config.Planet.GymGain * multiplier
                     station.part:SetAttribute("TrainingGain", station.gain)
                 end
             end
@@ -174,23 +173,26 @@ function Launch.new(ctx)
             Cycle.broadcast()
             -- Cumulative tick counts are idempotent even when a save retries; the
             -- multiplier scales the ticks so the ledger stays an integer total.
+            -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
+            local rate = config.Planet.TicksPerSecond
             local tick, spun, swallowed = 0, false, false
-            while tick < stay.total do
-                task.wait(1)
+            while tick < stay.total * rate do
+                task.wait(1 / rate)
                 tick += 1
+                local elapsed, second = tick / rate, tick % rate == 0
                 for userId in rocket.passengers do
                     ctx.profiles:queueReward(userId, cycle, tick * multiplier)
                     local player = Players:GetPlayerByUserId(userId)
-                    if player then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier .. " strength / +" .. config.Planet.SpeedBonus * multiplier .. " speed (" .. tick .. "/" .. stay.total .. ")") end
+                    if player and second then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier * rate .. " strength / +" .. config.Planet.SpeedBonus * multiplier * rate .. " speed (" .. elapsed .. "/" .. stay.total .. ")") end
                 end
-                if not spun and stay.total - tick <= config.WheelLeadSeconds then
+                if not spun and stay.total - elapsed <= config.WheelLeadSeconds then
                     spun = true
                     spinWheel(rocket)
                 end
                 -- The Black Hole's stay ends in the singularity, SingularitySeconds before
                 -- its (possibly extended) end. It closes the stay for the shop, so time
                 -- bought now goes to the next stay rather than this frozen one.
-                if definition.ModelTier == BLACK_HOLE and not swallowed and stay.total - tick <= Launch.SingularitySeconds then
+                if definition.ModelTier == BLACK_HOLE and not swallowed and stay.total - elapsed <= Launch.SingularitySeconds then
                     swallowed = true
                     if ctx.Shop then ctx.Shop.endStay() end
                     -- Hold everyone still while the hole takes them (their clients draw it).
@@ -201,7 +203,7 @@ function Launch.new(ctx)
                     end
                     place.folder:SetAttribute("SingularityAt", workspace:GetServerTimeNow())
                 end
-                Cycle.broadcast()
+                if second then Cycle.broadcast() end
             end
             if ctx.Shop then ctx.Shop.endStay() end
             if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
