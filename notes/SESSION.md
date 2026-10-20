@@ -1,4 +1,27 @@
-# Latest session: 2026-10-20, spaceport round the launch site
+# Latest session: 2026-10-20 (2), launch anywhere and the Black Hole's singularity
+
+- `RocketDebug` "launch" (DebugService, Studio only): from Building/Fueling, swaps in the
+  chosen mission, fills both phases, moves every player into the cabin and launches
+  after a short countdown; `stay` shortens the reward stay. Studio chat `/launch
+  blackhole [countdown] [stay]` (TextChatCommand) or `tools/debug/launch.luau` in the
+  command bar. LaunchService reads `service.debug` (cleared when that flight resets).
+- Black Hole: red warning beacons blink round the shard's rim and three more streams
+  tear off its edge (DestinationService). `BlackHoleController` (client): while on the
+  shard the hole swells 25% over the stay, the light drains violet, a drone (the engine
+  cue pitched down) rises, tremors shake the camera more often and harder toward the
+  end, and lightning cracks off the horizon (reducedEffects skips shake and bolts).
+- Singularity: LaunchService stamps `SingularityAt` on the BlackHole folder 4 s before
+  the stay ends (just after the wheel stops) and anchors passengers; each client hides
+  the characters, spirals stand-in copies into the hole shrinking, drags the camera in
+  (FOV 70 -> 120, blur, desaturation) as the hole balloons, flashes white then black;
+  the server's usual reset moves everyone to spawn (and unanchors them) and the black
+  fades. The camera is marked Cinematic so CameraController steps aside.
+- Studio: two full Black Hole runs via the debug launch (arrival, singularity, home,
+  rewards credited), sampled the pull numerically; RunChecks 13/13, no errors.
+  Rojo sometimes lands edits a moment after Play starts: restart Play if the server
+  still runs old code.
+
+# Earlier session: 2026-10-20, spaceport round the launch site
 
 - Branch `claude/partner-latest-f117d18` from master f117d18 (#42). User: the apron
   behind the rocket was empty and the land round the site was just meadow; fill it from
