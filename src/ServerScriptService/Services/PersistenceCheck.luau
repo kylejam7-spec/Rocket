@@ -72,6 +72,29 @@ return function()
     assert(waitFor(function() return d.records[1].released end))
     assert(d:load(1) and not d.records[1].released and store.data.Player_1.session.owner == d.owner)
 
+    -- Stay rewards: each tick shows at once, saves come at most one per
+    -- RewardSaveSeconds, and a save never counts the previewed ticks twice.
+    local rewards = fakeStore()
+    local e = server(rewards)
+    assert(e:load(2))
+    local unit, record = config.Planet.StrengthBonus, e.records[2]
+    e:queueReward(2, "L1", 1)
+    assert(record.profile.planetBonuses.strength == unit and record.profile.planetBonuses.speed == config.Planet.SpeedBonus, "tick not previewed")
+    e:queueReward(2, "L1", 2)
+    e:queueReward(2, "L1", 3)
+    assert(record.profile.planetBonuses.strength == 3 * unit)
+    assert(waitFor(function() return not next(record.pending) and not record.saveQueued and not record.busy end), "reward save didn't run")
+    assert(rewards.data.Player_2.planetBonuses.strength == 3 * unit and rewards.data.Player_2.completedLaunches == 1)
+    assert(record.profile.planetBonuses.strength == 3 * unit and record.profile.completedLaunches == 1)
+    local before = rewards.writes
+    e:queueReward(2, "L1", 4)
+    e:queueReward(2, "L1", 5)
+    task.wait(0.1)
+    assert(rewards.writes == before and record.profile.planetBonuses.strength == 5 * unit, "reward save not throttled")
+    assert(waitFor(function() return not next(record.pending) and not record.busy end))
+    assert(rewards.writes == before + 1 and rewards.data.Player_2.planetBonuses.strength == 5 * unit)
+    assert(record.profile.planetBonuses.strength == 5 * unit and record.profile.completedLaunches == 1)
+
     -- Studio without API access: unsaved progress instead of a failed load.
     local denied = Profiles.new(config, function() end)
     denied.store = { UpdateAsync = function() error("StudioAccessToApisNotAllowed: Studio access to APIs is not allowed.") end }

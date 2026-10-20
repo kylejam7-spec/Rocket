@@ -247,13 +247,38 @@ function Profiles:dirty(userId)
     if self.store and not next(record.pending) then record.status = "Unsaved changes — autosave pending" end
 end
 
+-- Unsaved stay ticks show in planetBonuses at once (record.preview holds what was
+-- added) so stats climb every tick; saves stay at most one per RewardSaveSeconds.
+function Profiles:preview(record)
+    local profile, added = record.profile, record.preview or { strength = 0, speed = 0 }
+    local ticks = 0
+    for id, pending in record.pending do
+        local saved = (profile.rewardedLaunchTicks or {})[id] or (table.find(profile.rewardedLaunchIds, id) and 1 or 0)
+        ticks += math.max(0, pending - saved)
+    end
+    local cap, bonuses, preview = self.config.MaxPlanetBonus, profile.planetBonuses, {}
+    for stat, unit in { strength = self.config.Planet.StrengthBonus, speed = self.config.Planet.SpeedBonus } do
+        local base = bonuses[stat] - added[stat]
+        bonuses[stat] = math.min(cap, base + ticks * unit)
+        preview[stat] = bonuses[stat] - base
+    end
+    record.preview = preview
+end
+
 function Profiles:queueReward(userId, launchId, ticks)
     local record = self.records[userId]
     if not record or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return end
     record.pending[launchId] = math.max(record.pending[launchId] or 0, ticks or 1)
     record.status = "Reward pending — saving"
+    self:preview(record)
     self.changed(userId)
-    task.spawn(function() self:save(userId) end)
+    if record.saveQueued then return end
+    record.saveQueued = true
+    task.delay(math.max(0, (record.rewardSavedAt or -math.huge) + self.config.RewardSaveSeconds - os.clock()), function()
+        record.saveQueued = false
+        record.rewardSavedAt = os.clock()
+        self:save(userId)
+    end)
 end
 
 function Profiles:save(userId)
@@ -261,6 +286,10 @@ function Profiles:save(userId)
     if not record or record.busy or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return false end
     record.busy = true
     local snapshot = copy(record.profile)
+    -- Saves start from the stored bonuses; the preview of pending ticks isn't real yet.
+    local added = record.preview or { strength = 0, speed = 0 }
+    snapshot.planetBonuses.strength -= added.strength
+    snapshot.planetBonuses.speed -= added.speed
     local batch = {}
     local batchCount, pendingCount = 0, 0
     for id, ticks in record.pending do
@@ -329,6 +358,8 @@ function Profiles:save(userId)
         record.profile.rewardedLaunchIds = saved.rewardedLaunchIds
         record.profile.rewardedLaunchTicks = saved.rewardedLaunchTicks
         for id, ticks in batch do if record.pending[id] <= ticks then record.pending[id] = nil end end
+        record.preview = nil
+        self:preview(record)
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)

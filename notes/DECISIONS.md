@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-10-20: Planet stays pay double per tick, 4 ticks a second
+
+- User: stay rewards doubled per tick (Moon 3 → 6 of each stat) and tick 4 times a
+  second instead of once: 24 / 48 / 72 / 96 / 120 a second (Moon → Black Hole), a
+  2-minute Moon stay 2,880 of each (was 360). `Config.Planet.TicksPerSecond`.
+- Destination benches and treadmills keep their old gain (`Planet.GymGain` 6 x reward
+  per training tick); they no longer follow the stay reward.
+- Saves don't follow the tick rate: `Profiles:queueReward` previews unsaved ticks in
+  `planetBonuses` at once and saves at most once per `RewardSaveSeconds` (1 s), the
+  same DataStore load as the old 1-a-second ticks.
+
 ## 2026-10-20: Ranks count launches only, Intern to NASA CEO
 
 - User: ten ranks by completed rocket launches only (lifetime deliveries dropped):

@@ -370,9 +370,8 @@ function World.new(ctx)
                 glow.Color, glow.Range, glow.Brightness = Color3.fromRGB(255, 210, 140), 12, 1
                 glow.Parent = lamp
             end
-            local bonus = treadmill and config.Planet.SpeedBonus or config.Planet.StrengthBonus
             table.insert(stations, { part = base, name = treadmill and "Treadmill" or "Bench press", destination = tier,
-                stat = treadmill and "speedLevel" or "strengthLevel", gain = 2 * bonus * place.reward, required = 0 })
+                stat = treadmill and "speedLevel" or "strengthLevel", gain = config.Planet.GymGain * place.reward, required = 0 })
         end
     end
     service.stations = stations

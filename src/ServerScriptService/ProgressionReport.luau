@@ -78,9 +78,9 @@ local function simulate(players, train, gymShare, sequence)
         end
         local tierInfo = cycle.Tier
         local stay = cycle.RewardSeconds or config.RewardSeconds
-        local perSecond = config.Planet.StrengthBonus * config.Destinations[tier].reward * cycle.RewardMultiplier
-        local passive = perSecond * stay
-        local gym = 2 * perSecond * stay * gymShare
+        local reward = config.Destinations[tier].reward * cycle.RewardMultiplier
+        local passive = config.Planet.StrengthBonus * config.Planet.TicksPerSecond * reward * stay
+        local gym = config.Planet.GymGain * reward / config.TrainingSeconds * stay * gymShare
         profile.strengthLevel += passive + gym / 2
         profile.speedLevel += passive + gym / 2
         fromDestinations += 2 * passive + gym
