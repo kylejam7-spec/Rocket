@@ -113,7 +113,8 @@ return function()
 
     -- Fill: flat units into whichever material the rocket needs now; Metal overflow
     -- carries into Fuel, Fuel overflow waits for the next rocket. Nobody's contribution.
-    assert(#Shop.Fills == 4 and Shop.Fills[1] == 2000 and Shop.Fills[4] == 11000)
+    assert(#Shop.Fills == 5 and Shop.Fills[1] == 2000 and Shop.Fills[4] == 11000 and Shop.Fills[5] == 27500)
+    assert(config.Shop.products.Fill27500.id == 3720426887 and config.Shop.products.Fill27500.price == 239)
     local rocket = Rocket.new(config, "c1", 1, 0)
     local metal, fuel = rocket.required.Metal, rocket.required.Fuel
     effects.fillBank = 2000
