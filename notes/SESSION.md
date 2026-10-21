@@ -1,10 +1,13 @@
-# Latest session: 2026-10-20 (16), pops, saved passes, shop fit, signs, upgrade chime
+# Latest session: 2026-10-20 (16), pops, saved passes, shop fit, upgrade chime
 
 - `claude/pops-passes-signs` from master b3a96a5.
-- Material sounds: el_boss's three pops (Sounds/el_boss, moved there from assets/sounds/ui)
-  replace game/pickup and game/place (build.py cues game/pop1-3; old oggs removed).
-  CargoController plays pop1/2/3 by load fill thirds, bending +8% across each third, so
-  pickups climb and placements descend (placements 0.94x, Fuel 0.85x). **Not uploaded
+- Material sounds: el_boss's pops (Sounds/el_boss, moved there from assets/sounds/ui)
+  replace game/pickup and game/place. First pass used all three by fill thirds; the user
+  then asked for one sound over a gradual range: build.py cue game/pop (pop 1 of 3, the
+  deepest) only, and CargoController pitches it 0.8x up an octave in 12 semitone steps by
+  load fill (placements 0.94x, Fuel 0.85x). Pitch is PlaybackSpeed at runtime: the same
+  resampling build.py's "pitch" does, without 13 uploads. (Rokit only installs tools like
+  Rojo; it can't make audio.) **Not uploaded
   yet** (no ROBLOX_API_KEY here): Studio plays the local copies, live servers are silent
   for pickups/places until `python tools/sounds/upload.py --user-id ...` runs.
 - Metal load: CargoVisual.MetalScale 1.15 (the same heap 15% larger; jerry can unchanged).
@@ -18,14 +21,14 @@
   bought here stays owned. UFO shop rows show the Fast Hatch time (⚡ 2.5 min).
 - SHOP panel: UIPadding so the list stops clipping the left card outlines; fit() caps
   the panel at the screen width and stops the touch shift at the left gutter.
-- World signs: badge + text measured (TextService) and centred as one group, text
-  centred, shrink to fit, accent rule between title and subtitle, inner hairline.
+- World signs: centred badge + text, accent rule and hairline were tried, then reverted
+  at the user's request (WorldSignController is master's again).
 - Studio: RunChecks 16/16. "bought FastHatch" saved passes = FastHatch to
   RocketProfiles_studio; after stopping and restarting Play the SHOP showed OWNED and
-  UFO rows "⚡ 2.5 min". Hold E at the yard: pop1 x7, pop2 x7, pop3 x7, full at 88;
-  placing 88 on the ramp: pop3 -> pop2 -> pop1. Ball 7.61 studs at 88 (= 2*8.8^0.55*1.15).
-  Arch, Mission Control and Upgrades signs eyeballed centred. 88 test Metal went into
-  that Play's rocket and the profile's coins/deliveries.
+  UFO rows "⚡ 2.5 min". Ball 7.61 studs at 88 (= 2*8.8^0.55*1.15). Single pop, 11 a
+  tick: pickups 0.90, 0.95, 1.07, 1.13, 1.27, 1.35, 1.51 then "full" at 88; placing
+  1.42 down to 0.75. Test Metal went into those Plays' rockets and the profile's
+  coins/deliveries.
 - Ramp (not changed, user asked for suggestions only): 45 deg, 528 studs long per side
   for the current tier; at walk 20 and 66 speed along the slope is ~kept but horizontal
   progress is cos 45 = 71%, with stutter (h dropping to ~5 for a frame).

@@ -108,16 +108,16 @@ function CargoController.start()
 
     -- Sounds for this player's own load, on the frame each transfer shows: the server
     -- stamps the unit count on CarriedMaterials together with its new size. Both play
-    -- the three pops by how full the load is: the deepest (pop1) in its first third,
-    -- pop3 in its last, each bending up a little across its third. So pickups climb
-    -- as the load fills and placements range back down as it empties. Placements sit a
-    -- touch lower than pickups, and Fuel's pops lower than scrap's. Losing the load is
-    -- a placement while the button is held, a drop right after Q/DROP, and silent
-    -- otherwise (a phase change clears it).
+    -- the one pop, pitched by how full the load is: POP_STEPS semitone steps from
+    -- POP_LOW (empty) up an octave (full). So pickups climb note by note as the load
+    -- fills and placements step back down as it empties. Placements sit a touch lower
+    -- than pickups, and Fuel's pops lower than scrap's. Losing the load is a placement
+    -- while the button is held, a drop right after Q/DROP, and silent otherwise (a
+    -- phase change clears it).
+    local POP_LOW, POP_STEPS = 0.8, 12
     local function pop(fill, kind, pitch)
-        local band = math.clamp(fill * 3, 0, 2.999)
-        local index = math.floor(band) + 1
-        Sfx.play("pop" .. index, { pitch = pitch * (kind == "Fuel" and 0.85 or 1) * (1 + 0.08 * (band - index + 1)) })
+        local step = math.round(math.clamp(fill, 0, 1) * POP_STEPS)
+        Sfx.play("pop", { pitch = pitch * (kind == "Fuel" and 0.85 or 1) * POP_LOW * 2 ^ (step / 12) })
     end
     local function watchLoad(character)
         local count, kind = 0, nil

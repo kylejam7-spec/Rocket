@@ -51,12 +51,10 @@ MANIFEST = {
     "ui/confirm": "kenney_interface-sounds/Audio/confirmation_001.ogg",
     "ui/notify": "kenney_interface-sounds/Audio/pluck_001.ogg",
     "ui/jingle": "kenney_music-jingles/Audio/Hit jingles/jingles_HIT04.ogg",
-    # Material pickup / place: el_boss's three pops (freesound 665181-665183, CC0, supplied
-    # by the user; 70 ms each, peaks ~930 / 1,010 / 1,280 Hz, pop1 the deepest).
-    # CargoController walks up them as a load fills and back down as it empties.
-    "game/pop1": "el_boss/665183__el_boss__item-or-material-pickup-pop-1-of-3.wav",
-    "game/pop2": "el_boss/665182__el_boss__item-or-material-pickup-pop-2-of-3.wav",
-    "game/pop3": "el_boss/665181__el_boss__item-or-material-pickup-pop-3-of-3.wav",
+    # Material pickup / place: el_boss's deepest pop (freesound 665183, "pop 1 of 3", CC0,
+    # supplied by the user with its 2 and 3 siblings; 70 ms, peak ~930 Hz). CargoController
+    # pitches it in semitone steps up an octave as a load fills, back down as it empties.
+    "game/pop": "el_boss/665183__el_boss__item-or-material-pickup-pop-1-of-3.wav",
     "game/full": "kenney_interface-sounds/Audio/bong_001.ogg",
     "game/drop": "kenney_impact-sounds/Audio/impactSoft_heavy_000.ogg",
     # Mixkit's coin jingle builds for ~200 ms; start at its first strong clink (90 ms)
