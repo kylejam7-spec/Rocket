@@ -1,4 +1,21 @@
-# Latest session: 2026-10-21 (17), Europa's oarfish
+# Latest session: 2026-10-21 (18), quiet join, new loading art
+
+- `claude/quiet-join` from master efedd2d.
+- Join sound burst: while a profile loads the server sends a blank placeholder
+  (saveStatus "Loading"), and the real profile arriving looked like a jump in coins,
+  stats, passes, UFOs and upgrades (coin burst, gains, level-up, confirms, the upgrade
+  chime with jingle + fanfare at max). State now passes previous = nil for the first
+  real profile (`State.loaded`). Studio join showed exactly that: "Loading coins=0" then
+  "Saved coins=1770".
+- And audio is muted while joining: Settings keeps Music/SFX at 0 until the loading
+  screen sets LocalPlayer.LoadingDone and the profile has arrived, then 1.5 s, then fades
+  up over 2.5 s; Sfx drops cues before that (Sfx.held counts them). Studio: silent to
+  ~1.5 s after the loading screen, full 0.8/0.5 about 4 s after; nothing held.
+- Loading art: assets/Loading Screen/newloadingscreen.png, uploaded through MCP as
+  138193828661909 (needs experience access; Studio falls back to textures/rocket-loading/
+  loading-v2.png in its content folder).
+
+# Earlier session: 2026-10-21 (17), Europa's oarfish
 
 - `claude/europa-oarfish`, stacked on `claude/pops-passes-signs` (PR #51).
 - Background event at Europa (not a cutscene). LaunchService stamps `OarfishAt` on the

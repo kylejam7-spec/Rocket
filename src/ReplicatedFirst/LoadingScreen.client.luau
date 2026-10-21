@@ -7,7 +7,8 @@
 --      effects (the bar follows each file), up to PRELOAD_LIMIT seconds;
 --   3. asks the server to spawn the character (Remotes.ClientReady: characters don't
 --      auto-load, Main) and holds it still until there's ground under it;
--- then fills the bar and fades away. It stays up at least MIN_SECONDS so a tip can be
+-- then fills the bar and fades away, and game audio fades in (it's muted while loading:
+-- Controllers/Settings). It stays up at least MIN_SECONDS so a tip can be
 -- read. Runs from ReplicatedFirst, so it can't use the UI modules (not here yet).
 local ContentProvider = game:GetService("ContentProvider")
 local Players = game:GetService("Players")
@@ -18,10 +19,12 @@ local TweenService = game:GetService("TweenService")
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
 
-local ART = "rbxassetid://133247550435220"
--- Studio plays before an upload is allowed to load; it has a local copy (of
--- assets/loading/loading.png).
-local ART_STUDIO = "rbxasset://textures/rocket-loading/loading.png"
+-- The title art: assets/Loading Screen/newloadingscreen.png (the sharper redo of
+-- "loading screen.png", same layout).
+local ART = "rbxassetid://138193828661909"
+-- Studio plays before an upload is allowed to load; it has a local copy (under a new
+-- name: Studio caches rbxasset:// textures by path).
+local ART_STUDIO = "rbxasset://textures/rocket-loading/loading-v2.png"
 local MIN_SECONDS, PRELOAD_LIMIT, TIP_SECONDS = 5, 25, 4.2
 local DISPLAY, BODY = Enum.Font.FredokaOne, Enum.Font.GothamBold
 local YELLOW, ORANGE, INK = Color3.fromRGB(255, 214, 64), Color3.fromRGB(255, 140, 40), Color3.fromRGB(24, 22, 48)
@@ -234,6 +237,8 @@ end
 reach(1)
 while os.clock() - started < MIN_SECONDS or shown < 0.995 do task.wait(0.05) end
 task.wait(0.4)
+-- Game audio fades in from here (Controllers/Settings); it's silent while loading.
+player:SetAttribute("LoadingDone", true)
 local fade = TweenInfo.new(0.6)
 for _, item in gui:GetDescendants() do
     if item:IsA("GuiObject") then
