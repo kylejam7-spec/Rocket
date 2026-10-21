@@ -113,9 +113,15 @@ for name, cue in CUES do
 end
 task.spawn(ContentProvider.PreloadAsync, ContentProvider, preload)
 
+-- Cues asked for while joining (before Settings.awake()), dropped: what they were.
+Sfx.held = {}
 function Sfx.play(name, options)
     local cue, pool = CUES[name], voices[name]
     if not pool then return false end
+    if not Settings.awake() then
+        Sfx.held[name] = (Sfx.held[name] or 0) + 1
+        return false
+    end
     local now = os.clock()
     if cue.gap and lastPlayed[name] and now - lastPlayed[name] < cue.gap then return false end
     lastPlayed[name] = now
@@ -138,6 +144,7 @@ function Sfx.attach(name, parent)
 end
 
 function Sfx.playAt(name, parent, options)
+    if not Settings.awake() then return end
     local sound = Sfx.attach(name, parent)
     if not sound then return end
     sound.PlaybackSpeed = options and options.pitch or 1
