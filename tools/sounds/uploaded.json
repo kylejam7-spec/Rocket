@@ -69,19 +69,12 @@
     },
     "sha256": "13a1042375d6ec8171a96d0c243903a8dcd15dc1682e98505e760cf6ba0bc3e0"
   },
-  "game/pickup": {
-    "assetId": "135700555663023",
+  "game/pop": {
+    "assetId": "102792123161256",
     "creator": {
       "userId": "11791915499"
     },
-    "sha256": "e0bdb5a41646f492d80bc7d3ac7ff560737fb175aa5ce20542322a216757ee7f"
-  },
-  "game/place": {
-    "assetId": "75890059397165",
-    "creator": {
-      "userId": "11791915499"
-    },
-    "sha256": "d3e6c28510c5f612e7f5a1c0786ba7733bde63418f08c86806a09a43527f556d"
+    "sha256": "b6670ec7d12c6a940544ea8e8eb3769312df32b23076353c978f9bbf535fca1d"
   },
   "game/rumble": {
     "assetId": "137135372833570",

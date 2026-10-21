@@ -36,9 +36,11 @@ local CANT_AFFORD = Color3.fromRGB(120, 112, 140)
 local function hex(color)
     return ("#%02X%02X%02X"):format(color.R * 255, color.G * 255, color.B * 255)
 end
--- "5 min · 80% Common · 20% Uncommon", each rarity in its colour.
-local function odds(ufo)
-    local parts = { ufo.Minutes .. " min" }
+-- "5 min · 80% Common · 20% Uncommon", each rarity in its colour. With Fast Hatch
+-- (`rate` > 1) the landing time shows divided and marked ⚡.
+local function odds(ufo, rate)
+    local minutes = ufo.Minutes / (rate or 1)
+    local parts = { (rate or 1) > 1 and ("⚡ " .. (minutes % 1 == 0 and minutes or ("%.1f"):format(minutes)) .. " min") or (minutes .. " min") }
     for _, rarity in Pets.Rarities do
         local percent = ufo.Odds[rarity]
         if percent then table.insert(parts, ('<font color="%s">%d%% %s</font>'):format(hex(Theme.rarity[rarity]), percent, rarity)) end
@@ -122,7 +124,7 @@ function UfoShopController.start()
             Name = "Title", Position = UDim2.fromOffset(66, 6), Size = UDim2.fromOffset(330, 28), Text = ufo.Name:upper(),
             Font = Theme.font.Display, TextSize = 24, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = row,
         })
-        StrokedText.new({
+        local oddsLabel = StrokedText.new({
             Name = "Odds", Position = UDim2.fromOffset(66, 34), Size = UDim2.fromOffset(330, 22), Text = odds(ufo), RichText = true,
             Font = Theme.font.Display, TextSize = 17, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
             stroke = 1.5, Parent = row,
@@ -157,7 +159,7 @@ function UfoShopController.start()
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
-        rows[tier] = { buy = buy, robux = robux, key = key }
+        rows[tier] = { buy = buy, robux = robux, key = key, odds = oddsLabel }
     end
 
     function render(state)
@@ -176,7 +178,10 @@ function UfoShopController.start()
         else
             status.Text = "Each UFO follows you while you play, then lands as a random pet!"
         end
+        local owned = state.shop and state.shop.owned or {}
+        local rate = owned.FastHatch and Config.Shop.FastHatchRate or 1
         for tier, row in rows do
+            row.odds.Text = odds(Pets.Ufos[tier], rate)
             local price = Pets.Ufos[tier].Price
             if price then
                 row.buy.BackgroundColor3 = (free and profile.coins >= price) and Theme.color.Go or CANT_AFFORD

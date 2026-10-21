@@ -110,6 +110,17 @@ return function()
     legacy.blackHolesVisited = nil
     assert(Profiles.validate(legacy, config).blackHolesVisited == 0, "older profiles start at 0 visits")
 
+    -- SHOP passes bought in game: saved, kept when a save from a stale copy lacks them,
+    -- and older profiles load with none.
+    assert(Profiles.validate(legacy, config).passes and #Profiles.validate(legacy, config).passes == 0, "older profiles start with no passes")
+    table.insert(f.records[3].profile.passes, "FastHatch")
+    f:dirty(3)
+    assert(f:saveNow(3) and table.find(visits.data.Player_3.passes, "FastHatch"), "a bought pass saves")
+    f.records[3].profile.passes = { "PetSlot1" }
+    assert(f:saveNow(3), "pass save failed")
+    local stored = visits.data.Player_3.passes
+    assert(#stored == 2 and table.find(stored, "FastHatch") and table.find(stored, "PetSlot1"), "saved passes are never dropped")
+
     -- Studio without API access: unsaved progress instead of a failed load.
     local denied = Profiles.new(config, function() end)
     denied.store = { UpdateAsync = function() error("StudioAccessToApisNotAllowed: Studio access to APIs is not allowed.") end }

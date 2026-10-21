@@ -10,8 +10,10 @@
 -- landing in `seconds` (10 by default); Invoke("pets", count) gives everyone `count`
 -- (1) of every pet; Invoke("nopets") clears everyone's pets and UFO.
 -- Shop (before the dashboard IDs exist): Invoke("own", key, on) gives (or with false
--- takes) everyone that Game Pass; Invoke("receipt", key, purchaseId) runs a product
--- receipt for the first player through the real journal path and returns its outcome.
+-- takes) everyone that Game Pass for this session; Invoke("bought", key) runs a finished
+-- Game Pass purchase for everyone (saved on their profiles, as a real one is);
+-- Invoke("receipt", key, purchaseId) runs a product receipt for the first player
+-- through the real journal path and returns its outcome.
 -- Invoke("board") puts everyone in the rocket's cabin (during boarding, they fly).
 -- Invoke("launch", destination, { countdown = s, stay = s }) flies everyone to a
 -- destination now: from Building or Fueling it swaps in that mission (index 1..5 or id:
@@ -106,6 +108,8 @@ function Debug.new(ctx, parent)
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, ctx.World.cabin.arrival) end
         elseif action == "own" then
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.debugOwn(player, value, extra) end
+        elseif action == "bought" then
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.passBought(player, value) end
         elseif action == "receipt" then
             local player = game:GetService("Players"):GetPlayers()[1]
             return player and ctx.Shop.debugReceipt(player, value, extra or Cycle.newId())

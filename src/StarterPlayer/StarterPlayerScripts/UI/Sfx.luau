@@ -31,9 +31,10 @@ local CUES = {
     confirm = { file = "ui/confirm", volume = 0.44 },
     notify = { file = "ui/notify", volume = 0.32, gap = 0.1 },
     jingle = { file = "ui/jingle", volume = 0.48 },
-    -- Cargo streams up to 20 transfers a second, so these are short and quiet.
-    pickup = { file = "game/pickup", volume = 0.4, voices = 4, vary = 0.04 },
-    place = { file = "game/place", volume = 0.5, voices = 4, vary = 0.04 },
+    -- Material pickup and place pop: CargoController pitches it up a step at a time as
+    -- a load fills and back down as it empties. Cargo streams up to 20 transfers a
+    -- second, so it's short and quiet, with no random spread to blur the steps.
+    pop = { file = "game/pop", volume = 0.45, voices = 4 },
     full = { file = "game/full", volume = 0.45, gap = 0.3 },
     drop = { file = "game/drop", volume = 0.5 },
     -- Up to 5 coins land 60 ms apart and the jingle runs 0.3 s, so they overlap: quiet.

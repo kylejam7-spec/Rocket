@@ -1,4 +1,39 @@
-# Latest session: 2026-10-20 (15), global leaderboards
+# Latest session: 2026-10-20 (16), pops, saved passes, shop fit, upgrade chime
+
+- `claude/pops-passes-signs` from master b3a96a5.
+- Material sounds: el_boss's pops (Sounds/el_boss, moved there from assets/sounds/ui)
+  replace game/pickup and game/place. First pass used all three by fill thirds; the user
+  then asked for one sound over a gradual range: build.py cue game/pop (pop 1 of 3, the
+  deepest) only, and CargoController pitches it 0.8x up an octave in 12 semitone steps by
+  load fill (placements 0.94x, Fuel 0.85x). Pitch is PlaybackSpeed at runtime: the same
+  resampling build.py's "pitch" does, without 13 uploads. (Rokit only installs tools like
+  Rojo; it can't make audio.) **Not uploaded
+  yet** (no ROBLOX_API_KEY here): Studio plays the local copies, live servers are silent
+  for pickups/places until `python tools/sounds/upload.py --user-id ...` runs.
+- Metal load: CargoVisual.MetalScale 1.15 (the same heap 15% larger; jerry can unchanged).
+- Upgrades: `celebrate(level, max)` in UpgradesController: confirm climbs a major scale,
+  1-4 coin clinks, gain sparkle from tier 4, levelup arpeggio from tier 7, jingle +
+  fanfare4 at max; the title bounce grows with level.
+- Passes: Studio test purchases never show in UserOwnsGamePassAsync, so bought passes
+  vanished on rejoin. Profiles now keep `passes` (keys; no schema bump, merged on save,
+  never dropped); ShopService.passBought records + saves; sync counts saved passes as
+  owned and checked. RocketDebug "bought" runs that path. Flip side: a refunded pass
+  bought here stays owned. UFO shop rows show the Fast Hatch time (⚡ 2.5 min).
+- SHOP panel: UIPadding so the list stops clipping the left card outlines; fit() caps
+  the panel at the screen width and stops the touch shift at the left gutter.
+- World signs: centred badge + text, accent rule and hairline were tried, then reverted
+  at the user's request (WorldSignController is master's again).
+- Studio: RunChecks 16/16. "bought FastHatch" saved passes = FastHatch to
+  RocketProfiles_studio; after stopping and restarting Play the SHOP showed OWNED and
+  UFO rows "⚡ 2.5 min". Ball 7.61 studs at 88 (= 2*8.8^0.55*1.15). Single pop, 11 a
+  tick: pickups 0.90, 0.95, 1.07, 1.13, 1.27, 1.35, 1.51 then "full" at 88; placing
+  1.42 down to 0.75. Test Metal went into those Plays' rockets and the profile's
+  coins/deliveries.
+- Ramp (not changed, user asked for suggestions only): 45 deg, 528 studs long per side
+  for the current tier; at walk 20 and 66 speed along the slope is ~kept but horizontal
+  progress is cos 45 = 71%, with stutter (h dropping to ~5 for a frame).
+
+# Earlier session: 2026-10-20 (15), global leaderboards
 
 - `claude/leaderboards` from master 590b77b. New LeaderboardService (categories, stands,
   merge/format, push/refresh/render loops, SurfaceGui panels) and LeaderboardCheck;

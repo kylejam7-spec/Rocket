@@ -1,5 +1,8 @@
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 local CargoVisual = {}
+-- The Metal load draws this much bigger than its diameter (user, 2026-10-20: the same
+-- heap, ~15% larger); the jerry can keeps the plain diameter.
+CargoVisual.MetalScale = 1.15
 
 -- Junk welded onto the ball, in units of its diameter (the core's radius is 0.5): shape,
 -- size, offset, colour, material. A Metal load reads as a heap of salvage: rusty lumps,
@@ -133,7 +136,7 @@ function CargoVisual.update(character, materials, colors)
     -- The owner's client plays its pickup and place sounds off this count, which
     -- arrives with the size change (CargoController).
     model:SetAttribute("Count", metal + fuel)
-    local size = CargoVisual.diameter(metal + fuel)
+    local size = CargoVisual.diameter(metal + fuel) * (kind == "Metal" and CargoVisual.MetalScale or 1)
     local main = model:FindFirstChild("JerryCan") or model.ScrapBall
     main.Size = kind == "Fuel" and CAN_BODY * size or Vector3.one * size
     -- Only C0 moves the load. Writing a welded part's CFrame on the server drags the

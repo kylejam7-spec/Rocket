@@ -4,7 +4,10 @@
 --
 -- Game Passes: ownership comes from Roblox (UserOwnsGamePassAsync on join, and
 -- PromptGamePassPurchaseFinished, which fires on the server, for a purchase made here).
--- Nothing about a pass is saved by us, so it can't be lost.
+-- A purchase made here is also saved on the buyer's profile (`passes`) and counts as
+-- owned on every later join, so it can't be lost to a failed or stale ownership check
+-- (Studio test purchases never show up in UserOwnsGamePassAsync at all). The flip side:
+-- a pass refunded after buying here stays owned.
 --
 -- Developer Products: nearly all are server-wide effects (training boost, rocket fill,
 -- longer stay, the next mission), so a grant needs no saved profile and never fails.
@@ -109,12 +112,15 @@ function ShopService.takeGuarantee(effects)
     return table.remove(effects.guarantees, 1)
 end
 
--- Pass ownership via owns(passId) (may yield or error). Returns owned and checked
--- (key -> true for every pass whose check succeeded).
-function ShopService.sync(config, owns)
+-- Pass ownership via owns(passId) (may yield or error), plus `saved` (pass keys on
+-- the profile, bought here before: owned and known without asking). Returns owned and
+-- checked (key -> true for every pass whose ownership is known).
+function ShopService.sync(config, owns, saved)
     local owned, checked = {}, {}
     for key, entry in config.Shop.passes do
-        if type(entry.id) == "number" then
+        if saved and table.find(saved, key) then
+            owned[key], checked[key] = true, true
+        elseif type(entry.id) == "number" then
             local ok, has = pcall(owns, entry.id)
             if ok then
                 checked[key] = true
@@ -277,10 +283,13 @@ function ShopService.new(ctx)
     -- On join, after the profile loads: which passes they own. A slot pass that's gone
     -- (refunded) puts the extra pets away; a failed check changes nothing.
     function service.sync(player)
-        local has, ok = ShopService.sync(config, function(id) return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id) end)
-        if not player.Parent then return end
-        owned[player.UserId], checked[player.UserId] = has, ok
         local record = ctx.profiles.records[player.UserId]
+        local has, ok = ShopService.sync(config, function(id) return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id) end,
+            record and record.profile.passes)
+        if not player.Parent then return end
+        -- A pass bought while the checks ran stays owned.
+        for key in owned[player.UserId] or {} do has[key], ok[key] = true, true end
+        owned[player.UserId], checked[player.UserId] = has, ok
         local slotsKnown = (ok.PetSlot1 or not Shop.enabled(config, "PetSlot1")) and (ok.PetSlot2 or not Shop.enabled(config, "PetSlot2"))
         if record and slotsKnown and ShopService.trim(record.profile, service.petSlots(player)) then ctx.profiles:dirty(player.UserId) end
         refresh(player)
@@ -318,16 +327,26 @@ function ShopService.new(ctx)
             MarketplaceService:PromptProductPurchase(player, entry.id)
         end
     end)
-    MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
-        prompting[player.UserId] = nil
-        local key = passIds[passId]
-        if not purchased or not key then return end
+    -- A pass bought here (PromptGamePassPurchaseFinished; DebugService "bought").
+    function service.passBought(player, key)
         owned[player.UserId] = owned[player.UserId] or {}
         owned[player.UserId][key] = true
+        -- Saved on their profile too, so it's theirs on every join (see the header).
+        local record = ctx.profiles.records[player.UserId]
+        if record and ctx.profiles:ready(player.UserId) and not table.find(record.profile.passes, key) then
+            table.insert(record.profile.passes, key)
+            ctx.profiles:dirty(player.UserId)
+            task.spawn(ctx.profiles.saveNow, ctx.profiles, player.UserId)
+        end
         local name = key:match("^Gym") and "gym access" or key
         for _, pass in Shop.Passes do if pass.key == key then name = pass.name end end
         ctx.Remote.feedback(player, "Thanks! " .. name .. " is yours.")
         refresh(player)
+    end
+    MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
+        prompting[player.UserId] = nil
+        local key = passIds[passId]
+        if purchased and key then service.passBought(player, key) end
     end)
     MarketplaceService.PromptProductPurchaseFinished:Connect(function(userId)
         prompting[userId] = nil

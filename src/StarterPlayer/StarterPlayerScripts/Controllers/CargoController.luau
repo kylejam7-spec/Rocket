@@ -107,11 +107,18 @@ function CargoController.start()
     Players.LocalPlayer.CharacterRemoving:Connect(function() setHolding(false) end)
 
     -- Sounds for this player's own load, on the frame each transfer shows: the server
-    -- stamps the unit count on CarriedMaterials together with its new size. Pickups
-    -- rise in pitch as the load fills; placements play their deep knock well raised,
-    -- falling only slightly as the load empties, so big loads don't sink low. Fuel's
-    -- knocks sit lower than scrap's. Losing the load is a placement while the button
-    -- is held, a drop right after Q/DROP, and silent otherwise (a phase change clears it).
+    -- stamps the unit count on CarriedMaterials together with its new size. Both play
+    -- the one pop, pitched by how full the load is: POP_STEPS semitone steps from
+    -- POP_LOW (empty) up an octave (full). So pickups climb note by note as the load
+    -- fills and placements step back down as it empties. Placements sit a touch lower
+    -- than pickups, and Fuel's pops lower than scrap's. Losing the load is a placement
+    -- while the button is held, a drop right after Q/DROP, and silent otherwise (a
+    -- phase change clears it).
+    local POP_LOW, POP_STEPS = 0.8, 12
+    local function pop(fill, kind, pitch)
+        local step = math.round(math.clamp(fill, 0, 1) * POP_STEPS)
+        Sfx.play("pop", { pitch = pitch * (kind == "Fuel" and 0.85 or 1) * POP_LOW * 2 ^ (step / 12) })
+    end
     local function watchLoad(character)
         local count, kind = 0, nil
         local function update(new, newKind)
@@ -122,13 +129,13 @@ function CargoController.start()
                 if new >= capacity then
                     Sfx.play("full")
                 else
-                    Sfx.play("pickup", { pitch = (newKind == "Fuel" and 0.85 or 1) * (0.9 + 0.3 * fill) })
+                    pop(fill, newKind, 1)
                 end
             elseif new < count then
                 if new == 0 and os.clock() - discardedAt < 1 then
                     Sfx.play("drop")
                 elseif new > 0 or holding then
-                    Sfx.play("place", { pitch = (kind == "Fuel" and 0.85 or 1) * (1.5 + 0.15 * fill) })
+                    pop(fill, kind, 0.94)
                 end
             end
             count, kind = new, newKind or kind
