@@ -1,4 +1,39 @@
-# Latest session: 2026-10-20 (16), pops, saved passes, shop fit, upgrade chime
+# Latest session: 2026-10-21 (17), Europa's oarfish
+
+- `claude/europa-oarfish`, stacked on `claude/pops-passes-signs` (PR #51).
+- Background event at Europa (not a cutscene). LaunchService stamps `OarfishAt` on the
+  Europa folder 20 s into each stay (`Launch.OarfishDelay`; RocketDebug "oarfish" stamps
+  it now); OarfishController plays it for anyone within 1,500 studs. Timeline from the
+  stamp: quake 0 s (user: ~7 s on its own), camera shake building 7-10 s (none with
+  Reduced effects), the fish breaks the ice at 10 s (the quake fades over 2.5 s), roar
+  from 10.3 s riding the head, dive at ~18.3 s (its break fades from 1.6 s in over 1.7 s),
+  done ~21 s.
+- The fish: the user's Europa_Oarfish.glb, rigged by `tools/monster/rig_oarfish.py`
+  (six meshes by material, 17 unparented bones B00-B16 on the centre line, linear weights
+  along X), imported, prepared by `tools/monster/prepare_oarfish.luau`, saved as
+  `src/ReplicatedStorage/EuropaOarfish.rbxm`. The client scales a copy to 360 studs and puts
+  every bone on a parabola from OarfishExit to OarfishEntry (apex 300, bowed 70 toward the
+  landing site, continued under the ice both sides) at its own distance behind the head,
+  plus a swimming wave; bone = target * body:Inverse() * rest (pivot-relative, so moving
+  the model each frame for culling doesn't matter). First import failed: at 128 m the
+  importer shrank the meshes to 2048 but not the bones (scattered skinning; shrinking the
+  bones afterwards didn't fix it). Re-exported at 12.8 m (1,280 studs): fine.
+- Map: DestinationService `breachHole` at (190, -300) and (430, 40) from Europa's centre
+  (front right: the landed rocket hides ±23° straight ahead of the pad), radius 34: open
+  water with floes, upturned rim slabs, rubble, forked cracks, spray drifts. Breach bursts
+  on the client: 36 flung ice chunks, a short spray and glitter.
+- Sounds (tools/sounds/build.py, sources in Sounds/europa, moved from assets/sounds/Europa
+  Monster sfx): europa/quake (earthquake 0-15 s, lowpass 220), break-out (ice break
+  11.3-14.6 s, its big crack), break-in (0.1-3.7 s), roar (monster.m4a 16.8-24.6 s), the
+  breaks and roar lowpassed for distance and given reverb at runtime. Uploaded; access
+  granted. The Black Hole ambience's re-upload (111045010900833) has access too, so the
+  ledger now holds it (no more re-uploads); rumble re-upload 90163739696256.
+- Studio: RunChecks 16/16. Three full events: quake 0.04, break-out 10.01, roar 10.3,
+  break-in 18.29; quake volume 0.90 until 10.0, 0 by 12.5; break-in 1.10 until 1.6 s in,
+  0.01 at 3.2 s. Captures: the real fish breaching in front of Jupiter from the pad, and
+  high in the arc. Captures land ~10 s late, so each was one re-triggered event.
+
+# Earlier session: 2026-10-20 (16), pops, saved passes, shop fit, upgrade chime
 
 - `claude/pops-passes-signs` from master b3a96a5.
 - Material sounds: el_boss's pops (Sounds/el_boss, moved there from assets/sounds/ui)

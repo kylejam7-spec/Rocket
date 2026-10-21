@@ -15,6 +15,7 @@
 -- Invoke("receipt", key, purchaseId) runs a product receipt for the first player
 -- through the real journal path and returns its outcome.
 -- Invoke("board") puts everyone in the rocket's cabin (during boarding, they fly).
+-- Invoke("oarfish") starts Europa's oarfish breach now (seen by anyone at Europa).
 -- Invoke("launch", destination, { countdown = s, stay = s }) flies everyone to a
 -- destination now: from Building or Fueling it swaps in that mission (index 1..5 or id:
 -- "Moon", "Mars", "Europa", "Saturn", "BlackHole"), finishes the build and fuel, puts
@@ -108,6 +109,8 @@ function Debug.new(ctx, parent)
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, ctx.World.cabin.arrival) end
         elseif action == "own" then
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.debugOwn(player, value, extra) end
+        elseif action == "oarfish" then
+            ctx.World.destinations[3].folder:SetAttribute("OarfishAt", workspace:GetServerTimeNow())
         elseif action == "bought" then
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.passBought(player, value) end
         elseif action == "receipt" then

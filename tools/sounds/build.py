@@ -27,6 +27,8 @@ OUTPUT = os.path.join(ROOT, "assets", "sounds")
 RATE = 48000
 NASA = "590189main_ringtone_131_launchNats.mp3"
 PICKUP = "833635__nomagician__pickup-notification-videogame-ui-sound.mp3"
+EUROPA_QUAKE = "europa/680510__audiodaprati__earthquake-2023.wav"
+EUROPA_ICE = "europa/682339__newlocknew__icebrk_ice-mantlebreaks-with-a-crunch-and-a-creak-1with-lfe-sweetener_em.mp3"
 
 # group/name -> one of
 #   "file under Sounds/"
@@ -55,6 +57,16 @@ MANIFEST = {
     # supplied by the user with its 2 and 3 siblings; 70 ms, peak ~930 Hz). CargoController
     # pitches it in semitone steps up an octave as a load fills, back down as it empties.
     "game/pop": "el_boss/665183__el_boss__item-or-material-pickup-pop-1-of-3.wav",
+    # Europa's oarfish (OarfishController), from the user's three files in Sounds/europa:
+    # audiodaprati's earthquake (freesound 680510), newlocknew's ice mantle break (682339)
+    # and a roar (monster.m4a, silent for its first 17 s). The quake is kept low (a rumble
+    # from below); the breaks and roar are dulled for distance (the client adds reverb).
+    # The ice break is one long take: its big crack at 11.5 s is the breakout, the
+    # crack-and-crunch it opens with is the dive back in. Each cue starts on its hit.
+    "europa/quake": {"layers": [{"file": EUROPA_QUAKE, "clip": [0, 15], "fadein": 0.5, "fadeout": 2.5, "lowpass": 220}]},
+    "europa/break-out": {"layers": [{"file": EUROPA_ICE, "clip": [11.3, 14.6], "fadeout": 0.8, "lowpass": 2600}]},
+    "europa/break-in": {"layers": [{"file": EUROPA_ICE, "clip": [0.1, 3.7], "fadeout": 0.8, "lowpass": 2600}]},
+    "europa/roar": {"layers": [{"file": "europa/monster.m4a", "clip": [16.8, 24.6], "fadeout": 1.6, "lowpass": 2400}]},
     "game/full": "kenney_interface-sounds/Audio/bong_001.ogg",
     "game/drop": "kenney_impact-sounds/Audio/impactSoft_heavy_000.ogg",
     # Mixkit's coin jingle builds for ~200 ms; start at its first strong clink (90 ms)
