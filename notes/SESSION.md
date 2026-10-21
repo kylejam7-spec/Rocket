@@ -1,4 +1,17 @@
-# Latest session: 2026-10-21 (18), quiet join, new loading art
+# Latest session: 2026-10-21 (19), loading art at full resolution
+
+- `claude/loading-art-tiles` from master 067d435. Roblox shrinks uploads to 1024 px, so
+  the 1672x941 art (138193828661909) arrived ~1024x576. `tools/loading/split_art.py`
+  cuts it into two 838x941 halves sharing 4 px round the middle; uploaded via MCP as
+  139147151061652 (left) and 135825281876684 (right); they need experience access.
+  LoadingScreen lays them in a frame sized to cover the screen at the art's aspect
+  (as ScaleType.Crop did), the slow zoom on the frame; Studio falls back to
+  textures/rocket-loading/loading-left.png / -right.png.
+- Studio: tiles 932.8 px wide each at 1848x949, overlapping 4.4 px; no seam in a zoomed
+  capture of the middle. Note: Studio caches an asset's access failure for the session
+  (138193828661909 kept failing until the user restarted Studio).
+
+# Earlier session: 2026-10-21 (18), quiet join, new loading art
 
 - `claude/quiet-join` from master efedd2d.
 - Join sound burst: while a profile loads the server sends a blank placeholder
