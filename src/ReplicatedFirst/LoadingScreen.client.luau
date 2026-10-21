@@ -19,12 +19,17 @@ local TweenService = game:GetService("TweenService")
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
 
--- The title art: assets/Loading Screen/newloadingscreen.png (the sharper redo of
--- "loading screen.png", same layout).
-local ART = "rbxassetid://138193828661909"
--- Studio plays before an upload is allowed to load; it has a local copy (under a new
--- name: Studio caches rbxasset:// textures by path).
-local ART_STUDIO = "rbxasset://textures/rocket-loading/loading-v2.png"
+-- The title art: assets/Loading Screen/newloadingscreen.png (1672x941), in two halves
+-- (tools/loading/split_art.py: 838 px each, sharing the 4 px round the middle) because
+-- Roblox shrinks any upload to 1024 px, which blurred the whole picture. `x` and `width`
+-- place each half in the art's own pixels.
+local ART_SIZE = Vector2.new(1672, 941)
+local ART_TILES = {
+    { image = "rbxassetid://139147151061652", studio = "rbxasset://textures/rocket-loading/loading-left.png", x = 0, width = 838 },
+    { image = "rbxassetid://135825281876684", studio = "rbxasset://textures/rocket-loading/loading-right.png", x = 834, width = 838 },
+}
+-- Studio plays before an upload is allowed to load, so it has local copies (from the
+-- same script; Studio caches rbxasset:// textures by path, so new art gets new names).
 local MIN_SECONDS, PRELOAD_LIMIT, TIP_SECONDS = 5, 25, 4.2
 local DISPLAY, BODY = Enum.Font.FredokaOne, Enum.Font.GothamBold
 local YELLOW, ORANGE, INK = Color3.fromRGB(255, 214, 64), Color3.fromRGB(255, 140, 40), Color3.fromRGB(24, 22, 48)
@@ -77,10 +82,22 @@ local function outline(thickness) return make("UIStroke", { Thickness = thicknes
 
 local gui = make("ScreenGui", { Name = "LoadingScreen", IgnoreGuiInset = true, ResetOnSpawn = false, DisplayOrder = 1000, ZIndexBehavior = Enum.ZIndexBehavior.Sibling })
 local backdrop = make("Frame", { Name = "Backdrop", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(12, 16, 44), BorderSizePixel = 0, Parent = gui })
--- The art fills the screen (cropped to fit) and drifts slowly closer.
-local art = make("ImageLabel", { Name = "Art", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1, 1),
-    BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Crop, Image = ART, ImageTransparency = 1, Parent = backdrop })
+-- The art fills the screen (cropped to fit, so its frame covers the screen at the
+-- art's aspect) and drifts slowly closer.
+local art = make("Frame", { Name = "Art", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), BackgroundTransparency = 1, Parent = backdrop })
 local zoom = make("UIScale", { Scale = 1, Parent = art })
+local tiles = {}
+for index, tile in ART_TILES do
+    tiles[index] = make("ImageLabel", { Name = "Art" .. index, Position = UDim2.fromScale(tile.x / ART_SIZE.X, 0), Size = UDim2.fromScale(tile.width / ART_SIZE.X, 1),
+        BackgroundTransparency = 1, ScaleType = Enum.ScaleType.Stretch, Image = tile.image, ImageTransparency = 1, ZIndex = index, Parent = art })
+end
+local function cover()
+    local screen = backdrop.AbsoluteSize
+    local scale = math.max(screen.X / ART_SIZE.X, screen.Y / ART_SIZE.Y)
+    art.Size = UDim2.fromOffset(math.ceil(ART_SIZE.X * scale), math.ceil(ART_SIZE.Y * scale))
+end
+backdrop:GetPropertyChangedSignal("AbsoluteSize"):Connect(cover)
+cover()
 -- A shade up from the bottom so the bar and tips read over the art.
 make("Frame", { Name = "Shade", AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0.42), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, Parent = backdrop },
     { make("UIGradient", { Rotation = 270, Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(1, 1) }) }) })
@@ -111,16 +128,16 @@ local rocket = make("TextLabel", { Name = "Rocket", AnchorPoint = Vector2.new(0.
 
 gui.Parent = player:WaitForChild("PlayerGui")
 
--- The art appears as soon as it has loaded (Studio falls back to its local copy).
+-- The art appears once both halves have loaded (Studio falls back to its local copies).
 task.spawn(function()
-    -- Through the label, not the bare id (a bare id's fetch reports failure here).
-    local result
-    ContentProvider:PreloadAsync({ art }, function(_, fetched) result = fetched end)
-    if result ~= Enum.AssetFetchStatus.Success and RunService:IsStudio() then
-        art.Image = ART_STUDIO
-        ContentProvider:PreloadAsync({ art })
+    -- Through the labels, not the bare ids (a bare id's fetch reports failure here).
+    local failed = false
+    ContentProvider:PreloadAsync(tiles, function(_, fetched) failed = failed or fetched ~= Enum.AssetFetchStatus.Success end)
+    if failed and RunService:IsStudio() then
+        for index, tile in ART_TILES do tiles[index].Image = tile.studio end
+        ContentProvider:PreloadAsync(tiles)
     end
-    TweenService:Create(art, TweenInfo.new(0.5), { ImageTransparency = 0 }):Play()
+    for _, tile in tiles do TweenService:Create(tile, TweenInfo.new(0.5), { ImageTransparency = 0 }):Play() end
     TweenService:Create(zoom, TweenInfo.new(40, Enum.EasingStyle.Linear), { Scale = 1.12 }):Play()
 end)
 
