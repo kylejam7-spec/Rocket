@@ -21,6 +21,10 @@ local TOUCHDOWN_HOLD = 1.5
 Launch.SingularitySeconds = 4
 Launch.SingularityLength = 7.5
 local BLACK_HOLE = 5
+-- Europa's oarfish breaches this far into each stay: the server stamps OarfishAt on the
+-- destination folder and every passenger's client plays it (OarfishController).
+Launch.OarfishDelay = 20
+local EUROPA = 3
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
@@ -175,7 +179,7 @@ function Launch.new(ctx)
             -- multiplier scales the ticks so the ledger stays an integer total.
             -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
             local rate = config.Planet.TicksPerSecond
-            local tick, spun, swallowed = 0, false, false
+            local tick, spun, swallowed, breached = 0, false, false, false
             while tick < stay.total * rate do
                 task.wait(1 / rate)
                 tick += 1
@@ -203,11 +207,16 @@ function Launch.new(ctx)
                     end
                     place.folder:SetAttribute("SingularityAt", workspace:GetServerTimeNow())
                 end
+                if definition.ModelTier == EUROPA and not breached and elapsed >= Launch.OarfishDelay then
+                    breached = true
+                    place.folder:SetAttribute("OarfishAt", workspace:GetServerTimeNow())
+                end
                 if second then Cycle.broadcast() end
             end
             if ctx.Shop then ctx.Shop.endStay() end
             if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
             place.folder:SetAttribute("SingularityAt", nil)
+            place.folder:SetAttribute("OarfishAt", nil)
             service.debug = nil
             rocket.phase = "Resetting"
             Cycle.deadline = 0

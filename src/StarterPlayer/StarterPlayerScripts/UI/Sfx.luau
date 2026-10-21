@@ -56,6 +56,14 @@ local CUES = {
     fanfare3 = { file = "pet/fanfare3", volume = 0.33 },
     fanfare4 = { file = "pet/fanfare4", volume = 0.36 },
     fanfare5 = { file = "pet/fanfare5", volume = 0.42 },
+    -- Europa's oarfish (OarfishController): the quake is everywhere at once (a rumble from
+    -- below; listed only so it's preloaded: the controller plays its own copy to fade it);
+    -- the ice breaking and the roar come from out on the plain, 300+ studs off, so they
+    -- keep their volume that far and only pan.
+    oarfishQuake = { file = "europa/quake", volume = 0.9, voices = 1 },
+    oarfishBreakOut = { file = "europa/break-out", volume = 1.1, world = true, near = 450, far = 3000 },
+    oarfishBreakIn = { file = "europa/break-in", volume = 1.1, world = true, near = 450, far = 3000 },
+    oarfishRoar = { file = "europa/roar", volume = 1.2, world = true, near = 450, far = 3000 },
 }
 
 -- The content id for a built file (its upload, else Studio's local copy), or nil.

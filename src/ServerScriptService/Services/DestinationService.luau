@@ -794,6 +794,77 @@ local function geyser(parent, at, radius, depth, scale)
     CollectionService:AddTag(vent, "GeyserVent")
     return vent
 end
+-- The oarfish's breach holes (OarfishController: it bursts out of BREACH_EXIT, arcs over
+-- past Jupiter's edge and dives into BREACH_ENTRY), out on the plain 360-430 studs from the
+-- landing site, front right: the landed rocket (behind the pad) hides about 23° either
+-- side of straight ahead from the pad, so the whole arc stays right of it. Each is open
+-- black-blue water with floes adrift in it, a rim of ice slabs shoved up and tipped
+-- outward, rubble flung across the ice and cracks running out from it. The folder
+-- carries both spots as OarfishExit / OarfishEntry (world, on the ice).
+local BREACH_EXIT, BREACH_ENTRY, BREACH_RADIUS = Vector3.new(190, 0, -300), Vector3.new(430, 0, 40), 34
+local function breachHole(parent, at, radius, random)
+    local model = Instance.new("Model")
+    model.Name = "BreachHole"
+    model.Parent = parent
+    local water = Color3.fromRGB(10, 30, 52)
+    disc(model, "SlushMargin", at + Vector3.new(0, 0.05, 0), radius + 5, 0.2, Color3.fromRGB(176, 212, 236), Enum.Material.Ice).CanCollide = false
+    local pool = disc(model, "OpenWater", at + Vector3.new(0, 0.1, 0), radius, 0.4, water, Enum.Material.Glass)
+    pool.CanCollide, pool.Reflectance = false, 0.2
+    -- The ocean's glow coming up through the opening, faint under the water.
+    disc(model, "OceanGlow", at + Vector3.new(0, 0.12, 0), radius * 0.55, 0.2, Color3.fromRGB(30, 110, 190), Enum.Material.Neon).Transparency = 0.6
+    for _ = 1, random:NextInteger(6, 9) do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0, radius * 0.75)
+        local size = random:NextNumber(5, 12)
+        decor(model, "Floe", { Size = Vector3.new(size, 0.9, size * random:NextNumber(0.5, 0.9)), Material = Enum.Material.Glacier,
+            Color = EUROPA.ice:Lerp(EUROPA.blue, random:NextNumber(0.1, 0.5)),
+            CFrame = CFrame.new(at + Vector3.new(math.cos(angle) * distance, 0.35, math.sin(angle) * distance)) * CFrame.Angles(random:NextNumber(-0.08, 0.08), random:NextNumber(0, 6.28), random:NextNumber(-0.08, 0.08)) })
+    end
+    -- The rim: slabs of the shell shoved up round the opening, tipped outward.
+    local count = math.floor(radius * 0.8)
+    for index = 1, count do
+        local angle = (index + random:NextNumber(-0.3, 0.3)) / count * math.pi * 2
+        local out = Vector3.new(math.cos(angle), 0, math.sin(angle))
+        local width, height, thick = random:NextNumber(10, 20), random:NextNumber(12, 28), random:NextNumber(2.5, 5)
+        local base = at + out * (radius + random:NextNumber(0.5, 4))
+        local frame = CFrame.lookAt(base, base + out) * CFrame.Angles(-random:NextNumber(0.3, 0.95), 0, random:NextNumber(-0.25, 0.25))
+        decor(model, "RimSlab", { Size = Vector3.new(width, height, thick), Material = index % 3 == 0 and Enum.Material.Ice or Enum.Material.Glacier,
+            Color = EUROPA.pale:Lerp(EUROPA.snow, random:NextNumber(0, 0.7)), CFrame = frame * CFrame.new(0, height * 0.32, 0) }).CastShadow = true
+    end
+    -- Rubble flung out over the ice.
+    for _ = 1, 34 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), radius + random:NextNumber(5, 50)
+        local size = random:NextNumber(1.5, 6) * (1 - (distance - radius) / 70)
+        decor(model, "IceRubble", { Size = Vector3.new(size * 1.3, size * 0.7, size), Material = Enum.Material.Ice,
+            Color = EUROPA.blue:Lerp(EUROPA.snow, random:NextNumber(0.2, 0.8)),
+            CFrame = CFrame.new(at + Vector3.new(math.cos(angle) * distance, size * 0.2, math.sin(angle) * distance)) * CFrame.Angles(random:NextNumber(0, 6.28), random:NextNumber(0, 6.28), random:NextNumber(0, 6.28)) })
+    end
+    -- Cracks running out across the shell, some forking.
+    local crack = Color3.fromRGB(70, 110, 150)
+    for index = 1, 11 do
+        local angle = (index + random:NextNumber(-0.35, 0.35)) / 11 * math.pi * 2
+        local from = at + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + 2)
+        local length = random:NextNumber(30, 90)
+        for step = 1, 3 do
+            local turn = angle + random:NextNumber(-0.35, 0.35)
+            local to = from + Vector3.new(math.cos(turn), 0, math.sin(turn)) * (length / 3)
+            local width = 2.2 - step * 0.5
+            decor(model, "IceCrack", { Size = Vector3.new(width, 0.12, (to - from).Magnitude + width), Material = Enum.Material.SmoothPlastic, Color = crack,
+                CFrame = CFrame.lookAt((from + to) / 2 + Vector3.new(0, 0.06, 0), to + Vector3.new(0, 0.06, 0)) })
+            if step == 1 and random:NextNumber() < 0.5 then
+                local fork = turn + random:NextNumber(0.5, 0.9) * (random:NextNumber() < 0.5 and -1 or 1)
+                local tip = to + Vector3.new(math.cos(fork), 0, math.sin(fork)) * random:NextNumber(10, 22)
+                decor(model, "IceCrack", { Size = Vector3.new(0.9, 0.12, (tip - to).Magnitude), Material = Enum.Material.SmoothPlastic, Color = crack,
+                    CFrame = CFrame.lookAt((to + tip) / 2 + Vector3.new(0, 0.06, 0), tip + Vector3.new(0, 0.06, 0)) })
+            end
+            from = to
+        end
+    end
+    for _ = 1, 5 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), radius + random:NextNumber(8, 30)
+        Planets.mound(model, "SprayDrift", at + Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance), random:NextNumber(6, 12), random:NextNumber(1, 2.5), EUROPA.snow, Enum.Material.Snow)
+    end
+    return model
+end
 builders[3] = function(folder, c)
     local random = Random.new(31)
     folder:SetAttribute("Dust", Color3.fromRGB(226, 238, 250))
@@ -923,6 +994,11 @@ builders[3] = function(folder, c)
         Planets.mound(folder, "GeyserCone", c + spot, 26, 9, EUROPA.snow, Enum.Material.Snow)
         geyser(folder, c + spot + Vector3.new(0, 9, 0), 5, 0, 4)
     end
+    local breach = Random.new(41)
+    for _, spot in { BREACH_EXIT, BREACH_ENTRY } do breachHole(folder, c + spot - Vector3.new(0, 3, 0), BREACH_RADIUS, breach) end
+    folder:SetAttribute("OarfishExit", c + BREACH_EXIT - Vector3.new(0, 3, 0))
+    folder:SetAttribute("OarfishEntry", c + BREACH_ENTRY - Vector3.new(0, 3, 0))
+    folder:SetAttribute("OarfishRadius", BREACH_RADIUS)
     fence(folder, c, 75, 70)
     return ground, Vector3.new(0, 0, 20)
 end

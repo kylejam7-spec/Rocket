@@ -1,10 +1,38 @@
 {
   "ambience/black-hole": {
-    "assetId": "91386870823827",
+    "assetId": "111045010900833",
     "creator": {
-      "userId": "1502038929"
+      "userId": "11791915499"
     },
     "sha256": "ef5c75845fd599c564cc9b88aa9292bad50ae501cc5f3cfded9ab38c8f18cb74"
+  },
+  "europa/break-in": {
+    "assetId": "80918051723114",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "455e4704ae785b98242827f8a13c7d5f68747e6d8291f3214b34e75076a0cf97"
+  },
+  "europa/break-out": {
+    "assetId": "107282286839311",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "3c68df9bdfac43b64bd6fd953bf014d497a0d2245d7372c8e24bb4670f969d0d"
+  },
+  "europa/quake": {
+    "assetId": "114809488101511",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "2ee819d1bfbf670ba16a95aaed39955f6618d5079e8f3e27ebf92f80f1e337ef"
+  },
+  "europa/roar": {
+    "assetId": "91889190790838",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "071f871e2aa716580fe4217fa4e01ee8febefa1ab628086daf37bf4955789b92"
   },
   "game/coin": {
     "assetId": "130766560947720",
@@ -77,9 +105,9 @@
     "sha256": "b6670ec7d12c6a940544ea8e8eb3769312df32b23076353c978f9bbf535fca1d"
   },
   "game/rumble": {
-    "assetId": "137135372833570",
+    "assetId": "90163739696256",
     "creator": {
-      "userId": "1502038929"
+      "userId": "11791915499"
     },
     "sha256": "3e85a41beadc7421700244285f3d1977adcd047dc5bc499529af3942b90a5bee"
   },
