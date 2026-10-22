@@ -1,4 +1,72 @@
-# Latest session: 2026-10-21 (19), loading art at full resolution
+# Latest session: 2026-10-22 (20), Saturn's UFO crash
+
+- `claude/saturn-ufo` from master 037310f.
+- Background event at Saturn (not a cutscene). LaunchService stamps `UfoAt` on the Saturn
+  folder 35 s into each stay (`Launch.UfoDelay`) and clears it when the stay ends;
+  RocketDebug "crash" stamps it now. SaturnUfoController (client) plays it for anyone within
+  1,500 studs: the saucer comes in from Saturn's side of the sky, spirals down onto a
+  150-stud circle 42 over the platform and goes round once, banked; a ring chunk (a copy of
+  one of the map's RingChunks, 190 studs/s along +X, the way the belt drifts on that side)
+  hits it out on the left at ~11.3 s; it tumbles (3 spins, 2.2 s) across the platform ~28
+  studs over the arrival and crashes on the right rim at `UfoCrash` (DestinationService
+  UFO_CRASH (62, 0, 14), between the UFO shop and the treadmill: the landed Saturn rocket
+  is 58 wide and hid the first spot, (29, -55), from the arrival), skids 8 studs and rocks
+  to rest nosed over 18° toward the platform (canopy and pilots facing it, tail out over
+  the edge) inside an invisible 33-wide, 80-tall cylinder (players stop 17 from its centre,
+  jumps reach ~16). Then, until the stay ends: smoke plume, embers, flickering amber/ion
+  lights, a red alarm light, the pilots freaking out (below). Flashes at the hit and the crash; the asteroid is three lumps of a RingChunk.
+- Refinement pass (user: aliens clipped the dome once landed, beeps only heard on top of it,
+  players ran up the UFO and off the map, the UFO cut into the rock):
+  - Pilots: heads sit ~6 cm (model metres) under the canopy at rest. The old dazed roll,
+    slump nod and torso lean pushed a head 29 cm through it (panic 19 cm), measured by FK
+    of the rig's vertices against the canopy mesh over the whole timeline in Blender/numpy.
+    Now heads only yaw (≤0.6) and nod ≤0.1, no roll, torsos still: every phase keeps the
+    rest gap. UFOGlass/Jade/Eyes/Highlight RenderFidelity Precise (saved in the rbxm).
+  - Resting: `settle` drops 145 underside points (profile from the mesh) onto the rock:
+    ellipsoid parts (the map's sphere-mesh lumps and Balls) solved exactly, others
+    raycast (made CanQuery locally for it). Raycasts alone hit the lumps' coarse collision
+    and left it hovering. Lowest point now 0.1 stud into the rock. DestinationService keeps
+    drifts/crystals (SATURN_PROPS) and rim boulders off the crash spot.
+- Second pass (user: pet UFOs keep landing; hull see-through; aliens should freak out):
+  - Pet UFOs: DebugService already had "ufo" = give everyone a pet UFO landing in 10 s;
+    the Saturn trigger reused the name, so each of ~6 test crashes also queued a pet UFO on
+    the Studio profile (RocketProfiles_studio only; DebugService never runs live). The
+    trigger is now RocketDebug "crash"; Play check: Ufos attribute nil before and after.
+  - Hull: the source's Upper hull and Lower shell are open shells facing inward (Blender
+    shows back faces, Roblox culls them). UFOTitanium/UFOGraphite DoubleSided (rbxm
+    re-saved, no re-import); rig_ufo.py now flips those shells for any rebuild and
+    prepare_ufo.luau sets DoubleSided. Material stays Metal.
+  - Freak-out loop after the crash (9 s, pilot 2 4.5 s behind): hands on head shaking "no",
+    pounding the console with darting looks, one hand on head while the outer arm waves
+    for help; a tremble throughout. Hands-on-head arm angles solved against the mesh
+    (hand within ~12 cm of the head's side), pilot 2 mirrored from pilot 1 (its own solve
+    passed through the glass mid-blend); whole timeline >= 3.3 cm clear of the canopy.
+- Sounds (tools/sounds/build.py; sources moved from assets/sounds/Saturns Rings to
+  Sounds/saturn): saturn/flyby (InspectorJ 397948, CC BY 4.0: needs credit, see
+  assets/LICENSES.md Credits), saturn/impact (AudioPapkin 828092, CC0), saturn/beeps (SkySpeira
+  848412, CC0, looped). All three play from a part riding the UFO: flyby at the hit
+  (near 80 / far 1500), impact at touchdown (same), beeps 0.6 s later at volume 0.55,
+  near 24 / far 70 (full all along the wall, fading out across the platform).
+  Uploaded by the user (upload.py): saturn/beeps 125968281699290, saturn/flyby
+  112291037294025, saturn/impact 113136207781823 (hashes match the built files). The
+  flyby's credit line is in assets/LICENSES.md (Credits) for the experience description.
+  build.py stops at ambience/black-hole on this machine (Sounds/freesound is missing),
+  after the Saturn cues are built.
+- Model: tools/monster/rig_ufo.py (decimate + join by material, 105k -> 32k triangles),
+  Import 3D, tools/monster/prepare_ufo.luau, saved as src/ReplicatedStorage/SaturnUFO.rbxm.
+  The four hull meshes (80538110176528, 110613354849867, 93007975263483, 121324691072328)
+  needed experience access (granted by the user); the palette texture was dropped for flat
+  colours. Edit-mode CreateMeshPartAsync kept failing after the grant; Play loaded them.
+- Studio: RunChecks 16/16. Event at the real 35 s stamp: flyby 11.27, impact 13.47, beeps
+  14.07 s (hit + 2.2, + 0.6). Captures: the hit (chunk meeting the rim), the tumble over
+  the arrival with ice debris, the wreck by the UFO shop with both pilots visible; the stay
+  end removed it. No errors.
+  After the refinement: rest centre y 5.64, underside min gap -0.10 to the lumps' true
+  surface; side capture shows the nose on the rubble at the rim, tail over the drop, the
+  pilots inside the dome; walking and jumping at it stops 17 from its centre (max root
+  y 20); RunChecks 16/16.
+
+# Earlier session: 2026-10-21 (19), loading art at full resolution
 
 - `claude/loading-art-tiles` from master 067d435. Roblox shrinks uploads to 1024 px, so
   the 1672x941 art (138193828661909) arrived ~1024x576. `tools/loading/split_art.py`

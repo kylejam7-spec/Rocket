@@ -25,6 +25,10 @@ local BLACK_HOLE = 5
 -- destination folder and every passenger's client plays it (OarfishController).
 Launch.OarfishDelay = 20
 local EUROPA = 3
+-- Saturn's UFO comes round the platform this far into each stay and crashes on it
+-- (UfoAt on the destination folder; UfoController).
+Launch.UfoDelay = 35
+local SATURN = 4
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
@@ -179,7 +183,7 @@ function Launch.new(ctx)
             -- multiplier scales the ticks so the ledger stays an integer total.
             -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
             local rate = config.Planet.TicksPerSecond
-            local tick, spun, swallowed, breached = 0, false, false, false
+            local tick, spun, swallowed, breached, crashed = 0, false, false, false, false
             while tick < stay.total * rate do
                 task.wait(1 / rate)
                 tick += 1
@@ -211,12 +215,17 @@ function Launch.new(ctx)
                     breached = true
                     place.folder:SetAttribute("OarfishAt", workspace:GetServerTimeNow())
                 end
+                if definition.ModelTier == SATURN and not crashed and elapsed >= Launch.UfoDelay then
+                    crashed = true
+                    place.folder:SetAttribute("UfoAt", workspace:GetServerTimeNow())
+                end
                 if second then Cycle.broadcast() end
             end
             if ctx.Shop then ctx.Shop.endStay() end
             if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
             place.folder:SetAttribute("SingularityAt", nil)
             place.folder:SetAttribute("OarfishAt", nil)
+            place.folder:SetAttribute("UfoAt", nil)
             service.debug = nil
             rocket.phase = "Resetting"
             Cycle.deadline = 0

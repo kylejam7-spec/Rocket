@@ -28,3 +28,33 @@ The controller scales a copy to 360 studs and moves each bone onto the flight pa
 stretched and in pieces, and moving the bones afterwards doesn't fix it. At 12.8 m the fish
 imports at 1,280 studs, under the limit. `prepare_oarfish.luau` stops with an error if the
 meshes and bones disagree in size.
+
+
+# Saturn UFO: FBX to Roblox
+
+The UFO that crashes at Saturn (`Controllers/SaturnUfoController`) is the user's
+`assets/models-textures/Monster/SaturnUFO.fbx`: a flying saucer with two alien pilots under a
+glass canopy, 192 small meshes (~105,000 triangles) rigidly skinned to 18 bones (Root > Hull >
+each pilot's Torso > Head and both arms > forearms > hands). In game it is
+`src/ReplicatedStorage/SaturnUFO.rbxm`: nine MeshParts, one per material (`UFOTitanium`,
+`UFOGraphite`, `UFOIon`, `UFOAmber`, `UFOCoral`, `UFOJade`, `UFOHighlight`, `UFOEyes`,
+`UFOGlass`; 32,000 triangles), still skinned, so the controller poses the pilots through
+`Bone.Transform`. Its pivot is the saucer's centre, looking where the pilots face, up through
+the canopy. The colours are `SaturnUFO_Color.png`'s swatches set as flat part colours (no
+texture).
+
+1. **Reduce.** Run `F:/blender.exe -b --factory-startup -P tools/monster/rig_ufo.py`. It drops
+   the stray default Cube, flips the hull's two shells (they face inward in the source),
+   decimates each part to ~250 triangles per metre of its size and joins the parts by material. It writes `Monster/import/SaturnUFO_Rig.fbx`.
+2. **Import.** In Studio, open *File > Import 3D* and import that FBX with the default
+   settings. At 8.24 m it comes in 824 studs across, under the 2048-stud part limit.
+3. **Prepare.** Paste `tools/monster/prepare_ufo.luau` into the command bar (Edit mode). It
+   builds `ReplicatedStorage.SaturnUFO` (canopy and pilots at Precise render fidelity, hull
+   double-sided) and stops with an error if bones are missing or the meshes and bones
+   disagree in size. The saved model predates the flip: its hull is inward-facing but
+   double-sided, which draws the same.
+4. **Save.** Serialize it to `src/ReplicatedStorage/SaturnUFO.rbxm` as above. With Rojo
+   connected, keep one copy.
+5. **Access.** The importer uploads the meshes to whoever runs the import. Until the
+   experience is given access to them, the parts don't draw in game ("User is not authorized
+   to access Asset" in Output; click "share access" there).

@@ -1019,7 +1019,12 @@ local SATURN = { rock = Color3.fromRGB(146, 150, 162), frost = Color3.fromRGB(22
 -- The ring plane lies this far below the platform's top.
 local RING_PLANE = 60
 local BEACON, HARVESTER, TETHERED = Vector3.new(-40, 0, -20), Vector3.new(42, 0, -26), Vector3.new(-24, 0, 46)
-local SATURN_PROPS = { { BEACON, 6 }, { HARVESTER, 8 }, { TETHERED, 7 } }
+-- The UFO's crash site, on the platform's top at its rim: on the right, between the UFO
+-- shop and the treadmill (the landed Saturn rocket, 58 studs across, hides about 32° either
+-- side of straight ahead from the arrival). Kept clear of drifts, crystals and the rim's
+-- boulders, so the wreck (30 across) settles on bare rock.
+local UFO_CRASH = Vector3.new(62, 0, 14)
+local SATURN_PROPS = { { BEACON, 6 }, { HARVESTER, 8 }, { TETHERED, 7 }, { UFO_CRASH, 17 } }
 -- The lighthouse: a lattice mast whose head carries one long beam through it, so it
 -- sweeps two beams round as it turns (PlanetSpin), a spotlight at each end.
 local function lighthouse(parent, c)
@@ -1130,7 +1135,7 @@ builders[4] = function(folder, c)
     for index = 1, 30 do
         local angle = index / 30 * math.pi * 2 + random:NextNumber(-0.08, 0.08)
         local at = c + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(66, 70)
-        if (at - c - Destinations.SignOffset).Magnitude > 10 then
+        if (at - c - Destinations.SignOffset).Magnitude > 10 and (at - c - UFO_CRASH).Magnitude > 20 then
             Planets.boulder(folder, at - Vector3.new(0, 2, 0), random:NextNumber(5, 10), SATURN.rock:Lerp(SATURN.frost, random:NextNumber(0, 0.6)), Enum.Material.Slate, random, false)
         end
     end
@@ -1239,6 +1244,8 @@ builders[4] = function(folder, c)
     -- Titan high above Saturn, on the sunward side, so its day side faces us.
     Planets.globe(folder, "Titan", { center = c + Vector3.new(-900, 1100, -1400), diameter = 80, texture = "Titan", spin = 0.005,
         atmosphere = Color3.fromRGB(230, 170, 90), glow = 0.3, color = Color3.fromRGB(214, 150, 70) })
+    -- Where the UFO crashes (SaturnUfoController).
+    folder:SetAttribute("UfoCrash", c + UFO_CRASH)
     fence(folder, c, 65, 50)
     return ground, Vector3.new(0, 0, 18)
 end
