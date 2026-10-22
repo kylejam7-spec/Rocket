@@ -5,7 +5,8 @@
     two alien pilots under its canopy, swoops in from Saturn's side of the sky, spirals
     down and circles the platform once, banking. A chunk of the rings comes tumbling along
     the belt and smacks into it out on the left:
-      hit         the fly-by sound starts from the UFO as it's knocked out of its circle,
+      hit         the crash of rock on hull sounds where they meet and the fly-by sound
+                  starts from the UFO as it's knocked out of its circle,
                   sparking and smoking, and spins away across the platform, over the
                   arrival,
       +FALL       it crashes on the right-hand rim (the folder's UfoCrash) with the impact
@@ -48,7 +49,9 @@ local REST_TILT = math.rad(18) -- nosed over toward the platform, its canopy fac
 -- The saucer's underside, from the centre out: { fraction of its radius, height under its
 -- middle in diameters } (tools/monster/rig_ufo.py's mesh; the engine dome hangs lowest).
 local UNDERSIDE = { { 0, -0.143 }, { 0.3, -0.14 }, { 0.45, -0.128 }, { 0.6, -0.097 }, { 0.75, -0.072 }, { 0.9, -0.046 }, { 1, -0.015 } }
-local BARRIER_HEIGHT = 80 -- the invisible wall round the wreck: too tall to jump onto
+-- The invisible wall round the wreck: as tall as the destination fences, so even the
+-- fastest walker thrown up off a slope can't land on it.
+local BARRIER_HEIGHT = 2000
 local ROCK_SIZE = Vector3.new(20, 14, 17)
 local ROCK_SPEED = 190
 local ROCK_LEAD = 7 -- seconds the chunk is in view before the hit (and after)
@@ -448,6 +451,18 @@ local function play(destination, startAt)
             rock.Parent = folder
         end },
         { at = hitAt, run = function(late)
+            if late < 0.4 then
+                -- The crash of rock on hull, from where they met (it stays there as the
+                -- UFO careens off with the fly-by).
+                local holder = Instance.new("Part")
+                holder.Anchored, holder.CanCollide, holder.CanQuery, holder.CanTouch, holder.Transparency = true, false, false, false, 1
+                holder.Size, holder.CFrame, holder.Parent = Vector3.one, CFrame.new(hit + (contact - hit) * 0.5), folder
+                local crack = Sfx.attach("ufoHit", holder)
+                if crack then
+                    crack.TimePosition = late
+                    crack:Play()
+                end
+            end
             if late < 1 then
                 local flyby = Sfx.attach("ufoFlyby", voice)
                 if flyby then
@@ -489,7 +504,7 @@ local function play(destination, startAt)
                     * CFrame.Angles(random:NextNumber(-0.6, 0.6), random:NextNumber(0, 6.28), random:NextNumber(-0.6, 0.6))
                 slab.Parent = folder
             end
-            -- An invisible wall round the wreck, too tall to jump onto: nobody climbs it
+            -- An invisible wall round the wreck, far too tall to get onto: nobody climbs it
             -- (and off over the rim, where it hangs past the platform's own fence).
             local barrier = Instance.new("Part")
             barrier.Name, barrier.Shape = "UfoBarrier", Enum.PartType.Cylinder

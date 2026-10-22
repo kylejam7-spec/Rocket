@@ -38,15 +38,28 @@ local function disc(parent, name, center, radius, thickness, color, material)
         CFrame = CFrame.new(center) * CFrame.Angles(0, 0, math.rad(90)), Color = color, Material = material or Enum.Material.Slate,
     })
 end
--- Invisible walls in a ring so nobody falls off a destination.
-local function fence(parent, center, radius, height)
+-- Invisible walls in a ring so nobody leaves a destination, their inner faces `radius` - 1
+-- from the centre. FenceHeight over the platform's top: the fastest walker (MaxSpeed 400)
+-- thrown straight up off a slope and jumping, in Europa's gravity (50), could rise ~2,000
+-- studs, so each wall is two parts stacked (a part is at most 2048 tall). From
+-- FENCE_DEPTH under the top, so nothing slips under; FENCE_THICKNESS thick, outward, as at
+-- 400 studs/s a character moves ~1.7 studs a physics step.
+Destinations.FenceHeight = 4000
+local FENCE_THICKNESS, FENCE_DEPTH, FENCE_PIECE = 12, 40, 2000
+local function fence(parent, center, radius)
+    local middle = radius - 1 + FENCE_THICKNESS / 2
+    local width = (radius + FENCE_THICKNESS) * 2 * math.sin(math.pi / 24) + 2
     for index = 1, 24 do
         local angle = index / 24 * math.pi * 2
-        local position = center + Vector3.new(math.cos(angle) * radius, height / 2, math.sin(angle) * radius)
-        make(parent, "Fence", {
-            Size = Vector3.new(2, height, radius * 2 * math.sin(math.pi / 24) + 2), Transparency = 1, CanQuery = false,
-            CFrame = CFrame.lookAt(position, Vector3.new(center.X, position.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0),
-        })
+        local at = center + Vector3.new(math.cos(angle) * middle, 0, math.sin(angle) * middle)
+        local facing = CFrame.lookAt(at, Vector3.new(center.X, at.Y, center.Z)) * CFrame.Angles(0, math.rad(90), 0)
+        for bottom = -FENCE_DEPTH, Destinations.FenceHeight - 1, FENCE_PIECE do
+            local height = math.min(FENCE_PIECE, Destinations.FenceHeight - bottom)
+            make(parent, "Fence", {
+                Size = Vector3.new(FENCE_THICKNESS, height, width), Transparency = 1, CanQuery = false,
+                CFrame = facing + Vector3.new(0, bottom + height / 2, 0),
+            })
+        end
     end
 end
 -- What surrounds a destination's platform (radius `radius`), so it reads as a place on
@@ -372,7 +385,7 @@ builders[1] = function(folder, c)
         ring = { radius = 690, spread = 140, count = 30, size = { 140, 320 }, dome = true, rock = Color3.fromRGB(150, 150, 156), rockAlt = Color3.fromRGB(118, 118, 126), material = Enum.Material.Slate, seed = 21 },
         farRing = { radius = 900, spread = 60, count = 26, size = { 260, 410 }, dome = true, rock = Color3.fromRGB(136, 136, 144), rockAlt = Color3.fromRGB(112, 112, 120), material = Enum.Material.Slate, seed = 31 },
         ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = MOON.rock, cragMaterial = Enum.Material.Slate })
-    fence(folder, c, 75, 60)
+    fence(folder, c, 75)
     return ground, Vector3.new(0, 0, 20)
 end
 -- 2 (Uncommon): a base on the rim of a great canyon on Mars. Beyond the landing site the
@@ -675,7 +688,7 @@ builders[2] = function(folder, c)
         ridge = { color = MARS.dust:Lerp(MARS.sand, 0.4), material = Enum.Material.Sand }, round = true,
         overlays = { { "MoonMaria", 600, 0.2, Color3.fromRGB(150, 60, 36) }, { "MarsGround", 50, 0.3 } },
         ground = MARS.dust, material = Enum.Material.Sand, crag = MARS.rock, cragMaterial = Enum.Material.Rock })
-    fence(folder, c, 75, 45)
+    fence(folder, c, 75)
     return ground, Vector3.new(0, 0, 20)
 end
 -- 3 (Rare): Europa, Jupiter's ice moon. Glowing crevasses cut into the ice shell, geyser
@@ -999,7 +1012,7 @@ builders[3] = function(folder, c)
     folder:SetAttribute("OarfishExit", c + BREACH_EXIT - Vector3.new(0, 3, 0))
     folder:SetAttribute("OarfishEntry", c + BREACH_ENTRY - Vector3.new(0, 3, 0))
     folder:SetAttribute("OarfishRadius", BREACH_RADIUS)
-    fence(folder, c, 75, 70)
+    fence(folder, c, 75)
     return ground, Vector3.new(0, 0, 20)
 end
 -- 4 (Epic): a chunk of Saturn's rings. The platform is a big ring particle of frosted
@@ -1246,7 +1259,7 @@ builders[4] = function(folder, c)
         atmosphere = Color3.fromRGB(230, 170, 90), glow = 0.3, color = Color3.fromRGB(214, 150, 70) })
     -- Where the UFO crashes (SaturnUfoController).
     folder:SetAttribute("UfoCrash", c + UFO_CRASH)
-    fence(folder, c, 65, 50)
+    fence(folder, c, 65)
     return ground, Vector3.new(0, 0, 18)
 end
 -- 5 (Legendary): a shard of obsidian adrift at the edge of a black hole. The shard has
@@ -1524,7 +1537,7 @@ builders[5] = function(folder, c)
             if size < 30 then spin(piece, field:NextNumber(-0.25, 0.25)) end
         end
     end
-    fence(folder, c, 70, 60)
+    fence(folder, c, 70)
     return ground, Vector3.new(0, 0, 20)
 end
 

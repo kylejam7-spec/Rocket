@@ -41,6 +41,19 @@
     for help; a tremble throughout. Hands-on-head arm angles solved against the mesh
     (hand within ~12 cm of the head's side), pilot 2 mirrored from pilot 1 (its own solve
     passed through the glass mid-blend); whole timeline >= 3.3 cm clear of the canopy.
+- Third pass (user: an impact for the asteroid hitting the UFO; high-speed players got off
+  Saturn's map by hitting the treadmill):
+  - saturn/hit (Kenney CC0: impactMetal_heavy_002 at 0.8x, impactMining_003, explosionCrunch_002
+    at 0.75x, lowFrequency_explosion_001; 1.68 s) plays at the hit from where rock met hull,
+    with the fly-by (Play: both at 11.27 s, 164 / 153 studs off). Uploaded by the user:
+    109378426830546 (hash matches). (Rebuilding also re-encoded europa/quake.ogg
+    differently; reverted so it isn't re-uploaded.)
+  - Barriers: every destination fence 4,000 tall (two stacked 2,000 parts + a cap, from 40
+    under the platform), 12 thick outward (inner faces where they were); Earth's barrier
+    2,000 tall, 12 thick outward; the UFO wall 2,000. Worst case: MaxSpeed 400 straight up
+    plus a 50 jump in Europa's gravity rises ~2,025. PerimeterCheck now asserts every
+    barrier beats that in its own gravity. Play: at WalkSpeed 400, running and jumping over
+    the treadmill and toward three other edges never got past r = 63.9 (fence face 64).
 - Sounds (tools/sounds/build.py; sources moved from assets/sounds/Saturns Rings to
   Sounds/saturn): saturn/flyby (InspectorJ 397948, CC BY 4.0: needs credit, see
   assets/LICENSES.md Credits), saturn/impact (AudioPapkin 828092, CC0), saturn/beeps (SkySpeira
