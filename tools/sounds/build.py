@@ -74,6 +74,15 @@ MANIFEST = {
     # inspectorj's spaceship fly-by (freesound 397948; swells for 1.25 s, peaks to 2.5 s,
     # then fades), audiopapkin's impact (828092; hits at once, gone by ~4.5 s) and
     # skyspeira's sci-fi beeps and chirps (848412), looped at the wreck.
+    # The asteroid smashing into the UFO (Kenney, CC0): a heavy metal clang pitched down
+    # for the hull, a rock crack and a crunch for the ice chunk breaking on it, a low thump
+    # under them.
+    "saturn/hit": {"layers": [
+        {"file": "kenney_impact-sounds/Audio/impactMetal_heavy_002.ogg", "pitch": 0.8},
+        {"file": "kenney_impact-sounds/Audio/impactMining_003.ogg", "gain": 0.7},
+        {"file": "kenney_sci-fi-sounds/Audio/explosionCrunch_002.ogg", "pitch": 0.75, "lowpass": 3000, "gain": 0.55, "delay": 0.02},
+        {"file": "kenney_sci-fi-sounds/Audio/lowFrequency_explosion_001.ogg", "gain": 0.5},
+    ]},
     "saturn/flyby": {"layers": [{"file": SATURN_FLYBY, "fadeout": 1.5}]},
     "saturn/impact": {"layers": [{"file": SATURN_IMPACT}]},
     "saturn/beeps": {"layers": [{"file": SATURN_BEEPS}], "mode": "loop"},

@@ -34,3 +34,5 @@ SkySpeira (both CC0, freesound.org).
 | Spaceship Fly-by, A | Saturn UFO fly-by (`saturn/flyby`) | InspectorJ | https://freesound.org/s/397948/ | CC BY 4.0 (credit required) | 2026-10-22 |
 | Sound Design Elements Impact SFX PS 123 | Saturn UFO crash impact (`saturn/impact`) | AudioPapkin | https://freesound.org/s/828092/ | CC0 | 2026-10-22 |
 | Strange Sci-Fi Digital Beeps and Chirps | Saturn UFO wreck beeps (`saturn/beeps`) | SkySpeira | https://freesound.org/s/848412/ | CC0 | 2026-10-22 |
+| Impact Sounds | Saturn UFO asteroid hit (`saturn/hit`); `game/drop` | Kenney | https://kenney.nl/assets/impact-sounds | CC0 | 2026-10-22 |
+| Sci-fi Sounds | Saturn UFO asteroid hit (`saturn/hit`); rocket ignition and liftoff, pet UFO cues | Kenney | https://kenney.nl/assets/sci-fi-sounds | CC0 | 2026-10-22 |

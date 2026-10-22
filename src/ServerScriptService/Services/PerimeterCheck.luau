@@ -25,6 +25,20 @@ return function()
         assert(west and east, ("stage %d: the perimeter does not run the length of the ground's sides"):format(stage))
     end
     assert(Surrounds.BarrierHeight >= 60 and Surrounds.BarrierHeight > Surrounds.WallHeight, "barrier too low")
+    -- Earth's barrier and every destination's fence stay out of reach: all of MaxSpeed
+    -- turned straight up (a runner thrown off a slope) plus a jump, in that place's
+    -- gravity, must not clear them. One barrier part can be at most 2048 tall.
+    do
+        local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
+        local Destinations = require(script.Parent.DestinationService)
+        local function reach(gravity) return (Config.MaxSpeed + 50) ^ 2 / (2 * gravity) end
+        assert(Surrounds.BarrierHeight > reach(workspace.Gravity), ("Earth's barrier is within reach of a %d-stud launch"):format(reach(workspace.Gravity)))
+        assert(Surrounds.BarrierHeight <= 2048, "Earth's barrier is taller than a part can be")
+        assert(Surrounds.BarrierThickness >= 8, "Earth's barrier is thin enough to step through at speed")
+        for _, spec in Config.Destinations do
+            assert(Destinations.FenceHeight > reach(spec.gravity), ("%s's fence is within reach of a %d-stud launch"):format(spec.id, reach(spec.gravity)))
+        end
+    end
     assert(Surrounds.PlainDepth > 0 and Surrounds.PlainDepth < 1, "the plain's top must sit just under the site's ground")
     -- No mountain reaches the fully expanded site or the District, none stands past the
     -- plain, and each row is continuous: neighbours' bases overlap, so the horizon is

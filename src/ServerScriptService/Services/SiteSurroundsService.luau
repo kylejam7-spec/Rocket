@@ -20,7 +20,11 @@ local Parkland = require(script.Parent.ParklandService)
 local Surrounds = {}
 
 Surrounds.WallHeight = 10
-Surrounds.BarrierHeight = 120
+-- The invisible barrier on the hoarding line: as tall as the destination fences (the
+-- fastest walker thrown up off a slope must not clear it) and thick, on the outer side,
+-- so a 400 studs/s runner can't step through it in one physics step.
+Surrounds.BarrierHeight = 2000
+Surrounds.BarrierThickness = 12
 -- The plain's top sits this far under the site's ground (y = 0).
 Surrounds.PlainDepth = 0.35
 Surrounds.PlainReach = 5120
@@ -78,12 +82,17 @@ local function run(parent, a, b, inside)
     for offset = -length / 2, length / 2, 40 do
         make(parent, "HoardingPost", Vector3.new(1.8, h + 1.6, 1.8), frame * CFrame.new(0, (h + 1.6) / 2, offset), STEEL, Enum.Material.Metal)
     end
-    local barrier = make(parent, "Barrier", Vector3.new(2, Surrounds.BarrierHeight, length + 2), frame * CFrame.new(0, Surrounds.BarrierHeight / 2, 0), HOARDING)
+    -- The side of the run the site is on (+1: the frame's +X).
+    local facing = (inside - mid)
+    local side = (frame:VectorToObjectSpace(Vector3.new(facing.X, 0, facing.Y)).X > 0) and 1 or -1
+    -- Its inner face stays on the hoarding line's inner side, as the old 2-stud barrier's
+    -- did; the rest of its thickness lies outside.
+    local thick = Surrounds.BarrierThickness
+    local barrier = make(parent, "Barrier", Vector3.new(thick, Surrounds.BarrierHeight, length + thick),
+        frame * CFrame.new(-side * (thick / 2 - 1), Surrounds.BarrierHeight / 2, 0), HOARDING)
     barrier.Transparency, barrier.CanCollide = 1, true
     -- Long runs carry a notice on their inner face every 240 studs.
     if length >= 240 then
-        local facing = (inside - mid)
-        local side = (frame:VectorToObjectSpace(Vector3.new(facing.X, 0, facing.Y)).X > 0) and 1 or -1
         for offset = -length / 2 + 120, length / 2 - 119, 240 do
             local at = frame * CFrame.new(side * 1.1, h * 0.55, offset)
             Signs.board(parent, "HoardingNotice", CFrame.lookAt(at.Position, at.Position + at.RightVector * side), Vector2.new(24, 4.4),

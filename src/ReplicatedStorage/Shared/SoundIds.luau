@@ -34,6 +34,7 @@ return table.freeze({
     ["pet/zip"] = "rbxassetid://136631171810461",
     ["saturn/beeps"] = "rbxassetid://125968281699290",
     ["saturn/flyby"] = "rbxassetid://112291037294025",
+    ["saturn/hit"] = "rbxassetid://109378426830546",
     ["saturn/impact"] = "rbxassetid://113136207781823",
     ["ui/click"] = "rbxassetid://118256580196638",
     ["ui/close"] = "rbxassetid://133361107086161",

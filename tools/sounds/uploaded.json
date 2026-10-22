@@ -223,6 +223,13 @@
     },
     "sha256": "d9e7b653be560a33fd31362ba826cca048c1cddb813295a25869e2d6723976e3"
   },
+  "saturn/hit": {
+    "assetId": "109378426830546",
+    "creator": {
+      "userId": "11791915499"
+    },
+    "sha256": "6c694ff1f06b311cf18a4f52b31bb4507da36a88a110ffdb8e83036212dc25cd"
+  },
   "saturn/impact": {
     "assetId": "113136207781823",
     "creator": {
