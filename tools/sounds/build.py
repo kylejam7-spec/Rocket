@@ -29,6 +29,9 @@ NASA = "590189main_ringtone_131_launchNats.mp3"
 PICKUP = "833635__nomagician__pickup-notification-videogame-ui-sound.mp3"
 EUROPA_QUAKE = "europa/680510__audiodaprati__earthquake-2023.wav"
 EUROPA_ICE = "europa/682339__newlocknew__icebrk_ice-mantlebreaks-with-a-crunch-and-a-creak-1with-lfe-sweetener_em.mp3"
+SATURN_FLYBY = "saturn/397948__inspectorj__spaceship-fly-by-a.wav"
+SATURN_IMPACT = "saturn/828092__audiopapkin__sound-design-elements-impact-sfx-ps-123.wav"
+SATURN_BEEPS = "saturn/848412__skyspeira__strange-sci-fi-digital-beeps-and-chirps.wav"
 
 # group/name -> one of
 #   "file under Sounds/"
@@ -67,6 +70,13 @@ MANIFEST = {
     "europa/break-out": {"layers": [{"file": EUROPA_ICE, "clip": [11.3, 14.6], "fadeout": 0.8, "lowpass": 2600}]},
     "europa/break-in": {"layers": [{"file": EUROPA_ICE, "clip": [0.1, 3.7], "fadeout": 0.8, "lowpass": 2600}]},
     "europa/roar": {"layers": [{"file": "europa/monster.m4a", "clip": [16.8, 24.6], "fadeout": 1.6, "lowpass": 2400}]},
+    # Saturn's UFO crash (UfoController), from the user's three files in Sounds/saturn:
+    # inspectorj's spaceship fly-by (freesound 397948; swells for 1.25 s, peaks to 2.5 s,
+    # then fades), audiopapkin's impact (828092; hits at once, gone by ~4.5 s) and
+    # skyspeira's sci-fi beeps and chirps (848412), looped at the wreck.
+    "saturn/flyby": {"layers": [{"file": SATURN_FLYBY, "fadeout": 1.5}]},
+    "saturn/impact": {"layers": [{"file": SATURN_IMPACT}]},
+    "saturn/beeps": {"layers": [{"file": SATURN_BEEPS}], "mode": "loop"},
     "game/full": "kenney_interface-sounds/Audio/bong_001.ogg",
     "game/drop": "kenney_impact-sounds/Audio/impactSoft_heavy_000.ogg",
     # Mixkit's coin jingle builds for ~200 ms; start at its first strong clink (90 ms)

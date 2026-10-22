@@ -64,6 +64,14 @@ local CUES = {
     oarfishBreakOut = { file = "europa/break-out", volume = 1.1, world = true, near = 450, far = 3000 },
     oarfishBreakIn = { file = "europa/break-in", volume = 1.1, world = true, near = 450, far = 3000 },
     oarfishRoar = { file = "europa/roar", volume = 1.2, world = true, near = 450, far = 3000 },
+    -- Saturn's UFO (SaturnUfoController), all from the UFO itself: the fly-by as the
+    -- asteroid knocks it out of its circle and it careens in, the impact as it hits the
+    -- rim (both carry across the platform and pan as it moves), and the beeps and chirps
+    -- of its broken systems, looped: full at its wall (17 studs from its centre) and round
+    -- about it, fading out across the platform (the arrival is ~60 studs off).
+    ufoFlyby = { file = "saturn/flyby", volume = 1.1, world = true, near = 80, far = 1500 },
+    ufoImpact = { file = "saturn/impact", volume = 1.2, world = true, near = 80, far = 1500 },
+    ufoBeeps = { file = "saturn/beeps", volume = 0.55, world = true, loop = true, near = 24, far = 70 },
 }
 
 -- The content id for a built file (its upload, else Studio's local copy), or nil.
