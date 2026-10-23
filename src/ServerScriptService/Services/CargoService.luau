@@ -130,7 +130,7 @@ function Cargo.new(ctx)
             ctx.Launch.beginBoarding()
         end
     end
-    -- Like pickup: 1 unit per tick, +1 per Bulk Place level.
+    -- Like pickup: units per tick from the Bulk Place level (Upgrades.placeUnits).
     local function place(player)
         local rocket = ctx.Cycle.rocket
         local material = Rocket.PhaseMaterial[rocket.phase]

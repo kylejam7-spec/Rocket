@@ -48,13 +48,13 @@ return function()
     assert(select(2, Service.buy(config, profile, "BulkPickup", "late")) == "maxed")
     assert(#profile.purchaseIds <= Service.LedgerSize)
 
-    -- Effects: +1 unit per tick per level for pickup and place, +10% reach per level.
+    -- Effects: 1 unit per tick unbought, then 3 x (1 + level) for pickup and place; +10% reach per level.
     local some = { upgrades = { BulkPickup = 3, BulkPlace = 2, PlacementRange = 5 } }
-    assert(Upgrades.pickupUnits(config, some) == 4 and Upgrades.placeUnits(config, some) == 3)
+    assert(Upgrades.pickupUnits(config, some) == 12 and Upgrades.placeUnits(config, some) == 9)
     assert(math.abs(Upgrades.reach(config, some) - config.FrontierReach * 1.5) < 1e-9)
     assert(Upgrades.pickupUnits(config, {}) == 1 and Upgrades.placeUnits(config, {}) == 1 and Upgrades.reach(config, {}) == config.FrontierReach)
     local top = { upgrades = { BulkPickup = 10, BulkPlace = 10, PlacementRange = 10 } }
-    assert(Upgrades.pickupUnits(config, top) == 11 and Upgrades.placeUnits(config, top) == 11)
+    assert(Upgrades.pickupUnits(config, top) == 33 and Upgrades.placeUnits(config, top) == 33)
     assert(math.abs(Upgrades.reach(config, top) - config.FrontierReach * 2) < 1e-9)
 
     -- Ranks count completed launches only, in rising order.

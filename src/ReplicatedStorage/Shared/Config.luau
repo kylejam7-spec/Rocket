@@ -50,8 +50,8 @@ return table.freeze({
     -- is also a Robux Game Pass (RobuxUpgrades). Prices show as 3 significant figures
     -- (under 1,000: rounded to 5).
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- +1 unit per pickup tick
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- +1 unit per place tick
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- units per pickup tick: see BulkFactor
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- units per place tick: see BulkFactor
         PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, step = 0.1 }), -- +10% reach
     }),
     UpgradePrices = table.freeze({
@@ -60,6 +60,9 @@ return table.freeze({
             table.freeze({ upTo = 10, factor = 3 }),
         }),
     }),
+    -- Bulk Pickup / Bulk Place: 1 unit per tick unbought, then BulkFactor x (1 + level):
+    -- 6, 9, 12 ... 33 a tick at level 10 (660 a second). User, 2026-10-23: x3 per level.
+    BulkFactor = 3,
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
     -- Robux upgrades (RobuxUpgradeService): one Game Pass per track per level; owning the
     -- level-N pass keeps that track at level N or higher, re-checked on every join.
