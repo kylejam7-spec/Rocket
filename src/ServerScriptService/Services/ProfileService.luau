@@ -179,7 +179,7 @@ end
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
 function Profiles.credit(profile, delivered, config, multiplier)
     if type(delivered) ~= "number" or delivered <= 0 or delivered % 1 ~= 0 then return 0 end
-    -- `multiplier`: 2x Coins (ShopService) times the friend boost (FriendService).
+    -- `multiplier`: 2x Coins (ShopService) times the friend boost (FriendService) and suit (SkinService).
     local coins = delivered * config.CoinsPerUnit * (multiplier or 1)
     profile.lifetimeDeliveries += delivered
     profile.coins += coins
@@ -290,10 +290,15 @@ function Profiles:preview(record)
 end
 
 -- `blackHole`: this launch went to the Black Hole (its first reward counts a visit).
-function Profiles:queueReward(userId, launchId, ticks, blackHole)
+-- `launches`: how many launches it counts for (a suit's boost; 1 by default).
+function Profiles:queueReward(userId, launchId, ticks, blackHole, launches)
     local record = self.records[userId]
     if not record or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return end
     record.pending[launchId] = math.max(record.pending[launchId] or 0, ticks or 1)
+    if launches and launches > 1 then
+        record.launchCounts = record.launchCounts or {}
+        record.launchCounts[launchId] = math.max(record.launchCounts[launchId] or 1, launches)
+    end
     if blackHole then
         record.blackHoles = record.blackHoles or {}
         record.blackHoles[launchId] = true
@@ -336,7 +341,7 @@ function Profiles:save(userId)
             local previous = profile.rewardedLaunchTicks[id] or (table.find(profile.rewardedLaunchIds, id) and 1 or 0)
             local delta = math.max(0, ticks - previous)
             if not table.find(profile.rewardedLaunchIds, id) then
-                profile.completedLaunches += 1
+                profile.completedLaunches += record.launchCounts and record.launchCounts[id] or 1
                 if record.blackHoles and record.blackHoles[id] then profile.blackHolesVisited = (profile.blackHolesVisited or 0) + 1 end
                 table.insert(profile.rewardedLaunchIds, id)
             end

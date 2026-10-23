@@ -193,8 +193,9 @@ function Launch.new(ctx)
                 tick += 1
                 local elapsed, second = tick / rate, tick % rate == 0
                 for userId in rocket.passengers do
-                    ctx.profiles:queueReward(userId, cycle, tick * multiplier, definition.ModelTier == BLACK_HOLE)
                     local player = Players:GetPlayerByUserId(userId)
+                    -- A suit makes the ride count for more launches (SkinService).
+                    ctx.profiles:queueReward(userId, cycle, tick * multiplier, definition.ModelTier == BLACK_HOLE, player and ctx.Skins and ctx.Skins.multiplier(player))
                     if player and second then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier * rate .. " strength / +" .. config.Planet.SpeedBonus * multiplier * rate .. " speed (" .. elapsed .. "/" .. stay.total .. ")") end
                 end
                 if not spun and stay.total - elapsed <= config.WheelLeadSeconds then

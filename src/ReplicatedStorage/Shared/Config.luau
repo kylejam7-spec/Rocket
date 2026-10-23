@@ -88,6 +88,11 @@ return table.freeze({
             MultiHatch = table.freeze({ id = 2039573122, price = 249 }),
             PetSlot1 = table.freeze({ id = 2037017405, price = 99 }),
             PetSlot2 = table.freeze({ id = 2039741160, price = 179 }),
+            -- Suits (Shared.Skins): 2x / 4x / 8x training, coins and launches. No IDs yet:
+            -- greyed out until the passes exist on the dashboard.
+            SuitGold = table.freeze({ price = 199 }),
+            SuitCommander = table.freeze({ price = 499 }),
+            SuitGalaxy = table.freeze({ price = 999 }),
             -- Gym<n> unlocks TrainingTiers[n] without its launches.
             -- 2x / 5x / 10x / 25x / 50x / 75x / 100x (user set 50x-100x).
             Gym1 = table.freeze({ id = 2042480753, price = 49 }),

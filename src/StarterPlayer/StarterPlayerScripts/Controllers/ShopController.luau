@@ -13,6 +13,7 @@ local RunService = game:GetService("RunService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Shop = require(ReplicatedStorage.Shared.Shop)
 local Missions = require(ReplicatedStorage.Shared.Missions)
+local Skins = require(ReplicatedStorage.Shared.Skins)
 local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -157,6 +158,24 @@ function ShopController.start()
     end
     local function gridLayout(grid, cell)
         Create.new("UIGridLayout", { CellSize = cell, CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
+    end
+
+    -- Suits: a card each in its colours; you wear the best one you own.
+    local suits = section("SUITS  ·  wear the best you own")
+    gridLayout(suits, UDim2.fromOffset(228, 128))
+    for index, skin in Skins.List do
+        local frame = card(suits, UDim2.new(), skin.trim)
+        frame.LayoutOrder = index
+        frame.BackgroundColor3 = skin.suit:Lerp(Theme.color.Track, 0.55)
+        StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = skin.icon,
+            Font = Theme.font.Display, TextSize = 30, stroke = 2, Parent = frame })
+        StrokedText.new({ Position = UDim2.fromOffset(52, 8), Size = UDim2.new(1, -60, 0, 26), Text = skin.name:upper(),
+            Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
+        StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), Text = Skins.blurb(skin), TextWrapped = true,
+            Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
+            TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = frame })
+        offerButton(skin.key, { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8),
+            Size = UDim2.new(1, -20, 0, 38), Parent = frame })
     end
 
     -- Game Passes: one card each.

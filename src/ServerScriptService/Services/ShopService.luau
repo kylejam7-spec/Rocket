@@ -28,6 +28,7 @@ local RunService = game:GetService("RunService")
 local Shop = require(ReplicatedStorage.Shared.Shop)
 local Missions = require(ReplicatedStorage.Shared.Missions)
 local Pets = require(ReplicatedStorage.Shared.Pets)
+local Skins = require(ReplicatedStorage.Shared.Skins)
 local Rocket = require(script.Parent.RocketService)
 local ShopService = {}
 ShopService.GRANTED, ShopService.RETRY = "granted", "retry"
@@ -278,6 +279,7 @@ function ShopService.new(ctx)
 
     local function refresh(player)
         if ctx.Pets then ctx.Pets.refresh(player) end
+        if ctx.Skins then ctx.Skins.refresh(player) end
         ctx.Cycle.send(player)
     end
     -- On join, after the profile loads: which passes they own. A slot pass that's gone
@@ -340,6 +342,8 @@ function ShopService.new(ctx)
         end
         local name = key:match("^Gym") and "gym access" or key
         for _, pass in Shop.Passes do if pass.key == key then name = pass.name end end
+        local skin = Skins.get(key)
+        if skin then name = "The " .. skin.name end
         ctx.Remote.feedback(player, "Thanks! " .. name .. " is yours.")
         refresh(player)
     end

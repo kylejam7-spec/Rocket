@@ -35,6 +35,7 @@ ctx.Robux = require(Services.RobuxUpgradeService).new(ctx)
 ctx.Pets = require(Services.PetService).new(ctx)
 ctx.Shop = require(Services.ShopService).new(ctx)
 ctx.Friends = require(Services.FriendService).new(ctx)
+ctx.Skins = require(Services.SkinService).new(ctx)
 ctx.Leaderboards = require(Services.LeaderboardService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
@@ -46,9 +47,9 @@ ctx.Training = require(Services.TrainingService).new({
     -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
     -- treadmill steps (~3.3 s for a new player at the 1x free gym: 10 ticks).
     -- Gym access passes unlock a District tier; a server boost multiplies every gain, and
-    -- so does each player's friend boost.
+    -- so do each player's friend boost and suit.
     unlocked = function(player, station) return ctx.Shop.gymUnlocked(player, station.tier) end,
-    multiplier = function(player) return ctx.Shop.trainingMultiplier() * ctx.Friends.multiplier(player) end,
+    multiplier = function(player) return ctx.Shop.trainingMultiplier() * ctx.Friends.multiplier(player) * ctx.Skins.multiplier(player) end,
     trained = function(player, station)
         if (station.required or 0) > 0 then return end
         local strength, speed = ctx.Stats.levels(ctx.profiles.records[player.UserId].profile)
@@ -67,12 +68,13 @@ ctx.Training = require(Services.TrainingService).new({
     stations = ctx.World.stations,
 })
 
--- Spawns `player` if they have no character (ready, timeout and respawn all land here).
+-- Spawns `player` if they have no character (ready, timeout and respawn all land here),
+-- in their suit (SkinService), not their own avatar.
 local spawning = {}
 local function spawnCharacter(player)
     if spawning[player] or player.Character or player.Parent ~= Players then return end
     spawning[player] = true
-    local ok, err = pcall(player.LoadCharacter, player)
+    local ok, err = pcall(player.LoadCharacterWithHumanoidDescription, player, ctx.Skins.description(player))
     spawning[player] = nil
     if not ok then warn("Rocket: couldn't spawn", player.UserId, err) end
 end
@@ -84,6 +86,7 @@ local function joined(player)
     ctx.Stats.attach(player)
     task.delay(LOAD_TIMEOUT, spawnCharacter, player)
     local function characterAdded(character)
+        task.spawn(ctx.Skins.characterAdded, player, character)
         -- Without CharacterAutoLoads there's no automatic respawn either.
         local humanoid = character:WaitForChild("Humanoid", 10)
         if humanoid then
