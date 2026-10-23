@@ -63,7 +63,8 @@ local function fence(parent, center, radius)
     end
 end
 -- What surrounds a destination's platform (radius `radius`), so it reads as a place on
--- a world rather than a disc in space: a rim of crags just outside the invisible fence,
+-- a world rather than a disc in space: a rim of crags (or a ridge) round the invisible
+-- fence, solid, as they reach a few studs inside it and you'd walk into them otherwise,
 -- a plain a few studs lower out to `look.reach`, strewn with boulders, and a continuous
 -- ring of mountains (look.ring, Mountains.ring) closing the horizon inside the plain's
 -- edge, low enough to leave the backdrop planet in view.
@@ -87,7 +88,7 @@ local function surroundings(parent, center, radius, look)
             local at = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * (radius + width * 0.5)
             local height, color = random:NextNumber(4, 7.5), ridge.color:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.06))
             if not look.keep or look.keep(at - center) then
-                Planets.mound(parent, "CraterWall", at, width, height, color, ridge.material)
+                Planets.mound(parent, "CraterWall", at, width, height, color, ridge.material, true)
             end
         end
     else
@@ -100,7 +101,7 @@ local function surroundings(parent, center, radius, look)
             local color = look.crag:Lerp(Color3.new(0, 0, 0), random:NextNumber(0, 0.18))
             local spin = random:NextNumber(0, 6.28)
             if not look.keep or look.keep(at - center) then
-                decor(parent, "RimCrag", { Size = Vector3.one * size, Color = color, Material = look.cragMaterial,
+                make(parent, "RimCrag", { Size = Vector3.one * size, Color = color, Material = look.cragMaterial, CanTouch = false,
                     CFrame = CFrame.new(at - Vector3.new(0, size * 0.25, 0)) * CFrame.Angles(0, spin, 0) * corner })
             end
         end
@@ -1144,12 +1145,13 @@ builders[4] = function(folder, c)
             Planets.blob(folder, "ChunkLump", pose, size, color, material)
         end
     end
-    -- A rough lip of frosted boulders round the edge, so it isn't a cut disc.
+    -- A rough lip of frosted boulders round the edge, so it isn't a cut disc (solid: they
+    -- reach inside the fence).
     for index = 1, 30 do
         local angle = index / 30 * math.pi * 2 + random:NextNumber(-0.08, 0.08)
         local at = c + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(66, 70)
         if (at - c - Destinations.SignOffset).Magnitude > 10 and (at - c - UFO_CRASH).Magnitude > 20 then
-            Planets.boulder(folder, at - Vector3.new(0, 2, 0), random:NextNumber(5, 10), SATURN.rock:Lerp(SATURN.frost, random:NextNumber(0, 0.6)), Enum.Material.Slate, random, false)
+            Planets.boulder(folder, at - Vector3.new(0, 2, 0), random:NextNumber(5, 10), SATURN.rock:Lerp(SATURN.frost, random:NextNumber(0, 0.6)), Enum.Material.Slate, random, true)
         end
     end
     -- Frost drifts, ice lumps and crystal clusters where there's room.
