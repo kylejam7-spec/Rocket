@@ -63,7 +63,7 @@ level 22 (~2,700 points in); every later level costs 450. Free gym (2/s): level 
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Cost | 10 | 10 | 15 | 20 | 35 | 50 | 75 | 130 | 220 | 320 | 450 |
 
-- Strength: carry = 10 + **3 per level**, uncapped (enough strength carries a whole rocket's Metal or Fuel in one trip).
+- Strength: carry = 10 + **1 per level**, uncapped (enough strength carries a whole rocket's Metal or Fuel in one trip).
 - Speed: walk = 24 + 46 · L / (L + 8), so MaxSpeed is now **70** (was 60): +5 at level 1,
   47 at level 8, 59 at level 30, 66 at level 100. The first speed level is worth about
   two thirds of the first strength level in delivery rate. After that the gap grows,

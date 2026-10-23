@@ -16,7 +16,7 @@ return table.freeze({
     -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, uncapped: enough
     -- strength carries a whole rocket's Metal or Fuel in one trip.
     BaseCarryCapacity = 10,
-    CarryPerLevel = 3,
+    CarryPerLevel = 1,
     -- Walk = BaseSpeed + SpeedEarly * level / (level + SpeedHalfLevel) + SpeedPerLevel * level,
     -- capped at MaxSpeed: the early levels give big steps (29 at level 1, ~49 at level 8),
     -- then every level adds 0.6 (121 at 100, 243 at 300) up to 400 around level 560.
