@@ -18,6 +18,7 @@ return table.freeze({
     ["game/liftoff"] = "rbxassetid://110297361406713",
     ["game/pop"] = "rbxassetid://102792123161256",
     ["game/rumble"] = "rbxassetid://90163739696256",
+    ["mars/wind"] = "rbxassetid://101178172939774",
     ["music/earth/ode-to-forgetting"] = "rbxassetid://80999109764444",
     ["music/earth/tokyo-sunset"] = "rbxassetid://85369291069099",
     ["music/earth/when-time-called-me-darling"] = "rbxassetid://136612848114541",

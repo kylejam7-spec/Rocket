@@ -8,6 +8,9 @@
             dust billows and grit streaks past on the wind toward the landing site, and
             gusts buffet the camera,
       36 s  the wind drops and the air clears over 12 s, back to the hazy afternoon.
+    The wind (soundreality's "Sandstorm", Pixabay, uploaded as is: SoundIds "mars/wind")
+    plays everywhere at once, not from the wall: faint as the wall nears, full in the
+    storm, fading with it.
     The haze and light are Shared.Skies "Mars" mixed toward STORM by the storm's strength,
     worked out from the time each frame (so arriving partway joins it at the right point),
     and set back to Mars's own when it ends. Everything is local to this client and only
@@ -17,9 +20,11 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local SoundService = game:GetService("SoundService")
 local Workspace = game:GetService("Workspace")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Skies = require(ReplicatedStorage.Shared.Skies)
+local SoundIds = require(ReplicatedStorage.Shared.SoundIds)
 local Settings = require(script.Parent.Settings)
 local DustStormController = {}
 
@@ -42,6 +47,7 @@ local DUST_DARK = Color3.fromRGB(132, 72, 46)
 local BILLOW = Color3.fromRGB(214, 146, 100)
 local SAND = Color3.fromRGB(244, 196, 146)
 local SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+local WIND_VOLUME = 1.4 -- at full strength; the approach plays it at a fraction
 -- Full strength: the haze, light and tint the storm mixes Mars's toward.
 local STORM = {
     atmosphere = { Density = 0.62, Offset = 0.15, Color = Color3.fromRGB(150, 86, 52), Decay = Color3.fromRGB(116, 60, 38), Glare = 0, Haze = 3 },
@@ -183,6 +189,16 @@ local function play(folder, startAt)
     local tint = Instance.new("ColorCorrectionEffect")
     tint.Name = "DustStormTint"
     tint.Parent = Lighting
+    -- The wind: started at the storm's point in the file, so arriving late doesn't
+    -- replay its opening.
+    local howl = Instance.new("Sound")
+    howl.Name, howl.SoundId, howl.Looped, howl.Volume = "DustStormWind", SoundIds["mars/wind"] or "", true, 0
+    howl.SoundGroup = Settings.group("SFX")
+    howl.Parent = SoundService
+    if howl.SoundId ~= "" then
+        howl.TimePosition = math.max(0, Workspace:GetServerTimeNow() - startAt)
+        howl:Play()
+    end
     local finished, left = false, false
     local connection = RunService.RenderStepped:Connect(function()
         local t = Workspace:GetServerTimeNow() - startAt
@@ -197,6 +213,7 @@ local function play(folder, startAt)
         end
         local k = strength(t)
         weather(k)
+        howl.Volume = WIND_VOLUME * math.min(1, k * 1.4)
         tint.TintColor = Color3.new(1, 1, 1):Lerp(STORM.tint, k)
         tint.Saturation, tint.Contrast, tint.Brightness = -0.2 * k, -0.08 * k, -0.04 * k
         -- The wall rolls in; once past the base it thins away (the storm is all round now).
@@ -226,6 +243,7 @@ local function play(folder, startAt)
     wall:Destroy()
     gust:Destroy()
     tint:Destroy()
+    howl:Destroy()
 end
 
 function DustStormController.start()
