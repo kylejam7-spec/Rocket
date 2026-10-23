@@ -2,6 +2,8 @@
 -- name, a big action word and a key chip, popping in with a bounce. Prompts are
 -- switched to Custom style locally; Roblox still handles key/gamepad input, and
 -- tapping or clicking the card drives InputHoldBegin/End for touch.
+-- PromptController.onPress(fn) calls fn(prompt, input) when a finger or click lands
+-- on a card (CargoController starts the material hold from it).
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local UI = script.Parent.Parent:WaitForChild("UI")
@@ -10,6 +12,11 @@ local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
 local Tween = require(UI.Tween)
 local PromptController = {}
+local pressListeners = {}
+
+function PromptController.onPress(fn)
+    table.insert(pressListeners, fn)
+end
 
 local GAMEPAD = { ButtonX = "X", ButtonY = "Y", ButtonA = "A", ButtonB = "B" }
 
@@ -69,6 +76,7 @@ local function build(prompt, inputType)
     local connections = {
         card.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+                for _, fn in pressListeners do task.spawn(fn, prompt, input) end
                 prompt:InputHoldBegin()
             end
         end),
