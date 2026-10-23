@@ -18,13 +18,13 @@ Skins.Default = table.freeze({
 })
 -- Cheapest first; the last one owned wins.
 Skins.List = table.freeze({
-    table.freeze({ key = "SuitGold", name = "Gold Suit", icon = "🥇", multiplier = 2,
+    table.freeze({ key = "SuitGold", name = "Gold Astronaut", icon = "🥇", multiplier = 2,
         suit = Color3.fromRGB(240, 186, 40), trim = Color3.fromRGB(120, 76, 20), pack = Color3.fromRGB(200, 150, 40),
         visor = Color3.fromRGB(255, 220, 120), helmet = true }),
-    table.freeze({ key = "SuitCommander", name = "Commander Suit", icon = "🎖", multiplier = 4,
+    table.freeze({ key = "SuitCommander", name = "Commander Astronaut", icon = "🎖", multiplier = 4,
         suit = Color3.fromRGB(34, 52, 112), trim = Color3.fromRGB(230, 50, 50), pack = Color3.fromRGB(60, 70, 96),
         visor = Color3.fromRGB(255, 120, 60), helmet = true, glow = true }),
-    table.freeze({ key = "SuitGalaxy", name = "Galaxy Suit", icon = "🌌", multiplier = 8,
+    table.freeze({ key = "SuitGalaxy", name = "Galaxy Astronaut", icon = "🌌", multiplier = 8,
         suit = Color3.fromRGB(58, 24, 110), trim = Color3.fromRGB(60, 240, 255), pack = Color3.fromRGB(30, 14, 60),
         visor = Color3.fromRGB(120, 200, 255), helmet = true, glow = true, trail = true, sparkles = true }),
 })

@@ -169,8 +169,10 @@ function ShopController.start()
         frame.BackgroundColor3 = skin.suit:Lerp(Theme.color.Track, 0.55)
         StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = skin.icon,
             Font = Theme.font.Display, TextSize = 30, stroke = 2, Parent = frame })
-        StrokedText.new({ Position = UDim2.fromOffset(52, 8), Size = UDim2.new(1, -60, 0, 26), Text = skin.name:upper(),
-            Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
+        -- Suit names run long: shrink to fit, at most the pass cards' size.
+        local title = StrokedText.new({ Position = UDim2.fromOffset(52, 8), Size = UDim2.new(1, -60, 0, 26), Text = skin.name:upper(),
+            Font = Theme.font.Display, TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
+        Create.new("UITextSizeConstraint", { MaxTextSize = 21, Parent = title })
         StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), Text = Skins.blurb(skin), TextWrapped = true,
             Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = frame })
