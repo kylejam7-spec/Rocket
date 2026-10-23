@@ -1,12 +1,13 @@
 --[[
-    Suits: everyone wears the same basic astronaut suit instead of their own avatar
-    (SkinService builds the character from Skins.description and dresses it). Three suits
-    sell as Game Passes (Config.Shop.passes: SuitGold, SuitCommander, SuitGalaxy). A
-    player gets the boost of the best one they own, which multiplies their gym training,
-    their delivery coins and the launches each ride counts for (ranks, gym unlocks, the
-    launches leaderboard); they wear that one unless they pick another they own (or the
-    basic one) in the SHOP. Suits don't stack with each other; the boost
-    multiplies with the other boosts (2x Coins, the server training boost, friends).
+    Suits: everyone wears the same basic astronaut suit instead of their own avatar,
+    keeping only their own head (SkinService builds the character from Skins.description
+    and dresses it). Three suits sell as Game Passes (Config.Shop.passes: SuitGold,
+    SuitCommander, SuitGalaxy). A player gets the boost of the best one they own, which
+    multiplies their gym training, their delivery coins and the launches each ride counts
+    for (ranks, gym unlocks, the launches leaderboard); they wear that one unless they
+    pick another they own (or the basic one) in the SHOP. Suits don't stack with each
+    other; the boost multiplies with the other boosts (2x Coins, the server training
+    boost, friends).
     Colours: suit (torso, arms, legs), trim (collar, badge, helmet ring), pack (backpack),
     visor (the glass helmet, if any). `glow` makes the trim Neon and lights the badge;
     `trail` and `sparkles` are the Galaxy Suit's extras.
@@ -29,7 +30,7 @@ Skins.List = table.freeze({
         suit = Color3.fromRGB(58, 24, 110), trim = Color3.fromRGB(60, 240, 255), pack = Color3.fromRGB(30, 14, 60),
         visor = Color3.fromRGB(120, 200, 255), helmet = true, glow = true, trail = true, sparkles = true }),
 })
--- The skin tone under every suit (the head; gloves are the suit colour).
+-- The skin tone for a head when the player's own avatar can't be read.
 Skins.Skin = Color3.fromRGB(234, 184, 146)
 
 function Skins.get(key)
@@ -53,11 +54,21 @@ function Skins.blurb(skin)
     return skin.multiplier .. "x training, coins & launches"
 end
 
--- The HumanoidDescription every character is built from: no accessories, clothing or
--- animations of their own, the suit's colours on the body.
-function Skins.description(skin)
+-- The HumanoidDescription every character is built from: the suit's colours on the
+-- body, no clothing, accessories or animations of their own, but their own head from
+-- `avatar` (their HumanoidDescription, if it could be read): head shape, face, skin tone
+-- and hair (rigid or layered).
+function Skins.description(skin, avatar)
     local description = Instance.new("HumanoidDescription")
     description.HeadColor = Skins.Skin
+    if avatar then
+        description.Head, description.Face, description.HeadColor = avatar.Head, avatar.Face, avatar.HeadColor
+        local hair = {}
+        for _, accessory in avatar:GetAccessories(true) do
+            if accessory.AccessoryType == Enum.AccessoryType.Hair then table.insert(hair, accessory) end
+        end
+        description:SetAccessories(hair, true)
+    end
     description.TorsoColor = skin.suit
     description.LeftArmColor, description.RightArmColor = skin.suit, skin.suit
     description.LeftLegColor, description.RightLegColor = skin.suit, skin.suit

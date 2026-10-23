@@ -22,6 +22,15 @@ return function()
     local description = Skins.description(Skins.List[3])
     assert(description.TorsoColor == Skins.List[3].suit and description.Shirt == 0 and description.HatAccessory == "", "description")
     description:Destroy()
+    -- Their own head: shape, face, skin tone and hair, but no hat or clothes.
+    local avatar = Instance.new("HumanoidDescription")
+    avatar.Head, avatar.Face, avatar.HeadColor, avatar.Shirt = 123, 456, Color3.fromRGB(90, 60, 40), 789
+    avatar.HairAccessory, avatar.HatAccessory = "111", "222"
+    local mine = Skins.description(Skins.Default, avatar)
+    assert(mine.Head == 123 and mine.Face == 456 and mine.HeadColor == avatar.HeadColor and mine.TorsoColor == Skins.Default.suit, "own head")
+    assert(mine.HairAccessory == "111" and mine.HatAccessory == "" and mine.Shirt == 0, "hair kept, hat and shirt dropped")
+    mine:Destroy()
+    avatar:Destroy()
     -- Dressing a stand-in R15 body: gear welded, helmet only on the paid suits.
     local body = Instance.new("Model")
     for name, size in { UpperTorso = Vector3.new(2, 1.6, 1), Head = Vector3.new(1.2, 1.2, 1.2) } do

@@ -84,6 +84,19 @@ end
 function Skin.new(ctx)
     local service = {}
     local function owns(player, key) return ctx.Shop ~= nil and ctx.Shop.owns(player, key) end
+    -- Each player's own avatar (a web call, once per join), for their head.
+    local avatars = {}
+    local function avatar(player)
+        if avatars[player] == nil then
+            local ok, description = pcall(game:GetService("Players").GetHumanoidDescriptionFromUserId, game:GetService("Players"), math.max(1, player.UserId))
+            avatars[player] = ok and description or false
+        end
+        return avatars[player] or nil
+    end
+    game:GetService("Players").PlayerRemoving:Connect(function(player)
+        if avatars[player] then avatars[player]:Destroy() end
+        avatars[player] = nil
+    end)
     -- The best suit `player` owns: its boost is theirs whatever they wear.
     function service.best(player)
         return Skins.best(function(key) return owns(player, key) end)
@@ -99,7 +112,7 @@ function Skin.new(ctx)
         return player and service.best(player).multiplier or 1
     end
     function service.description(player)
-        return Skins.description(service.skin(player))
+        return Skins.description(service.skin(player), avatar(player))
     end
     -- Dresses a new character in the player's suit.
     function service.characterAdded(player, character)
@@ -117,7 +130,7 @@ function Skin.new(ctx)
         local character = player.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         if not humanoid then return end
-        pcall(humanoid.ApplyDescription, humanoid, Skins.description(skin))
+        pcall(humanoid.ApplyDescription, humanoid, Skins.description(skin, avatar(player)))
         Skin.dress(character, skin)
     end
     -- WearSuit(key): put on a suit they own, or the basic one ("Astronaut").
