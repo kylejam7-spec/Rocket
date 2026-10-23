@@ -40,7 +40,7 @@ local CALM, CLEAR = 36, 48 -- the wind drops, and the air is clear again
 local WIND = Vector3.new(0, 0, 1)
 local FRONT_FROM, FRONT_TO = -1500, 1700
 local FRONT_SPEED = -FRONT_FROM / ARRIVE
-local FRONT_SPAN, FRONT_STEP = 1300, 100
+local FRONT_SPAN, FRONT_STEP = 1100, 60
 local DUST = Color3.fromRGB(176, 104, 66)
 local DUST_DARK = Color3.fromRGB(132, 72, 46)
 -- The wind's dust is lighter than the haze it blows through, or it disappears into it.
@@ -94,47 +94,45 @@ local function decor(name, props, parent)
     return part
 end
 
--- The dust wall: a ragged bank of billowing balls across the view, half sunk into the
--- ground, roiling smoke off the top. Built over the base, its pivot the base's centre,
--- so it's moved along WIND from there.
+-- The dust wall: a dense bank of churning dust across the view, rolling along as one
+-- (the dust is locked to its holders, which move with the wall). Roblox draws a particle
+-- at most 100 studs across, so the bank is many of them, packed and nearly opaque (the
+-- smoke texture is wispy on its own): invisible holders from just under the ground to
+-- ~260 up, so it sits on the land and towers over it. Built over the base, its pivot the
+-- base's centre, so it's moved along WIND from there; it starts full (Emit), not empty.
+local WALL_RATE = 6 -- puffs a second per holder
+local WALL_FILL = 45 -- puffs each holder starts with
+local function cloud(holder, random)
+    local billow = Instance.new("ParticleEmitter")
+    billow.Texture = SMOKE
+    billow.Color = ColorSequence.new(SAND:Lerp(DUST, random:NextNumber(0.3, 0.7)), DUST:Lerp(DUST_DARK, random:NextNumber(0.2, 0.6)))
+    billow.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 70, 15), NumberSequenceKeypoint.new(1, 100) })
+    billow.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.12, 0.05), NumberSequenceKeypoint.new(0.7, 0.15), NumberSequenceKeypoint.new(1, 1) })
+    billow.Lifetime, billow.Rate = NumberRange.new(8, 10), WALL_RATE
+    billow.Speed, billow.SpreadAngle = NumberRange.new(2, 10), Vector2.new(180, 180)
+    billow.Acceleration = Vector3.new(0, 2, 0)
+    billow.Rotation, billow.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-10, 10)
+    billow.LightInfluence = 0.5
+    billow.LockedToPart = true
+    billow.Parent = holder
+    return billow
+end
 local function buildWall(center)
     local random = Random.new(22)
     local model = Instance.new("Model")
     model.Name = "DustStormFront"
-    local parts = {}
+    local clouds = {}
     local across = WIND:Cross(Vector3.yAxis)
     for along = -FRONT_SPAN, FRONT_SPAN, FRONT_STEP do
-        local base = random:NextNumber(220, 320)
-        local behind = random:NextNumber(-60, 60)
-        local layers = {
-            { size = base, y = -40, transparency = 0.12 },
-            { size = base * random:NextNumber(0.7, 0.9), y = -40 + base * 0.45, transparency = 0.3 },
-            { size = base * random:NextNumber(0.45, 0.6), y = -40 + base * 0.8, transparency = 0.5 },
-        }
-        for index, layer in layers do
-            local ball = decor("Billow", {
-                Shape = Enum.PartType.Ball, Size = Vector3.one * layer.size, Transparency = layer.transparency,
-                Color = DUST:Lerp(DUST_DARK, random:NextNumber(0, 0.6)),
-                CFrame = CFrame.new(center + WIND * (behind + random:NextNumber(-30, 30)) + across * (along + random:NextNumber(-30, 30)) + Vector3.new(0, layer.y, 0)),
-            }, model)
-            table.insert(parts, { part = ball, transparency = layer.transparency })
-            if index == 2 then
-                local roil = Instance.new("ParticleEmitter")
-                roil.Texture, roil.Color = SMOKE, ColorSequence.new(DUST)
-                roil.Size = NumberSequence.new(80, 140)
-                roil.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, 0.45), NumberSequenceKeypoint.new(1, 1) })
-                roil.Lifetime, roil.Rate = NumberRange.new(5, 7), 1.5
-                roil.Speed, roil.SpreadAngle = NumberRange.new(10, 25), Vector2.new(40, 40)
-                roil.EmissionDirection = Enum.NormalId.Top
-                roil.Rotation, roil.RotSpeed = NumberRange.new(0, 360), NumberRange.new(-12, 12)
-                roil.LightInfluence = 1
-                roil.Parent = ball
-            end
-        end
+        local behind = random:NextNumber(-50, 50)
+        local holder = decor("DustBank", { Size = Vector3.new(FRONT_STEP * 1.3, 300, 70), Transparency = 1,
+            CFrame = CFrame.fromMatrix(center + WIND * behind + across * along + Vector3.new(0, 100, 0), across, Vector3.yAxis) }, model)
+        table.insert(clouds, cloud(holder, random))
     end
     model.WorldPivot = CFrame.new(center)
     model.Parent = Workspace
-    return model, parts
+    for _, billow in clouds do billow:Emit(WALL_FILL) end
+    return model, clouds
 end
 
 -- The wind round the camera: billows of dust and streaks of grit blowing along WIND
@@ -184,7 +182,7 @@ end
 -- One storm, from the server's stamp `startAt`; returns when it's over or abandoned.
 local function play(folder, startAt)
     local center = SPEC.position
-    local wall, billows = buildWall(center)
+    local wall, clouds = buildWall(center)
     local gust, billow, grit = buildGust()
     local tint = Instance.new("ColorCorrectionEffect")
     tint.Name = "DustStormTint"
@@ -216,12 +214,13 @@ local function play(folder, startAt)
         howl.Volume = WIND_VOLUME * math.min(1, k * 1.4)
         tint.TintColor = Color3.new(1, 1, 1):Lerp(STORM.tint, k)
         tint.Saturation, tint.Contrast, tint.Brightness = -0.2 * k, -0.08 * k, -0.04 * k
-        -- The wall rolls in; once past the base it thins away (the storm is all round now).
+        -- The wall rolls in; once it's over the base it stops making clouds and the ones it
+        -- has thin away as it goes (the storm is all round now).
         local front = FRONT_FROM + FRONT_SPEED * t
         if front < FRONT_TO then
             wall:PivotTo(CFrame.new(center + WIND * front))
-            local fade = smooth((front - 150) / 500)
-            for _, item in billows do item.part.Transparency = item.transparency + (1 - item.transparency) * fade end
+            local rate = front < 0 and WALL_RATE or 0
+            for _, billow in clouds do billow.Rate = rate end
         elseif wall.Parent then
             wall.Parent = nil
         end
