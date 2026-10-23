@@ -55,6 +55,12 @@ function ShopController.start()
         local state = current
         if not state then return end
         local owned = state.shop and state.shop.owned or {}
+        -- A suit they own (or the basic one): put it on (SkinService WearSuit).
+        if Skins.get(key) and (key == Skins.Default.key or owned[key]) then
+            if player:GetAttribute("Suit") == key then return end
+            Sfx.play("click")
+            return State.remote("WearSuit"):FireServer(key)
+        end
         if owned[key] then return Sfx.play("error") end
         -- Not on sale yet: the server says "coming soon".
         if not Shop.enabled(Config, key) then Sfx.play("error"); return State.remote("BuyShop"):FireServer(key) end
@@ -72,7 +78,10 @@ function ShopController.start()
         local entry = Shop.entry(Config, key)
         local owned = state.shop and state.shop.owned or {}
         local text, color
-        if owned[key] then
+        if Skins.get(key) and (key == Skins.Default.key or owned[key]) then
+            local wearing = player:GetAttribute("Suit") == key
+            text, color = wearing and "WEARING ✔" or "WEAR", wearing and OWNED or Theme.color.Speed
+        elseif owned[key] then
             text, color = "OWNED ✔", OWNED
         elseif not Shop.enabled(Config, key) then
             -- No dashboard ID yet: the price shows, greyed.
@@ -160,20 +169,22 @@ function ShopController.start()
         Create.new("UIGridLayout", { CellSize = cell, CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
     end
 
-    -- Suits: a card each in its colours; you wear the best one you own.
-    local suits = section("SUITS  ·  wear the best you own")
+    -- Suits: a card each in its colours, the free basic one first. Wear any you own (the
+    -- boost is always your best suit's).
+    local suits = section("SUITS  ·  boost from your best, wear any you own")
     gridLayout(suits, UDim2.fromOffset(228, 128))
-    for index, skin in Skins.List do
+    for index, skin in { Skins.Default, table.unpack(Skins.List) } do
         local frame = card(suits, UDim2.new(), skin.trim)
         frame.LayoutOrder = index
         frame.BackgroundColor3 = skin.suit:Lerp(Theme.color.Track, 0.55)
-        StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = skin.icon,
+        StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = skin.icon or "🧑‍🚀",
             Font = Theme.font.Display, TextSize = 30, stroke = 2, Parent = frame })
         -- Suit names run long: shrink to fit, at most the pass cards' size.
         local title = StrokedText.new({ Position = UDim2.fromOffset(52, 8), Size = UDim2.new(1, -60, 0, 26), Text = skin.name:upper(),
             Font = Theme.font.Display, TextScaled = true, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
         Create.new("UITextSizeConstraint", { MaxTextSize = 21, Parent = title })
-        StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), Text = Skins.blurb(skin), TextWrapped = true,
+        StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), TextWrapped = true,
+            Text = skin == Skins.Default and "Everyone's suit · free" or Skins.blurb(skin),
             Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
             TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = frame })
         offerButton(skin.key, { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8),
@@ -338,6 +349,10 @@ function ShopController.start()
             if not before[key] and previous then Sfx.play("confirm"); Tween.bounce(shopButton.Label, 1.4, 0.4) end
         end
         render(state)
+    end)
+    -- The WEAR / WEARING buttons follow the suit actually on.
+    player:GetAttributeChangedSignal("Suit"):Connect(function()
+        if current then render(current) end
     end)
     local elapsed = 0
     RunService.Heartbeat:Connect(function(dt)

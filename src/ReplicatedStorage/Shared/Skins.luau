@@ -1,10 +1,11 @@
 --[[
     Suits: everyone wears the same basic astronaut suit instead of their own avatar
     (SkinService builds the character from Skins.description and dresses it). Three suits
-    sell as Game Passes (Config.Shop.passes: SuitGold, SuitCommander, SuitGalaxy); a
-    player wears the best one they own and gets its boost, which multiplies their gym
-    training, their delivery coins and the launches each ride counts for (ranks, gym
-    unlocks, the launches leaderboard). Suits don't stack with each other; the boost
+    sell as Game Passes (Config.Shop.passes: SuitGold, SuitCommander, SuitGalaxy). A
+    player gets the boost of the best one they own, which multiplies their gym training,
+    their delivery coins and the launches each ride counts for (ranks, gym unlocks, the
+    launches leaderboard); they wear that one unless they pick another they own (or the
+    basic one) in the SHOP. Suits don't stack with each other; the boost
     multiplies with the other boosts (2x Coins, the server training boost, friends).
     Colours: suit (torso, arms, legs), trim (collar, badge, helmet ring), pack (backpack),
     visor (the glass helmet, if any). `glow` makes the trim Neon and lights the badge;
@@ -13,7 +14,7 @@
 local Skins = {}
 
 Skins.Default = table.freeze({
-    key = "Astronaut", name = "Astronaut", multiplier = 1,
+    key = "Astronaut", name = "Basic Astronaut", multiplier = 1,
     suit = Color3.fromRGB(236, 238, 242), trim = Color3.fromRGB(150, 154, 164), pack = Color3.fromRGB(176, 180, 190),
 })
 -- Cheapest first; the last one owned wins.

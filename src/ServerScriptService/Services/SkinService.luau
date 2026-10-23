@@ -3,7 +3,9 @@
 -- tanks, a collar ring and a chest badge, and for the paid suits a glass helmet (Neon
 -- trim, a lit badge, a trail and sparkles on the better ones). A pass bought or found
 -- on join re-dresses the character in place (ShopService's refresh calls `refresh`).
--- The worn suit is the player's Suit attribute; its boost is `multiplier`.
+-- Players may wear any suit they own, or the basic one (WearSuit; saved as the profile's
+-- `suit`): the look only, as the boost (`multiplier`) is always their best suit's. The
+-- worn suit is the player's Suit attribute.
 local Skins = require(game:GetService("ReplicatedStorage").Shared.Skins)
 local Skin = {}
 
@@ -81,12 +83,20 @@ end
 
 function Skin.new(ctx)
     local service = {}
-    -- The suit `player` wears (their best owned one).
+    local function owns(player, key) return ctx.Shop ~= nil and ctx.Shop.owns(player, key) end
+    -- The best suit `player` owns: its boost is theirs whatever they wear.
+    function service.best(player)
+        return Skins.best(function(key) return owns(player, key) end)
+    end
+    -- The suit `player` wears: their saved choice while they own it, else their best.
     function service.skin(player)
-        return Skins.best(function(key) return ctx.Shop ~= nil and ctx.Shop.owns(player, key) end)
+        local record = ctx.profiles.records[player.UserId]
+        local chosen = record and record.profile.suit and Skins.get(record.profile.suit)
+        if chosen and (chosen == Skins.Default or owns(player, chosen.key)) then return chosen end
+        return service.best(player)
     end
     function service.multiplier(player)
-        return player and service.skin(player).multiplier or 1
+        return player and service.best(player).multiplier or 1
     end
     function service.description(player)
         return Skins.description(service.skin(player))
@@ -110,6 +120,18 @@ function Skin.new(ctx)
         pcall(humanoid.ApplyDescription, humanoid, Skins.description(skin))
         Skin.dress(character, skin)
     end
+    -- WearSuit(key): put on a suit they own, or the basic one ("Astronaut").
+    local wear = Instance.new("RemoteEvent")
+    wear.Name = "WearSuit"
+    wear.Parent = ctx.Remote.folder
+    wear.OnServerEvent:Connect(function(player, key)
+        local skin = type(key) == "string" and Skins.get(key)
+        if not skin or not ctx.profiles:ready(player.UserId) then return end
+        if skin ~= Skins.Default and not owns(player, key) then return end
+        ctx.profiles.records[player.UserId].profile.suit = key
+        ctx.profiles:dirty(player.UserId)
+        service.refresh(player)
+    end)
     return service
 end
 

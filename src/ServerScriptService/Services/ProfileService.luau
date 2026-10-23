@@ -147,6 +147,9 @@ local function validate(raw, config)
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
     end
+    -- The suit chosen to wear (SkinService), by key; nil wears the best owned. Came later
+    -- without a schema bump; anything but a short string is dropped, not refused.
+    if type(result.suit) ~= "string" or #result.suit > 40 then result.suit = nil end
     return result
 end
 Profiles.validate = validate
@@ -377,6 +380,7 @@ function Profiles:save(userId)
                 current.pets = snapshot.pets
                 current.equippedPets = snapshot.equippedPets
                 current.ufos = snapshot.ufos
+                current.suit = snapshot.suit
                 -- Passes only ever add up: one recorded by any server stays.
                 current.passes = Profiles.mergePasses(current.passes, snapshot.passes)
                 applyRewards(current)
