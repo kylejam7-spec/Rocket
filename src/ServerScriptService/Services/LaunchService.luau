@@ -29,6 +29,10 @@ local EUROPA = 3
 -- (UfoAt on the destination folder; UfoController).
 Launch.UfoDelay = 35
 local SATURN = 4
+-- Mars's dust storm rolls in this far into each stay and blows over (StormAt on the
+-- destination folder; DustStormController).
+Launch.StormDelay = 25
+local MARS = 2
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
@@ -183,7 +187,7 @@ function Launch.new(ctx)
             -- multiplier scales the ticks so the ledger stays an integer total.
             -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
             local rate = config.Planet.TicksPerSecond
-            local tick, spun, swallowed, breached, crashed = 0, false, false, false, false
+            local tick, spun, swallowed, breached, crashed, stormed = 0, false, false, false, false, false
             while tick < stay.total * rate do
                 task.wait(1 / rate)
                 tick += 1
@@ -219,6 +223,10 @@ function Launch.new(ctx)
                     crashed = true
                     place.folder:SetAttribute("UfoAt", workspace:GetServerTimeNow())
                 end
+                if definition.ModelTier == MARS and not stormed and elapsed >= Launch.StormDelay then
+                    stormed = true
+                    place.folder:SetAttribute("StormAt", workspace:GetServerTimeNow())
+                end
                 if second then Cycle.broadcast() end
             end
             if ctx.Shop then ctx.Shop.endStay() end
@@ -226,6 +234,7 @@ function Launch.new(ctx)
             place.folder:SetAttribute("SingularityAt", nil)
             place.folder:SetAttribute("OarfishAt", nil)
             place.folder:SetAttribute("UfoAt", nil)
+            place.folder:SetAttribute("StormAt", nil)
             service.debug = nil
             rocket.phase = "Resetting"
             Cycle.deadline = 0
