@@ -51,13 +51,19 @@ end
 local function bonus(config, profile, track)
     return Upgrades.level(profile, track) * config.Upgrades[track].step
 end
+-- Units moved per tick at a Bulk Pickup / Bulk Place level: 1 unbought, then
+-- Config.BulkFactor x (1 + level).
+function Upgrades.bulkUnits(config, track, level)
+    if level <= 0 then return 1 end
+    return config.BulkFactor * (1 + level * config.Upgrades[track].step)
+end
 -- Units moved per pickup tick.
 function Upgrades.pickupUnits(config, profile)
-    return 1 + bonus(config, profile, "BulkPickup")
+    return Upgrades.bulkUnits(config, "BulkPickup", Upgrades.level(profile, "BulkPickup"))
 end
 -- Units poured into the rocket per place tick.
 function Upgrades.placeUnits(config, profile)
-    return 1 + bonus(config, profile, "BulkPlace")
+    return Upgrades.bulkUnits(config, "BulkPlace", Upgrades.level(profile, "BulkPlace"))
 end
 -- Place reach in studs.
 function Upgrades.reach(config, profile)

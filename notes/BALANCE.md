@@ -63,7 +63,7 @@ level 22 (~2,700 points in); every later level costs 450. Free gym (2/s): level 
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Cost | 10 | 10 | 15 | 20 | 35 | 50 | 75 | 130 | 220 | 320 | 450 |
 
-- Strength: carry = 10 + **3 per level** (cap 1,000, level 330).
+- Strength: carry = 10 + **1 per level**, uncapped (enough strength carries a whole rocket's Metal or Fuel in one trip).
 - Speed: walk = 24 + 46 · L / (L + 8), so MaxSpeed is now **70** (was 60): +5 at level 1,
   47 at level 8, 59 at level 30, 66 at level 100. The first speed level is worth about
   two thirds of the first strength level in delivery rate. After that the gap grows,
@@ -91,8 +91,9 @@ for speed to also make pickup and place faster.
 ## 2026-10-16 upgrades: 10 levels, ×3 coins, Robux per level
 
 Three tracks (Bulk Pickup, Bulk Place, Placement Range), 10 levels each, set by the user.
-Pickup and place move 1 + level units per 0.05 s tick; reach is 12 studs +10% per level
-(level 10: 11 units per tick, 2× reach). Coins: 50, then ×3 per level (3 significant
+Pickup and place move 1 unit per 0.05 s tick unbought, then 3 × (1 + level) (changed
+2026-10-23 from 1 + level); reach is 12 studs +10% per level (level 10: 33 units per
+tick, 2× reach). Coins: 50, then ×3 per level (3 significant
 figures). Each level is also a Robux Game Pass (owning the level-N pass keeps the track at
 level N or higher).
 

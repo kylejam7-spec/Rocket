@@ -13,10 +13,10 @@ return table.freeze({
     -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
     StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
     MaxPlanetBonus = 1000000,
-    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, capped at MaxCapacity.
+    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, uncapped: enough
+    -- strength carries a whole rocket's Metal or Fuel in one trip.
     BaseCarryCapacity = 10,
-    CarryPerLevel = 3,
-    MaxCapacity = 1000,
+    CarryPerLevel = 1,
     -- Walk = BaseSpeed + SpeedEarly * level / (level + SpeedHalfLevel) + SpeedPerLevel * level,
     -- capped at MaxSpeed: the early levels give big steps (29 at level 1, ~49 at level 8),
     -- then every level adds 0.6 (121 at 100, 243 at 300) up to 400 around level 560.
@@ -50,8 +50,8 @@ return table.freeze({
     -- is also a Robux Game Pass (RobuxUpgrades). Prices show as 3 significant figures
     -- (under 1,000: rounded to 5).
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- +1 unit per pickup tick
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- +1 unit per place tick
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- units per pickup tick: see BulkFactor
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- units per place tick: see BulkFactor
         PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, step = 0.1 }), -- +10% reach
     }),
     UpgradePrices = table.freeze({
@@ -60,6 +60,9 @@ return table.freeze({
             table.freeze({ upTo = 10, factor = 3 }),
         }),
     }),
+    -- Bulk Pickup / Bulk Place: 1 unit per tick unbought, then BulkFactor x (1 + level):
+    -- 6, 9, 12 ... 33 a tick at level 10 (660 a second). User, 2026-10-23: x3 per level.
+    BulkFactor = 3,
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
     -- Robux upgrades (RobuxUpgradeService): one Game Pass per track per level; owning the
     -- level-N pass keeps that track at level N or higher, re-checked on every join.
@@ -85,6 +88,11 @@ return table.freeze({
             MultiHatch = table.freeze({ id = 2039573122, price = 249 }),
             PetSlot1 = table.freeze({ id = 2037017405, price = 99 }),
             PetSlot2 = table.freeze({ id = 2039741160, price = 179 }),
+            -- Suits (Shared.Skins): 2x / 4x / 8x training, coins and launches (dashboard:
+            -- "Gold / Commander / Galaxy Astronaut Skin").
+            SuitGold = table.freeze({ id = 2053295062, price = 1199 }),
+            SuitCommander = table.freeze({ id = 2052479099, price = 1499 }),
+            SuitGalaxy = table.freeze({ id = 2055359009, price = 1999 }),
             -- Gym<n> unlocks TrainingTiers[n] without its launches.
             -- 2x / 5x / 10x / 25x / 50x / 75x / 100x (user set 50x-100x).
             Gym1 = table.freeze({ id = 2042480753, price = 49 }),

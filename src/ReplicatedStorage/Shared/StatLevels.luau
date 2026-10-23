@@ -47,9 +47,9 @@ function StatLevels.level(config, points)
     return level, points - StatLevels.total(config, level), StatLevels.cost(config, level + 1)
 end
 
--- Carry capacity at a strength level: a flat amount per level.
+-- Carry capacity at a strength level: a flat amount per level, uncapped.
 function StatLevels.capacity(config, level)
-    return math.min(config.MaxCapacity, config.BaseCarryCapacity + config.CarryPerLevel * level)
+    return config.BaseCarryCapacity + config.CarryPerLevel * level
 end
 
 -- Walk speed at a speed level: big early steps, then a steady climb to MaxSpeed.

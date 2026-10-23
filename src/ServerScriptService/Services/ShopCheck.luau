@@ -18,6 +18,7 @@ return function()
     -- one gym pass per District tier, one product per fill size, one mission product per mission.
     local keys = {}
     for _, pass in Shop.Passes do table.insert(keys, pass.key) end
+    for _, skin in require(ReplicatedStorage.Shared.Skins).List do table.insert(keys, skin.key) end
     for tier in config.TrainingTiers do table.insert(keys, Shop.gymKey(tier)) end
     for _, units in Shop.Fills do table.insert(keys, Shop.fillKey(units)) end
     for mission = 1, Missions.Count do table.insert(keys, Shop.nextKey(mission)) end

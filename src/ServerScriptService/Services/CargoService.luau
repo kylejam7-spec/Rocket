@@ -130,7 +130,7 @@ function Cargo.new(ctx)
             ctx.Launch.beginBoarding()
         end
     end
-    -- Like pickup: 1 unit per tick, +1 per Bulk Place level.
+    -- Like pickup: units per tick from the Bulk Place level (Upgrades.placeUnits).
     local function place(player)
         local rocket = ctx.Cycle.rocket
         local material = Rocket.PhaseMaterial[rocket.phase]
@@ -142,7 +142,9 @@ function Cargo.new(ctx)
             return false
         end
         service.visual(player)
-        ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config, ctx.Shop and ctx.Shop.coinMultiplier(player))
+        ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config,
+            (ctx.Shop and ctx.Shop.coinMultiplier(player) or 1) * (ctx.Friends and ctx.Friends.multiplier(player) or 1)
+                * (ctx.Skins and ctx.Skins.multiplier(player) or 1))
         ctx.profiles:dirty(player.UserId)
         ctx.Stats.update(player)
         -- A delivery also proves the carry, in case it beat the 5 Hz reach sample.
