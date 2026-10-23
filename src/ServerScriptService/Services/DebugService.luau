@@ -19,6 +19,7 @@
 -- Invoke("crash") starts Saturn's UFO crash now (seen by anyone at Saturn; it stays down
 -- until the stay ends). Not "ufo": that one gives everyone a pet UFO.
 -- Invoke("storm") starts Mars's dust storm now (seen by anyone at Mars).
+-- Invoke("friends", n) gives everyone a friend boost as if n friends were here (nil: real).
 -- Invoke("launch", destination, { countdown = s, stay = s }) flies everyone to a
 -- destination now: from Building or Fueling it swaps in that mission (index 1..5 or id:
 -- "Moon", "Mars", "Europa", "Saturn", "BlackHole"), finishes the build and fuel, puts
@@ -116,6 +117,8 @@ function Debug.new(ctx, parent)
             ctx.World.destinations[3].folder:SetAttribute("OarfishAt", workspace:GetServerTimeNow())
         elseif action == "crash" then
             ctx.World.destinations[4].folder:SetAttribute("UfoAt", workspace:GetServerTimeNow())
+        elseif action == "friends" then
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Friends.setDebug(player, value) end
         elseif action == "storm" then
             ctx.World.destinations[2].folder:SetAttribute("StormAt", workspace:GetServerTimeNow())
         elseif action == "bought" then

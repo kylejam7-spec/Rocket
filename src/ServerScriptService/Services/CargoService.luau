@@ -142,7 +142,8 @@ function Cargo.new(ctx)
             return false
         end
         service.visual(player)
-        ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config, ctx.Shop and ctx.Shop.coinMultiplier(player))
+        ctx.profiles.credit(ctx.profiles.records[player.UserId].profile, amount, config,
+            (ctx.Shop and ctx.Shop.coinMultiplier(player) or 1) * (ctx.Friends and ctx.Friends.multiplier(player) or 1))
         ctx.profiles:dirty(player.UserId)
         ctx.Stats.update(player)
         -- A delivery also proves the carry, in case it beat the 5 Hz reach sample.

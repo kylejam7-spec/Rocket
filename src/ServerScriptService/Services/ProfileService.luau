@@ -179,7 +179,7 @@ end
 -- Callers pass only what Rocket:deliver accepted, so coins can't outnumber carried units.
 function Profiles.credit(profile, delivered, config, multiplier)
     if type(delivered) ~= "number" or delivered <= 0 or delivered % 1 ~= 0 then return 0 end
-    -- `multiplier`: 2x Coins (ShopService), 1 otherwise.
+    -- `multiplier`: 2x Coins (ShopService) times the friend boost (FriendService).
     local coins = delivered * config.CoinsPerUnit * (multiplier or 1)
     profile.lifetimeDeliveries += delivered
     profile.coins += coins

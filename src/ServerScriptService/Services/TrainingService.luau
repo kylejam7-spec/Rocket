@@ -100,8 +100,9 @@ function Training.new(context)
                     if session.nextTick <= now then session.nextTick = now + context.config.TrainingSeconds end
                     local profile = context.profiles.records[userId].profile
                     local stat = session.station.stat
-                    -- A server training boost (ShopService) multiplies every station.
-                    local gain = session.station.gain * (context.multiplier and context.multiplier() or 1)
+                    -- A server training boost (ShopService) multiplies every station, and
+                    -- the player's friend boost (FriendService) theirs.
+                    local gain = session.station.gain * (context.multiplier and context.multiplier(player) or 1)
                     profile[stat] += gain
                     context.profiles:dirty(userId)
                     context.feedback(player, "+" .. gain .. " " .. (stat == "strengthLevel" and "Strength" or "Speed") .. "!")

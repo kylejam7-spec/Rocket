@@ -34,6 +34,7 @@ ctx.Upgrades = require(Services.UpgradeService).new(ctx)
 ctx.Robux = require(Services.RobuxUpgradeService).new(ctx)
 ctx.Pets = require(Services.PetService).new(ctx)
 ctx.Shop = require(Services.ShopService).new(ctx)
+ctx.Friends = require(Services.FriendService).new(ctx)
 ctx.Leaderboards = require(Services.LeaderboardService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
@@ -44,9 +45,10 @@ ctx.Training = require(Services.TrainingService).new({
     changed = function(player) ctx.Stats.update(player); ctx.Cycle.sendSoon(player) end,
     -- Reaching level 1 of that stat on a starter gym finishes the tutorial's bench and
     -- treadmill steps (~3.3 s for a new player at the 1x free gym: 10 ticks).
-    -- Gym access passes unlock a District tier; a server boost multiplies every gain.
+    -- Gym access passes unlock a District tier; a server boost multiplies every gain, and
+    -- so does each player's friend boost.
     unlocked = function(player, station) return ctx.Shop.gymUnlocked(player, station.tier) end,
-    multiplier = function() return ctx.Shop.trainingMultiplier() end,
+    multiplier = function(player) return ctx.Shop.trainingMultiplier() * ctx.Friends.multiplier(player) end,
     trained = function(player, station)
         if (station.required or 0) > 0 then return end
         local strength, speed = ctx.Stats.levels(ctx.profiles.records[player.UserId].profile)
