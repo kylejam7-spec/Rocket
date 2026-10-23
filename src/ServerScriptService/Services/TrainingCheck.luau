@@ -101,7 +101,7 @@ return function()
         assert(at == level and into == 0 and need == StatLevels.cost(config, level + 1), "Exact total reaches the level")
         assert(StatLevels.level(config, total - 0.5) == level - 1, "Half a point short stays a level below")
         local carry, walk = StatLevels.capacity(config, level), StatLevels.walk(config, level)
-        assert((carry > lastCarry or carry == config.MaxCapacity) and (walk > lastWalk or walk == config.MaxSpeed) and walk <= config.MaxSpeed)
+        assert(carry > lastCarry and (walk > lastWalk or walk == config.MaxSpeed) and walk <= config.MaxSpeed)
         assert(walk - lastWalk <= lastStep + 1e-9, "Walk gains never grow")
         lastCost, lastCarry, lastStep, lastWalk = cost, carry, walk - lastWalk, walk
     end

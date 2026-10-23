@@ -13,10 +13,10 @@ return table.freeze({
     -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
     StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
     MaxPlanetBonus = 1000000,
-    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, capped at MaxCapacity.
+    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, uncapped: enough
+    -- strength carries a whole rocket's Metal or Fuel in one trip.
     BaseCarryCapacity = 10,
     CarryPerLevel = 3,
-    MaxCapacity = 1000,
     -- Walk = BaseSpeed + SpeedEarly * level / (level + SpeedHalfLevel) + SpeedPerLevel * level,
     -- capped at MaxSpeed: the early levels give big steps (29 at level 1, ~49 at level 8),
     -- then every level adds 0.6 (121 at 100, 243 at 300) up to 400 around level 560.
