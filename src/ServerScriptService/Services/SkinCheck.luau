@@ -31,18 +31,36 @@ return function()
     assert(mine.HairAccessory == "111" and mine.HatAccessory == "" and mine.Shirt == 0, "hair kept, hat and shirt dropped")
     mine:Destroy()
     avatar:Destroy()
-    -- Dressing a stand-in R15 body: gear welded, helmet only on the paid suits.
+    -- Every piece a suit lists exists in SuitModels, with a body part, role and offset.
+    local models = ReplicatedStorage:FindFirstChild("SuitModels")
+    assert(models, "ReplicatedStorage.SuitModels is missing (tools/suits)")
+    local bases = {}
+    for _, template in models:GetChildren() do
+        assert(template:IsA("MeshPart") and template:GetAttribute("BodyPart") and typeof(template:GetAttribute("Offset")) == "CFrame", template.Name)
+        assert(Skins.Default.roles[template:GetAttribute("Role")], template.Name .. " has no role")
+        bases[template.Name:match("^(%a+)_%a+$") or template.Name] = true
+    end
+    for _, skin in { Skins.Default, table.unpack(Skins.List) } do
+        for _, name in skin.pieces do assert(bases[name], skin.key .. " wears missing piece " .. name) end
+    end
+    -- Dressing a stand-in R15 body: the pieces welded on, coloured by role, paid armour
+    -- only on paid suits, and a re-dress replacing the old gear.
     local body = Instance.new("Model")
-    for name, size in { UpperTorso = Vector3.new(2, 1.6, 1), Head = Vector3.new(1.2, 1.2, 1.2) } do
+    for _, name in { "Head", "UpperTorso", "LowerTorso", "LeftUpperArm", "RightUpperArm", "LeftLowerArm", "RightLowerArm", "LeftHand",
+        "RightHand", "LeftUpperLeg", "RightUpperLeg", "LeftLowerLeg", "RightLowerLeg", "LeftFoot", "RightFoot" } do
         local part = Instance.new("Part")
-        part.Name, part.Size, part.Anchored = name, size, true
+        part.Name, part.Anchored = name, true
         part.Parent = body
     end
     SkinService.dress(body, Skins.Default)
-    assert(body.SuitGear:FindFirstChild("Backpack") and not body.SuitGear:FindFirstChild("Helmet"), "default gear")
+    local gear = body.SuitGear
+    assert(gear:FindFirstChild("Backpack") and gear:FindFirstChild("HelmetGlass") and not gear:FindFirstChild("ShoulderPad_Left"), "basic gear")
+    assert(gear.Backpack.SuitWeld.Part0 == body.UpperTorso and gear.Backpack.Color == Skins.Default.roles.Base.color, "welded, coloured")
     SkinService.dress(body, Skins.List[3])
-    assert(#body:GetChildren() == 3 and body.SuitGear:FindFirstChild("Helmet"), "redress replaces the gear")
-    assert(body.SuitGear.Backpack:FindFirstChildOfClass("Trail"), "galaxy trail")
+    assert(#body:GetChildren() == 16, "redress replaces the gear")
+    gear = body.SuitGear
+    assert(gear:FindFirstChild("Halo") and gear:FindFirstChild("ShoulderPad_Left") and gear.HelmetLamps.Material == Enum.Material.Neon, "galaxy gear")
+    assert(gear.ThrusterGlow:FindFirstChild("Flame") and gear.Backpack:FindFirstChildOfClass("Trail"), "galaxy effects")
     body:Destroy()
     return "Suit checks passed"
 end

@@ -174,7 +174,7 @@ function ShopController.start()
     local suits = section("SUITS  ·  boost from your best, wear any you own")
     gridLayout(suits, UDim2.fromOffset(228, 128))
     for index, skin in { Skins.Default, table.unpack(Skins.List) } do
-        local frame = card(suits, UDim2.new(), skin.trim)
+        local frame = card(suits, UDim2.new(), Skins.accent(skin))
         frame.LayoutOrder = index
         frame.BackgroundColor3 = skin.suit:Lerp(Theme.color.Track, 0.55)
         StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = skin.icon or "🧑‍🚀",
