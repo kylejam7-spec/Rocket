@@ -1,7 +1,7 @@
 -- Every world sign tagged WorldSign (SignService), drawn per player in the gym signs'
 -- style: a dark rounded panel with a thick accent border and a soft sheen, an optional
--- round accent badge with an icon that gently pulses and sways, a big outlined title
--- and a subtitle in the accent colour. Sized from the sign's face, so one style fits a
+-- round accent badge with an icon (or a product picture) that gently pulses and sways,
+-- a big outlined title and a subtitle in the accent colour. Sized from the sign's face, so one style fits a
 -- door plate and a 30-stud arch.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -10,6 +10,7 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
+local Icon = require(UI.Icon)
 local WorldSignController = {}
 
 local PIXELS_PER_STUD = 40
@@ -57,6 +58,14 @@ local function build(part, playerGui)
         local scale = Create.new("UIScale", { Parent = circle })
         TweenService:Create(scale, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.08 }):Play()
         TweenService:Create(glyph, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Rotation = 8 }):Play()
+        -- A product picture (the Image attribute) fills the badge over the glyph; if it
+        -- fails to load, UI.Icon removes it and the glyph shows.
+        local imageKey = part:GetAttribute("Image")
+        if Icon.image(imageKey) then
+            local picture = Icon.new(imageKey, nil, { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+                Size = UDim2.fromScale(1, 1), ZIndex = 2, Parent = circle })
+            picture:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(0.5, 0)
+        end
         left = inner * 0.24 + size
     end
     local subtitle = part:GetAttribute("Subtitle")

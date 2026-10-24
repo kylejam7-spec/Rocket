@@ -184,7 +184,7 @@ function Skin.stand(parent, base, facing, skin)
     -- The plaque leans back in front of the plinth, its face toward the lane.
     Signs.decorate(block("Plaque", Vector3.new(5.5, 1.8, 0.3), frame * CFrame.new(0, 1, -PLINTH_SIZE / 2 - 0.9) * CFrame.Angles(math.rad(20), 0, 0),
         Signs.Backing, Enum.Material.Metal), Enum.NormalId.Front,
-        { title = skin.name:upper(), subtitle = skin.multiplier .. "X TRAINING · COINS · LAUNCHES", icon = skin.icon, accent = accent })
+        { title = skin.name:upper(), subtitle = skin.multiplier .. "X TRAINING · COINS · LAUNCHES", icon = skin.icon, image = skin.key, accent = accent })
     model.Parent = parent
 
     -- The mannequin: a plain R15 body in the suit, standing on the plinth. Anchored and

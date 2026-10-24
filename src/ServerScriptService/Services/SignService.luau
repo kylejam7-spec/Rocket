@@ -9,7 +9,8 @@
     two steel posts down to it on concrete footings, a brace behind, and a lamp bar along
     the top shining down on the panel; props.back (more props) puts a second panel on the
     back (and then no brace).
-    props: { title, subtitle?, icon?, accent? (Color3), ground?, back? }.
+    props: { title, subtitle?, icon?, image? (a Shared.ProductImages key: its picture fills
+    the badge, the icon is the fallback), accent? (Color3), ground?, back? }.
 ]]
 local CollectionService = game:GetService("CollectionService")
 local Signs = {}
@@ -22,6 +23,7 @@ function Signs.decorate(part, face, props)
     part:SetAttribute("Title", props.title)
     part:SetAttribute("Subtitle", props.subtitle)
     part:SetAttribute("Icon", props.icon)
+    part:SetAttribute("Image", props.image)
     part:SetAttribute("Accent", props.accent or Color3.fromRGB(255, 204, 40))
     part:SetAttribute("Face", (face or Enum.NormalId.Front).Name)
     CollectionService:AddTag(part, Signs.Tag)
