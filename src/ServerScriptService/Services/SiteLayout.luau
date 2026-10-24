@@ -41,14 +41,18 @@ Layout.Fuel = Vector3.new(125, 0, 15)
 
 Layout.Upgrades = Vector3.new(-42, 0, -42)
 Layout.UfoShop = Vector3.new(42, 0, -42)
--- Suit stands (SkinService): mannequins on the lane side of the forecourt huts, facing
--- the lane (user, 2026-10-24). Gold to the right of the Upgrades hut as you face it from
--- across the lane (its launch-pad side); Commander and Galaxy side by side to the right
--- of the UFO Shop as you face it from the Upgrades hut (its spawn side).
+-- Suit stands (SkinService), facing the lane (user, 2026-10-24). Commander and Galaxy on
+-- the UFO Shop's centre line (x), side by side off its spawn side with even gaps: GAP
+-- from the hut (its spawn-side wall, 6.9 from centre) to the first stand, and GAP between
+-- them (a stand is 7.4 across). Gold on the Upgrades hut's centre line, level with
+-- their middle.
+local STAND, GAP = 7.4, 4
+local first = Layout.UfoShop.Z + 6.9 + GAP + STAND / 2
+local second = first + STAND + GAP
 Layout.SuitStands = {
-    { key = "SuitGold", at = Vector3.new(-29.5, 0, -54), facing = Vector3.new(1, 0, 0) },
-    { key = "SuitCommander", at = Vector3.new(29.5, 0, -30), facing = Vector3.new(-1, 0, 0) },
-    { key = "SuitGalaxy", at = Vector3.new(29.5, 0, -20), facing = Vector3.new(-1, 0, 0) },
+    { key = "SuitGold", at = Vector3.new(Layout.Upgrades.X, 0, (first + second) / 2), facing = Vector3.new(1, 0, 0) },
+    { key = "SuitCommander", at = Vector3.new(Layout.UfoShop.X, 0, first), facing = Vector3.new(-1, 0, 0) },
+    { key = "SuitGalaxy", at = Vector3.new(Layout.UfoShop.X, 0, second), facing = Vector3.new(-1, 0, 0) },
 }
 
 -- Gym District: first bay centre on z, bay step and bay offset from the walkway.
