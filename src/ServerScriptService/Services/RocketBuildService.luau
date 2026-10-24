@@ -18,6 +18,8 @@ local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, POST_SPACING = 40, 28, 80
 -- The ramp-top bar: its height over the surface (under a jump) and how far down from the
 -- ramp's top end it stands.
 local END_RAIL, END_RAIL_BACK = 3.5, 4
+-- How far below the rocket's top the ramps end.
+local RAMP_TOP_GAP = 2
 -- Bridges between the ramps: one every BRIDGE_SPACING up the rocket, BRIDGE_WIDTH wide
 -- with BRIDGE_RAIL-high rails, lifted BRIDGE_CLEAR over the hull below; approaches at least
 -- BRIDGE_APPROACH long, aiming for BRIDGE_SLOPE and never steeper than BRIDGE_MAX_SLOPE.
@@ -227,7 +229,10 @@ function Build:load(tier, variant)
     end
     self.rampInner, self.rampOuter, self.rampSurface = inner, outer, surface
     local y0 = low.Y - (low.Y + (surface - low.Z) * s) / c - 2
-    local y1 = high.Y - 8
+    -- The ramps run to just under the nose: the slide stops a runner 8 studs short of the
+    -- top end (StopAt), so the rocket's top is RAMP_TOP_GAP + 8 above them, inside even
+    -- the unupgraded reach (Config.FrontierReach, RampCheck).
+    local y1 = high.Y - RAMP_TOP_GAP
     local steel, dark = Models.Colors.tower, Models.Colors.dark
     self.rampTop = y1
     for _, side in { -1, 1 } do

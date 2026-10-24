@@ -4,11 +4,15 @@
 -- standing on a ramp or the hull beside the fill line can place, at every fill level.
 -- Nothing of the ramps (bridges, rails, posts) touches the rocket, bridges join them all
 -- the way up, the boarding walkway's top is clear of the mount's trim, and the upright
--- rocket leaves the boarding station and its door clear.
+-- rocket leaves the boarding station, its door and the walk from the ramp to it clear.
+-- An unupgraded player (Upgrades.reachAt 0) can place every Metal segment and Fuel cell
+-- from where the ramp's slide stops them.
 return function()
     local Build = require(script.Parent.RocketBuildService)
     local config = require(game.ReplicatedStorage.Shared.Config)
     local Layout = require(script.Parent.SiteLayout)
+    local Upgrades = require(game.ReplicatedStorage.Shared.Upgrades)
+    local reach0 = Upgrades.reachAt(config, 0)
     local padHalf = Layout.Pad.size / 2
     local ORIGIN = CFrame.new(0, 0, 30000)
     local holder = Instance.new("Folder")
@@ -102,11 +106,29 @@ return function()
                 zone.CFrame, zone.Size = triggerCFrame * CFrame.new(0, 0, 3), triggerSize + Vector3.new(0, 0, 6)
                 zone.Parent = holder
                 assert(#workspace:GetPartsInPart(zone, overlap) == 0, name .. " rocket stands in front of the BOARD door")
+                -- ...nor anywhere on the walk from the top of the boarding ramp to the door.
+                local doorAt = ORIGIN:PointToObjectSpace(station.BoardingDoor.Position)
+                local mountFront = ORIGIN:PointToObjectSpace(mount.Position).Z + mount.Size.Z / 2
+                local mountTop = ORIGIN:PointToObjectSpace(mount.Position).Y + mount.Size.Y / 2
+                zone.Size = Vector3.new(station.BoardingRamp.Size.X, 10, mountFront - doorAt.Z)
+                zone.CFrame = ORIGIN * CFrame.new(0, mountTop + 5.5, (mountFront + doorAt.Z) / 2)
+                assert(#workspace:GetPartsInPart(zone, overlap) == 0, name .. " rocket stands on the walk from the boarding ramp to the door")
                 zone:Destroy()
                 local door = ORIGIN:PointToObjectSpace(station.BoardingDoor.Position)
                 local mount = build.site.LaunchComplex.LaunchMount
                 assert(door.Z + 4.4 <= ORIGIN:PointToObjectSpace(mount.Position).Z + mount.Size.Z / 2, name .. " BOARD door's doorstep runs off the mount")
                 build.vehicle:PivotTo(build.pivot)
+                -- Every segment and fuel cell is within an unupgraded player's reach of where
+                -- the ramp's slide stops them (a stud to spare); the ramps' feet are under
+                -- the rocket's bottom.
+                local ramp = build.site.LaunchComplex.LaunchRamp
+                local stop = build.pivot:PointToObjectSpace(ramp.Position).Y + ramp:GetAttribute("StopAt")
+                for _, list in build.lists do
+                    for _, item in list.items do
+                        assert(item.high.Y - stop <= reach0 - 1, ("%s %s's top is %.1f studs above the ramp stop (reach %d)"):format(name, item.spec.name, item.high.Y - stop, reach0))
+                    end
+                end
+                assert(build.pivot:PointToObjectSpace(ramp.Position).Y - ramp.Size.Y / 2 <= build.bounds.low.Y, name .. " ramps start above the rocket's bottom")
                 for _, fraction in { 0, 0.1, 0.3, 0.5, 0.7, 0.9, 0.99 } do
                     build:setProgress(fraction, 0)
                     local item = build.frontierItem
