@@ -1,5 +1,5 @@
 -- The reference-style HUD: left stat stack (Coins, Strength, Speed, Launches), the
--- top-centre objective line, Feedback toasts above the pill, the save-status tag,
+-- top-centre objective line, Feedback toasts above the pill,
 -- and stat-gain juice ("+2 💪" over your head, "Strength Level 5!" on each new
 -- level, coins that fly from your head to the Coins row on delivery).
 local Players = game:GetService("Players")
@@ -106,12 +106,6 @@ function HudController.start()
         Tween.bounce(goal, 1.06, 0.3)
     end)
     fitGoal()
-
-    local save = StrokedText.new({
-        Name = "SaveStatus", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, Theme.gutter, 1, -12),
-        Size = UDim2.fromOffset(320, 18), Font = Theme.font.Display, TextSize = 14, TextColor3 = Theme.color.Muted,
-        TextXAlignment = Enum.TextXAlignment.Left, stroke = 1.5, Parent = gui,
-    })
 
     local function head()
         local character = player.Character
@@ -280,7 +274,6 @@ function HudController.start()
             end
         end
         goal.Text = objective(state, learned)
-        save.Text = state.persistent and ("Progress: " .. state.saveStatus) or "Studio test: progress isn't saved"
     end)
 
     -- Material how-to hints ("Cargo full…", "Metal placed!…", "Pick up Metal…") show

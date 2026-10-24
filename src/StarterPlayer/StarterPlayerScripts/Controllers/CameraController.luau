@@ -10,8 +10,6 @@ local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
-local Theme = require(UI.Theme)
-local StrokedText = require(UI.StrokedText)
 local CameraController = {}
 -- Zoom out far enough to take in a whole late-game rocket and its ramps (also the touch
 -- and controller camera's limit). Each scroll notch zooms by ZOOM_STEP, so the long
@@ -29,18 +27,6 @@ function CameraController.start()
     local active, looking, focused = false, false, true
     local previousType
     local gui = Create.screen("CameraControls")
-    local hint = StrokedText.new({
-        AnchorPoint = Vector2.new(0, 1),
-        -- Bottom left above the save tag; the action cluster owns the bottom right.
-        Position = UDim2.new(0, Theme.gutter, 1, -34),
-        Size = UDim2.fromOffset(320, 18),
-        TextColor3 = Theme.color.Muted,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        Font = Theme.font.Display,
-        TextSize = 14,
-        stroke = 1.5,
-        Parent = gui,
-    })
     local function desktop()
         return Input.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
     end
@@ -106,7 +92,6 @@ function CameraController.start()
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         if not desktop() or not root or not humanoid or humanoid.Health <= 0 then
             restore(camera)
-            hint.Visible = false
             return
         end
         if not active then
@@ -120,8 +105,6 @@ function CameraController.start()
         local free = released()
         Input.MouseBehavior = free and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCurrentPosition
         Input.MouseIconEnabled = free
-        hint.Visible = true
-        hint.Text = "Hold right-click: look  •  Scroll: zoom  •  Q: drop"
         if not free then
             local delta = Input:GetMouseDelta()
             yaw -= delta.X * SENSITIVITY

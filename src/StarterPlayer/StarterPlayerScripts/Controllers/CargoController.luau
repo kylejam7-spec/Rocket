@@ -1,6 +1,6 @@
--- Carried materials: Q drops them (touch: the round DROP and GRAB/PLACE buttons in the
--- action cluster), and the held E / ButtonX / prompt-card input streams pickups and
--- placements while in range.
+-- Carried materials: Q drops them (a "[Q] TO DROP" chip shows while carrying on keyboard
+-- and mouse; touch: the round DROP and GRAB/PLACE buttons in the action cluster), and
+-- the held E / ButtonX / prompt-card input streams pickups and placements while in range.
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -12,7 +12,9 @@ local State = require(script.Parent.State)
 local Actions = require(script.Parent.ActionController)
 local Prompts = require(script.Parent.PromptController)
 local UI = script.Parent.Parent:WaitForChild("UI")
+local Create = require(UI.Create)
 local Theme = require(UI.Theme)
+local StrokedText = require(UI.StrokedText)
 local Button = require(UI.Button)
 local Tween = require(UI.Tween)
 local Sfx = require(UI.Sfx)
@@ -41,12 +43,40 @@ function CargoController.start()
         onActivated = discard,
         Parent = Actions.cluster(),
     })
+    -- Keyboard and mouse: a key-cap chip just above the fill buttons (ShopController's row
+    -- over the progress pill, ProgressController: 14 from the bottom, 70 tall).
+    local hintGui = Create.screen("DropHint")
+    local chip = Create.new("Frame", {
+        Name = "DropChip", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -(14 + 70 + 4 + 36 + 8)),
+        Size = UDim2.fromOffset(150, 38), BackgroundColor3 = Theme.color.Panel, BackgroundTransparency = 0.15,
+        Visible = false, Parent = hintGui,
+    })
+    Create.new("UICorner", { CornerRadius = UDim.new(0.5, 0), Parent = chip })
+    Create.new("UIStroke", { Thickness = 2.5, Color = Theme.color.Stroke, Parent = chip })
+    local key = Create.new("Frame", { Name = "Key", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 6, 0.5, 0),
+        Size = UDim2.fromOffset(28, 28), BackgroundColor3 = Theme.color.White, Parent = chip })
+    Create.new("UICorner", { CornerRadius = UDim.new(0, 7), Parent = key })
+    Create.new("UIStroke", { Thickness = 2, Color = Theme.color.Stroke, Parent = key })
+    StrokedText.new({ Size = UDim2.fromScale(1, 1), Text = "Q", Font = Theme.font.Display, TextSize = 20,
+        TextColor3 = Theme.color.Stroke, Parent = key })
+    StrokedText.new({ Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -46, 1, 0), Text = "TO DROP",
+        Font = Theme.font.Display, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = chip })
+    local function keyboard()
+        return UserInputService.PreferredInput == Enum.PreferredInput.KeyboardAndMouse
+    end
+    local function showHint()
+        local show = carrying and keyboard()
+        if show and not chip.Visible then Tween.bounce(chip, 1.2, 0.35) end
+        chip.Visible = show
+    end
+    UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(showHint)
     State.subscribe(function(state)
         carrying = state.cargo ~= nil
         if discardButton then
             if carrying and not discardButton.Visible then Tween.bounce(discardButton, 1.3, 0.4) end
             discardButton.Visible = carrying
         end
+        showHint()
         -- The place prompt shows from this player's (upgraded) reach, like the server's check.
         local ring = CollectionService:GetTagged("BuildFrontier")[1]
         local prompt = ring and ring:FindFirstChild("PlacePoint") and ring.PlacePoint:FindFirstChildOfClass("ProximityPrompt")
