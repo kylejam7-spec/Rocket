@@ -12,6 +12,8 @@ return table.freeze({
     Launch = "rbxassetid://108448707996059",
     Shop = "rbxassetid://136537907312029",
     Invite = "rbxassetid://126845733173066",
+    -- The Next Black Hole art without its card (tools/product-images #BlackHoleIcon).
+    BlackHole = "rbxassetid://129359521996186",
     -- Game Passes
     DoubleCoins = "rbxassetid://110076787932945",
     FastHatch = "rbxassetid://129842147177638",

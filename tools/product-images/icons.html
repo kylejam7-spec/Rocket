@@ -266,6 +266,8 @@ const icons = {
     ['Saturn', 'Saturn', 'saturn.png', { ring: true }],
   ].map(([key, name, tex, opts]) => ['Next' + key, () => background('#3a2a7a', '#07041a') + label('NEXT STOP', 72, { size: 44, width: 320, fill: '#ffe14a' })
     + planet(PLANETS + tex, 256, 250, opts.ring ? 105 : 135, opts) + label(name.toUpperCase(), 408)])),
+  // Just the black hole, transparent (render.sh --transparent): the HUD icon (assets/hud-icons).
+  BlackHoleIcon: () => blackHole(256, 256, 118),
   NextBlackHole: () => background('#3a1a5a', '#020008') + label('NEXT STOP', 72, { size: 44, width: 320, fill: '#ffe14a' }) + blackHole(256, 250, 86) + label('BLACK HOLE', 408),
   ...Object.fromEntries(['Rare', 'Epic', 'Legendary'].map(r => ['Ufo' + r, () => {
     const c = rarity[r];
@@ -277,6 +279,7 @@ const key = decodeURIComponent(location.hash.slice(1));
 if (key === 'list') {
   document.title = Object.keys(icons).join(',');
 } else {
+  if (key.endsWith('Icon')) document.documentElement.style.background = document.body.style.background = 'transparent';
   document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">${(icons[key] || icons.DoubleCoins)()}</svg>`;
 }
 </script>

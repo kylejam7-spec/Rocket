@@ -36,7 +36,7 @@ Leaderboards.Categories = table.freeze({
         value = function(p) return p.completedLaunches end }),
     table.freeze({ key = "Delivered", title = "MATERIALS DELIVERED", icon = "🔩", accent = Color3.fromRGB(150, 220, 120),
         value = function(p) return p.lifetimeDeliveries end }),
-    table.freeze({ key = "BlackHoles", title = "BLACK HOLES VISITED", icon = "🕳️", accent = Color3.fromRGB(190, 120, 255),
+    table.freeze({ key = "BlackHoles", title = "BLACK HOLES VISITED", icon = "🕳️", image = "BlackHole", accent = Color3.fromRGB(190, 120, 255),
         value = function(p) return p.blackHolesVisited or 0 end }),
 })
 -- Which categories each stand shows, left to right as you face it (west stand first).
