@@ -3,13 +3,15 @@
 -- Options: onActivated, color, shape ("pill" default, or "circle"), icon (big
 -- glyph for circle buttons), caption (small stroked label under a circle),
 -- radius (px), stroke (outline thickness), sound (the Sfx cue on press, "click"
--- by default; false for none, when the handler plays its own).
+-- by default; false for none, when the handler plays its own), image (a product key:
+-- its picture sits at the left end, the label beside it; UI.Icon).
 local UserInputService = game:GetService("UserInputService")
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
 local Sfx = require(script.Parent.Sfx)
+local Icon = require(script.Parent.Icon)
 local Button = {}
 
 function Button.new(props)
@@ -48,6 +50,11 @@ function Button.new(props)
         stroke = 2.5,
         Parent = button,
     })
+    if props.image and Icon.image(props.image) then
+        local side = button.Size.Y.Offset - 6
+        Icon.new(props.image, nil, { Size = UDim2.fromOffset(side, side), Position = UDim2.fromOffset(4, 3), Parent = button })
+        label.Position, label.Size = UDim2.fromOffset(side + 4, 0), UDim2.new(1, -(side + 8), 1, 0)
+    end
     if circle and props.caption then
         StrokedText.new({
             Name = "Caption",

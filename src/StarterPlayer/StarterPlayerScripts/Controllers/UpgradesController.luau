@@ -22,6 +22,7 @@ local Button = require(UI.Button)
 local Panel = require(UI.Panel)
 local Sfx = require(UI.Sfx)
 local StrokedText = require(UI.StrokedText)
+local Icon = require(UI.Icon)
 local Tween = require(UI.Tween)
 local UpgradesController = {}
 
@@ -120,10 +121,7 @@ function UpgradesController.start()
             BackgroundColor3 = Theme.color.Track, BackgroundTransparency = 0.35, Parent = panel,
         })
         Create.new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = row })
-        StrokedText.new({
-            Name = "Icon", Position = UDim2.fromOffset(8, 4), Size = UDim2.fromOffset(50, 50), Text = spec.icon,
-            Font = Theme.font.Display, TextSize = 36, stroke = 2, Parent = row,
-        })
+        Icon.new(track, spec.icon, { Position = UDim2.fromOffset(8, 4), Size = UDim2.fromOffset(50, 50), TextSize = 36, Parent = row })
         local title = StrokedText.new({
             Name = "Title", Position = UDim2.fromOffset(66, 4), Size = UDim2.fromOffset(300, 28), Text = spec.name,
             Font = Theme.font.Display, TextSize = 24, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = row,

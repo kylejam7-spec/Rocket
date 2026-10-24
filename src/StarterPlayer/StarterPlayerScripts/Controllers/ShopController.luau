@@ -22,6 +22,7 @@ local Button = require(UI.Button)
 local Panel = require(UI.Panel)
 local Sfx = require(UI.Sfx)
 local StrokedText = require(UI.StrokedText)
+local Icon = require(UI.Icon)
 local Tween = require(UI.Tween)
 local ShopController = {}
 
@@ -164,9 +165,8 @@ function ShopController.start()
     for index, pass in Shop.Passes do
         local frame = card(passes, UDim2.new(), ROBUX)
         frame.LayoutOrder = index
-        StrokedText.new({ Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(40, 40), Text = pass.icon,
-            Font = Theme.font.Display, TextSize = 30, stroke = 2, Parent = frame })
-        StrokedText.new({ Position = UDim2.fromOffset(52, 8), Size = UDim2.new(1, -60, 0, 26), Text = pass.name:upper(),
+        Icon.new(pass.key, pass.icon, { Position = UDim2.fromOffset(6, 4), Size = UDim2.fromOffset(44, 44), Parent = frame })
+        StrokedText.new({ Position = UDim2.fromOffset(56, 12), Size = UDim2.new(1, -64, 0, 26), Text = pass.name:upper(),
             Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
         StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), Text = pass.text, TextWrapped = true,
             Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
@@ -182,11 +182,13 @@ function ShopController.start()
     for tier, spec in Config.TrainingTiers do
         local frame = card(gyms, UDim2.new(), Theme.color.Strength)
         frame.LayoutOrder = tier
-        StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = "🏋 " .. spec.multiplier .. "X GYM",
+        Icon.new(Shop.gymKey(tier), "🏋", { Position = UDim2.fromOffset(8, 5), Size = UDim2.fromOffset(26, 26), Parent = frame })
+        StrokedText.new({ Position = UDim2.fromOffset(40, 6), Size = UDim2.new(1, -48, 0, 26), Text = spec.multiplier .. "X GYM",
             Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
         local note = StrokedText.new({ Name = "Note", Position = UDim2.fromOffset(10, 30), Size = UDim2.new(1, -20, 0, 18),
             Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
             stroke = 1.5, Parent = frame })
+        note.Position = UDim2.fromOffset(10, 32)
         local button = offerButton(Shop.gymKey(tier), { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1),
             Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(1, -20, 0, 36), TextSize = 18, Parent = frame })
         gymCards[tier] = { note = note, button = button, cycles = spec.cycles }
@@ -196,8 +198,9 @@ function ShopController.start()
     local boosts = section("SERVER BOOSTS  ·  for everyone here")
     gridLayout(boosts, UDim2.fromOffset(350, 96))
     local boostCard = card(boosts, UDim2.new(), Theme.color.Ready)
-    StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -150, 0, 26),
-        Text = "⚡ " .. Config.Shop.ServerTrainingMultiplier .. "X TRAINING", Font = Theme.font.Display, TextSize = 22,
+    Icon.new("ServerTraining", "⚡", { Position = UDim2.fromOffset(8, 4), Size = UDim2.fromOffset(30, 30), Parent = boostCard })
+    StrokedText.new({ Position = UDim2.fromOffset(44, 6), Size = UDim2.new(1, -184, 0, 26),
+        Text = Config.Shop.ServerTrainingMultiplier .. "X TRAINING", Font = Theme.font.Display, TextSize = 22,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = boostCard })
     local boostNote = StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -150, 0, 48), TextWrapped = true,
         Text = "Every gym gives " .. Config.Shop.ServerTrainingMultiplier .. "x to the whole server for "
@@ -250,7 +253,7 @@ function ShopController.start()
         Padding = UDim.new(0, 6), SortOrder = Enum.SortOrder.LayoutOrder, Parent = fillRow })
     for index, units in Shop.Fills do
         offerButton(Shop.fillKey(units), { Name = "Fill" .. units, Size = UDim2.fromOffset(134, 34), TextSize = 16,
-            LayoutOrder = index, radius = 10, Parent = fillRow }, "+" .. Theme.number(units) .. " · ")
+            LayoutOrder = index, radius = 10, image = Shop.fillKey(units), Parent = fillRow }, "+" .. Theme.number(units) .. " · ")
     end
 
     ------------------------------------------------------------------ destination
@@ -263,14 +266,14 @@ function ShopController.start()
     if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 0.9, Parent = dest }) end
     local destTitle = StrokedText.new({ Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 26), Font = Theme.font.Display,
         TextSize = 22, stroke = 2, Parent = dest })
-    offerButton("ExtraStay", { Name = "ExtraStay", Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 40), Parent = dest },
+    offerButton("ExtraStay", { Name = "ExtraStay", Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 40), image = "ExtraStay", Parent = dest },
         "+" .. Config.Shop.ExtraStaySeconds .. "s HERE · ")
     StrokedText.new({ Position = UDim2.fromOffset(12, 86), Size = UDim2.new(1, -24, 0, 20), Text = "PICK THE NEXT MISSION",
         Font = Theme.font.Display, TextSize = 17, TextColor3 = Theme.color.Gold, stroke = 1.5, Parent = dest })
     for mission = 1, Missions.Count do
         local definition = Missions.get(mission)
         local button = offerButton(Shop.nextKey(mission), { Name = "Next" .. definition.Id, Position = UDim2.fromOffset(12, 108 + (mission - 1) * 42),
-            Size = UDim2.new(1, -24, 0, 36), TextSize = 17, Parent = dest }, Config.Destinations[mission].name:gsub("^THE ", "") .. " · ")
+            Size = UDim2.new(1, -24, 0, 36), TextSize = 17, image = Shop.nextKey(mission), Parent = dest }, Config.Destinations[mission].name:gsub("^THE ", "") .. " · ")
         Create.new("UIStroke", { Thickness = 3, Color = Theme.rarity[definition.Rarity], ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = button })
     end
     local destStatus = StrokedText.new({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 12, 1, -8), Size = UDim2.new(1, -24, 0, 22),
@@ -281,7 +284,10 @@ function ShopController.start()
         local shop = state.shop or {}
         -- The fill buttons name the material the rocket needs right now.
         local material = state.phase == "Fueling" and Theme.icon.Fuel or Theme.icon.Metal
-        for _, units in Shop.Fills do offers[Shop.fillKey(units)].prefix = "+" .. Theme.number(units) .. " " .. material .. " · " end
+        for _, units in Shop.Fills do
+            local key = Shop.fillKey(units)
+            offers[key].prefix = "+" .. Theme.number(units) .. (Icon.image(key) and "" or " " .. material) .. " · "
+        end
         local owned = shop.owned or {}
         for key, offer in offers do renderOffer(key, offer, state) end
         local launches = state.profile and state.profile.completedLaunches or 0

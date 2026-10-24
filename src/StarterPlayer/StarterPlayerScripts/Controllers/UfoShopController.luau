@@ -24,6 +24,7 @@ local Button = require(UI.Button)
 local Panel = require(UI.Panel)
 local Sfx = require(UI.Sfx)
 local StrokedText = require(UI.StrokedText)
+local Icon = require(UI.Icon)
 local Tween = require(UI.Tween)
 local UfoShopController = {}
 
@@ -116,10 +117,7 @@ function UfoShopController.start()
         })
         Create.new("UICorner", { CornerRadius = UDim.new(0, 12), Parent = row })
         Create.new("UIStroke", { Thickness = 2, Color = color, Transparency = 0.3, Parent = row })
-        StrokedText.new({
-            Name = "Icon", Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(50, 50), Text = Theme.icon.Ufo,
-            Font = Theme.font.Display, TextSize = 36, stroke = 2, Parent = row,
-        })
+        Icon.new(Shop.ufoKey(tier), Theme.icon.Ufo, { Position = UDim2.fromOffset(8, 6), Size = UDim2.fromOffset(50, 50), TextSize = 36, Parent = row })
         StrokedText.new({
             Name = "Title", Position = UDim2.fromOffset(66, 6), Size = UDim2.fromOffset(330, 28), Text = ufo.Name:upper(),
             Font = Theme.font.Display, TextSize = 24, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = row,

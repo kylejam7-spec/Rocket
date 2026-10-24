@@ -5,6 +5,11 @@
 and rendered by `tools/product-images/render.sh` (headless Chrome; pass keys to redo some).
 Game Pass images are shown cropped to a circle, so the art and labels stay inside it.
 
+In game, `src/ReplicatedStorage/Shared/ProductImages.luau` holds the uploaded ids (owner
+account, user 1502038929) and `UI/Icon` shows them on shop cards, buttons and rows, with the
+emoji as fallback. The suit images are dashboard-only: suits sell through stand prompts.
+Re-uploading an image means a new id there.
+
 The planet art uses the CC0 Planet Texture Pack already listed in `assets/LICENSES.md`;
 everything else is original vector art. The font is Fredoka One (SIL OFL).
 
