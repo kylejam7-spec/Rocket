@@ -7,10 +7,19 @@
 -- `refresh`). Players may wear any suit they own, or the basic one (WearSuit; saved as
 -- the profile's `suit`): the look only, as the boost (`multiplier`) is always their best
 -- suit's. The worn suit is the player's Suit attribute.
+-- The suits sell on stands on the forecourt (SiteLayout.SuitStands): a mannequin wearing
+-- each one on a plinth, whose prompt buys it (ShopService.buy), puts it on once owned, or
+-- takes it off again for the basic suit (SuitStandController words it per player).
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Skins = require(ReplicatedStorage.Shared.Skins)
+local Signs = require(script.Parent.SignService)
 local Skin = {}
+
+Skin.StandTag = "SuitStand" -- each stand's prompt, its Suit attribute the suit's key
+local MANNEQUIN_SCALE = 1.3
+local PLINTH_HEIGHT, PLINTH_SIZE = 1.2, 6
 
 local FACES = { Enum.NormalId.Front, Enum.NormalId.Back, Enum.NormalId.Left, Enum.NormalId.Right, Enum.NormalId.Top, Enum.NormalId.Bottom }
 local SPARKLE = "rbxasset://textures/particles/sparkles_main.dds"
@@ -145,6 +154,77 @@ function Skin.dress(character, skin)
     effects(skin, byName, character)
 end
 
+-- A suit stand at `base` (on the ground) facing `facing`: a round plinth with a rim lit in
+-- the suit's trim, a mannequin wearing the suit on it, and a plaque in front naming the
+-- suit and its boost. Returns the stand's prompt. Yields (the mannequin's body loads).
+function Skin.stand(parent, base, facing, skin)
+    local frame = CFrame.lookAt(base, base + facing)
+    local model = Instance.new("Model")
+    model.Name = skin.key .. "Stand"
+    local function block(name, size, cframe, color, material, shape)
+        local part = Instance.new("Part")
+        part.Name, part.Size, part.CFrame, part.Color = name, size, cframe, color
+        part.Material = material or Enum.Material.SmoothPlastic
+        part.Anchored, part.CanCollide, part.CanQuery, part.CanTouch = true, false, false, false
+        part.TopSurface, part.BottomSurface = Enum.SurfaceType.Smooth, Enum.SurfaceType.Smooth
+        if shape then part.Shape = shape end
+        part.Parent = model
+        return part
+    end
+    local upright = CFrame.Angles(0, 0, math.rad(90))
+    local accent = Skins.accent(skin)
+    local plinth = block("Plinth", Vector3.new(PLINTH_HEIGHT, PLINTH_SIZE, PLINTH_SIZE), frame * CFrame.new(0, PLINTH_HEIGHT / 2, 0) * upright,
+        Color3.fromRGB(40, 42, 52), Enum.Material.Metal, Enum.PartType.Cylinder)
+    plinth.CanCollide = true
+    local rim = block("PlinthRim", Vector3.new(0.3, PLINTH_SIZE + 0.3, PLINTH_SIZE + 0.3), frame * CFrame.new(0, PLINTH_HEIGHT - 0.2, 0) * upright,
+        accent, Enum.Material.Neon, Enum.PartType.Cylinder)
+    local light = Instance.new("PointLight")
+    light.Color, light.Range, light.Brightness = accent, 12, 1.5
+    light.Parent = rim
+    -- The plaque leans back in front of the plinth, its face toward the lane.
+    Signs.decorate(block("Plaque", Vector3.new(5.5, 1.8, 0.3), frame * CFrame.new(0, 1, -PLINTH_SIZE / 2 - 0.9) * CFrame.Angles(math.rad(20), 0, 0),
+        Signs.Backing, Enum.Material.Metal), Enum.NormalId.Front,
+        { title = skin.name:upper(), subtitle = skin.multiplier .. "X TRAINING · COINS · LAUNCHES", icon = skin.icon, accent = accent })
+    model.Parent = parent
+
+    -- The mannequin: a plain R15 body in the suit, standing on the plinth. Anchored and
+    -- out of the way of every query; an invisible box round it keeps players out of it.
+    local top = base.Y + PLINTH_HEIGHT
+    local ok, rig = pcall(Players.CreateHumanoidModelFromDescription, Players, Skins.description(skin), Enum.HumanoidRigType.R15)
+    local holder = plinth
+    if ok and rig then
+        rig.Name = "Mannequin"
+        local humanoid = rig:FindFirstChildOfClass("Humanoid")
+        humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
+        Skin.dress(rig, skin)
+        rig:ScaleTo(MANNEQUIN_SCALE)
+        for _, part in rig:GetDescendants() do
+            if part:IsA("BasePart") then
+                part.CanCollide, part.CanQuery, part.CanTouch = false, false, false
+                if part.Parent == rig then part.Anchored = true end
+            end
+        end
+        rig:PivotTo(frame * CFrame.new(0, top - base.Y + 5, 0))
+        local box, size = rig:GetBoundingBox()
+        rig:PivotTo(rig:GetPivot() + Vector3.new(0, top - (box.Position.Y - size.Y / 2), 0))
+        rig.Parent = model
+        box, size = rig:GetBoundingBox()
+        holder = block("Collider", Vector3.new(size.X * 0.7, size.Y, size.Z * 0.7), box, Color3.new(), nil)
+        holder.Transparency, holder.CanCollide = 1, true
+    else
+        warn("SkinService: no mannequin for " .. skin.key .. ": " .. tostring(rig))
+    end
+    local prompt = Instance.new("ProximityPrompt")
+    prompt.ObjectText, prompt.ActionText = skin.name, "Buy"
+    prompt.MaxActivationDistance, prompt.HoldDuration, prompt.RequiresLineOfSight = 12, 0, false
+    prompt.KeyboardKeyCode = Enum.KeyCode.E
+    prompt:SetAttribute("Suit", skin.key)
+    prompt.Parent = holder
+    CollectionService:AddTag(prompt, Skin.StandTag)
+    return prompt
+end
+
 function Skin.new(ctx)
     local service = {}
     local function owns(player, key) return ctx.Shop ~= nil and ctx.Shop.owns(player, key) end
@@ -197,18 +277,37 @@ function Skin.new(ctx)
         pcall(humanoid.ApplyDescription, humanoid, Skins.description(skin, avatar(player)))
         Skin.dress(character, skin)
     end
-    -- WearSuit(key): put on a suit they own, or the basic one ("Astronaut").
-    local wear = Instance.new("RemoteEvent")
-    wear.Name = "WearSuit"
-    wear.Parent = ctx.Remote.folder
-    wear.OnServerEvent:Connect(function(player, key)
+    -- Puts on a suit they own, or the basic one ("Astronaut").
+    function service.wear(player, key)
         local skin = type(key) == "string" and Skins.get(key)
         if not skin or not ctx.profiles:ready(player.UserId) then return end
         if skin ~= Skins.Default and not owns(player, key) then return end
         ctx.profiles.records[player.UserId].profile.suit = key
         ctx.profiles:dirty(player.UserId)
         service.refresh(player)
-    end)
+    end
+    local wear = Instance.new("RemoteEvent")
+    wear.Name = "WearSuit"
+    wear.Parent = ctx.Remote.folder
+    wear.OnServerEvent:Connect(service.wear)
+
+    -- The stands: buy the suit, then wear it, or take it off for the basic one.
+    local Layout = require(script.Parent.SiteLayout)
+    for _, spot in Layout.SuitStands do
+        task.spawn(function()
+            local skin = Skins.get(spot.key)
+            local prompt = Skin.stand(workspace:FindFirstChild("RocketWorld") or workspace, spot.at, spot.facing, skin)
+            prompt.Triggered:Connect(function(player)
+                if not owns(player, skin.key) then
+                    if ctx.Shop then ctx.Shop.buy(player, skin.key) end
+                elseif player:GetAttribute("Suit") == skin.key then
+                    service.wear(player, Skins.Default.key)
+                else
+                    service.wear(player, skin.key)
+                end
+            end)
+        end)
+    end
     return service
 end
 

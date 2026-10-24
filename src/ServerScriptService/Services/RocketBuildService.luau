@@ -13,7 +13,7 @@ local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
 -- Each ramp is at least RAMP_MIN_WIDTH wide, so a full 50-player server can climb, pass
 -- and stand along the fill line at once. The outer edge stays RAMP_PAST_MOUNT beyond the
 -- launch mount, inside the floodlights.
-local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 40, 28, 5, 40
+local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, POST_SPACING = 40, 28, 80
 -- The ramp-top bar: its height over the surface (under a jump) and how far down from the
 -- ramp's top end it stands.
 local END_RAIL, END_RAIL_BACK = 3.5, 4
@@ -139,7 +139,7 @@ end
 -- Replace whatever is on the pad with `tier` (variant = 1st/2nd/3rd cycle of that tier).
 function Build:load(tier, variant)
     self.site:ClearAllChildren()
-    self.filling, self.frontierItem, self.arms, self.ramps = nil, nil, {}, {}
+    self.filling, self.frontierItem, self.ramps = nil, nil, {}
     local data = Models[tier]()
     local complex = Instance.new("Model")
     complex.Name = "LaunchComplex"
@@ -151,7 +151,7 @@ function Build:load(tier, variant)
         end
     end
 
-    -- Bounds of this variant's rocket decide the hinge, ramp and arms.
+    -- Bounds of this variant's rocket decide the hinge and the ramps.
     local items, low, high, coreRadius = {}, Vector3.one * math.huge, -Vector3.one * math.huge, 2
     for order, spec in data.build do
         if (spec.minVariant or 1) <= variant then
@@ -220,17 +220,11 @@ function Build:load(tier, variant)
             CFrame.new(foot + Vector3.new(0, END_RAIL / 2 - 1, 0)) * self.origin.Rotation, complex))
     end
     local up = self.origin.Rotation
-    for y = low.Y + 10, y1, ARM_SPACING do
-        -- Level bridges over the core's top ridge at ramp height, joining both ramps' inner
-        -- edges. They stop at those edges: overlapping the sloped ramp, a level bridge stood
-        -- up from it as a step.
-        local center = tilted * Vector3.new(0, y, surface)
-        local arm = create({ name = "RampArm", shape = "Block", size = Vector3.new(2 * inner, 1, ARM_WIDTH), color = Models.Colors.grey, material = "Metal" },
-            CFrame.new(center.X, center.Y - 0.5, center.Z) * up, complex)
-        table.insert(self.arms, arm)
-        -- Posts under every other arm, on the outer edges only, so they never hide the
-        -- rocket being built and tall ramps don't look like a fence.
-        for _, x in (#self.arms % 2 == 1 and { -outer + 0.5, outer - 0.5 } or {}) do
+    -- Posts under the ramps' outer edges only, so they never meet the rocket being built
+    -- and tall ramps don't look like a fence. Nothing joins the two ramps across the hull:
+    -- level bridges there cut through the fuel gauges and windows along its ridge.
+    for y = low.Y + 10, y1, POST_SPACING do
+        for _, x in { -outer + 0.5, outer - 0.5 } do
             local top = tilted * Vector3.new(x, y, surface - 1)
             local height = top.Y - self.origin.Y
             if height > 2 then
@@ -334,7 +328,7 @@ function Build:inPlaceReach(position, reach)
         and height >= self.rampSurface - 1 and height <= self.rampSurface + 8
 end
 
--- True for points on the tilted rocket or the arms over it (the ramps are outside).
+-- True for points on the tilted rocket (the ramps are outside).
 function Build:isAboard(position)
     local point, b = self.pivot:PointToObjectSpace(position), self.bounds
     return point.Y > b.low.Y - 2 and point.Y < b.high.Y + 4 and math.abs(point.X) < self.rampInner
@@ -349,17 +343,13 @@ function Build:isOnRamps(position)
 end
 
 -- Swing the finished rocket upright about its hinge. Clients animate it; the server
--- snaps to the upright pose afterwards. The arms and the ramps (which lean at the build
--- angle, so the upright hull would seem to cut through them) retract first: they fade out
--- and stop colliding. The next load builds fresh ones.
+-- snaps to the upright pose afterwards. The ramps (which lean at the build angle, so the
+-- upright hull would seem to cut through them) retract first: they fade out and stop
+-- colliding. The next load builds fresh ones.
 function Build:erect(serverTime, seconds)
     local vehicle = self.vehicle
     if self.filling then self.filling.part:Destroy() end
     self.filling, self.frontierItem = nil, nil
-    for _, arm in self.arms do
-        arm.CanCollide, arm.CanQuery = false, false
-        TweenService:Create(arm, reveal, { Transparency = 1 }):Play()
-    end
     local fold = TweenInfo.new(math.min(seconds, 1.5), Enum.EasingStyle.Quad, Enum.EasingDirection.In)
     for _, piece in self.ramps do
         piece.CanCollide, piece.CanQuery = false, false

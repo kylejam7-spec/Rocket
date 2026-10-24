@@ -21,7 +21,7 @@ return function()
                 assert(build.rampOuter <= padHalf.X - 1, ("%s ramp reaches x = %.1f, past the pad (%.1f)"):format(name, build.rampOuter, padHalf.X))
                 -- The launch complex (mount, ramps' feet, tower) stands on the pad.
                 for _, item in build.site.LaunchComplex:GetDescendants() do
-                    if item:IsA("BasePart") and item.Name ~= "RampArm" and item.Name ~= "RampBeacon" then
+                    if item:IsA("BasePart") and item.Name ~= "RampBeacon" then
                         local p = item.Position
                         if p.Y < 3 then
                             assert(math.abs(p.X) <= padHalf.X + 1 and math.abs(p.Z) <= padHalf.Z + 1,

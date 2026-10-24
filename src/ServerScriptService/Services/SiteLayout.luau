@@ -41,6 +41,14 @@ Layout.Fuel = Vector3.new(125, 0, 15)
 
 Layout.Upgrades = Vector3.new(-42, 0, -42)
 Layout.UfoShop = Vector3.new(42, 0, -42)
+-- Suit stands (SkinService): mannequins on the lane side of the forecourt huts, inside
+-- their clear squares, facing the lane. Gold by the Upgrades hut, the others flanking
+-- the UFO Shop.
+Layout.SuitStands = {
+    { key = "SuitGold", at = Vector3.new(-29.5, 0, -30), facing = Vector3.new(1, 0, 0) },
+    { key = "SuitCommander", at = Vector3.new(29.5, 0, -30), facing = Vector3.new(-1, 0, 0) },
+    { key = "SuitGalaxy", at = Vector3.new(29.5, 0, -54), facing = Vector3.new(-1, 0, 0) },
+}
 
 -- Gym District: first bay centre on z, bay step and bay offset from the walkway.
 Layout.Gym = { z0 = 132, step = 16, x = 27, entrance = 114 }

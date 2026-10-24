@@ -305,10 +305,9 @@ function ShopService.new(ctx)
         refresh(player)
     end
 
-    local remote = Instance.new("RemoteEvent")
-    remote.Name = "BuyShop"
-    remote.Parent = ctx.Remote.folder
-    remote.OnServerEvent:Connect(function(player, key)
+    -- Opens the Roblox prompt for `key` if `player` may buy it now (BuyShop, and the suit
+    -- stands' prompts: SkinService).
+    function service.buy(player, key)
         if type(key) ~= "string" or not Shop.entry(config, key) then return end
         if not ctx.profiles:ready(player.UserId) or not ctx.Interaction.allowed(player, "shop") then return end
         if not Shop.enabled(config, key) then return ctx.Remote.feedback(player, "That's coming soon!") end
@@ -328,7 +327,11 @@ function ShopService.new(ctx)
             prompting[player.UserId] = os.clock() + 30
             MarketplaceService:PromptProductPurchase(player, entry.id)
         end
-    end)
+    end
+    local remote = Instance.new("RemoteEvent")
+    remote.Name = "BuyShop"
+    remote.Parent = ctx.Remote.folder
+    remote.OnServerEvent:Connect(service.buy)
     -- A pass bought here (PromptGamePassPurchaseFinished; DebugService "bought").
     function service.passBought(player, key)
         owned[player.UserId] = owned[player.UserId] or {}
