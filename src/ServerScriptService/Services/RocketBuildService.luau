@@ -13,7 +13,10 @@ local UPRIGHT = CFrame.Angles(0, 0, math.rad(90))
 -- Each ramp is at least RAMP_MIN_WIDTH wide, so a full 50-player server can climb, pass
 -- and stand along the fill line at once. The outer edge stays RAMP_PAST_MOUNT beyond the
 -- launch mount, inside the floodlights.
-local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 20, 14, 5, 40
+local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, ARM_WIDTH, ARM_SPACING = 40, 28, 5, 40
+-- The ramp-top bar: its height over the surface (under a jump) and how far down from the
+-- ramp's top end it stands.
+local END_RAIL, END_RAIL_BACK = 3.5, 4
 local reveal = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local Build = {}
@@ -196,19 +199,33 @@ function Build:load(tier, variant)
     local steel, dark = Models.Colors.tower, Models.Colors.dark
     self.rampTop = y1
     for _, side in { -1, 1 } do
-        table.insert(self.ramps, create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
-            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex))
-        table.insert(self.ramps, create({ name = "RampRail", shape = "Block", size = Vector3.new(0.6, y1 - y0, 1.4), color = dark, material = "Metal" },
-            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, surface + 0.2), complex))
+        local ramp = create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
+            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex)
+        -- How far up the ramp (its own Y) a runner's ramp slide carries them: just short
+        -- of the end rail (SpeedController).
+        ramp:SetAttribute("StopAt", (y1 - END_RAIL_BACK) - (y0 + y1) / 2 - 4)
+        table.insert(self.ramps, ramp)
+        -- A guard wall 4 studs high on the outer edge: a fast runner drifting into it slides
+        -- along it (a low lip there launched them off the side).
+        table.insert(self.ramps, create({ name = "RampRail", shape = "Block", size = Vector3.new(0.6, y1 - y0, 4.5), color = dark, material = "Metal" },
+            tilted * CFrame.new(side * (outer - 0.3), (y0 + y1) / 2, surface + 1.75), complex))
         table.insert(self.ramps, create({ name = "RampBeacon", shape = "Block", size = Vector3.new(1.5, 1, 1.5), color = Color3.fromRGB(255, 70, 60), material = "Neon",
             light = { color = Color3.fromRGB(255, 80, 60), range = 24, brightness = 2 } },
             tilted * CFrame.new(side * rampX, y1, surface + 0.75), complex))
+        -- An upright bar across the top end, END_RAIL studs over the surface: low enough to
+        -- jump, while the ramp slide stops a runner holding W just short of it (at full
+        -- speed they'd sail over anything jumpable). Thick, so nobody tunnels through it.
+        local foot = tilted * Vector3.new(side * rampX, y1 - END_RAIL_BACK, surface)
+        table.insert(self.ramps, create({ name = "RampEndRail", shape = "Block", size = Vector3.new(rampWidth, END_RAIL + 2, 3), color = dark, material = "Metal" },
+            CFrame.new(foot + Vector3.new(0, END_RAIL / 2 - 1, 0)) * self.origin.Rotation, complex))
     end
     local up = self.origin.Rotation
     for y = low.Y + 10, y1, ARM_SPACING do
-        -- Level bridges over the core's top ridge at ramp height, joining both ramps' inner edges.
+        -- Level bridges over the core's top ridge at ramp height, joining both ramps' inner
+        -- edges. They stop at those edges: overlapping the sloped ramp, a level bridge stood
+        -- up from it as a step.
         local center = tilted * Vector3.new(0, y, surface)
-        local arm = create({ name = "RampArm", shape = "Block", size = Vector3.new(2 * inner + 2, 1, ARM_WIDTH), color = Models.Colors.grey, material = "Metal" },
+        local arm = create({ name = "RampArm", shape = "Block", size = Vector3.new(2 * inner, 1, ARM_WIDTH), color = Models.Colors.grey, material = "Metal" },
             CFrame.new(center.X, center.Y - 0.5, center.Z) * up, complex)
         table.insert(self.arms, arm)
         -- Posts under every other arm, on the outer edges only, so they never hide the

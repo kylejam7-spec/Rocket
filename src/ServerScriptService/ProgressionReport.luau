@@ -62,7 +62,9 @@ local function simulate(players, train, gymShare, sequence)
             while done < need do
                 local carry = capacity()
                 local fill = done / need
-                local distance = 2 * (TRIP_BASE + HEIGHT[tier] * fill) - 2 * (Upgrades.reach(config, profile) - config.FrontierReach)
+                -- Reach only saves the climb: you still walk to the ramp foot.
+                local climb = math.max(0, HEIGHT[tier] * fill - (Upgrades.reach(config, profile) - config.FrontierReach))
+                local distance = 2 * (TRIP_BASE + climb)
                 local trip = distance / walk() + math.ceil(carry / Upgrades.pickupUnits(config, profile)) * config.MaterialHoldSeconds
                     + math.ceil(carry / Upgrades.placeUnits(config, profile)) * config.MaterialHoldSeconds + HANDLING
                 local gained = gymGain() * trip * train / (1 - train)

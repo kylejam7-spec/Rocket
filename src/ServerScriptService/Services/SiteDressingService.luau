@@ -226,8 +226,8 @@ local function leaderboardStand(parent, base, facing, keys)
 end
 
 -- A building going up: a steel frame (columns, beams per floor), a part-poured slab,
--- scaffolding with planks on one face, and a hoarding board naming it.
-local function skeleton(parent, base, facing, width, depth, floors, name, icon)
+-- and scaffolding with planks on one face.
+local function skeleton(parent, base, facing, width, depth, floors)
     local model = folder(parent, "Skeleton")
     local frame = CFrame.lookAt(base, base + facing)
     local red, scaffold = Color3.fromRGB(176, 64, 44), Color3.fromRGB(190, 196, 204)
@@ -266,8 +266,6 @@ local function skeleton(parent, base, facing, width, depth, floors, name, icon)
     for y = 2, top - 3, 6 do
         beam(model, "ScaffoldBrace", (frame * CFrame.new(-width / 2, y, front)).Position, (frame * CFrame.new(-width / 2 + 8, y + 6, front)).Position, 0.2, scaffold, Enum.Material.Metal)
     end
-    Signs.board(model, "Hoarding", frame * CFrame.new(0, 4, front - 2.4), Vector2.new(width * 0.8, 4.6),
-        { title = name, subtitle = "COMING SOON", icon = icon, accent = Color3.fromRGB(255, 150, 50), ground = 0 })
 end
 
 local function cone(parent, at)
@@ -397,8 +395,8 @@ function Dressing.build(world)
     leaderboardStand(site, Vector3.new(-50, 0, 80), Vector3.new(1, 0, 0), Leaderboards.Stands[1])
     leaderboardStand(site, Vector3.new(50, 0, 80), Vector3.new(-1, 0, 0), Leaderboards.Stands[2])
     -- Buildings going up behind the stations.
-    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4, "MISSION CONTROL", "🛰️")
-    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3, "ASSEMBLY HANGAR", "🔧")
+    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4)
+    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3)
     -- Cones along the lane, barriers at the forecourt corners.
     local cones = folder(site, "Cones")
     for z = Layout.Lane.z0 + 20, Layout.Spawn.Z - 16, 24 do
