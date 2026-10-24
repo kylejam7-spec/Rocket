@@ -125,6 +125,59 @@ local function smokeRing(name, cframe, smokeScale)
     return pad, smoke
 end
 
+-- The launch's smoke, sized to the rocket (`height` tall; its hull is ~0.1 of that across):
+-- a ring of columns rising round its base and a ring of low clouds billowing out across
+-- the pad. Returns the pad part and { emitter, base rate } pairs (rates scale with power).
+local function launchSmoke(cframe, height)
+    local pad = Instance.new("Part")
+    pad.Name = "LaunchSmoke"
+    pad.Anchored, pad.CanCollide, pad.CanQuery, pad.CanTouch, pad.Transparency = true, false, false, false, 1
+    pad.Size, pad.CFrame = Vector3.one, cframe
+    pad.Parent = workspace
+    local smoke = {}
+    local grey = ColorSequence.new(Color3.fromRGB(225, 222, 218), Color3.fromRGB(170, 168, 172))
+    local function add(position, up, props, rate)
+        local attachment = Instance.new("Attachment")
+        local side = up:Cross(Vector3.zAxis)
+        local right = side.Magnitude > 0.1 and side.Unit or Vector3.xAxis
+        attachment.CFrame = CFrame.fromMatrix(position, right, up)
+        attachment.Parent = pad
+        table.insert(smoke, { emitter(attachment, props), rate })
+    end
+    -- Columns: straight up round the engines.
+    for index = 1, 12 do
+        local angle = index / 12 * math.pi * 2
+        add(Vector3.new(math.cos(angle), 0, math.sin(angle)) * height * 0.09, Vector3.yAxis, {
+            Texture = SMOKE, Rate = 0, EmissionDirection = Enum.NormalId.Top, Color = grey,
+            Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, math.min(100, height * 0.05)), NumberSequenceKeypoint.new(1, math.min(100, height * 0.16)) }),
+            Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.25), NumberSequenceKeypoint.new(0.7, 0.55), NumberSequenceKeypoint.new(1, 1) }),
+            Lifetime = NumberRange.new(4, 6), Speed = NumberRange.new(height * 0.03, height * 0.06), SpreadAngle = Vector2.new(35, 35),
+            Drag = 0.8, RotSpeed = NumberRange.new(-20, 20), Rotation = NumberRange.new(0, 360),
+        }, 4)
+    end
+    -- Billows: out and a little up along the ground, slowing as they spread and climb.
+    for index = 1, 16 do
+        local angle = (index + 0.5) / 16 * math.pi * 2
+        local out = Vector3.new(math.cos(angle), 0, math.sin(angle))
+        add(out * height * 0.12, (out * 0.85 + Vector3.yAxis * 0.35).Unit, {
+            Texture = SMOKE, Rate = 0, EmissionDirection = Enum.NormalId.Top, Color = grey,
+            Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, math.min(100, height * 0.06)), NumberSequenceKeypoint.new(1, math.min(100, height * 0.2)) }),
+            Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2), NumberSequenceKeypoint.new(0.6, 0.5), NumberSequenceKeypoint.new(1, 1) }),
+            Lifetime = NumberRange.new(6, 10), Speed = NumberRange.new(height * 0.08, height * 0.14), SpreadAngle = Vector2.new(25, 12),
+            Drag = 0.5, Acceleration = Vector3.new(0, height * 0.004, 0), RotSpeed = NumberRange.new(-15, 15), Rotation = NumberRange.new(0, 360),
+        }, 3)
+    end
+    return pad, smoke
+end
+
+-- The passengers' launch shot: one camera low over the ground off the east side of the
+-- site (user, 2026-10-24: a high view showed the map end past the mountains; from down
+-- here the horizon is the mountains). It rises at a tenth of the rocket's pace and
+-- narrows its view as the rocket climbs away, so it soon looks up into the sky and the
+-- rocket stays a good size. The spot is clear of buildings with a clear view of the pad.
+local SHOT_FOV, SHOT_FOV_END = 70, 32
+local SHOT_OFFSET = Vector3.new(280, 25, 265) -- from the pad's centre: x = 280, z = 0
+
 local playing, launches = {}, 0
 local function play(vehicle)
     local launchAt = vehicle:GetAttribute("LaunchAt")
@@ -143,8 +196,10 @@ local function play(vehicle)
     local accel = 2 * climb / math.max(1, duration - ignition) ^ 2
 
     local emitters, nozzle, burn = engineFire(vehicle, exhaust, height)
-    -- Smoke stays on the pad while the rocket climbs away.
-    local pad, smoke = smokeRing("LaunchSmoke", origin, smokeScale)
+    -- Smoke stays on the pad while the rocket climbs away; heavier rockets make more, up
+    -- to twice the first's, and Reduced effects thins it out.
+    local pad, smoke = launchSmoke(CFrame.new(origin.Position), height)
+    local smokeRate = math.min(2, smokeScale) * (Settings.get("reducedEffects") and 0.4 or 1)
 
     -- Ignition bursts on the pad; the engine roar rides the rocket and swells with the
     -- exhaust through ignition, bigger rockets deeper, and turns duller as it climbs
@@ -180,6 +235,7 @@ local function play(vehicle)
     local lifted = false
 
     local camera = workspace.CurrentCamera
+    local normalFov
     launches += 1
     local shakeName = "RocketLaunchShake" .. launches
     RunService:BindToRenderStep(shakeName, Enum.RenderPriority.Camera.Value + 2, function()
@@ -190,7 +246,7 @@ local function play(vehicle)
         local rise = 0.5 * accel * lift * lift
         vehicle:PivotTo(origin + Vector3.new(0, rise, 0))
         burn(power)
-        for _, item in smoke do item.Rate = (t < duration * 0.8 and 8 or 0) * power * smokeScale end
+        for _, entry in smoke do entry[1].Rate = (t < duration * 0.8 and entry[2] or 0) * power * smokeRate end
         if engine then engine.Volume = roar * power end
         if sub then sub.Volume = subVolume * power end
         if not lifted and lift > 0 then
@@ -204,27 +260,17 @@ local function play(vehicle)
             air.MidGain = -math.clamp(distance / 100, 0, 12)
         end
         -- Read live: attribute replication order is not guaranteed relative to LaunchAt.
-        -- Two shots: alongside as it clears the pad, then a high, wide view from the
-        -- other side of the pad looking up as it shrinks into the sky. That one sits well
-        -- above everything on the ground (the UFO Shop, the hut, players on the apron),
-        -- so nothing walks into the frame. For the big rockets both stand out past the
-        -- site's hoarding (SiteSurroundsService), so the first starts high enough to see
-        -- the pad over it.
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            -- Both shots stand about one rocket height off (the rocket fills the frame and
-            -- stays well inside the draw distance, even Tier 5).
-            local view = origin.Position + Vector3.new(height * 0.62, 12 + height * 0.1 + rise * 0.85, height * 0.85)
-            if lift > (duration - ignition) * 0.45 then
-                -- Rises at 0.82 of the rocket's pace: it still pulls away and
-                -- shrinks, but stays within ~1400 studs. Held still, the big rockets got
-                -- ~5000 away, past the draw distance Roblox drops to when a launch's
-                -- smoke and fire cut the frame rate, and vanished mid-shot.
-                view = origin.Position + Vector3.new(-height * 0.55, 40 + height * 0.5 + rise * 0.82, height * 1.0)
-            end
-            -- Aimed a little below the middle, so the flames clear the HUD at the bottom.
-            camera.CFrame = CFrame.lookAt(view, rocketMid - Vector3.new(0, height * 0.12, 0))
+            normalFov = normalFov or camera.FieldOfView
+            local climbed = math.clamp(rise / climb, 0, 1)
+            camera.FieldOfView = SHOT_FOV + (SHOT_FOV_END - SHOT_FOV) * math.sqrt(climbed)
+            local view = origin.Position + SHOT_OFFSET + Vector3.new(0, rise * 0.1, 0)
+            -- Aimed below the middle, and at first lagging the climb, so the pad and its smoke
+            -- stay in the bottom of the frame as the rocket clears it; then it catches up.
+            local aim = origin.Position + Vector3.new(0, rise * (0.55 + 0.45 * math.sqrt(climbed)) + height * (0.3 + 0.15 * climbed), 0)
+            camera.CFrame = CFrame.lookAt(view, aim)
             -- Roblox draws and lights in detail around Focus, which otherwise stays on the
             -- passenger in the far-off cabin: the pad would load late and drop out.
             camera.Focus = CFrame.new(rocketMid)
@@ -250,6 +296,7 @@ local function play(vehicle)
             camera:SetAttribute("Cinematic", nil)
             camera.CameraType = Enum.CameraType.Custom
         end
+        if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
         burn(0)
         for _, item in emitters do if item:IsA("ParticleEmitter") then item.Enabled = false end end
         -- Park the departed rocket out of sight until the server builds the next one.

@@ -18,8 +18,8 @@ local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, POST_SPACING = 40, 28, 80
 -- The ramp-top bar: its height over the surface (under a jump) and how far down from the
 -- ramp's top end it stands.
 local END_RAIL, END_RAIL_BACK = 3.5, 4
--- How far below the rocket's top the ramps end.
-local RAMP_TOP_GAP = 2
+-- How far below the rocket's top the ramps end, and how thick they are.
+local RAMP_TOP_GAP, RAMP_THICKNESS = 2, 4
 -- Bridges between the ramps: one every BRIDGE_SPACING up the rocket, BRIDGE_WIDTH wide
 -- with BRIDGE_RAIL-high rails, lifted BRIDGE_CLEAR over the hull below; approaches at least
 -- BRIDGE_APPROACH long, aiming for BRIDGE_SLOPE and never steeper than BRIDGE_MAX_SLOPE.
@@ -236,8 +236,10 @@ function Build:load(tier, variant)
     local steel, dark = Models.Colors.tower, Models.Colors.dark
     self.rampTop = y1
     for _, side in { -1, 1 } do
-        local ramp = create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, 1), color = steel, material = "DiamondPlate" },
-            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - 0.5), complex)
+        -- RAMP_THICKNESS deep under the same surface: a late-game runner going at the
+        -- 1-stud slab from below passed through it in one physics step.
+        local ramp = create({ name = "LaunchRamp", shape = "Block", size = Vector3.new(rampWidth, y1 - y0, RAMP_THICKNESS), color = steel, material = "DiamondPlate" },
+            tilted * CFrame.new(side * rampX, (y0 + y1) / 2, surface - RAMP_THICKNESS / 2), complex)
         -- How far up the ramp (its own Y) a runner's ramp slide carries them: just short
         -- of the end rail (SpeedController).
         ramp:SetAttribute("StopAt", (y1 - END_RAIL_BACK) - (y0 + y1) / 2 - 4)

@@ -59,6 +59,9 @@ local function rampSlide(character, humanoid, root, dt)
     local hit = workspace:Raycast(root.Position + Vector3.new(0, stand, 0), Vector3.new(0, -(2 * stand + 3), 0), rampParams)
     if not hit or not RAMPS[hit.Instance.Name] then return end
     local normal = hit.Normal
+    -- Only from on top: a runner under a ramp (its underside within a standing height
+    -- over their head) found its top surface with this cast and was lifted up through it.
+    if (root.Position - hit.Position):Dot(normal) < 0 then return end
     local along = move - normal * move:Dot(normal)
     if along.Magnitude < 0.05 then return end
     local sunk = hit.Position.Y + stand - root.Position.Y
