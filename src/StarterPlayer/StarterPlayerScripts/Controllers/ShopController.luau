@@ -1,5 +1,5 @@
 -- The Robux SHOP (Shared.Shop; IDs and prices in Config.Shop). Three places sell:
--- * the 🛒 SHOP button under the stat stack opens the panel: Game Passes, gym access
+-- * the SHOP button (cart picture) under the stat stack opens the panel: Game Passes, gym access
 --   for each Gym District tier, and the server training boost (with a chip by the
 --   button while it runs);
 -- * the rocket-fill row right above the progress pill while building or fueling:
@@ -114,10 +114,10 @@ function ShopController.start()
     if screenScale then screenScale:GetPropertyChangedSignal("Scale"):Connect(fit) end
     gui:GetPropertyChangedSignal("AbsoluteSize"):Connect(fit)
     fit()
-    StrokedText.new({
-        Text = "🛒 SHOP", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12),
+    Icon.attach(StrokedText.new({
+        Text = Icon.text("Shop", "🛒") .. "SHOP", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 12),
         Size = UDim2.fromOffset(300, 44), Font = Theme.font.Display, TextSize = 38, stroke = 3, Parent = panel,
-    })
+    }), "Shop")
     local fillRow
     local function close()
         if panel.Visible then Sfx.play("close") end
@@ -210,8 +210,8 @@ function ShopController.start()
     offerButton("ServerTraining", { Name = "Buy", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
         Size = UDim2.fromOffset(124, 44), Parent = boostCard })
     local fillCard = card(boosts, UDim2.new(), Theme.color.Build)
-    StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = Theme.icon.Launch .. " FILL THE ROCKET",
-        Font = Theme.font.Display, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = fillCard })
+    Icon.attach(StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = Icon.text("Launch", Theme.icon.Launch) .. "FILL THE ROCKET",
+        Font = Theme.font.Display, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = fillCard }), "Launch")
     StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -20, 0, 48), TextWrapped = true,
         Text = "Add 2,000 to 27,500 Metal or Fuel to the rocket: the buttons above the progress bar. At a destination: more time and the next mission.",
         Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
@@ -223,7 +223,7 @@ function ShopController.start()
     local holder = Create.new("Frame", { Name = "ShopHolder", BackgroundTransparency = 1, Size = UDim2.fromOffset(330, 52),
         Position = UDim2.fromOffset(Theme.gutter, Actions.touch and 8 + 276 * 1.25 + 8 or 150 + 276 + 6), Parent = gui })
     local shopButton = Button.new({
-        Name = "ShopButton", Text = "🛒 SHOP", TextSize = 26, color = ROBUX, Size = UDim2.fromOffset(150, 50), sound = false,
+        Name = "ShopButton", Text = Icon.text("Shop", "🛒") .. "SHOP", TextSize = 26, color = ROBUX, Size = UDim2.fromOffset(150, 50), sound = false,
         onActivated = function()
             if panel.Visible then return close() end
             fit()
@@ -234,6 +234,7 @@ function ShopController.start()
         end,
         Parent = holder,
     })
+    Icon.attach(shopButton.Label, "Shop")
     local boostChip = StrokedText.new({
         Name = "BoostChip", Position = UDim2.fromOffset(160, 9), Size = UDim2.fromOffset(170, 32), BackgroundTransparency = 0.2,
         BackgroundColor3 = Theme.color.Panel, Font = Theme.font.Display, TextSize = 18, TextColor3 = Theme.color.Ready,

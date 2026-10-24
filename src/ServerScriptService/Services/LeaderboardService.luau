@@ -21,16 +21,18 @@
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
 local UserService = game:GetService("UserService")
+local CollectionService = game:GetService("CollectionService")
+local Images = require(game:GetService("ReplicatedStorage").Shared.ProductImages)
 local Leaderboards = {}
 
 Leaderboards.Categories = table.freeze({
-    table.freeze({ key = "Strength", title = "STRENGTH", icon = "💪", accent = Color3.fromRGB(255, 110, 80),
+    table.freeze({ key = "Strength", title = "STRENGTH", icon = "💪", image = "Strength", accent = Color3.fromRGB(255, 110, 80),
         value = function(p) return p.strengthLevel + p.planetBonuses.strength end }),
-    table.freeze({ key = "Speed", title = "SPEED", icon = "👟", accent = Color3.fromRGB(90, 200, 255),
+    table.freeze({ key = "Speed", title = "SPEED", icon = "👟", image = "Speed", accent = Color3.fromRGB(90, 200, 255),
         value = function(p) return p.speedLevel + p.planetBonuses.speed end }),
-    table.freeze({ key = "Coins", title = "COINS", icon = "💰", accent = Color3.fromRGB(255, 204, 40),
+    table.freeze({ key = "Coins", title = "COINS", icon = "💰", image = "Coin", accent = Color3.fromRGB(255, 204, 40),
         value = function(p) return p.coins end }),
-    table.freeze({ key = "Launches", title = "ROCKETS DELIVERED", icon = "🚀", accent = Color3.fromRGB(255, 150, 60),
+    table.freeze({ key = "Launches", title = "ROCKETS DELIVERED", icon = "🚀", image = "Launch", accent = Color3.fromRGB(255, 150, 60),
         value = function(p) return p.completedLaunches end }),
     table.freeze({ key = "Delivered", title = "MATERIALS DELIVERED", icon = "🔩", accent = Color3.fromRGB(150, 220, 120),
         value = function(p) return p.lifetimeDeliveries end }),
@@ -117,8 +119,14 @@ local function buildPanel(face, category, size)
     header.BackgroundColor3 = category.accent
     header.BorderSizePixel = 0
     header.Parent = gui
-    label(header, "Title", { Size = UDim2.new(1, -24, 0.9, 0), Position = UDim2.new(0, 12, 0.05, 0),
-        Text = category.icon .. " " .. category.title, TextColor3 = WHITE, TextStrokeTransparency = 0 })
+    -- A picture before the title where there is one (InlineIconController), else the emoji.
+    local picture = category.image and Images[category.image]
+    local title = label(header, "Title", { Size = UDim2.new(1, -24, 0.9, 0), Position = UDim2.new(0, 12, 0.05, 0),
+        Text = (picture and "" or category.icon .. " ") .. category.title, TextColor3 = WHITE, TextStrokeTransparency = 0 })
+    if picture then
+        title:SetAttribute("Image", category.image)
+        CollectionService:AddTag(title, "InlineIcon")
+    end
     label(gui, "Subtitle", { Size = UDim2.new(1, -24, 0.06, 0), Position = UDim2.new(0, 12, 0.175, 0),
         Text = "TOP " .. size .. " · ALL SERVERS", TextColor3 = MUTED })
     local rows = {}

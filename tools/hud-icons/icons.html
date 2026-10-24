@@ -1,0 +1,163 @@
+<!doctype html>
+<!--
+  HUD and inline icons (512 x 512, transparent): Coin, Strength, Speed, Launch, Shop,
+  Invite. They replace the emoji everywhere in game (Shared.ProductImages). render.sh
+  opens this page once per key (icons.html#Coin) in headless Chrome.
+-->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: transparent; overflow: hidden; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<script>
+const OUT = '#160e20';
+const W = 16; // outline width at 512 px; icons often show at 24-48 px
+let uid = 0;
+const id = (p) => p + (++uid);
+
+function grad(stops, x1 = 0, y1 = 0, x2 = 0, y2 = 1) {
+  const g = id('g');
+  return [g, `<linearGradient id="${g}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`];
+}
+function radial(stops, cx = 0.35, cy = 0.3, r = 0.8) {
+  const g = id('r');
+  return [g, `<radialGradient id="${g}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o, c, a]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a ?? 1}"/>`).join('')}</radialGradient>`];
+}
+// Soft drop shadow under the whole icon.
+const SHADOW = `<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.35"/></filter>`;
+const shine = (d, o = 0.6) => `<path d="${d}" fill="#fff" opacity="${o}"/>`;
+
+const icons = {
+  Coin() {
+    const [rim, rimDef] = grad([[0, '#ffe680'], [0.5, '#ffb800'], [1, '#c26a00']]);
+    const [face, faceDef] = radial([[0, '#fff3a6'], [0.55, '#ffcc28'], [1, '#e89400']], 0.38, 0.32, 0.75);
+    const [edge, edgeDef] = grad([[0, '#b86400'], [1, '#7a3c00']]);
+    let ridges = '';
+    for (let i = 0; i < 40; i++) {
+      const a = i / 40 * Math.PI * 2;
+      ridges += `<line x1="${256 + Math.cos(a) * 178}" y1="${248 + Math.sin(a) * 178}" x2="${256 + Math.cos(a) * 196}" y2="${248 + Math.sin(a) * 196}" stroke="#c98000" stroke-width="6" stroke-linecap="round" opacity="0.7"/>`;
+    }
+    const star = [];
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 54 : 118;
+      star.push(`${256 + Math.cos(a) * r} ${252 + Math.sin(a) * r}`);
+    }
+    return `<defs>${rimDef}${faceDef}${edgeDef}</defs>
+      <ellipse cx="256" cy="276" rx="216" ry="216" fill="url(#${edge})" stroke="${OUT}" stroke-width="${W}"/>
+      <circle cx="256" cy="248" r="216" fill="url(#${rim})" stroke="${OUT}" stroke-width="${W}"/>
+      ${ridges}
+      <circle cx="256" cy="248" r="168" fill="url(#${face})" stroke="#c98000" stroke-width="10"/>
+      <path d="M${star.join(' L')} Z" fill="#fff4b8" stroke="#d98a00" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M${star.join(' L')} Z" fill="#ffffff" opacity="0.35" transform="translate(-6 -6)"/>
+      ${shine('M120 170 Q150 92 236 70 Q170 110 146 196 Z', 0.75)}
+      <circle cx="368" cy="128" r="14" fill="#fff" opacity="0.9"/>`;
+  },
+
+  Strength() {
+    // A flexed arm: shoulder at the bottom left, a big rounded bicep, the forearm rising
+    // to a fist at the top right.
+    const [skin, skinDef] = radial([[0, '#ffd28a'], [0.55, '#ffa22a'], [1, '#d86400']], 0.4, 0.35, 0.85);
+    const [fist, fistDef] = grad([[0, '#ffd697'], [1, '#f2901a']]);
+    return `<defs>${skinDef}${fistDef}</defs>
+      <path d="M64 474 L80 338 C92 230 214 176 300 238 L300 176 L428 176 C446 260 450 360 420 420 C396 464 356 480 300 480
+        C220 482 140 482 64 474 Z" fill="url(#${skin})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+      <path d="M300 238 C322 268 324 316 296 350" fill="none" stroke="#b55400" stroke-width="12" stroke-linecap="round" opacity="0.75"/>
+      <path d="M150 420 C200 436 260 436 300 420" fill="none" stroke="#b55400" stroke-width="10" stroke-linecap="round" opacity="0.45"/>
+      ${shine('M112 318 C130 252 196 222 252 236 C200 250 152 280 132 340 Z', 0.6)}
+      <rect x="282" y="42" width="168" height="170" rx="60" fill="url(#${fist})" stroke="${OUT}" stroke-width="${W}"/>
+      <path d="M326 92 C340 80 356 80 368 92 M372 92 C386 80 402 80 414 92" fill="none" stroke="#c86a00" stroke-width="10" stroke-linecap="round"/>
+      <path d="M270 112 C240 128 244 188 282 196 L344 196 C362 196 368 170 350 160 L300 150 Z" fill="url(#${fist})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+      ${shine('M310 66 Q370 52 426 76 Q370 74 318 90 Z', 0.7)}
+      <path d="M172 300 l11 -28 l11 28 l28 11 l-28 11 l-11 28 l-11 -28 l-28 -11 Z" fill="#fff" opacity="0.9"/>`;
+  },
+
+  Speed() {
+    // A sneaker facing right, with speed streaks behind it.
+    const [upper, upperDef] = grad([[0, '#7cc8ff'], [0.55, '#2f8cff'], [1, '#1a52c8']]);
+    const [sole, soleDef] = grad([[0, '#ffffff'], [1, '#cfd6e4']]);
+    return `<defs>${upperDef}${soleDef}</defs>
+      <g stroke-linecap="round" stroke-width="22">
+        <line x1="22" y1="232" x2="118" y2="232" stroke="${OUT}" stroke-width="36"/><line x1="22" y1="232" x2="118" y2="232" stroke="#9fe0ff"/>
+        <line x1="8" y1="296" x2="96" y2="296" stroke="${OUT}" stroke-width="36"/><line x1="8" y1="296" x2="96" y2="296" stroke="#9fe0ff"/>
+        <line x1="36" y1="360" x2="104" y2="360" stroke="${OUT}" stroke-width="36"/><line x1="36" y1="360" x2="104" y2="360" stroke="#9fe0ff"/>
+      </g>
+      <path d="M128 384 L132 196 C134 168 176 160 196 178 C222 200 254 206 284 196 L316 232 C356 258 420 266 462 296
+        C500 324 496 384 462 392 Z" fill="url(#${upper})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+      <path d="M150 300 C220 292 300 270 352 236" fill="none" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+      <path d="M212 200 L248 236 M244 192 L284 230 M276 196 L306 228" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+      <path d="M404 296 C440 304 470 322 476 350" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity="0.7"/>
+      <rect x="112" y="374" width="384" height="62" rx="30" fill="url(#${sole})" stroke="${OUT}" stroke-width="${W}"/>
+      <path d="M150 412 L470 412" stroke="#9aa6bd" stroke-width="10" stroke-linecap="round" stroke-dasharray="26 18"/>
+      ${shine('M150 200 C160 180 184 178 196 192 C176 196 162 214 158 250 Z', 0.6)}`;
+  },
+
+  Launch() {
+    // A rocket climbing to the upper right with a flame.
+    const [body, bodyDef] = grad([[0, '#ffffff'], [0.6, '#e3e8f2'], [1, '#aab4c8']], 0, 0, 1, 0);
+    const [nose, noseDef] = grad([[0, '#ff8a7a'], [1, '#e2263a']], 0, 0, 1, 0);
+    const [flame, flameDef] = grad([[0, '#fff6a8'], [0.5, '#ffb020'], [1, '#ff4a1a']]);
+    const [glass, glassDef] = radial([[0, '#d8f6ff'], [0.6, '#4fb4ff'], [1, '#1a4fc2']]);
+    return `<defs>${bodyDef}${noseDef}${flameDef}${glassDef}</defs>
+      <g transform="rotate(45 256 256)">
+        <path d="M256 470 C214 430 214 392 228 360 L284 360 C298 392 298 430 256 470 Z" fill="url(#${flame})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <path d="M256 440 C238 418 238 396 246 378 L266 378 C274 396 274 418 256 440 Z" fill="#fff8c8"/>
+        <path d="M190 300 L130 366 L136 400 L206 368 Z" fill="url(#${nose})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <path d="M322 300 L382 366 L376 400 L306 368 Z" fill="url(#${nose})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <path d="M256 36 C330 96 350 200 336 300 C330 340 316 368 300 376 L212 376 C196 368 182 340 176 300 C162 200 182 96 256 36 Z"
+          fill="url(#${body})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <path d="M256 36 C298 70 320 112 330 150 L182 150 C192 112 214 70 256 36 Z" fill="url(#${nose})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <circle cx="256" cy="232" r="46" fill="url(#${glass})" stroke="${OUT}" stroke-width="${W}"/>
+        <circle cx="240" cy="214" r="12" fill="#fff" opacity="0.9"/>
+        <rect x="236" y="300" width="40" height="70" rx="16" fill="#e2263a" stroke="${OUT}" stroke-width="10"/>
+        ${shine('M206 170 C204 210 206 260 214 300 L196 300 C188 256 188 206 194 170 Z', 0.85)}
+      </g>`;
+  },
+
+  Shop() {
+    // A shopping cart with a glossy gold basket.
+    const [basket, basketDef] = grad([[0, '#ffe680'], [0.6, '#ffc21f'], [1, '#e88a00']]);
+    const [metal, metalDef] = grad([[0, '#f4f6fb'], [1, '#9aa6bd']]);
+    let grid = '';
+    for (const x of [200, 262, 324, 386]) grid += `<line x1="${x}" y1="182" x2="${x - 14}" y2="324" stroke="#c97a00" stroke-width="10" stroke-linecap="round"/>`;
+    grid += `<line x1="146" y1="254" x2="426" y2="254" stroke="#c97a00" stroke-width="10" stroke-linecap="round"/>`;
+    return `<defs>${basketDef}${metalDef}</defs>
+      <path d="M40 92 L104 92 L146 182" fill="none" stroke="${OUT}" stroke-width="${W + 22}" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M40 92 L104 92 L146 182" fill="none" stroke="url(#${metal})" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M130 170 L470 170 L420 336 L176 336 Z" fill="url(#${basket})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+      ${grid}
+      ${shine('M156 186 L452 186 L446 204 L162 204 Z', 0.55)}
+      <path d="M176 336 L196 392 L412 392" fill="none" stroke="${OUT}" stroke-width="${W + 22}" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M176 336 L196 392 L412 392" fill="none" stroke="url(#${metal})" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+      ${[214, 392].map(x => `<circle cx="${x}" cy="440" r="38" fill="#3a3550" stroke="${OUT}" stroke-width="${W}"/><circle cx="${x}" cy="440" r="14" fill="#c9cfdc"/>`).join('')}
+      <path d="M318 82 l12 -30 l12 30 l30 12 l-30 12 l-12 30 l-12 -30 l-30 -12 Z" fill="#fff"/>`;
+  },
+
+  Invite() {
+    // A waving hand with motion arcs.
+    const [skin, skinDef] = grad([[0, '#ffe07a'], [0.6, '#ffc226'], [1, '#e89200']], 0, 0, 0.4, 1);
+    const finger = (x, y, h, rot) => `<rect x="${x - 30}" y="${y - h}" width="60" height="${h + 60}" rx="30" transform="rotate(${rot} ${x} ${y})" fill="url(#${skin})" stroke="${OUT}" stroke-width="${W}"/>`;
+    return `<defs>${skinDef}</defs>
+      <g transform="rotate(-16 256 300)">
+        ${finger(176, 230, 120, -10)}${finger(240, 214, 150, -3)}${finger(306, 216, 150, 4)}${finger(366, 240, 118, 11)}
+        <path d="M150 230 L398 236 L392 360 C388 440 330 482 260 482 C188 482 140 440 140 360 Z" fill="url(#${skin})" stroke="${OUT}" stroke-width="${W}" stroke-linejoin="round"/>
+        <rect x="370" y="250" width="62" height="168" rx="31" transform="rotate(42 400 330)" fill="url(#${skin})" stroke="${OUT}" stroke-width="${W}"/>
+        <path d="M190 300 C220 318 290 318 330 300" fill="none" stroke="#c97800" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+        ${shine('M164 120 C168 100 190 96 196 116 L190 220 L170 222 Z', 0.6)}
+      </g>
+      <g fill="none" stroke-linecap="round">
+        <path d="M66 150 C40 196 40 250 62 296" stroke="${OUT}" stroke-width="34"/><path d="M66 150 C40 196 40 250 62 296" stroke="#9fe0ff" stroke-width="18"/>
+        <path d="M446 96 C480 136 490 190 476 236" stroke="${OUT}" stroke-width="34"/><path d="M446 96 C480 136 490 190 476 236" stroke="#9fe0ff" stroke-width="18"/>
+      </g>`;
+  },
+};
+
+const key = decodeURIComponent(location.hash.slice(1));
+document.body.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>${SHADOW}</defs><g filter="url(#shadow)">${(icons[key] || icons.Coin)()}</g></svg>`;
+</script>
+</body>
+</html>

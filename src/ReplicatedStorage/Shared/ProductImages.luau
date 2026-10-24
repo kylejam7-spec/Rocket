@@ -2,7 +2,16 @@
 -- keyed like Config.Shop: pass and product keys, plus the upgrade tracks (one generic
 -- "+1" image per track covers all 10 level passes). The same art is each item's
 -- Creator Dashboard image. UI.Icon shows these, falling back to the emoji.
+-- The HUD icons (tools/hud-icons, transparent) replace the coin, strength, speed, launch,
+-- shop and invite emoji everywhere in game.
 return table.freeze({
+    -- HUD icons
+    Coin = "rbxassetid://89257651522908",
+    Strength = "rbxassetid://102144534492797",
+    Speed = "rbxassetid://130223404601927",
+    Launch = "rbxassetid://108448707996059",
+    Shop = "rbxassetid://136537907312029",
+    Invite = "rbxassetid://126845733173066",
     -- Game Passes
     DoubleCoins = "rbxassetid://110076787932945",
     FastHatch = "rbxassetid://129842147177638",

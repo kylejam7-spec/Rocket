@@ -96,10 +96,11 @@ function UpgradesController.start()
         Size = UDim2.fromOffset(300, 44), Font = Theme.font.Display, TextSize = 38, stroke = 3, Parent = panel,
     })
     local coinsLabel = StrokedText.new({
-        Name = "Coins", Position = UDim2.fromOffset(22, 18), Size = UDim2.fromOffset(150, 34), Text = Theme.icon.Coin .. " 0",
+        Name = "Coins", Position = UDim2.fromOffset(22, 18), Size = UDim2.fromOffset(150, 34), Text = Icon.text("Coin", Theme.icon.Coin) .. "0",
         Font = Theme.font.Display, TextSize = 26, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
         stroke = 2, Parent = panel,
     })
+    Icon.attach(coinsLabel, "Coin")
     local function close()
         if panel.Visible then Sfx.play("close") end
         panel.Visible = false
@@ -161,13 +162,14 @@ function UpgradesController.start()
     local function render(state)
         local profile = state.profile
         if not profile then return end
-        coinsLabel.Text = Theme.icon.Coin .. " " .. Theme.number(profile.coins)
+        coinsLabel.Text = Icon.text("Coin", Theme.icon.Coin) .. Theme.number(profile.coins)
         for track, row in rows do
             local level = profile.upgrades and profile.upgrades[track] or 0
             local price = Upgrades.price(Config, track, level)
             row.title.Text = Config.Upgrades[track].name .. "  Lv " .. level
             row.detail.Text = effect(track, level)
-            row.buy.Label.Text = price and (Theme.icon.Coin .. " " .. Theme.short(price)) or "MAX"
+            row.buy.Label.Text = price and (Icon.text("Coin", Theme.icon.Coin) .. Theme.short(price)) or "MAX"
+            Icon.attach(row.buy.Label, price and "Coin" or nil)
             row.buy.BackgroundColor3 = (price and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
             local product, robux = Upgrades.robux(Config, track, level)
             row.robux.Visible = product ~= nil

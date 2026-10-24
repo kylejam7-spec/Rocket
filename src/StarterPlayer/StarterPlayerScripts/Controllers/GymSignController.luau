@@ -15,6 +15,7 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
+local Icon = require(UI.Icon)
 local WorldScale = require(UI.WorldScale)
 local GymSignController = {}
 
@@ -22,8 +23,8 @@ local LOCKED = Color3.fromRGB(110, 110, 125)
 local GOLD = ColorSequence.new(Color3.fromRGB(255, 245, 140), Color3.fromRGB(255, 165, 30))
 local GREY = ColorSequence.new(Color3.fromRGB(215, 215, 225), Color3.fromRGB(150, 150, 165))
 local STAT = {
-    strengthLevel = { icon = Theme.icon.Strength, name = "STRENGTH", color = Theme.color.Strength, equipment = "BENCH" },
-    speedLevel = { icon = Theme.icon.Speed, name = "SPEED", color = Theme.color.Speed, equipment = "TREADMILL" },
+    strengthLevel = { icon = Theme.icon.Strength, image = "Strength", name = "STRENGTH", color = Theme.color.Strength, equipment = "BENCH" },
+    speedLevel = { icon = Theme.icon.Speed, image = "Speed", name = "SPEED", color = Theme.color.Speed, equipment = "TREADMILL" },
 }
 
 local function multiplierText(multiplier)
@@ -107,14 +108,14 @@ local function buildSign(sign, playerGui)
         Text = sign:GetAttribute("Title") or "GYM", Font = Theme.font.Display, TextScaled = true,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 6, Parent = panel,
     })
-    -- "💪 +3/s   👟 +3/s" in the stat colours: the per-tick gain times ticks a second.
+    -- "+3/s" after each stat's picture, in the stat colours: the per-tick gain times ticks a second.
     local gain = math.round((sign:GetAttribute("Gain") or 0) / Config.TrainingSeconds)
     for index, stat in { STAT.strengthLevel, STAT.speedLevel } do
-        StrokedText.new({
+        Icon.attach(StrokedText.new({
             Name = stat.name .. "Gain", Position = UDim2.new(0, 262 + (index - 1) * 270, 0, 112), Size = UDim2.fromOffset(260, 64),
-            Text = stat.icon .. " +" .. gain .. "/s", Font = Theme.font.Display, TextScaled = true, TextColor3 = stat.color,
+            Text = Icon.text(stat.image, stat.icon) .. "+" .. gain .. "/s", Font = Theme.font.Display, TextScaled = true, TextColor3 = stat.color,
             TextXAlignment = Enum.TextXAlignment.Left, stroke = 5, Parent = panel,
-        })
+        }), stat.image)
     end
     local setStatus = statusPill(panel, { Position = UDim2.fromOffset(262, 186), Size = UDim2.fromOffset(330, 52), ring = 4, stroke = 4 })
     return function(launches, passes)
@@ -125,7 +126,7 @@ local function buildSign(sign, playerGui)
     end
 end
 
--- The tag over a bench or treadmill: "💪 BENCH", "+3 STRENGTH / SEC" and an "x3" badge.
+-- The tag over a bench or treadmill: the stat picture and "BENCH", "+3 STRENGTH / SEC" and an "x3" badge.
 local function buildStation(station, playerGui)
     local gui = Create.new("BillboardGui", {
         Name = "StationTag_" .. station.Name, Adornee = station, Size = UDim2.fromOffset(280, 72),
@@ -153,7 +154,8 @@ local function buildStation(station, playerGui)
         local required = station:GetAttribute("RequiredCycles") or 0
         local gymTier = station:GetAttribute("GymTier")
         local locked = launches < required and not (gymTier and passes["Gym" .. gymTier])
-        name.Text = stat.icon .. " " .. stat.equipment .. (station:GetAttribute("Destination") and " • BONUS" or "")
+        name.Text = Icon.text(stat.image, stat.icon) .. stat.equipment .. (station:GetAttribute("Destination") and " • BONUS" or "")
+        Icon.attach(name, stat.image)
         local perSecond = math.round((station:GetAttribute("TrainingGain") or 0) / Config.TrainingSeconds)
         rate.Text = locked and lockLabel(required, launches) or ("+" .. Theme.short(perSecond) .. " " .. stat.name .. " / SEC")
         rate.TextColor3 = locked and Theme.color.Locked or stat.color

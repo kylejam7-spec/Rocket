@@ -123,8 +123,11 @@ local fill = make("Frame", { Name = "Fill", Size = UDim2.fromScale(0, 1), Backgr
     { corner(13), make("UIGradient", { Color = ColorSequence.new(YELLOW, ORANGE) }) })
 local shine = make("Frame", { Name = "Shine", Size = UDim2.new(0, 60, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.55, BorderSizePixel = 0, Parent = fill },
     { make("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 1) }) }) })
-local rocket = make("TextLabel", { Name = "Rocket", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0, 0.5), Size = UDim2.fromOffset(40, 40), BackgroundTransparency = 1,
-    Text = "🚀", TextSize = 34, Rotation = 45, ZIndex = 3, Parent = track })
+-- The rocket is the Launch HUD icon (Shared.ProductImages.Launch; this runs before
+-- ReplicatedStorage arrives, so the id is copied here). It points up-right, so 45 more
+-- lays it along the bar.
+local rocket = make("ImageLabel", { Name = "Rocket", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0, 0.5), Size = UDim2.fromOffset(44, 44), BackgroundTransparency = 1,
+    Image = "rbxassetid://108448707996059", ScaleType = Enum.ScaleType.Fit, Rotation = 45, ZIndex = 3, Parent = track })
 
 gui.Parent = player:WaitForChild("PlayerGui")
 

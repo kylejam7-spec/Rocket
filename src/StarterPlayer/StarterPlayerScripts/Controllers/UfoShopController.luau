@@ -82,10 +82,11 @@ function UfoShopController.start()
         Size = UDim2.fromOffset(320, 44), Font = Theme.font.Display, TextSize = 38, stroke = 3, Parent = panel,
     })
     local coinsLabel = StrokedText.new({
-        Name = "Coins", Position = UDim2.fromOffset(22, 18), Size = UDim2.fromOffset(150, 34), Text = Theme.icon.Coin .. " 0",
+        Name = "Coins", Position = UDim2.fromOffset(22, 18), Size = UDim2.fromOffset(150, 34), Text = Icon.text("Coin", Theme.icon.Coin) .. "0",
         Font = Theme.font.Display, TextSize = 26, TextColor3 = Theme.color.Gold, TextXAlignment = Enum.TextXAlignment.Left,
         stroke = 2, Parent = panel,
     })
+    Icon.attach(coinsLabel, "Coin")
     local status = StrokedText.new({
         Name = "Status", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 62), Size = UDim2.new(1, -40, 0, 28),
         Font = Theme.font.Display, TextSize = 20, TextColor3 = Theme.color.Muted, stroke = 1.5, Parent = panel,
@@ -143,7 +144,7 @@ function UfoShopController.start()
             })
         end
         local buy = ufo.Price and Button.new({
-            Name = "Buy", Text = Theme.icon.Coin .. " " .. Theme.short(ufo.Price), TextSize = 22,
+            Name = "Buy", Text = Icon.text("Coin", Theme.icon.Coin) .. Theme.short(ufo.Price), TextSize = 22,
             color = Theme.color.Go,
             AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(140, 44),
             Parent = row, sound = false,
@@ -157,13 +158,14 @@ function UfoShopController.start()
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
+        if buy then Icon.attach(buy.Label, "Coin") end
         rows[tier] = { buy = buy, robux = robux, key = key, odds = oddsLabel }
     end
 
     function render(state)
         local profile = state.profile
         if not profile then return end
-        coinsLabel.Text = Theme.icon.Coin .. " " .. Theme.number(profile.coins)
+        coinsLabel.Text = Icon.text("Coin", Theme.icon.Coin) .. Theme.number(profile.coins)
         local ufos = profile.ufos or {}
         local free, max = room(state)
         -- The one landing soonest.

@@ -53,9 +53,9 @@ function ProgressController.start()
         Size = UDim2.fromOffset(300, 120), Font = Theme.font.Display, TextSize = 110, stroke = 5,
         Visible = false, Parent = gui,
     })
-    local function banner(message, tint, seconds)
+    local function banner(message, tint, seconds, image)
         Popup.banner({
-            Name = "Banner", Text = message, TextColor3 = tint, seconds = seconds,
+            Name = "Banner", Text = message, TextColor3 = tint, seconds = seconds, image = image,
             AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.26), Parent = gui,
         })
     end
@@ -68,9 +68,9 @@ function ProgressController.start()
         elseif phaseChanged and state.phase == "Fueling" then
             banner("ROCKET BUILT! FUEL IT UP! " .. icon.Fuel, color.Fuel, 4)
         elseif phaseChanged and state.phase == "Boarding" then
-            banner(state.legendary and "LEGENDARY MISSION! BOARD THE ROCKET!" or "ROCKET READY! BOARD NOW! " .. icon.Launch, color.Ready, 4)
+            banner(state.legendary and "LEGENDARY MISSION! BOARD THE ROCKET!" or "ROCKET READY! BOARD NOW!", color.Ready, 4, not state.legendary and "Launch" or nil)
         elseif phaseChanged and state.phase == "Launching" and state.passenger then
-            banner("LIFTOFF! " .. icon.Launch, color.Gold, 4)
+            banner("LIFTOFF!", color.Gold, 4, "Launch")
         end
         -- Your own delivery: pop the amount over the pill.
         if state.cycle == previous.cycle and state.contribution > previous.contribution then
@@ -97,7 +97,7 @@ function ProgressController.start()
         elseif state.phase == "Boarding" then
             bar:set(1, color.Ready, "BOARD NOW! T-" .. math.ceil(remaining))
         elseif state.phase == "Launching" then
-            bar:set(1, color.Gold, "LIFTOFF! " .. icon.Launch)
+            bar:set(1, color.Gold, "LIFTOFF!", "Launch")
         elseif state.phase == "Rewarding" then
             bar:set(1, color.Launch, (state.destination or "SPACE"):gsub("^THE ", "") .. " " .. math.ceil(remaining) .. "s")
         else

@@ -291,7 +291,7 @@ local function arch(parent, z)
     -- Toward spawn (+Z) it names the place; toward the pad, what it is.
     local gold = Color3.fromRGB(255, 204, 40)
     Signs.board(model, "ArchSign", CFrame.lookAt(Vector3.new(0, 24, z), Vector3.new(0, 24, z + 1)), Vector2.new(span + 2, 5.4), {
-        title = "SPACEPORT EARTH", subtitle = "GROUND ZERO", icon = "🚀", accent = gold,
+        title = "SPACEPORT EARTH", subtitle = "GROUND ZERO", icon = "🚀", image = "Launch", accent = gold,
         back = { title = "LAUNCH SITE", subtitle = "BUILD • FUEL • BOARD", icon = "🛠️", accent = gold },
     })
     for _, side in { -1, 1 } do

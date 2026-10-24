@@ -1,21 +1,23 @@
 -- Short-lived juice text.
 -- Popup.show(props): pops in, rises and fades, then destroys itself ("+1" ticks).
 -- Popup.world(adornee, props): the same, floating in 3D above a part or model
---   (training "+2 💪" icons, "Strength Level Up!"); `shift` raises it that many
+--   (training "+2" strength pops, "Strength Level Up!"); `shift` raises it that many
 --   screen pixels, so stacked popups stay apart at any camera distance.
 -- Popup.banner(props): pops in with a bounce, holds `seconds`, then fades; a newer
 --   banner with the same Name replaces it (announcements, toasts).
--- Options: rise (px), seconds, plus any StrokedText option or TextLabel property.
+-- Options: rise (px), seconds, image (a Shared.ProductImages key shown after the text,
+-- UI.Icon.attach), plus any StrokedText option or TextLabel property.
 local Players = game:GetService("Players")
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
+local Icon = require(script.Parent.Icon)
 local WorldScale = require(script.Parent.WorldScale)
 local Popup = {}
 
 local function label(props)
-    return StrokedText.new(Create.merge({
+    local item = StrokedText.new(Create.merge({
         AnchorPoint = Vector2.new(0.5, 0.5),
         Size = UDim2.fromOffset(260, 48),
         Font = Theme.font.Display,
@@ -23,6 +25,8 @@ local function label(props)
         TextColor3 = Theme.color.White,
         stroke = 3,
     }, props))
+    if props.image then Icon.attach(item, props.image, "after") end
+    return item
 end
 
 local function fadeOut(item, seconds)
