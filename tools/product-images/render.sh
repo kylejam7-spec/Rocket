@@ -10,7 +10,7 @@ page="file:///$(cygpath -m "$here/icons.html" 2>/dev/null || echo "$here/icons.h
 keys=("$@")
 if [ ${#keys[@]} -eq 0 ]; then
   keys=(DoubleCoins FastHatch MultiHatch PetSlot1 PetSlot2 SuitGold SuitCommander SuitGalaxy
-    Gym1 Gym2 Gym3 Gym4 Gym5 Gym6 Gym7 BulkPickup BulkPlace PlacementRange
+    Gym1 Gym2 Gym3 Gym4 Gym5 Gym6 Gym7 GymSpaceX BulkPickup BulkPlace PlacementRange
     ServerTraining Fill2000 Fill4000 Fill7000 Fill11000 Fill27500 ExtraStay
     NextMoon NextMars NextEuropa NextSaturn NextBlackHole UfoRare UfoEpic UfoLegendary)
 fi

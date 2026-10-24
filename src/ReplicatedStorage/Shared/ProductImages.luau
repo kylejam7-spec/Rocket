@@ -23,6 +23,7 @@ return table.freeze({
     Gym5 = "rbxassetid://122344487876282",
     Gym6 = "rbxassetid://93915111594305",
     Gym7 = "rbxassetid://108302914063618",
+    GymSpaceX = "rbxassetid://134613045896817",
     -- Upgrade tracks (Config.RobuxUpgrades level passes)
     BulkPickup = "rbxassetid://112823589818627",
     BulkPlace = "rbxassetid://76628864622796",

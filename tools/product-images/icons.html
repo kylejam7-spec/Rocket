@@ -222,6 +222,24 @@ function ruler(cx, cy) {
     ${shine(cx - 120, cy - 30, 30, 6, 0)}</g>`;
 }
 
+// A tall white launcher on its flame, nose up, leaning `rot` degrees.
+function rocket(cx, cy, s, rot = 0) {
+  const P = (x, y) => `${cx + x * s} ${cy + y * s}`;
+  const flame = id('flame');
+  return `<g transform="rotate(${rot} ${cx} ${cy})"><defs><linearGradient id="${flame}" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff6c2"/><stop offset="0.35" stop-color="#ffcc28"/><stop offset="1" stop-color="#ff4f2a" stop-opacity="0"/></linearGradient></defs>
+    <path d="M${P(-34, 150)} Q${P(-60, 260)} ${P(0, 330)} Q${P(60, 260)} ${P(34, 150)} Z" fill="url(#${flame})"/>
+    <path d="M${P(-20, 150)} Q${P(-30, 220)} ${P(0, 262)} Q${P(30, 220)} ${P(20, 150)} Z" fill="#fff" opacity="0.85"/>
+    <path d="M${P(-36, 70)} L${P(-78, 150)} L${P(-36, 140)} Z" fill="#2a3550" stroke="${OUT}" stroke-width="${W * s}" stroke-linejoin="round"/>
+    <path d="M${P(36, 70)} L${P(78, 150)} L${P(36, 140)} Z" fill="#2a3550" stroke="${OUT}" stroke-width="${W * s}" stroke-linejoin="round"/>
+    <path d="M${P(-36, 150)} L${P(-36, -110)} Q${P(-36, -200)} ${P(0, -240)} Q${P(36, -200)} ${P(36, -110)} L${P(36, 150)} Z" fill="#f2f5fa" stroke="${OUT}" stroke-width="${W * s}" stroke-linejoin="round"/>
+    <path d="M${P(-36, -110)} Q${P(-36, -200)} ${P(0, -240)} Q${P(36, -200)} ${P(36, -110)} Z" fill="#2a3550"/>
+    <rect x="${cx - 36 * s}" y="${cy - 20 * s}" width="${72 * s}" height="${16 * s}" fill="#2a3550"/>
+    <rect x="${cx - 36 * s}" y="${cy + 112 * s}" width="${72 * s}" height="${38 * s}" fill="#9aa3b5" stroke="${OUT}" stroke-width="${W * 0.7 * s}"/>
+    <circle cx="${cx}" cy="${cy - 64 * s}" r="${16 * s}" fill="#4fb4ff" stroke="${OUT}" stroke-width="${W * 0.7 * s}"/>
+    <rect x="${cx - 24 * s}" y="${cy - 100 * s}" width="${10 * s}" height="${190 * s}" rx="${5 * s}" fill="#fff" opacity="0.7"/></g>`;
+}
+
 const PLANETS = '../../assets/planets/';
 const rarity = { Rare: '#3c96ff', Epic: '#af50ff', Legendary: '#ffaa1e' };
 
@@ -242,6 +260,9 @@ const icons = {
     const plates = ['#5fe08a', '#4fb4ff', '#af50ff', '#ff7ab8', '#ff8a2a', '#ff4f4f', '#ffcc28'][i];
     return ['Gym' + (i + 1), () => background('#ffb36b', '#c2361a') + dumbbell(232, 250, 0.92, plates, 0) + badge(m + 'x', '#3c8cff', { size: m >= 100 ? 44 : 54 }) + label('GYM ' + m + 'X', 408)];
   })),
+  // The SpaceX Gym (Config.SpaceXGym, 150x): a launch behind the dumbbell, on a night sky.
+  GymSpaceX: () => background('#3d6dff', '#070b2e') + rocket(256, 196, 0.62, 0) + `<ellipse cx="256" cy="318" rx="170" ry="34" fill="#c7d2e8" opacity="0.35"/>`
+    + dumbbell(240, 290, 0.78, '#4fb4ff', -8) + badge('150x', '#ff4f4f', { x: 384, y: 124, r: 60, size: 42 }) + label('SPACEX GYM', 408),
   // Robux upgrade levels: one generic "+1" image per track, used for all 10 level passes.
   BulkPickup: () => background('#ffe08a', '#d27a00') + crate(150, 150, 100) + crate(262, 150, 100) + crate(206, 60, 100) + hand(256, 300, 0.85) + badge('+1', '#5fe08a', { x: 396, y: 268, r: 56 }) + label('BULK PICKUP', 408),
   BulkPlace: () => background('#ffa0d0', '#b0206a') + arrow(256, 70, 256, 210, '#5fe08a', 40) + crate(150, 230, 100) + crate(262, 230, 100) + `<ellipse cx="256" cy="345" rx="150" ry="30" fill="#7ff9ff" opacity="0.55" stroke="#bffcff" stroke-width="6"/>` + badge('+1', '#5fe08a', { x: 400, y: 132, r: 56 }) + label('BULK PLACE', 408),
