@@ -104,6 +104,8 @@ return table.freeze({
             Gym5 = table.freeze({ id = 2040706913, price = 699 }),
             Gym6 = table.freeze({ id = 2036915437, price = 899 }),
             Gym7 = table.freeze({ id = 2042348700, price = 1099 }),
+            -- The SpaceX Gym at the back of the District: paid only (SpaceXGym below).
+            GymSpaceX = table.freeze({ id = 2052845580, price = 1499 }),
         }),
         -- Developer Products: repeatable; each receipt is granted once (receipt journal).
         products = table.freeze({
@@ -164,6 +166,9 @@ return table.freeze({
         table.freeze({ cycles = 50, multiplier = 75 }),
         table.freeze({ cycles = 100, multiplier = 100 }),
     }),
+    -- The SpaceX Gym, centred at the very back of the Gym District: no launches unlock
+    -- it, only its Game Pass (Shop.passes.GymSpaceX).
+    SpaceXGym = table.freeze({ key = "GymSpaceX", multiplier = 150, title = "SPACEX GYM" }),
     -- Per-tick stat reward unit for passengers at a destination, TicksPerSecond ticks a
     -- second: x the destination's reward (rarer missions pay more) x the mission's
     -- RewardMultiplier (Shared.Missions). User, 2026-10-20: double per tick (3 → 6) at 4

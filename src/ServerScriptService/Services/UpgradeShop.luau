@@ -106,8 +106,10 @@ function UpgradeShop.build(parent, base)
         end
     end
     piece("RidgeCap", Vector3.new(W + 2.6, 0.5, 0.9), at(0, ridgeY + 0.05, 0), DARK, Enum.Material.Metal)
-    -- The sign on the front gable, a vent and an antenna on the roof.
-    Signs.decorate(piece("UpgradesSign", Vector3.new(0.4, 3.6, 12), at(W / 2 + 0.2, FLOOR + H + 1.6, 0), Signs.Backing), Enum.NormalId.Right,
+    -- The sign on the front gable, a vent and an antenna on the roof. The sign stays under
+    -- the eaves (the roof's underside falls ~0.53 a stud out from the ridge): 10 wide and
+    -- low on the gable, its foot over the wall top and clear of the awning.
+    Signs.decorate(piece("UpgradesSign", Vector3.new(0.4, 3.2, 10), at(W / 2 + 0.2, FLOOR + H + 0.9, 0), Signs.Backing), Enum.NormalId.Right,
         { title = "UPGRADES", subtitle = "SPEND YOUR COINS", icon = "⚡", accent = YELLOW })
     local vent = piece("RoofVent", Vector3.new(1.6, 1.6, 1.6), at(-3, ridgeY - 1.6, 3.5), STEEL, Enum.Material.Metal)
     vent.Shape = Enum.PartType.Cylinder

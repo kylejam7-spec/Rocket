@@ -53,7 +53,12 @@ function Button.new(props)
     if props.image and Icon.image(props.image) then
         local side = button.Size.Y.Offset - 6
         Icon.new(props.image, nil, { Size = UDim2.fromOffset(side, side), Position = UDim2.fromOffset(4, 3), Parent = button })
-        label.Position, label.Size = UDim2.fromOffset(side + 4, 0), UDim2.new(1, -(side + 8), 1, 0)
+        label.Position, label.Size = UDim2.fromOffset(side + 6, 0), UDim2.new(1, -(side + 10), 1, 0)
+        -- The label keeps to the space beside the picture: long text shrinks to fit there
+        -- (never past its TextSize) instead of running under it.
+        Create.new("UITextSizeConstraint", { MaxTextSize = label.TextSize, Parent = label })
+        label.TextScaled = true
+        Create.new("UIPadding", { PaddingTop = UDim.new(0.2, 0), PaddingBottom = UDim.new(0.2, 0), Parent = label })
     end
     if circle and props.caption then
         StrokedText.new({

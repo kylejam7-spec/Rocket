@@ -38,7 +38,7 @@ function Movement.new(ctx)
     -- spawn move looks like a teleport and snaps players back to the map centre.
     function service.track(player, root, grace, settle)
         motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(),
-            blockedUntil = os.clock() + grace, settledAt = os.clock() + (settle or 0) }
+            blockedUntil = os.clock() + grace, settledAt = os.clock() + (settle or 0), from = nil }
     end
     -- Takes a position (stands upright) or a full CFrame (gym poses).
     function service.relocate(player, position)
@@ -59,7 +59,16 @@ function Movement.new(ctx)
             root.AssemblyLinearVelocity = Vector3.zero
             sample.blockedUntil = now + 2
         end
+        sample.from = sample.position
         sample.position, sample.safe, sample.time = root.Position, root.CFrame, now
+    end
+    -- The last sampled step (from, to), for checks a fast runner could cross between
+    -- samples (the BOARD door): nil just after a spawn or relocation.
+    function service.lastStep(player)
+        local root = service.body(player)
+        local sample = motion[player.UserId]
+        if not root or not sample or sample.root ~= root or not sample.from then return nil end
+        return sample.from, sample.position
     end
     function service.forget(player)
         motion[player.UserId] = nil

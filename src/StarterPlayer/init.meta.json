@@ -5,6 +5,9 @@
     },
     "SerializedOverrides": {
       "BinaryString": ""
+    },
+    "DevCameraOcclusionMode": {
+      "Enum": 1
     }
   },
   "className": "StarterPlayer"

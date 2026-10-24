@@ -1,10 +1,11 @@
 -- The Robux SHOP (Shared.Shop; IDs and prices in Config.Shop). Three places sell:
 -- * the 🛒 SHOP button under the stat stack opens the panel: Game Passes, gym access
---   for each Gym District tier, and the server training boost (with a chip by the
---   button while it runs);
+--   for each Gym District tier and the SpaceX Gym, and the server training boost (with
+--   a chip by the button while it runs); every item shows its product picture;
 -- * the rocket-fill row right above the progress pill while building or fueling:
 --   +2,000 / 4,000 / 7,000 / 11,000 / 27,500 of whatever the rocket needs now (Metal or Fuel);
--- * at a destination, passengers get a side panel: more time there and the next mission.
+-- * at a destination, passengers get a small SELECT A PLANET button on the right that
+--   opens the side panel: more time there and the next mission.
 -- Every button sends BuyShop(key); the server checks it and opens the Roblox prompt.
 -- Offers without a dashboard ID show their price greyed out; prices are always on the button.
 -- Suits aren't here: they sell on their stands on the forecourt (SkinService).
@@ -75,9 +76,9 @@ function ShopController.start()
             text, color = "OWNED ✔", OWNED
         elseif not Shop.enabled(Config, key) then
             -- No dashboard ID yet: the price shows, greyed.
-            text, color = offer.prefix .. "R$ " .. entry.price, OFF
+            text, color = offer.prefix .. "R$ " .. Theme.number(entry.price), OFF
         else
-            text = offer.prefix .. "R$ " .. entry.price
+            text = offer.prefix .. "R$ " .. Theme.number(entry.price)
             local ok = Shop.isPass(Config, key) or Shop.available(Config, key, view(state))
             color = ok and ROBUX or OFF
         end
@@ -159,61 +160,78 @@ function ShopController.start()
         Create.new("UIGridLayout", { CellSize = cell, CellPadding = UDim2.fromOffset(10, 10), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
     end
 
-    -- Game Passes: one card each.
+    -- An item's picture (its product art already carries the name). Without art, or if it
+    -- fails to load, the emoji shows with the name under it instead.
+    local function picture(parent, key, emoji, name, size, position)
+        local holder = Create.new("Frame", { Name = "Picture", AnchorPoint = Vector2.new(0.5, 0), Position = position,
+            Size = UDim2.fromOffset(size, size), BackgroundTransparency = 1, Parent = parent })
+        local image = Icon.new(key, emoji, { Size = UDim2.fromScale(1, 1), TextSize = math.floor(size * 0.5), Parent = holder })
+        local caption = StrokedText.new({ Name = "Caption", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.fromScale(0.5, 1),
+            Size = UDim2.new(1, 0, 0, math.floor(size * 0.22)), Text = name:upper(), Font = Theme.font.Display, TextScaled = true,
+            stroke = 2, Visible = not image:IsA("ImageLabel"), ZIndex = 2, Parent = holder })
+        if image:IsA("ImageLabel") then
+            image.Destroying:Connect(function() caption.Visible = true end)
+        end
+        return holder
+    end
+
+    -- Game Passes: a tile each, picture on top, what it does, then the price.
     local passes = section("GAME PASSES  ·  yours for good")
-    gridLayout(passes, UDim2.fromOffset(228, 128))
+    gridLayout(passes, UDim2.fromOffset(132, 226))
     for index, pass in Shop.Passes do
         local frame = card(passes, UDim2.new(), ROBUX)
         frame.LayoutOrder = index
-        Icon.new(pass.key, pass.icon, { Position = UDim2.fromOffset(6, 4), Size = UDim2.fromOffset(44, 44), Parent = frame })
-        StrokedText.new({ Position = UDim2.fromOffset(56, 12), Size = UDim2.new(1, -64, 0, 26), Text = pass.name:upper(),
-            Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
-        StrokedText.new({ Position = UDim2.fromOffset(10, 46), Size = UDim2.new(1, -20, 0, 32), Text = pass.text, TextWrapped = true,
-            Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
-            TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = frame })
+        picture(frame, pass.key, pass.icon, pass.name, 112, UDim2.new(0.5, 0, 0, 8))
+        StrokedText.new({ Name = "Blurb", Position = UDim2.fromOffset(6, 124), Size = UDim2.new(1, -12, 0, 46), Text = pass.text,
+            TextWrapped = true, Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, stroke = 1.5, Parent = frame })
         offerButton(pass.key, { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8),
-            Size = UDim2.new(1, -20, 0, 38), Parent = frame })
+            Size = UDim2.new(1, -14, 0, 38), TextSize = 18, Parent = frame })
     end
 
-    -- Gym access: every District tier, unlocked without its launches.
+    -- Gym access: every District tier, unlocked without its launches, and the paid-only
+    -- SpaceX Gym at the back of the District.
     local gyms = section("GYM ACCESS  ·  train there before you've unlocked it")
-    gridLayout(gyms, UDim2.fromOffset(170, 96))
+    gridLayout(gyms, UDim2.fromOffset(170, 206))
     local gymCards = {}
+    local function gymCard(order, key, name, accent, emoji)
+        local frame = card(gyms, UDim2.new(), accent)
+        frame.LayoutOrder = order
+        picture(frame, key, emoji or "🏋", name, 118, UDim2.new(0.5, 0, 0, 6))
+        local note = StrokedText.new({ Name = "Note", Position = UDim2.fromOffset(8, 128), Size = UDim2.new(1, -16, 0, 20),
+            Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, stroke = 1.5, Parent = frame })
+        local button = offerButton(key, { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -8),
+            Size = UDim2.new(1, -16, 0, 40), TextSize = 19, Parent = frame })
+        return note, button
+    end
     for tier, spec in Config.TrainingTiers do
-        local frame = card(gyms, UDim2.new(), Theme.color.Strength)
-        frame.LayoutOrder = tier
-        Icon.new(Shop.gymKey(tier), "🏋", { Position = UDim2.fromOffset(8, 5), Size = UDim2.fromOffset(26, 26), Parent = frame })
-        StrokedText.new({ Position = UDim2.fromOffset(40, 6), Size = UDim2.new(1, -48, 0, 26), Text = spec.multiplier .. "X GYM",
-            Font = Theme.font.Display, TextSize = 21, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = frame })
-        local note = StrokedText.new({ Name = "Note", Position = UDim2.fromOffset(10, 30), Size = UDim2.new(1, -20, 0, 18),
-            Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
-            stroke = 1.5, Parent = frame })
-        note.Position = UDim2.fromOffset(10, 32)
-        local button = offerButton(Shop.gymKey(tier), { Name = "Buy", AnchorPoint = Vector2.new(0.5, 1),
-            Position = UDim2.new(0.5, 0, 1, -8), Size = UDim2.new(1, -20, 0, 36), TextSize = 18, Parent = frame })
+        local note, button = gymCard(tier, Shop.gymKey(tier), spec.multiplier .. "X GYM", Theme.color.Strength)
         gymCards[tier] = { note = note, button = button, cycles = spec.cycles }
     end
+    local spaceXNote = gymCard(#Config.TrainingTiers + 1, Config.SpaceXGym.key, Config.SpaceXGym.title, Theme.color.Speed, Theme.icon.Launch)
+    spaceXNote.Text = "★ x" .. Config.SpaceXGym.multiplier .. " · Game Pass only"
+    spaceXNote.TextColor3 = Theme.color.Gold
 
-    -- Server boosts.
+    -- Server boosts: picture on the left, what it does, and the price.
     local boosts = section("SERVER BOOSTS  ·  for everyone here")
-    gridLayout(boosts, UDim2.fromOffset(350, 96))
+    gridLayout(boosts, UDim2.fromOffset(350, 136))
     local boostCard = card(boosts, UDim2.new(), Theme.color.Ready)
-    Icon.new("ServerTraining", "⚡", { Position = UDim2.fromOffset(8, 4), Size = UDim2.fromOffset(30, 30), Parent = boostCard })
-    StrokedText.new({ Position = UDim2.fromOffset(44, 6), Size = UDim2.new(1, -184, 0, 26),
+    picture(boostCard, "ServerTraining", "⚡", Config.Shop.ServerTrainingMultiplier .. "X TRAINING", 116, UDim2.fromOffset(68, 10))
+    StrokedText.new({ Position = UDim2.fromOffset(136, 10), Size = UDim2.new(1, -146, 0, 26),
         Text = Config.Shop.ServerTrainingMultiplier .. "X TRAINING", Font = Theme.font.Display, TextSize = 22,
         TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = boostCard })
-    local boostNote = StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -150, 0, 48), TextWrapped = true,
+    local boostNote = StrokedText.new({ Position = UDim2.fromOffset(136, 38), Size = UDim2.new(1, -146, 0, 44), TextWrapped = true,
         Text = "Every gym gives " .. Config.Shop.ServerTrainingMultiplier .. "x to the whole server for "
             .. Config.Shop.ServerTrainingSeconds // 60 .. " minutes. Stacks!",
         Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = boostCard })
-    offerButton("ServerTraining", { Name = "Buy", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -10, 0.5, 0),
-        Size = UDim2.fromOffset(124, 44), Parent = boostCard })
+    offerButton("ServerTraining", { Name = "Buy", AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 136, 1, -10),
+        Size = UDim2.new(1, -146, 0, 40), Parent = boostCard })
     local fillCard = card(boosts, UDim2.new(), Theme.color.Build)
-    StrokedText.new({ Position = UDim2.fromOffset(10, 6), Size = UDim2.new(1, -20, 0, 26), Text = Theme.icon.Launch .. " FILL THE ROCKET",
+    picture(fillCard, "Fill11000", Theme.icon.Launch, "FILL", 116, UDim2.fromOffset(68, 10))
+    StrokedText.new({ Position = UDim2.fromOffset(136, 10), Size = UDim2.new(1, -146, 0, 26), Text = "FILL THE ROCKET",
         Font = Theme.font.Display, TextSize = 22, TextXAlignment = Enum.TextXAlignment.Left, stroke = 2, Parent = fillCard })
-    StrokedText.new({ Position = UDim2.fromOffset(10, 36), Size = UDim2.new(1, -20, 0, 48), TextWrapped = true,
-        Text = "Add 2,000 to 27,500 Metal or Fuel to the rocket: the buttons above the progress bar. At a destination: more time and the next mission.",
+    StrokedText.new({ Position = UDim2.fromOffset(136, 38), Size = UDim2.new(1, -146, 0, 88), TextWrapped = true,
+        Text = "Add 2,000 to 27,500 Metal or Fuel with the buttons above the progress bar. At a destination: more time and the next planet.",
         Font = Theme.font.Display, TextSize = 15, TextColor3 = Theme.color.Muted, TextXAlignment = Enum.TextXAlignment.Left,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = fillCard })
 
@@ -257,15 +275,39 @@ function ShopController.start()
     end
 
     ------------------------------------------------------------------ destination
+    -- A small button keeps the screen clear; it opens the panel (which closes back to it).
+    -- Both sit top right, just under the top bar's Settings and Backpack buttons.
     local DEST_W = 270
+    local destOpen = false
+    local destButton = Button.new({
+        Name = "SelectPlanet", Text = "🪐 SELECT A PLANET", TextSize = 20, color = ROBUX, sound = false,
+        AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 10), Size = UDim2.fromOffset(230, 52),
+        Visible = false, Parent = gui,
+        onActivated = function()
+            destOpen = true
+            Sfx.play("open")
+            if current then render(current) end
+        end,
+    })
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 0.9, Parent = destButton }) end
     local dest = Panel.new({
-        Name = "DestinationShop", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -Theme.gutter, 0.45, 0),
+        Name = "DestinationShop", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -Theme.gutter, 0, 10),
         Size = UDim2.fromOffset(DEST_W, 104 + Missions.Count * 42 + 40), BackgroundTransparency = 0.12, radius = 16,
         stroke = 3, strokeColor = ROBUX, Visible = false, Parent = gui,
     })
     if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 0.9, Parent = dest }) end
     local destTitle = StrokedText.new({ Position = UDim2.fromOffset(12, 8), Size = UDim2.new(1, -24, 0, 26), Font = Theme.font.Display,
         TextSize = 22, stroke = 2, Parent = dest })
+    Button.new({
+        Name = "Close", shape = "circle", icon = Theme.icon.Leave, color = Theme.color.Danger,
+        AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, -20, 0, 20), Size = UDim2.fromOffset(32, 32), sound = false,
+        onActivated = function()
+            destOpen = false
+            Sfx.play("close")
+            if current then render(current) end
+        end,
+        Parent = dest,
+    })
     offerButton("ExtraStay", { Name = "ExtraStay", Position = UDim2.fromOffset(12, 40), Size = UDim2.new(1, -24, 0, 40), image = "ExtraStay", Parent = dest },
         "+" .. Config.Shop.ExtraStaySeconds .. "s HERE · ")
     StrokedText.new({ Position = UDim2.fromOffset(12, 86), Size = UDim2.new(1, -24, 0, 20), Text = "PICK THE NEXT MISSION",
@@ -301,7 +343,9 @@ function ShopController.start()
         -- Hidden under the open panel.
         fillRow.Visible = (state.phase == "Building" or state.phase == "Fueling") and not panel.Visible
         local atDestination = state.phase == "Rewarding" and state.passenger == true
-        dest.Visible = atDestination
+        if not atDestination then destOpen = false end
+        dest.Visible = atDestination and destOpen
+        destButton.Visible = atDestination and not destOpen
         if atDestination then
             destTitle.Text = "🪐 " .. (state.destination or "SPACE")
             if shop.guaranteed then

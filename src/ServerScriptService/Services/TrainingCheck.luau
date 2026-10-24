@@ -2,6 +2,7 @@
 return function()
     local Training = require(script.Parent.TrainingService)
     local config = require(game.ReplicatedStorage.Shared.Config)
+    local Shop = require(game.ReplicatedStorage.Shared.Shop)
     local remotes = Instance.new("Folder")
     local player = { UserId = -1, Character = {} }
     local root = { Parent = true, Position = Vector3.zero, Anchored = false, Size = Vector3.new(2, 2, 1) }
@@ -80,6 +81,31 @@ return function()
             service.stop(second)
             assert(not next(station.occupants))
         end
+        -- The paid-only SpaceX gym: locked at any launch count, open with its pass.
+        local paidPart = Instance.new("Part")
+        local paidCallback
+        local passOwned = false
+        local paid = Training.new({
+            config = config, remotes = remotes, players = { GetPlayerByUserId = function() return player end }, profiles = profiles,
+            stations = { { part = paidPart, name = "SpaceX gym bench", stat = "strengthLevel", gain = config.SpaceXGym.multiplier,
+                required = math.huge, tier = "SpaceX", paid = true } },
+            prompt = function() return { Triggered = { Connect = function(_, callback) paidCallback = callback end } } end,
+            allowed = function() return true end, near = function() return true end, phaseAllowed = function() return true end,
+            body = function() return root, humanoid end, relocate = function() end, feedback = function() end, changed = function() end,
+            unlocked = function(_, station) return passOwned and station.tier == "SpaceX" end,
+        })
+        player.UserId -= 1
+        profiles.records[player.UserId] = { profile = profile }
+        profile.completedLaunches = 1e6
+        paidCallback(player)
+        assert(not paid.sessions[player.UserId], "Launches opened the paid-only gym")
+        passOwned = true
+        paidCallback(player)
+        assert(paid.sessions[player.UserId], "The SpaceX pass didn't open its gym")
+        assert(paidPart:GetAttribute("RequiredCycles") == math.huge and paidPart:GetAttribute("GymTier") == "SpaceX")
+        paid.stop(player)
+        paidPart:Destroy()
+        assert(Shop.gymKey("SpaceX") == config.SpaceXGym.key and Shop.enabled(config, config.SpaceXGym.key), "SpaceX Gym pass on sale")
     end)
     for _, station in stations do station.part:Destroy() end
     remotes:Destroy()
@@ -126,5 +152,5 @@ return function()
     assert(math.abs(1 / config.TrainingSeconds - 3) < 1e-9, "Gyms tick 3 times a second")
     local top = config.TrainingBaseGain * config.TrainingTiers[#config.TrainingTiers].multiplier / config.TrainingSeconds
     assert(math.round(top) == 300 and curve.max / top >= 1, "Top gym levels too fast")
-    return "All 14 tiered gym stations (2x-100x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches and treadmills; level costs, carry and walk curves passed"
+    return "All 14 tiered gym stations (2x-100x): locked below milestone, unlocked at milestone, correct gains, no cap, exit, shared benches and treadmills; SpaceX gym pass only; level costs, carry and walk curves passed"
 end

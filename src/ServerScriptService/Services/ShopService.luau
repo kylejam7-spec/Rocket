@@ -332,6 +332,11 @@ function ShopService.new(ctx)
     remote.Name = "BuyShop"
     remote.Parent = ctx.Remote.folder
     remote.OnServerEvent:Connect(service.buy)
+    -- Tells the buyer's client a pass was just bought here, so it celebrates
+    -- (PurchaseCelebrationController); ownership loading on join doesn't fire it.
+    local bought = Instance.new("RemoteEvent")
+    bought.Name = "PassBought"
+    bought.Parent = ctx.Remote.folder
     -- A pass bought here (PromptGamePassPurchaseFinished; DebugService "bought").
     function service.passBought(player, key)
         owned[player.UserId] = owned[player.UserId] or {}
@@ -343,12 +348,16 @@ function ShopService.new(ctx)
             ctx.profiles:dirty(player.UserId)
             task.spawn(ctx.profiles.saveNow, ctx.profiles, player.UserId)
         end
-        local name = key:match("^Gym") and "gym access" or key
+        local name = key
+        local tier = tonumber(key:match("^Gym(%d+)$"))
+        if tier and config.TrainingTiers[tier] then name = "The " .. config.TrainingTiers[tier].multiplier .. "x Gym" end
+        if key == config.SpaceXGym.key then name = "The SpaceX Gym" end
         for _, pass in Shop.Passes do if pass.key == key then name = pass.name end end
         local skin = Skins.get(key)
         if skin then name = "The " .. skin.name end
         ctx.Remote.feedback(player, "Thanks! " .. name .. " is yours.")
         refresh(player)
+        bought:FireClient(player, key)
     end
     MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(player, passId, purchased)
         prompting[player.UserId] = nil

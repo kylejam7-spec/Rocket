@@ -18,6 +18,11 @@ local RAMP_MIN_WIDTH, RAMP_PAST_MOUNT, POST_SPACING = 40, 28, 80
 -- The ramp-top bar: its height over the surface (under a jump) and how far down from the
 -- ramp's top end it stands.
 local END_RAIL, END_RAIL_BACK = 3.5, 4
+-- Bridges between the ramps: one every BRIDGE_SPACING up the rocket, BRIDGE_WIDTH wide
+-- with BRIDGE_RAIL-high rails, lifted BRIDGE_CLEAR over the hull below; approaches at least
+-- BRIDGE_APPROACH long, aiming for BRIDGE_SLOPE and never steeper than BRIDGE_MAX_SLOPE.
+local BRIDGE_SPACING, BRIDGE_WIDTH, BRIDGE_RAIL, BRIDGE_CLEAR = 70, 10, 3, 0.5
+local BRIDGE_APPROACH, BRIDGE_SLOPE, BRIDGE_MAX_SLOPE = 5, 15, 35
 local reveal = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 local Build = {}
@@ -173,8 +178,23 @@ function Build:load(tier, variant)
             hullBottom = math.min(hullBottom, item.low.Y)
         end
     end
+    -- How far forward (+Z, upright) anything of the finished rocket stands within |x| <= halfWidth
+    -- between heights y0 and y1: the station goes in front of it (engine pods, skirts).
+    local fuelItems = {}
+    for order, spec in data.fuel do table.insert(fuelItems, entry(spec, order)) end
+    local function front(halfWidth, y0, y1)
+        local z = -math.huge
+        for _, list in { items, fuelItems } do
+            for _, item in list do
+                if item.low.X < halfWidth and item.high.X > -halfWidth and item.low.Y < y1 and item.high.Y > y0 then
+                    z = math.max(z, item.high.Z)
+                end
+            end
+        end
+        return z
+    end
     self.boarding = BoardingStation.build(complex, self.origin,
-        { mountTop = mountTop, mountFront = mountFront, coreRadius = coreRadius, hullBottom = hullBottom })
+        { mountTop = mountTop, mountFront = mountFront, coreRadius = coreRadius, hullBottom = hullBottom, front = front })
     -- "Lowest uncompleted point" first; list order breaks ties.
     table.sort(items, function(a, b)
         if a.low.Y ~= b.low.Y then return a.low.Y < b.low.Y end
@@ -216,6 +236,9 @@ function Build:load(tier, variant)
         -- How far up the ramp (its own Y) a runner's ramp slide carries them: just short
         -- of the end rail (SpeedController).
         ramp:SetAttribute("StopAt", (y1 - END_RAIL_BACK) - (y0 + y1) / 2 - 4)
+        -- ...and how far across (its own X, signed toward the outer edge): just inside the
+        -- guard wall, which a runner held against it at full speed could climb.
+        ramp:SetAttribute("EdgeAt", side * (rampWidth / 2 - 2.6))
         table.insert(self.ramps, ramp)
         -- A guard wall 4 studs high on the outer edge: a fast runner drifting into it slides
         -- along it (a low lip there launched them off the side).
@@ -232,9 +255,71 @@ function Build:load(tier, variant)
             CFrame.new(foot + Vector3.new(0, END_RAIL / 2 - 1, 0)) * self.origin.Rotation, complex))
     end
     local up = self.origin.Rotation
+    -- Bridges across the hull join the two ramps every BRIDGE_SPACING, so players can walk
+    -- straight over from one to the other. Each lies in the ramps' plane, lifted over the
+    -- hull where anything on it (the core's ridge, fuel gauges, windows, boosters, fins)
+    -- would meet it, with gentle approaches down to both ramps' inner edges. A bridge whose
+    -- approaches would still touch the hull moves up or down the ramp a little, or is left
+    -- out. Rails along both sides; the open ends meet the ramps.
+    local solids = table.clone(items)
+    for order, spec in data.fuel do table.insert(solids, entry(spec, order)) end
+    local function clearance(y0b, y1b, x0, x1)
+        -- The highest hull top (local Z) under the band y0b..y1b and |x| in x0..x1.
+        local top = -math.huge
+        for _, item in solids do
+            local near = math.max(0, item.low.X, -item.high.X) -- the item's |x| nearest the axis
+            local far = math.max(math.abs(item.low.X), math.abs(item.high.X))
+            if item.high.Y > y0b and item.low.Y < y1b and far >= x0 and near <= x1 then top = math.max(top, item.high.Z) end
+        end
+        return top
+    end
+    local function slab(a, b, y)
+        -- A deck piece from a to b (local X, Z at local height y; a.X < b.X), its top face
+        -- on that line, BRIDGE_WIDTH along the rocket, a rail along each side.
+        local x = (b - a).Unit
+        local axisX, axisY = Vector3.new(x.X, 0, x.Y), Vector3.yAxis
+        local normal = axisX:Cross(axisY)
+        local mid = Vector3.new((a.X + b.X) / 2, y, (a.Y + b.Y) / 2) - normal * 0.5
+        local cframe = tilted * CFrame.fromMatrix(mid, axisX, axisY, normal)
+        table.insert(self.ramps, create({ name = "RampBridge", shape = "Block", size = Vector3.new((b - a).Magnitude + 0.3, BRIDGE_WIDTH, 1), color = Models.Colors.grey, material = "DiamondPlate" },
+            cframe, complex))
+        for _, edge in { -1, 1 } do
+            table.insert(self.ramps, create({ name = "RampBridgeRail", shape = "Block", size = Vector3.new((b - a).Magnitude + 0.3, 0.6, BRIDGE_RAIL), color = dark, material = "Metal" },
+                cframe * CFrame.new(0, edge * (BRIDGE_WIDTH / 2 - 0.3), 0.5 + BRIDGE_RAIL / 2), complex))
+        end
+    end
+    self.bridges = {}
+    for y = low.Y + BRIDGE_SPACING / 2, y1 - BRIDGE_WIDTH, BRIDGE_SPACING do
+        for _, shift in { 0, 8, -8, 16, -16 } do
+            local at = y + shift
+            local y0b, y1b = at - BRIDGE_WIDTH / 2 - 1, at + BRIDGE_WIDTH / 2 + 1
+            local top = math.max(surface, clearance(y0b, y1b, 0, inner) + 1 + BRIDGE_CLEAR)
+            local lift = top - surface
+            local run = math.min(inner - 1, math.max(BRIDGE_APPROACH, lift / math.tan(math.rad(BRIDGE_SLOPE))))
+            -- The approach from the ramp edge (x = inner, surface) up to (inner - run, top):
+            -- each eighth of it clears the hull under it at its low (outer) end.
+            local fits = lift < 0.05 or math.atan2(lift, run) <= math.rad(BRIDGE_MAX_SLOPE)
+            for step = 0, 7 do
+                if not fits or lift < 0.05 then break end
+                local x = inner - run * step / 8
+                fits = clearance(y0b, y1b, x - run / 8, x) <= surface + lift * step / 8 - 1 - BRIDGE_CLEAR
+            end
+            if fits then
+                if lift < 0.05 then
+                    slab(Vector2.new(-inner, surface), Vector2.new(inner, surface), at)
+                else
+                    local inside = inner - run
+                    slab(Vector2.new(-inside, top), Vector2.new(inside, top), at)
+                    slab(Vector2.new(-inner, surface), Vector2.new(-inside, top), at)
+                    slab(Vector2.new(inside, top), Vector2.new(inner, surface), at)
+                end
+                table.insert(self.bridges, { y = at, top = top })
+                break
+            end
+        end
+    end
     -- Posts under the ramps' outer edges only, so they never meet the rocket being built
-    -- and tall ramps don't look like a fence. Nothing joins the two ramps across the hull:
-    -- level bridges there cut through the fuel gauges and windows along its ridge.
+    -- and tall ramps don't look like a fence.
     for y = low.Y + 10, y1, POST_SPACING do
         for _, x in { -outer + 0.5, outer - 0.5 } do
             local top = tilted * Vector3.new(x, y, surface - 1)
@@ -353,11 +438,21 @@ function Build:isAboard(position)
         and point.Z > b.low.Z - 2 and point.Z < b.high.Z + 6
 end
 
--- True for points on (or just over) either ramp.
+-- True for points on (or just over) either ramp or a bridge between them. On tall mounts
+-- the ramps' plane (and the bridges in it) stands above the hull, out of isAboard's reach.
 function Build:isOnRamps(position)
     local point = self.pivot:PointToObjectSpace(position)
-    return math.abs(point.X) >= self.rampInner - 1 and math.abs(point.X) <= self.rampOuter + 1
-        and point.Y < (self.rampTop or 0) + 4 and point.Z > self.rampSurface - 2 and point.Z < self.rampSurface + 9
+    if math.abs(point.X) >= self.rampInner - 1 and math.abs(point.X) <= self.rampOuter + 1
+        and point.Y < (self.rampTop or 0) + 4 and point.Z > self.rampSurface - 2 and point.Z < self.rampSurface + 9 then
+        return true
+    end
+    for _, bridge in self.bridges or {} do
+        if math.abs(point.X) < self.rampInner and math.abs(point.Y - bridge.y) <= BRIDGE_WIDTH / 2 + 1
+            and point.Z > self.rampSurface - 2 and point.Z < bridge.top + 9 then
+            return true
+        end
+    end
+    return false
 end
 
 -- Swing the finished rocket upright about its hinge. Clients animate it; the server
@@ -382,6 +477,8 @@ function Build:erect(serverTime, seconds)
         if self.vehicle ~= vehicle or not vehicle.Parent then return end
         vehicle:PivotTo(self.origin)
         self.pivot = self.origin
+        -- The rocket stands complete: the boarding station appears in front of it.
+        if self.boarding then self.boarding.reveal() end
     end)
 end
 

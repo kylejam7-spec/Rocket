@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local State = require(script.Parent.State)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Shop = require(ReplicatedStorage.Shared.Shop)
 local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
@@ -77,7 +78,12 @@ local function statusPill(parent, props)
     end
 end
 
-local function lockLabel(required, launches)
+-- Locked: the launches still needed, or the price of a paid-only gym's pass (PaidOnly).
+local function lockLabel(object, required, launches)
+    if object:GetAttribute("PaidOnly") then
+        local entry = Shop.entry(Config, Shop.gymKey(object:GetAttribute("GymTier")))
+        return "🔒 GAME PASS · R$ " .. Theme.number(entry and entry.price or 0)
+    end
     return "🔒 " .. launches .. "/" .. required .. (required == 1 and " LAUNCH" or " LAUNCHES")
 end
 
@@ -121,7 +127,7 @@ local function buildSign(sign, playerGui)
         local locked = required ~= nil and launches < required and not (gymTier and passes["Gym" .. gymTier])
         mark.set(locked, tierColor, multiplierText(multiplier))
         border.Color = locked and LOCKED or tierColor
-        setStatus(locked, locked and lockLabel(required, launches) or (required and "✔ UNLOCKED" or "✔ OPEN TO ALL"))
+        setStatus(locked, locked and lockLabel(sign, required, launches) or (required and "✔ UNLOCKED" or "✔ OPEN TO ALL"))
     end
 end
 
@@ -155,7 +161,7 @@ local function buildStation(station, playerGui)
         local locked = launches < required and not (gymTier and passes["Gym" .. gymTier])
         name.Text = stat.icon .. " " .. stat.equipment .. (station:GetAttribute("Destination") and " • BONUS" or "")
         local perSecond = math.round((station:GetAttribute("TrainingGain") or 0) / Config.TrainingSeconds)
-        rate.Text = locked and lockLabel(required, launches) or ("+" .. Theme.short(perSecond) .. " " .. stat.name .. " / SEC")
+        rate.Text = locked and lockLabel(station, required, launches) or ("+" .. Theme.short(perSecond) .. " " .. stat.name .. " / SEC")
         rate.TextColor3 = locked and Theme.color.Locked or stat.color
         border.Color = locked and LOCKED or tierColor
         local gain = station:GetAttribute("TrainingGain") or 0

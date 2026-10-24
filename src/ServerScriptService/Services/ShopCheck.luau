@@ -20,6 +20,7 @@ return function()
     for _, pass in Shop.Passes do table.insert(keys, pass.key) end
     for _, skin in require(ReplicatedStorage.Shared.Skins).List do table.insert(keys, skin.key) end
     for tier in config.TrainingTiers do table.insert(keys, Shop.gymKey(tier)) end
+    table.insert(keys, config.SpaceXGym.key)
     for _, units in Shop.Fills do table.insert(keys, Shop.fillKey(units)) end
     for mission = 1, Missions.Count do table.insert(keys, Shop.nextKey(mission)) end
     for tier = 3, #Pets.Ufos do table.insert(keys, Shop.ufoKey(tier)) end

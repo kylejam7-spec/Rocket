@@ -71,13 +71,31 @@ function Launch.new(ctx)
     local function destination()
         return World.destinations[Cycle.rocket.definition.ModelTier]
     end
-    -- In the trigger box just in front of the BOARD door.
+    -- Whether the segment a..b (the trigger box's frame) passes through the box `half`.
+    local function crosses(a, b, half)
+        local enter, leave = 0, 1
+        for _, axis in { "X", "Y", "Z" } do
+            local from, step = a[axis], b[axis] - a[axis]
+            if math.abs(step) < 1e-6 then
+                if math.abs(from) > half[axis] then return false end
+            else
+                local t1, t2 = (-half[axis] - from) / step, (half[axis] - from) / step
+                enter, leave = math.max(enter, math.min(t1, t2)), math.min(leave, math.max(t1, t2))
+                if enter > leave then return false end
+            end
+        end
+        return true
+    end
+    -- In the trigger box just in front of the BOARD door, or ran through it since the
+    -- last sample (a late-game runner crosses it, and the door, between two samples).
     function service.onHatch(player)
         local root = Movement.observed(player)
         if not root or not ctx.profiles:ready(player.UserId) then return false end
-        local localPosition = boarding.CFrame:PointToObjectSpace(root.Position)
-        local half = boarding.Size / 2
-        return math.abs(localPosition.X) <= half.X and math.abs(localPosition.Y) <= half.Y + 2 and math.abs(localPosition.Z) <= half.Z
+        local half = boarding.Size / 2 + Vector3.new(0, 2, 0)
+        local from, to = Movement.lastStep(player)
+        local here = boarding.CFrame:PointToObjectSpace(root.Position)
+        if math.abs(here.X) <= half.X and math.abs(here.Y) <= half.Y and math.abs(here.Z) <= half.Z then return true end
+        return from ~= nil and crosses(boarding.CFrame:PointToObjectSpace(from), boarding.CFrame:PointToObjectSpace(to), half)
     end
     -- Inside the cabin box. Uses the raw body: a just-teleported player still counts.
     function service.inCabin(player)

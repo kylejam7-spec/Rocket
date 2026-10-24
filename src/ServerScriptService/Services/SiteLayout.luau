@@ -55,8 +55,9 @@ Layout.SuitStands = {
     { key = "SuitGalaxy", at = Vector3.new(Layout.UfoShop.X, 0, second), facing = Vector3.new(-1, 0, 0) },
 }
 
--- Gym District: first bay centre on z, bay step and bay offset from the walkway.
-Layout.Gym = { z0 = 132, step = 16, x = 27, entrance = 114 }
+-- Gym District: first row's centre on z, row step and bay offset from the walkway; the
+-- SpaceX hall across the back (x by z, and its gap behind the last row).
+Layout.Gym = { z0 = 132, step = 29, x = 27, entrance = 114, spaceX = { x = 70, z = 34, gap = 5 } }
 
 -- Footprints map expansion must not pave over (the material stations).
 Layout.Reserved = {}

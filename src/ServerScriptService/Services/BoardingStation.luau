@@ -6,9 +6,14 @@
 --
 -- BoardingStation.build(parent, origin, site) builds it in `origin`'s frame (the upright
 -- rocket on the pad, +Z toward the forecourt, y = 0 the apron) from site = { mountTop,
--- mountFront, coreRadius, hullBottom } (studs). Returns { trigger = { cframe, size },
--- setPhase = function(phase) }: the door and its strips light for "Boarding", and the
--- BOARD sign says what has to happen first (fill the rocket, fuel it) or what's next.
+-- mountFront, coreRadius, hullBottom, front } (studs; front(halfWidth, y0, y1) is how far
+-- forward the finished rocket stands in that column, so the hatch module goes in front
+-- of engine pods and skirts and nothing stands before its door). Returns
+-- { trigger = { cframe, size }, setPhase = function(phase), reveal = function() }.
+-- The station is hidden while the rocket is built and fuelled: reveal() (the rocket
+-- stands upright and complete) fades it in for boarding, and any other phase hides it
+-- again. The door and its strips light for "Boarding".
+local TweenService = game:GetService("TweenService")
 local Signs = require(script.Parent.SignService)
 local BoardingStation = {}
 
@@ -57,6 +62,22 @@ function BoardingStation.build(parent, origin, site)
         table.insert(glow, block("RampGuide", Vector3.new(0.3, 0.25, length - 2), surface * CFrame.new(x - side * 0.6, 0.15, 0), CLOSED,
             Enum.Material.Neon, { CanCollide = false, CanQuery = false }))
     end
+    -- A trim strip along the mount's front edge (Tier 5's stands a stud proud of the top)
+    -- parts round the ramp, so its top has no lip and its rails don't cut through it.
+    local gap = RAMP_WIDTH / 2 + 1
+    for _, trim in parent:GetChildren() do
+        local at = trim:IsA("BasePart") and trim.Name == "MountTrim" and origin:ToObjectSpace(trim.CFrame)
+        if at and math.abs(at.Z - front) < trim.Size.Z and trim.Size.X > 2 * gap then
+            for _, side in { -1, 1 } do
+                local piece = trim:Clone()
+                local width = trim.Size.X / 2 - gap
+                piece.Size = Vector3.new(width, trim.Size.Y, trim.Size.Z)
+                piece.CFrame = trim.CFrame * CFrame.new(side * (gap + width / 2), 0, 0)
+                piece.Parent = parent
+            end
+            trim:Destroy()
+        end
+    end
     -- Posts under the ramp's high end.
     for _, fraction in { 0.35, 0.7 } do
         local height = top * fraction
@@ -68,11 +89,14 @@ function BoardingStation.build(parent, origin, site)
 
     -- The crew hatch module: from under the hull out past its front, mount top up to the
     -- hull's underside. The door is on its front face.
-    local back = site.coreRadius * 0.8
-    local face = site.coreRadius + 5
     local width = math.clamp(site.coreRadius * 0.75, DOOR_WIDTH + 10, 48)
     -- At least the door plus a band for the sign (on low-slung tiers it tucks into the hull).
     local height = math.clamp(site.hullBottom - top - 0.3, DOOR_HEIGHT + 11, 80)
+    -- Its back meets the front of whatever of the rocket stands at its height (engine
+    -- pods, a thrust skirt), or tucks under the hull where nothing does.
+    local standing = site.front and site.front(width / 2 + 2.5, top, top + height) or -math.huge
+    local back = math.max(site.coreRadius * 0.8, standing)
+    local face = math.max(site.coreRadius + 5, back + 6)
     block("HatchModule", Vector3.new(width, height, face - back), CFrame.new(0, top + height / 2, (back + face) / 2), HULL, Enum.Material.Metal)
     -- Dark corner posts up its front edges, and a light band round it that glows for boarding.
     for _, side in { -1, 1 } do
@@ -105,15 +129,42 @@ function BoardingStation.build(parent, origin, site)
         trigger = { cframe = origin * CFrame.new(0, top + DOOR_HEIGHT / 2, face + 2.4), size = Vector3.new(DOOR_WIDTH + 2, DOOR_HEIGHT, 4) },
         model = model,
     }
+    -- Hidden until reveal(): every part's look and collision, remembered (the BOARD sign
+    -- is drawn by each client, WorldSignController, which hides it while it's Hidden).
+    local looks = {}
+    for _, part in model:GetDescendants() do
+        if part:IsA("BasePart") then looks[part] = { part.Transparency, part.CanCollide, part.CanQuery } end
+    end
+    local shown = true
+    local function show(visible, seconds)
+        if visible == shown then return end
+        shown = visible
+        sign:SetAttribute("Hidden", not visible)
+        for part, look in looks do
+            part.CanCollide, part.CanQuery = visible and look[2], visible and look[3]
+            local goal = visible and look[1] or 1
+            if seconds then
+                part.Transparency = 1
+                TweenService:Create(part, TweenInfo.new(seconds, Enum.EasingStyle.Quad), { Transparency = goal }):Play()
+            else
+                part.Transparency = goal
+            end
+        end
+    end
     local current
+    function station.reveal()
+        if current == "Boarding" then show(true, 0.8) end
+    end
     function station.setPhase(phase)
         if phase == current then return end
         current = phase
+        if phase ~= "Boarding" then show(false) end
         local open = phase == "Boarding"
         for _, part in glow do
             if part.Parent then part.Color = open and OPEN or CLOSED end
         end
-        door.Transparency = open and 0.1 or 0
+        looks[door][1] = open and 0.1 or 0
+        if shown then door.Transparency = looks[door][1] end
         local status = STATUS[phase] or AFTER
         sign:SetAttribute("Subtitle", status[1])
         sign:SetAttribute("Accent", status[2])

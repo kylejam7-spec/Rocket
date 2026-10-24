@@ -13,14 +13,22 @@
 -- rising ground at ~45 studs/s, so at a late-game walk speed it sank into the 40-degree
 -- ramp, dragged along it at ~75 studs/s and bounced off its foot. While running on a
 -- LaunchRamp, before each physics step the character is held at standing height over
--- the surface and moves along the ramp's plane at its full walk speed. That stays within
--- the server's move limit, which only counts horizontal movement.
+-- the surface and moves along the ramp's plane at its full walk speed; the same on the
+-- bridges across the hull between the ramps. That stays within the server's move limit,
+-- which only counts horizontal movement.
+-- Inside the rocket's cabin (the floor tagged RocketCabin, its CabinSize attribute) a
+-- late-game runner covers more than a wall's thickness in one physics step and slipped
+-- out through the walls. After each step, anyone who was inside is kept inside: back
+-- within the walls, their speed outward dropped. Only the exit hatch (a server teleport
+-- far out of the room) or the flight takes them out.
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local SpeedController = {}
 
 local MAX_RISE, MAX_RUN = 1.15, 1.3
-local RAMP = "LaunchRamp" -- RocketBuildService's climbing ramps
+-- RocketBuildService's climbing ramps and the bridges across the hull between them.
+local RAMPS = { LaunchRamp = true, RampBridge = true }
 
 local function noTripping(character)
     local humanoid = character:WaitForChild("Humanoid", 10)
@@ -49,7 +57,7 @@ local function rampSlide(character, humanoid, root, dt)
     local stand = humanoid.HipHeight + root.Size.Y / 2
     rampParams.FilterDescendantsInstances = { character }
     local hit = workspace:Raycast(root.Position + Vector3.new(0, stand, 0), Vector3.new(0, -(2 * stand + 3), 0), rampParams)
-    if not hit or hit.Instance.Name ~= RAMP then return end
+    if not hit or not RAMPS[hit.Instance.Name] then return end
     local normal = hit.Normal
     local along = move - normal * move:Dot(normal)
     if along.Magnitude < 0.05 then return end
@@ -58,14 +66,54 @@ local function rampSlide(character, humanoid, root, dt)
     local velocity = along.Unit * humanoid.WalkSpeed * math.min(1, move.Magnitude)
     -- Uphill, never past the ramp's StopAt (just short of its end rail) this step: holding
     -- W stops at the rail instead of launching over it. A jump still clears it.
-    local stopAt = hit.Instance:GetAttribute("StopAt")
+    local ramp = hit.Instance
+    local at = ramp.CFrame:PointToObjectSpace(hit.Position)
+    local stopAt = ramp:GetAttribute("StopAt")
     if stopAt then
-        local up = hit.Instance.CFrame.UpVector
+        local up = ramp.CFrame.UpVector
         local climb = velocity:Dot(up)
-        local room = math.max(0, stopAt - hit.Instance.CFrame:PointToObjectSpace(hit.Position).Y)
+        local room = math.max(0, stopAt - at.Y)
         if climb > room / dt then velocity -= up * (climb - room / dt) end
     end
+    -- Across, never past EdgeAt (just inside the outer guard wall): a runner held against
+    -- the wall at full speed climbed over it. Crossing a bridge heads straight for it.
+    local edgeAt = ramp:GetAttribute("EdgeAt")
+    if edgeAt then
+        local out = ramp.CFrame.RightVector * math.sign(edgeAt)
+        local across = velocity:Dot(out)
+        local room = math.max(0, (edgeAt - at.X) * math.sign(edgeAt))
+        if across > room / dt then velocity -= out * (across - room / dt) end
+    end
     root.AssemblyLinearVelocity = velocity
+end
+
+-- The cabin's inside as a box: its centre (floor top) and half size, or nil.
+local function cabinBox()
+    local floor = CollectionService:GetTagged("RocketCabin")[1]
+    local size = floor and floor:GetAttribute("CabinSize")
+    if not size then return nil end
+    return floor.Position + Vector3.new(0, floor.Size.Y / 2, 0), size / 2
+end
+
+local CABIN_MARGIN = 1.4 -- studs the root stays off each wall
+local wasInside = false
+local function keepInCabin(root)
+    local center, half = cabinBox()
+    if not center then return end
+    local offset = root.Position - center
+    local inside = math.abs(offset.X) <= half.X and math.abs(offset.Z) <= half.Z and offset.Y >= -2 and offset.Y <= half.Y * 2 + 2
+    -- Just out after being in (not teleported away): put back within the walls.
+    local near = math.abs(offset.X) <= half.X + 40 and math.abs(offset.Z) <= half.Z + 40 and offset.Y > -40 and offset.Y < half.Y * 2 + 40
+    if not inside and wasInside and near then
+        local x = math.clamp(offset.X, -half.X + CABIN_MARGIN, half.X - CABIN_MARGIN)
+        local z = math.clamp(offset.Z, -half.Z + CABIN_MARGIN, half.Z - CABIN_MARGIN)
+        local y = math.clamp(offset.Y, 3, half.Y * 2 - 3)
+        root.CFrame = root.CFrame.Rotation + center + Vector3.new(x, y, z)
+        local velocity = root.AssemblyLinearVelocity
+        root.AssemblyLinearVelocity = Vector3.new(0, math.min(velocity.Y, 0), 0)
+        return
+    end
+    wasInside = inside
 end
 
 function SpeedController.start()
@@ -83,7 +131,9 @@ function SpeedController.start()
         local character = player.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         local root = humanoid and humanoid.RootPart
-        if not root or root.Anchored or humanoid.SeatPart or humanoid.FloorMaterial ~= Enum.Material.Air then return end
+        if not root or root.Anchored then wasInside = false return end
+        keepInCabin(root)
+        if humanoid.SeatPart or humanoid.FloorMaterial ~= Enum.Material.Air then return end
         local velocity = root.AssemblyLinearVelocity
         local rise, run = jumpSpeed(humanoid) * MAX_RISE, humanoid.WalkSpeed * MAX_RUN
         local flat = Vector3.new(velocity.X, 0, velocity.Z)

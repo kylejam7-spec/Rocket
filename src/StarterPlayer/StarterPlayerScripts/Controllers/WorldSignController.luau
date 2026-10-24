@@ -91,6 +91,12 @@ function WorldSignController.start()
     local function add(part)
         if drawn[part] or not part:IsA("BasePart") then return end
         drawn[part] = build(part, playerGui)
+        -- A sign whose part is Hidden (the boarding station until boarding) isn't drawn.
+        local function hide()
+            if drawn[part] then drawn[part].Enabled = not part:GetAttribute("Hidden") end
+        end
+        hide()
+        part:GetAttributeChangedSignal("Hidden"):Connect(hide)
         part.Destroying:Connect(function()
             if drawn[part] then drawn[part]:Destroy() end
             drawn[part] = nil
@@ -101,6 +107,7 @@ function WorldSignController.start()
                 if not drawn[part] then return end
                 drawn[part]:Destroy()
                 drawn[part] = build(part, playerGui)
+                hide()
             end)
         end
     end

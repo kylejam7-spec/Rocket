@@ -63,8 +63,10 @@ function Training.new(context)
             if sessions[player.UserId] or not context.allowed(player, "train") or not context.near(player, station.part) then return end
             if not context.phaseAllowed(station) then return end
             local profile = context.profiles.records[player.UserId].profile
-            if profile.completedLaunches < (station.required or 0) and not (context.unlocked and context.unlocked(player, station)) then
-                context.feedback(player, "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")
+            -- A paid-only gym (station.paid) opens with its pass alone, however many launches.
+            if (station.paid or profile.completedLaunches < (station.required or 0)) and not (context.unlocked and context.unlocked(player, station)) then
+                context.feedback(player, station.paid and "This gym is Game Pass only: unlock it to train here!"
+                    or "Complete " .. station.required .. " rocket cycles to unlock " .. station.name .. ".")
                 return
             end
             local root, humanoid = context.body(player)
