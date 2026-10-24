@@ -49,7 +49,7 @@ local function objective(state, learned)
         if material == "Fuel" then return learned.PlaceFuel and "" or "Pour the fuel into the rocket at the glowing ring!" end
         return learned.PickupFuel and "" or "Rocket built! Fill your jerry can at the FUEL DEPOT!"
     elseif state.phase == "Boarding" then
-        return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Walk into the rocket at the green BOARD hatch!"
+        return state.boarded and "You're aboard! Next stop: " .. state.destination .. "!" or "BOARD NOW! Run up the ramp and through the glowing BOARD door!"
     elseif state.phase == "Launching" then
         return state.passenger and "LIFTOFF! Off to " .. state.destination .. "!" or "You missed this one. Next build starts soon!"
     elseif state.phase == "Rewarding" then

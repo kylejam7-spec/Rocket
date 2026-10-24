@@ -6,6 +6,7 @@
 local TweenService = game:GetService("TweenService")
 local Config = require(game:GetService("ReplicatedStorage").Shared.Config)
 local Models = require(script.Parent.RocketModels)
+local BoardingStation = require(script.Parent.BoardingStation)
 local GHOST_COLOR, GHOST_TRANSPARENCY = Color3.fromRGB(150, 200, 255), 0.86
 local FUEL_LIT = Color3.fromRGB(255, 150, 40)
 local SCRAP = Color3.fromRGB(125, 118, 108)
@@ -163,6 +164,17 @@ function Build:load(tier, variant)
             table.insert(items, item)
         end
     end
+    -- The boarding station on the mount's front (BoardingStation): its hatch module stops
+    -- just under the lowest full-width core segment.
+    local hullBottom = math.huge
+    for _, item in items do
+        local spec = item.spec
+        if spec.shape == "Cylinder" and math.abs(spec.cframe.X) < 0.5 and math.abs(spec.cframe.Z) < 0.5 and spec.size.Z / 2 >= coreRadius * 0.9 then
+            hullBottom = math.min(hullBottom, item.low.Y)
+        end
+    end
+    self.boarding = BoardingStation.build(complex, self.origin,
+        { mountTop = mountTop, mountFront = mountFront, coreRadius = coreRadius, hullBottom = hullBottom })
     -- "Lowest uncompleted point" first; list order breaks ties.
     table.sort(items, function(a, b)
         if a.low.Y ~= b.low.Y then return a.low.Y < b.low.Y end
@@ -258,7 +270,12 @@ function Build:load(tier, variant)
     vehicle:SetAttribute("Tilt", Config.RocketTiltDegrees)
     complex.Parent, vehicle.Parent = self.site, self.site
     self.vehicle, self.data = vehicle, data
-    return self.origin * data.boarding.cframe, data.boarding.size
+    return self.boarding.trigger.cframe, self.boarding.trigger.size
+end
+
+-- Lights the boarding door for the countdown (LaunchService), dark otherwise.
+function Build:setBoardingOpen(open)
+    if self.boarding then self.boarding.setOpen(open) end
 end
 
 -- buildFraction and fuelFraction are 0..1. Finished segments turn solid; the first

@@ -39,7 +39,7 @@ local TIPS = {
     "Strength = more scrap per trip. The bench press in the GYM DISTRICT is free!",
     "Treadmills make you faster. Faster legs, more trips, bigger rocket.",
     "Fill a jerry can at the FUEL DEPOT and pour it into the rocket. Rockets are thirsty.",
-    "Walk in through the green BOARD hatch before the countdown ends to fly along!",
+    "Run up the ramp and through the glowing BOARD door before the countdown ends to fly along!",
     "Every destination pays free strength and speed for every second you're there.",
     "Gyms on other worlds pay double. Do your reps on the Moon!",
     "Gravity on the Moon is low. Your jumps will be legendary.",

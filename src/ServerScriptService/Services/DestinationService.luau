@@ -1580,10 +1580,14 @@ function Destinations.build(world, config)
     local cc, size = config.CabinPosition, Vector3.new(84, 20, 60)
     local hull, panel, rib = Color3.fromRGB(226, 230, 238), Color3.fromRGB(206, 212, 224), Color3.fromRGB(150, 158, 174)
     local light, accent, dark = Color3.fromRGB(150, 220, 255), Color3.fromRGB(255, 176, 40), Color3.fromRGB(40, 44, 56)
-    local floor = make(cabinFolder, "CabinFloor", { Size = Vector3.new(size.X, 1, size.Z), CFrame = CFrame.new(cc - Vector3.new(0, 0.5, 0)), Color = Color3.fromRGB(70, 76, 92), Material = Enum.Material.DiamondPlate })
+    -- Walls, floor and ceiling are SHELL studs thick, outward from the same inner faces:
+    -- a fast runner slipped through the old 1-stud walls (LaunchService also puts anyone
+    -- who gets out without the exit hatch back in).
+    local SHELL = 8
+    local floor = make(cabinFolder, "CabinFloor", { Size = Vector3.new(size.X, SHELL, size.Z), CFrame = CFrame.new(cc - Vector3.new(0, SHELL / 2, 0)), Color = Color3.fromRGB(70, 76, 92), Material = Enum.Material.DiamondPlate })
     CollectionService:AddTag(floor, Destinations.CabinTag)
     floor:SetAttribute("CabinSize", size)
-    make(cabinFolder, "CabinCeiling", { Size = Vector3.new(size.X, 1, size.Z), CFrame = CFrame.new(cc + Vector3.new(0, size.Y + 0.5, 0)), Color = hull })
+    make(cabinFolder, "CabinCeiling", { Size = Vector3.new(size.X, SHELL, size.Z), CFrame = CFrame.new(cc + Vector3.new(0, size.Y + SHELL / 2, 0)), Color = hull })
     -- A carpet runner down the aisle, its edges lit in blue.
     decor(cabinFolder, "AisleCarpet", { Size = Vector3.new(size.X - 4, 0.06, 4), CFrame = CFrame.new(cc + Vector3.new(0, 0.03, 0)), Color = Color3.fromRGB(46, 60, 110), Material = Enum.Material.Fabric })
     for _, side in { -1, 1 } do
@@ -1592,8 +1596,8 @@ function Destinations.build(world, config)
     for _, side in { -1, 1 } do
         -- The long walls run past the end walls so the corners are closed (flush, they
         -- left a 1-stud gap at each corner that showed the outside through it).
-        make(cabinFolder, "CabinWall", { Size = Vector3.new(size.X + 2, size.Y + 2, 1), CFrame = CFrame.new(cc + Vector3.new(0, size.Y / 2, side * (size.Z / 2 + 0.5))), Color = hull })
-        make(cabinFolder, "CabinWall", { Size = Vector3.new(1, size.Y + 2, size.Z), CFrame = CFrame.new(cc + Vector3.new(side * (size.X / 2 + 0.5), size.Y / 2, 0)), Color = hull })
+        make(cabinFolder, "CabinWall", { Size = Vector3.new(size.X + 2 * SHELL, size.Y + 2 * SHELL, SHELL), CFrame = CFrame.new(cc + Vector3.new(0, size.Y / 2, side * (size.Z / 2 + SHELL / 2))), Color = hull })
+        make(cabinFolder, "CabinWall", { Size = Vector3.new(SHELL, size.Y + 2 * SHELL, size.Z), CFrame = CFrame.new(cc + Vector3.new(side * (size.X / 2 + SHELL / 2), size.Y / 2, 0)), Color = hull })
         local z = side * (size.Z / 2 - 0.05)
         -- A dark kick panel along the bottom and an accent stripe at shoulder height.
         decor(cabinFolder, "KickPanel", { Size = Vector3.new(size.X, 2, 0.15), CFrame = CFrame.new(cc + Vector3.new(0, 1, z)), Color = dark, Material = Enum.Material.Metal })

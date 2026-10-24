@@ -1,7 +1,8 @@
 -- Boarding countdown, passenger lock, launch, destination reward and the move to the
--- next cycle. During boarding, stepping on the rocket's BOARD hatch takes you into the
--- cabin (the inside of the rocket, DestinationService); its exit hatch lets you out
--- until liftoff. Everyone in the cabin when the countdown ends flies to the design's
+-- next cycle. During boarding, walking up the boarding station's ramp and into its lit
+-- BOARD door (BoardingStation) takes you into the cabin (the inside of the rocket,
+-- DestinationService); its exit hatch lets you out until liftoff. Anyone who leaves the
+-- cabin any other way (a fast runner can slip through a wall) is put straight back. Everyone in the cabin when the countdown ends flies to the design's
 -- destination (Config.Destinations by ModelTier): the ascent, then a copy of the
 -- rocket descends onto the destination's landing spot (both client-animated, with
 -- the passengers watching), and stays there for the reward stay. Passengers get the
@@ -40,6 +41,8 @@ function Launch.new(ctx)
     -- Studio playtests (DebugService "launch") may shorten the next countdown and stay:
     -- { countdown = seconds?, stay = seconds? }, cleared when that flight resets.
     local service = { debug = nil }
+    -- Boarded this countdown and not since let out by the exit hatch (userId = true).
+    local aboard = {}
     local random = Random.new()
     -- Spins once per stay: stamps Cycle.wheel (clients animate it in sync), updates
     -- the pity counter and announces the result when the wheel stops.
@@ -68,11 +71,13 @@ function Launch.new(ctx)
     local function destination()
         return World.destinations[Cycle.rocket.definition.ModelTier]
     end
+    -- In the trigger box just in front of the BOARD door.
     function service.onHatch(player)
         local root = Movement.observed(player)
         if not root or not ctx.profiles:ready(player.UserId) then return false end
         local localPosition = boarding.CFrame:PointToObjectSpace(root.Position)
-        return math.abs(localPosition.X) <= boarding.Size.X / 2 and math.abs(localPosition.Z) <= boarding.Size.Z / 2 and localPosition.Y >= 0 and localPosition.Y <= 9
+        local half = boarding.Size / 2
+        return math.abs(localPosition.X) <= half.X and math.abs(localPosition.Y) <= half.Y + 2 and math.abs(localPosition.Z) <= half.Z
     end
     -- Inside the cabin box. Uses the raw body: a just-teleported player still counts.
     function service.inCabin(player)
@@ -83,9 +88,15 @@ function Launch.new(ctx)
     end
     function service.trackBoarding(player)
         if Cycle.rocket.phase ~= "Boarding" then return end
-        if not service.inCabin(player) and service.onHatch(player) then
-            Movement.relocate(player, spread(cabin.arrival, 6))
-            Remote.feedback(player, "You're aboard! Liftoff when the countdown ends. Use the hatch to get out.")
+        if not service.inCabin(player) then
+            if aboard[player.UserId] then
+                -- Out of the cabin without the exit hatch: back in.
+                Movement.relocate(player, spread(cabin.arrival, 6))
+            elseif service.onHatch(player) then
+                aboard[player.UserId] = true
+                Movement.relocate(player, spread(cabin.arrival, 6))
+                Remote.feedback(player, "You're aboard! Liftoff when the countdown ends. Use the hatch to get out.")
+            end
         end
         Cycle.boarded[player.UserId] = service.inCabin(player)
     end
@@ -101,6 +112,7 @@ function Launch.new(ctx)
     exitPrompt.ObjectText = "Hatch"
     exitPrompt.Triggered:Connect(function(player)
         if Cycle.rocket.phase ~= "Boarding" or not service.inCabin(player) then return end
+        aboard[player.UserId] = nil
         Movement.relocate(player, besideHatch())
         Cycle.boarded[player.UserId] = false
         Cycle.send(player)
@@ -121,6 +133,8 @@ function Launch.new(ctx)
             end
         end
         rocketBuild:erect(workspace:GetServerTimeNow(), config.ErectSeconds)
+        aboard = {}
+        rocketBuild:setBoardingOpen(true)
         ctx.Cargo.refreshPrompts()
         Remote.announce(definition.IsLegendary and "LEGENDARY MISSION READY! Board the " .. tier.Name .. " now!" or "ROCKET READY! Board now: launch countdown started.")
         Cycle.broadcast()
@@ -131,6 +145,16 @@ function Launch.new(ctx)
             for _, player in Players:GetPlayers() do
                 if service.inCabin(player) then passengers[player.UserId] = true end
             end
+            -- Boarded but outside the cabin this very tick (put back next tick): still flying.
+            for userId in aboard do
+                local player = Players:GetPlayerByUserId(userId)
+                if player and not passengers[userId] and ctx.profiles:ready(userId) then
+                    Movement.relocate(player, spread(cabin.arrival, 6))
+                    passengers[userId] = true
+                end
+            end
+            aboard = {}
+            rocketBuild:setBoardingOpen(false)
             if not rocket:lockPassengers(passengers) then return end
             Cycle.boarded = passengers
             -- Anyone left in the cabin without a lock (profile not ready) goes home.

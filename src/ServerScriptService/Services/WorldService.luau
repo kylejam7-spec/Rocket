@@ -150,11 +150,11 @@ function World.new(ctx)
     frontierText.Text = "▼ BUILD HERE ▼"
     frontierText.Parent = frontierSign
     service.frontier, service.frontierSign = frontier, frontierSign
-    -- Crew boarding zone; each tier moves it to the front of its own launch mount.
+    -- The boarding trigger: an invisible box in front of the boarding station's door
+    -- (BoardingStation); each tier moves it to its own station.
     local boarding = tag(part("BoardingZone", Vector3.new(0, 0.7, -100), Vector3.new(14, 0.2, 8), Color3.fromRGB(89, 210, 165)), World.Tags.Boarding)
-    boarding.Transparency = 0.35
-    boarding.CanCollide = false
-    label(boarding, "BOARD")
+    boarding.Transparency = 1
+    boarding.CanCollide, boarding.CanQuery, boarding.CanTouch = false, false, false
     service.boarding = boarding
     -- Rockets are built on the permanent LaunchPad (MapExpansionService); y = pad top.
     service.rocketBuild = require(script.Parent.RocketBuildService).new(world, Layout.PadOrigin)
