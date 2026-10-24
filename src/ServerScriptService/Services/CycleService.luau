@@ -68,6 +68,7 @@ function Cycle.new(ctx)
         })
     end
     function service.broadcast()
+        ctx.World.rocketBuild:setBoardingPhase(service.rocket.phase)
         for _, player in Players:GetPlayers() do service.send(player) end
     end
     -- Batched sends: deliveries request a broadcast; pickups mark one player's HUD.

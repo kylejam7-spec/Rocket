@@ -134,7 +134,6 @@ function Launch.new(ctx)
         end
         rocketBuild:erect(workspace:GetServerTimeNow(), config.ErectSeconds)
         aboard = {}
-        rocketBuild:setBoardingOpen(true)
         ctx.Cargo.refreshPrompts()
         Remote.announce(definition.IsLegendary and "LEGENDARY MISSION READY! Board the " .. tier.Name .. " now!" or "ROCKET READY! Board now: launch countdown started.")
         Cycle.broadcast()
@@ -154,7 +153,6 @@ function Launch.new(ctx)
                 end
             end
             aboard = {}
-            rocketBuild:setBoardingOpen(false)
             if not rocket:lockPassengers(passengers) then return end
             Cycle.boarded = passengers
             -- Anyone left in the cabin without a lock (profile not ready) goes home.

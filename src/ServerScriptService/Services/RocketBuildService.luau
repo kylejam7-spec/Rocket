@@ -273,9 +273,10 @@ function Build:load(tier, variant)
     return self.boarding.trigger.cframe, self.boarding.trigger.size
 end
 
--- Lights the boarding door for the countdown (LaunchService), dark otherwise.
-function Build:setBoardingOpen(open)
-    if self.boarding then self.boarding.setOpen(open) end
+-- The boarding station follows the rocket's phase (CycleService.broadcast): the door
+-- lights for boarding and its sign says what's needed first.
+function Build:setBoardingPhase(phase)
+    if self.boarding then self.boarding.setPhase(phase) end
 end
 
 -- buildFraction and fuelFraction are 0..1. Finished segments turn solid; the first

@@ -95,6 +95,14 @@ function WorldSignController.start()
             if drawn[part] then drawn[part]:Destroy() end
             drawn[part] = nil
         end)
+        -- Live signs (the boarding station's status) redraw when their words change.
+        for _, name in { "Title", "Subtitle", "Icon", "Image", "Accent" } do
+            part:GetAttributeChangedSignal(name):Connect(function()
+                if not drawn[part] then return end
+                drawn[part]:Destroy()
+                drawn[part] = build(part, playerGui)
+            end)
+        end
     end
     for _, part in CollectionService:GetTagged("WorldSign") do add(part) end
     CollectionService:GetInstanceAddedSignal("WorldSign"):Connect(add)

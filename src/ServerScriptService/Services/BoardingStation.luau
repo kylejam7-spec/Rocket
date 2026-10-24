@@ -7,7 +7,8 @@
 -- BoardingStation.build(parent, origin, site) builds it in `origin`'s frame (the upright
 -- rocket on the pad, +Z toward the forecourt, y = 0 the apron) from site = { mountTop,
 -- mountFront, coreRadius, hullBottom } (studs). Returns { trigger = { cframe, size },
--- setOpen = function(open) } — open lights the door and its strips for boarding.
+-- setPhase = function(phase) }: the door and its strips light for "Boarding", and the
+-- BOARD sign says what has to happen first (fill the rocket, fuel it) or what's next.
 local Signs = require(script.Parent.SignService)
 local BoardingStation = {}
 
@@ -17,6 +18,13 @@ local DOOR_WIDTH, DOOR_HEIGHT = 12, 16
 local OPEN, CLOSED = Color3.fromRGB(80, 255, 140), Color3.fromRGB(70, 76, 92)
 local STEEL, DARK = Color3.fromRGB(150, 156, 166), Color3.fromRGB(46, 50, 62)
 local HULL, HAZARD = Color3.fromRGB(226, 230, 238), Color3.fromRGB(255, 196, 40)
+-- The BOARD sign's subtitle and colour per rocket phase (anything else: after liftoff).
+local STATUS = {
+    Building = { "FILL THE ROCKET TO BOARD", Color3.fromRGB(255, 185, 35) },
+    Fueling = { "FUEL THE ROCKET TO BOARD", Color3.fromRGB(255, 80, 150) },
+    Boarding = { "BOARD NOW!", OPEN },
+}
+local AFTER = { "NEXT ROCKET SOON", Color3.fromRGB(150, 120, 255) }
 
 function BoardingStation.build(parent, origin, site)
     local model = Instance.new("Model")
@@ -63,13 +71,14 @@ function BoardingStation.build(parent, origin, site)
     local back = site.coreRadius * 0.8
     local face = site.coreRadius + 5
     local width = math.clamp(site.coreRadius * 0.75, DOOR_WIDTH + 10, 48)
-    local height = math.clamp(site.hullBottom - top - 0.3, DOOR_HEIGHT + 6, 80)
+    -- At least the door plus a band for the sign (on low-slung tiers it tucks into the hull).
+    local height = math.clamp(site.hullBottom - top - 0.3, DOOR_HEIGHT + 11, 80)
     block("HatchModule", Vector3.new(width, height, face - back), CFrame.new(0, top + height / 2, (back + face) / 2), HULL, Enum.Material.Metal)
     -- Dark corner posts up its front edges, and a light band round it that glows for boarding.
     for _, side in { -1, 1 } do
         block("HatchPost", Vector3.new(2, height, 2), CFrame.new(side * (width / 2 + 0.4), top + height / 2, face - 0.6), DARK, Enum.Material.Metal)
     end
-    table.insert(glow, block("HatchBand", Vector3.new(width + 0.4, 0.8, 0.4), CFrame.new(0, top + DOOR_HEIGHT + 3, face + 0.2), CLOSED, Enum.Material.Neon,
+    table.insert(glow, block("HatchBand", Vector3.new(width + 0.4, 0.8, 0.4), CFrame.new(0, top + height - 0.8, face + 0.2), CLOSED, Enum.Material.Neon,
         { CanCollide = false, CanQuery = false }))
     -- Facing +Z: a part's front face is -Z, so the door and sign are turned round.
     local outward = CFrame.Angles(0, math.pi, 0)
@@ -84,18 +93,11 @@ function BoardingStation.build(parent, origin, site)
         end
     end
     block("DoorLintel", Vector3.new(DOOR_WIDTH + 2.4, 1.2, 0.6), CFrame.new(0, top + DOOR_HEIGHT + 0.6, face + 0.3), HAZARD)
-    local signHeight = math.min(height - DOOR_HEIGHT - 6, 8)
-    if signHeight >= 3 then
-        Signs.decorate(block("BoardSign", Vector3.new(math.min(width - 4, signHeight * 4), signHeight, 0.4),
-            CFrame.new(0, top + DOOR_HEIGHT + 4.5 + signHeight / 2, face + 0.3) * outward, Signs.Backing),
-            Enum.NormalId.Front, { title = "BOARD", subtitle = "LIFTOFF THIS WAY", icon = "🚀", accent = OPEN })
-    end
-    -- An arch over the foot of the ramp, so the way in reads from the forecourt (its
-    -- posts stand just outside the ramp's edges: Signs.board puts them at 0.32 of its width).
-    local archWidth = (RAMP_WIDTH / 2 + 2) / 0.32
-    local archAt = (origin * CFrame.new(0, 16, front + run + 3)).Position
-    Signs.board(model, "BoardingArch", CFrame.lookAt(archAt, archAt + origin.Rotation * Vector3.zAxis), Vector2.new(archWidth, 7),
-        { title = "BOARDING", subtitle = "UP THE RAMP • THROUGH THE DOOR", icon = "🚀", accent = OPEN, ground = origin.Y })
+    -- Between the door's lintel and the light band.
+    local signHeight = math.min(height - DOOR_HEIGHT - 4, 8)
+    local sign = Signs.decorate(block("BoardSign", Vector3.new(math.min(width - 4, signHeight * 4.5), signHeight, 0.4),
+        CFrame.new(0, top + DOOR_HEIGHT + 1.8 + signHeight / 2, face + 0.3) * outward, Signs.Backing),
+        Enum.NormalId.Front, { title = "BOARD", subtitle = STATUS.Building[1], icon = "🚀", accent = STATUS.Building[2] })
     model.Parent = parent
 
     local station = {
@@ -103,13 +105,20 @@ function BoardingStation.build(parent, origin, site)
         trigger = { cframe = origin * CFrame.new(0, top + DOOR_HEIGHT / 2, face + 2.4), size = Vector3.new(DOOR_WIDTH + 2, DOOR_HEIGHT, 4) },
         model = model,
     }
-    function station.setOpen(open)
+    local current
+    function station.setPhase(phase)
+        if phase == current then return end
+        current = phase
+        local open = phase == "Boarding"
         for _, part in glow do
             if part.Parent then part.Color = open and OPEN or CLOSED end
         end
         door.Transparency = open and 0.1 or 0
+        local status = STATUS[phase] or AFTER
+        sign:SetAttribute("Subtitle", status[1])
+        sign:SetAttribute("Accent", status[2])
     end
-    station.setOpen(false)
+    station.setPhase("Building")
     return station
 end
 
