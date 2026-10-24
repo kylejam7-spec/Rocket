@@ -4,7 +4,7 @@
     - Apron (inside the fence, behind the pad, z < -445): a walk-in Mission Control base
       on the centre line under the leaning rocket, landing pads with parked craft to the
       east, hangars and a monorail to the west. Every tier's tilted rocket clears this
-      ground by 230+ studs, so nothing here stands taller than Spaceport.ApronCap.
+      ground by 140+ studs, so nothing here stands taller than Spaceport.ApronCap.
     - Beyond (outside the widest the site ever grows): a campus past the back fence (a
       display rocket, hangars, a dish array and a tank farm, with the monorail running
       out to it), a comms array to the west and assembly hangars to the east, each on its
@@ -17,8 +17,9 @@ local Signs = require(script.Parent.SignService)
 local CollectionService = game:GetService("CollectionService")
 local Spaceport = {}
 
--- Tallest anything on the apron behind the pad may stand (the rockets clear 230+).
-Spaceport.ApronCap = 150
+-- Tallest anything on the apron behind the pad may stand (the rockets, leaning at 40
+-- degrees to the ground, clear 140+).
+Spaceport.ApronCap = 110
 -- Apron props stay behind this line (the pad and its floodlights end at z = -440).
 Spaceport.ApronFront = -445
 
@@ -26,7 +27,7 @@ Spaceport.ApronFront = -445
 -- clear of the plain (y = -0.35) so the two never flicker.
 Spaceport.SlabTop = 0.6
 Spaceport.Slabs = {
-    Campus = { -430, 430, -1490, -1085 },
+    Campus = { -430, 430, -1540, -1135 },
     CommsArray = { -900, -690, -720, -180 },
     Assembly = { 690, 900, -720, -180 },
 }
@@ -123,54 +124,54 @@ add("Space_rocket_topA", 120, -955, 0, 18, true, 37.8)
 -- with a train standing at the campus end. Track pieces are 30 long at scale 30.
 local RAIL, RAIL_X, RAIL_Y = 30, -228, 15
 Spaceport.TrackEnd = -460 -- the track's apron end
-for z = Spaceport.TrackEnd, -1430, -30 do
+for z = Spaceport.TrackEnd, -1480, -30 do
     add("Space_monorail_trackStraight", RAIL_X, z - 15, 0, RAIL, false, RAIL_Y)
     if (z - Spaceport.TrackEnd) % 90 == 0 then add("Space_monorail_trackSupport", RAIL_X, z - 15, 0, RAIL, false) end
 end
 -- The train (its own model, MonorailTrain; SpaceportController runs it up to the apron
 -- and back): nose toward +Z, cars trailing behind, resting at the campus station.
 Spaceport.Train = {}
-Spaceport.TrainTravel = 810 -- from the campus station to the apron end of the track
+Spaceport.TrainTravel = 860 -- from the campus station to the apron end of the track
 for index, car in { "Space_monorail_trainFront", "Space_monorail_trainPassenger", "Space_monorail_trainPassenger", "Space_monorail_trainCargo", "Space_monorail_trainEnd" } do
-    table.insert(Spaceport.Train, { car, RAIL_X, -1300 - (index - 1) * 30, 0, RAIL, false, RAIL_Y + 3.9 })
+    table.insert(Spaceport.Train, { car, RAIL_X, -1350 - (index - 1) * 30, 0, RAIL, false, RAIL_Y + 3.9 })
 end
-for z = -1300, -1420, -30 do
+for z = -1350, -1470, -30 do
     add("Space_platform_long", RAIL_X + 18, z, 90, 15, true, Spaceport.SlabTop)
 end
 
 -- Campus past the back fence.
 local top = Spaceport.SlabTop
 -- The Rocket Garden: a 270-stud display rocket on a round pad, craft parked round it.
-add("Space_platform_large", 0, -1290, 0, 70, true, top)
+add("Space_platform_large", 0, -1340, 0, 70, true, top)
 local stack, y = { { "Space_rocket_baseA", 1.6 }, { "Space_rocket_fuelB", 1.0 }, { "Space_rocket_fuelB", 1.0 }, { "Space_rocket_topA", 0.8 } }, top + 7
 for _, piece in stack do
-    add(piece[1], 0, -1290, 0, 60, true, y)
+    add(piece[1], 0, -1340, 0, 60, true, y)
     y += piece[2] * 60
 end
-add("Space_rocket_finsB", 0, -1290, 0, 60, false, top + 7)
-add("Space_craft_speederA", -110, -1215, 150, 15, true, top)
-add("Space_craft_racer", 105, -1210, 210, 15, true, top)
-add("Space_astronautA", -40, -1200, 0, 14, true, top)
-add("Space_astronautB", 40, -1200, 0, 14, true, top)
+add("Space_rocket_finsB", 0, -1340, 0, 60, false, top + 7)
+add("Space_craft_speederA", -110, -1265, 150, 15, true, top)
+add("Space_craft_racer", 105, -1260, 210, 15, true, top)
+add("Space_astronautA", -40, -1250, 0, 14, true, top)
+add("Space_astronautB", 40, -1250, 0, 14, true, top)
 -- Hangar row facing the fence, joined by corridor tubes.
 for _, h in { { -300, "Space_hangar_largeA" }, { -170, "Space_hangar_largeB" }, { 170, "Space_hangar_largeB" }, { 300, "Space_hangar_largeA" } } do
-    add(h[2], h[1], -1160, 180, 30, true, top)
+    add(h[2], h[1], -1210, 180, 30, true, top)
 end
 for _, x in { -261.25, -243.75, -226.25, -208.75, 208.75, 226.25, 243.75, 261.25 } do
-    add("Space_corridor_window", x, -1160, 90, 17.5, true, top)
+    add("Space_corridor_window", x, -1210, 90, 17.5, true, top)
 end
 -- Dish array (south-west) and tank farm (south-east).
-for index, z in { -1290, -1370, -1450 } do
+for index, z in { -1340, -1420, -1500 } do
     add("Space_satelliteDish_large", -385, z, 140 + index * 12, 80, false, top)
 end
-for _, d in { { -280, -1280 }, { -280, -1370 }, { -190, -1440 } } do
+for _, d in { { -280, -1330 }, { -280, -1420 }, { -190, -1490 } } do
     add("Space_satelliteDish_detailed", d[1], d[2], 160, 60, false, top)
 end
-for _, t in { { 280, -1280 }, { 340, -1280 }, { 310, -1340 }, { 370, -1340 }, { 280, -1400 } } do
+for _, t in { { 280, -1330 }, { 340, -1330 }, { 310, -1390 }, { 370, -1390 }, { 280, -1450 } } do
     add("Space_machine_barrelLarge", t[1], t[2], 0, 60, true, top)
 end
-add("Space_chimney_detailed", 200, -1430, 0, 30, true, top)
-add("Space_machine_generatorLarge", 200, -1360, 90, 20, true, top)
+add("Space_chimney_detailed", 200, -1480, 0, 30, true, top)
+add("Space_machine_generatorLarge", 200, -1410, 90, 20, true, top)
 
 -- Comms array to the west: a line of big dishes with their transmitter huts.
 for index, z in { -260, -380, -500, -620 } do
@@ -544,7 +545,7 @@ local function signs(parent)
     board("LandingPadsSign", Vector3.new(190, 9, -458), toSite, Vector2.new(26, 5), { title = "LANDING PADS", subtitle = "VISITING CRAFT", icon = "🛸", accent = ORANGE })
     board("HangarsSign", Vector3.new(-160, 9, -468), toSite, Vector2.new(24, 5), { title = "HANGARS", subtitle = "SERVICE & REPAIR", icon = "🔧", accent = ORANGE })
     board("MonorailSign", Vector3.new(-210, 8, -458), toSite, Vector2.new(16, 4), { title = "MONORAIL", subtitle = "TO THE CAMPUS", icon = "🚝", accent = cyan })
-    board("CampusSign", Vector3.new(0, 30, -1095), toSite, Vector2.new(70, 12), { title = "SPACEPORT CAMPUS", subtitle = "ROCKET GARDEN • HANGARS • TANK FARM", icon = "🚀", accent = ORANGE }, top)
+    board("CampusSign", Vector3.new(0, 30, -1145), toSite, Vector2.new(70, 12), { title = "SPACEPORT CAMPUS", subtitle = "ROCKET GARDEN • HANGARS • TANK FARM", icon = "🚀", accent = ORANGE }, top)
     board("CampusStationSign", Vector3.new(-190, 8, -1272), toSite, Vector2.new(16, 4), { title = "CAMPUS STATION", subtitle = "MONORAIL", icon = "🚝", accent = cyan }, top)
     board("CommsArraySign", Vector3.new(-705, 14, -440), Vector3.xAxis, Vector2.new(30, 6), { title = "COMMS ARRAY", subtitle = "DEEP SPACE NETWORK", icon = "📡", accent = cyan }, top)
     board("AssemblySign", Vector3.new(705, 14, -540), -Vector3.xAxis, Vector2.new(30, 6), { title = "ASSEMBLY", subtitle = "STAGE INTEGRATION", icon = "🏗️", accent = ORANGE }, top)

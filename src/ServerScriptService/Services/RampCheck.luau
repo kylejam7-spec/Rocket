@@ -17,11 +17,11 @@ return function()
                 local widest = 0
                 for _, item in build.lists.Metal.items do widest = math.max(widest, item.high.X, -item.low.X) end
                 assert(build.rampInner >= widest + 1 and build.rampInner <= widest + 1.5, name .. " ramp hugs the widest segment")
-                assert(build.rampOuter - build.rampInner >= 20, name .. " ramp wide enough for a full server")
+                assert(build.rampOuter - build.rampInner >= 40, name .. " ramp wide enough for a full server")
                 assert(build.rampOuter <= padHalf.X - 1, ("%s ramp reaches x = %.1f, past the pad (%.1f)"):format(name, build.rampOuter, padHalf.X))
                 -- The launch complex (mount, ramps' feet, tower) stands on the pad.
                 for _, item in build.site.LaunchComplex:GetDescendants() do
-                    if item:IsA("BasePart") and item.Name ~= "RampArm" and item.Name ~= "RampBeacon" then
+                    if item:IsA("BasePart") and item.Name ~= "RampBeacon" then
                         local p = item.Position
                         if p.Y < 3 then
                             assert(math.abs(p.X) <= padHalf.X + 1 and math.abs(p.Z) <= padHalf.Z + 1,
@@ -72,5 +72,5 @@ return function()
     end)
     holder:Destroy()
     assert(ok, failure)
-    return "All 15 rocket variants: ramps hug the rocket, >=20 wide, on the pad; no ledge; placing in reach from ramps and hull at every fill level"
+    return "All 15 rocket variants: ramps hug the rocket, >=40 wide, on the pad; no ledge; placing in reach from ramps and hull at every fill level"
 end

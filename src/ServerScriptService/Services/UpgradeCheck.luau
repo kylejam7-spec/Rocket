@@ -48,14 +48,19 @@ return function()
     assert(select(2, Service.buy(config, profile, "BulkPickup", "late")) == "maxed")
     assert(#profile.purchaseIds <= Service.LedgerSize)
 
-    -- Effects: 1 unit per tick unbought, then 3 x (1 + level) for pickup and place; +10% reach per level.
+    -- Effects: 1 unit per tick unbought, then 3 x (1 + level) for pickup and place; reach
+    -- grows 11, 12 ... 20 studs a level.
     local some = { upgrades = { BulkPickup = 3, BulkPlace = 2, PlacementRange = 5 } }
     assert(Upgrades.pickupUnits(config, some) == 12 and Upgrades.placeUnits(config, some) == 9)
-    assert(math.abs(Upgrades.reach(config, some) - config.FrontierReach * 1.5) < 1e-9)
+    assert(Upgrades.reach(config, some) == config.FrontierReach + 11 + 12 + 13 + 14 + 15)
+    assert(Upgrades.reachAt(config, 1) == config.FrontierReach + 11 and Upgrades.reachAt(config, 2) == config.FrontierReach + 23)
     assert(Upgrades.pickupUnits(config, {}) == 1 and Upgrades.placeUnits(config, {}) == 1 and Upgrades.reach(config, {}) == config.FrontierReach)
     local top = { upgrades = { BulkPickup = 10, BulkPlace = 10, PlacementRange = 10 } }
     assert(Upgrades.pickupUnits(config, top) == 33 and Upgrades.placeUnits(config, top) == 33)
-    assert(math.abs(Upgrades.reach(config, top) - config.FrontierReach * 2) < 1e-9)
+    assert(Upgrades.reach(config, top) == config.FrontierReach + 155)
+    for level = 1, 10 do
+        assert(Upgrades.reachAt(config, level) - Upgrades.reachAt(config, level - 1) == 10 + level, "level n adds 10 + n studs")
+    end
 
     -- Ranks count completed launches only, in rising order.
     for i = 2, #config.Ranks do assert(config.Ranks[i].launches > config.Ranks[i - 1].launches, "ranks rise") end

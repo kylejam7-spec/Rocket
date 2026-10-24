@@ -29,16 +29,18 @@ return table.freeze({
     -- The anti-teleport check allows this times a player's walk speed (never below 70).
     MoveLimitFactor = 1.5,
     MinMoveLimit = 70,
-    -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth.
+    -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth,
+    -- with no cap (only Roblox's largest part size).
     ScrapBallBaseDiameter = 2,
     ScrapBallGrowth = 0.55,
-    ScrapBallMaxDiameter = 24,
-    -- The rocket is built tilted against its ramp, then erected upright for boarding.
-    RocketTiltDegrees = 45,
+    -- The rocket is built tilted against its ramp, then erected upright for boarding. The
+    -- tilt is from upright: 50 lays the hull and its ramps at 40 degrees to the ground.
+    RocketTiltDegrees = 50,
     ErectSeconds = 5,
     -- Place reach: from the glowing frontier ring, or along the rocket from the fill line
     -- while standing on a ramp (Build:inPlaceReach); also the place prompt's range.
-    -- Placement Range adds 10% of it per level.
+    -- Each Placement Range level adds a stud more than the last: 11 at level 1, 12 at
+    -- level 2 ... 20 at level 10 (167 studs of reach in all).
     FrontierReach = 12,
     -- Soft currency: coins per accepted delivery unit (Metal or Fuel), credited by the server.
     CoinsPerUnit = 1,
@@ -52,7 +54,7 @@ return table.freeze({
     Upgrades = table.freeze({
         BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- units per pickup tick: see BulkFactor
         BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- units per place tick: see BulkFactor
-        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, step = 0.1 }), -- +10% reach
+        PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, first = 11 }), -- studs level 1 adds
     }),
     UpgradePrices = table.freeze({
         base = 50,

@@ -48,9 +48,6 @@ function Upgrades.cheapest(config, profile)
     return best
 end
 
-local function bonus(config, profile, track)
-    return Upgrades.level(profile, track) * config.Upgrades[track].step
-end
 -- Units moved per tick at a Bulk Pickup / Bulk Place level: 1 unbought, then
 -- Config.BulkFactor x (1 + level).
 function Upgrades.bulkUnits(config, track, level)
@@ -65,9 +62,14 @@ end
 function Upgrades.placeUnits(config, profile)
     return Upgrades.bulkUnits(config, "BulkPlace", Upgrades.level(profile, "BulkPlace"))
 end
+-- Place reach in studs at a Placement Range level: level n adds `first + n - 1` studs
+-- over level n - 1.
+function Upgrades.reachAt(config, level)
+    return config.FrontierReach + level * config.Upgrades.PlacementRange.first + level * (level - 1) / 2
+end
 -- Place reach in studs.
 function Upgrades.reach(config, profile)
-    return config.FrontierReach * (1 + bonus(config, profile, "PlacementRange"))
+    return Upgrades.reachAt(config, Upgrades.level(profile, "PlacementRange"))
 end
 
 -- Rank index and name from completed launches.

@@ -63,11 +63,13 @@ local CAN = {
 local CAN_BODY = Vector3.new(0.7, 0.84, 0.34)
 local CAN_COLORS = { Body = Color3.fromRGB(190, 38, 32), Trim = Color3.fromRGB(140, 26, 22), Handle = Color3.fromRGB(58, 58, 62) }
 
--- Grows with the load (volume-ish), capped at a deliberately absurd size.
--- Also the jerry can's height, so both loads grow at the same rate.
+-- Grows with the load (volume-ish) without a cap, short of Roblox's largest part size
+-- (2048 studs) so the drawn load still matches its welds. Also the jerry can's height,
+-- so both loads grow at the same rate.
+CargoVisual.Largest = 2048 / CargoVisual.MetalScale
 function CargoVisual.diameter(count)
     return math.clamp(Config.ScrapBallBaseDiameter * (count / Config.BaseCarryCapacity) ^ Config.ScrapBallGrowth,
-        0.8, Config.ScrapBallMaxDiameter)
+        0.8, CargoVisual.Largest)
 end
 
 local function piece(name, shape, color, material, parent)

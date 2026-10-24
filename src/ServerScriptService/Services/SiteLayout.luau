@@ -2,7 +2,7 @@
     Where everything on the Earth launch site (the main map) stands, in one place.
     -Z is toward the launch site; the spawn lane runs along x = 0.
 
-        z -1000 .. -88  launch apron, the pad at its near end (rockets tilt toward -Z;
+        z -1060 .. -88  launch apron, the pad at its near end (rockets tilt toward -Z;
                         Tier 5 is ~1000 studs long)
         z  -90 ..  -10  forecourt: Upgrades hut (west) and UFO Shop (east) either side
                         of the lane; site offices and stores off to the sides
@@ -21,14 +21,15 @@ local Layout = {}
 -- Far enough back that Tier 5's boarding hatch (+168) stops short of the forecourt.
 Layout.PadOrigin = CFrame.new(0, 0.58, -265)
 -- The permanent pad under every tier's launch complex: the scaled Tier 5 mount, ramps
--- out to |x| = 182, boarding hatch, and the floodlights outside the ramps (Tier 5's
+-- out to |x| = 197, boarding hatch, and the floodlights outside the ramps (Tier 5's
 -- poles at |x| = 232, lamps to 240): |x| <= 245, |z| <= 175.
 Layout.Pad = { center = Vector3.new(0, 0.33, -265), size = Vector3.new(490, 0.5, 350) }
--- Concrete apron under the tilted rockets (Tier 5's farthest part reaches z = -984,
--- its floodlights x = +/-234).
-Layout.Apron = { x = 270, z0 = -1000, z1 = -88 }
--- The base ground; map expansion adds strips outside |x| = Ground.x.
-Layout.Ground = { x = 290, z0 = -1020, z1 = 112 }
+-- Concrete apron under the tilted rockets (at the 40-degree build lean Tier 5's farthest
+-- part reaches z = -1046, its floodlights x = +/-234).
+Layout.Apron = { x = 270, z0 = -1060, z1 = -88 }
+-- The base ground; map expansion adds strips outside |x| = Ground.x. The back fence (and
+-- its tall barrier) runs along z0, clear of Tier 5's ramp tops.
+Layout.Ground = { x = 290, z0 = -1080, z1 = 112 }
 
 Layout.Spawn = Vector3.new(0, 1, 40)
 Layout.Lane = { width = 20, z0 = -92, z1 = 112 }
@@ -40,6 +41,14 @@ Layout.Fuel = Vector3.new(125, 0, 15)
 
 Layout.Upgrades = Vector3.new(-42, 0, -42)
 Layout.UfoShop = Vector3.new(42, 0, -42)
+-- Suit stands (SkinService): mannequins on the lane side of the forecourt huts, inside
+-- their clear squares, facing the lane. Gold by the Upgrades hut, the others flanking
+-- the UFO Shop.
+Layout.SuitStands = {
+    { key = "SuitGold", at = Vector3.new(-29.5, 0, -30), facing = Vector3.new(1, 0, 0) },
+    { key = "SuitCommander", at = Vector3.new(29.5, 0, -30), facing = Vector3.new(-1, 0, 0) },
+    { key = "SuitGalaxy", at = Vector3.new(29.5, 0, -54), facing = Vector3.new(-1, 0, 0) },
+}
 
 -- Gym District: first bay centre on z, bay step and bay offset from the walkway.
 Layout.Gym = { z0 = 132, step = 16, x = 27, entrance = 114 }

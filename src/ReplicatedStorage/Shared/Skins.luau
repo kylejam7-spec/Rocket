@@ -5,7 +5,7 @@
     SuitCommander, SuitGalaxy). A player gets the boost of the best one they own, which
     multiplies their gym training, their delivery coins and the launches each ride counts
     for (ranks, gym unlocks, the launches leaderboard); they wear that one unless they
-    pick another they own (or the basic one) in the SHOP. Suits don't stack with each
+    pick another they own (or the basic one) at its stand on the forecourt (SkinService). Suits don't stack with each
     other; the boost multiplies with the other boosts (2x Coins, the server training
     boost, friends).
 

@@ -12,7 +12,7 @@ return function()
         local ball = assert(model:FindFirstChild("ScrapBall"))
         assert(model:GetAttribute("Count") == count, "The load carries its unit count (client sounds)")
         assert(ball.Shape == Enum.PartType.Ball and ball.Size.X == ball.Size.Y)
-        assert(ball.Size.X > previous and ball.Size.X <= config.ScrapBallMaxDiameter * visual.MetalScale + 1e-3, "Ball grows with cargo, up to the cap")
+        assert(ball.Size.X > previous, "Ball grows with cargo")
         assert(math.abs(ball.Size.X - visual.diameter(count) * visual.MetalScale) < 1e-3, "The Metal heap draws MetalScale larger")
         previous = ball.Size.X
         local weld = assert(ball:FindFirstChild("Weld"))
@@ -22,7 +22,8 @@ return function()
         end
     end
     assert(visual.diameter(10) == config.ScrapBallBaseDiameter, "Base carry gives the base diameter")
-    assert(visual.diameter(1e6) == config.ScrapBallMaxDiameter, "Huge loads hit the cap")
+    assert(visual.diameter(1e5) > 24, "No cap on the load's size (the old one was 24)")
+    assert(visual.diameter(1e12) == visual.Largest, "Only Roblox's largest part size limits it")
     local ball = character.CarriedMaterials.ScrapBall
     visual.update(character, {Metal = 3}, colors)
     assert(character.CarriedMaterials.ScrapBall == ball and ball.Size.X < previous, "Pouring shrinks the same ball")
@@ -66,5 +67,5 @@ return function()
         area += (piece.x1 - piece.x0) * (piece.z1 - piece.z0)
     end
     assert(area == 100 * 100 - 20 * 30, "Carving removes exactly the hole")
-    return "Cargo checks passed: overhead scrap ball and jerry can grow to a cap, shrink in place, swap, clear, never collide; stations flank the lane clear of the apron, gyms and expansion"
+    return "Cargo checks passed: overhead scrap ball and jerry can grow without a cap, shrink in place, swap, clear, never collide; stations flank the lane clear of the apron, gyms and expansion"
 end

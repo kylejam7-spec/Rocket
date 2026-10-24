@@ -53,10 +53,9 @@ end
 local function effect(track, level)
     local spec = Config.Upgrades[track]
     local function at(n)
-        local bonus = n * spec.step
         if track == "BulkPickup" then return "Grab " .. Upgrades.bulkUnits(Config, track, n) .. " per tick" end
         if track == "BulkPlace" then return "Place " .. Upgrades.bulkUnits(Config, track, n) .. " per tick" end
-        return "Reach +" .. math.round(bonus * 100) .. "%"
+        return "Reach " .. Upgrades.reachAt(Config, n) .. " studs"
     end
     if level >= spec.max then return at(level) .. "  (MAX)" end
     return at(level) .. "  →  " .. at(level + 1)

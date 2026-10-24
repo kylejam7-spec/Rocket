@@ -183,6 +183,9 @@ end
 -- A leaderboard stand: three display panels in a steel frame on a plinth, facing
 -- `facing`, one per category in `keys` (left to right as you face it). Each panel's
 -- face carries a `Leaderboard` attribute; LeaderboardService draws the top ten on it.
+-- The frame itself is scenery: one invisible block as big as the stand is what you bump
+-- into, too thick for a runner at full speed (~1.7 studs a physics step) to sink into,
+-- with no gaps under the panels to wedge in.
 local PANEL = Vector2.new(14, 18)
 local function leaderboardStand(parent, base, facing, keys)
     local model = folder(parent, "LeaderboardStand")
@@ -190,11 +193,13 @@ local function leaderboardStand(parent, base, facing, keys)
     local step, bottom = PANEL.X + 1.6, 2.4
     local width = step * #keys + 1.6
     local top = bottom + PANEL.Y + 1
-    make(model, "Plinth", Vector3.new(width + 2, 1, 6), frame * CFrame.new(0, 0.5, 0.6), CONCRETE, Enum.Material.Concrete, true)
+    make(model, "Plinth", Vector3.new(width + 2, 1, 6), frame * CFrame.new(0, 0.5, 0.6), CONCRETE, Enum.Material.Concrete)
     for index = 0, #keys do
         local x = (index - #keys / 2) * step
-        make(model, "StandLeg", Vector3.new(1.2, top, 1.2), frame * CFrame.new(x, top / 2, 0.6), STEEL, Enum.Material.Metal, true)
+        make(model, "StandLeg", Vector3.new(1.2, top, 1.2), frame * CFrame.new(x, top / 2, 0.6), STEEL, Enum.Material.Metal)
     end
+    local collider = make(model, "StandCollider", Vector3.new(width + 2, top + 1.2, 6), frame * CFrame.new(0, (top + 1.2) / 2, 0.6), STEEL, nil, true)
+    collider.Transparency, collider.CastShadow = 1, false
     make(model, "StandBeam", Vector3.new(width, 1.2, 1.6), frame * CFrame.new(0, top + 0.6, 0.6), DARK, Enum.Material.Metal)
     make(model, "StandSill", Vector3.new(width, 0.8, 1.6), frame * CFrame.new(0, bottom - 0.6, 0.6), DARK, Enum.Material.Metal)
     local Leaderboards = require(script.Parent.LeaderboardService)
@@ -203,7 +208,7 @@ local function leaderboardStand(parent, base, facing, keys)
         -- Facing the stand, the frame's +X is on your left, so index 1 goes at +X.
         local x = ((#keys + 1) / 2 - index) * step
         local center = frame * CFrame.new(x, bottom + PANEL.Y / 2, 0)
-        make(model, "PanelBacking", Vector3.new(PANEL.X + 0.6, PANEL.Y + 0.6, 0.8), center * CFrame.new(0, 0, 0.6), Color3.fromRGB(22, 20, 36), Enum.Material.SmoothPlastic, true)
+        make(model, "PanelBacking", Vector3.new(PANEL.X + 0.6, PANEL.Y + 0.6, 0.8), center * CFrame.new(0, 0, 0.6), Color3.fromRGB(22, 20, 36), Enum.Material.SmoothPlastic)
         make(model, "PanelTrim", Vector3.new(PANEL.X + 1, PANEL.Y + 1, 0.4), center * CFrame.new(0, 0, 0.6), category.accent, Enum.Material.Neon)
         local face = make(model, "PanelFace", Vector3.new(PANEL.X, PANEL.Y, 0.05), center * CFrame.new(0, 0, 0.17), Color3.fromRGB(22, 20, 36))
         face.Transparency = 1
@@ -221,8 +226,8 @@ local function leaderboardStand(parent, base, facing, keys)
 end
 
 -- A building going up: a steel frame (columns, beams per floor), a part-poured slab,
--- scaffolding with planks on one face, and a hoarding board naming it.
-local function skeleton(parent, base, facing, width, depth, floors, name, icon)
+-- and scaffolding with planks on one face.
+local function skeleton(parent, base, facing, width, depth, floors)
     local model = folder(parent, "Skeleton")
     local frame = CFrame.lookAt(base, base + facing)
     local red, scaffold = Color3.fromRGB(176, 64, 44), Color3.fromRGB(190, 196, 204)
@@ -261,8 +266,6 @@ local function skeleton(parent, base, facing, width, depth, floors, name, icon)
     for y = 2, top - 3, 6 do
         beam(model, "ScaffoldBrace", (frame * CFrame.new(-width / 2, y, front)).Position, (frame * CFrame.new(-width / 2 + 8, y + 6, front)).Position, 0.2, scaffold, Enum.Material.Metal)
     end
-    Signs.board(model, "Hoarding", frame * CFrame.new(0, 4, front - 2.4), Vector2.new(width * 0.8, 4.6),
-        { title = name, subtitle = "COMING SOON", icon = icon, accent = Color3.fromRGB(255, 150, 50), ground = 0 })
 end
 
 local function cone(parent, at)
@@ -392,8 +395,8 @@ function Dressing.build(world)
     leaderboardStand(site, Vector3.new(-50, 0, 80), Vector3.new(1, 0, 0), Leaderboards.Stands[1])
     leaderboardStand(site, Vector3.new(50, 0, 80), Vector3.new(-1, 0, 0), Leaderboards.Stands[2])
     -- Buildings going up behind the stations.
-    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4, "MISSION CONTROL", "🛰️")
-    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3, "ASSEMBLY HANGAR", "🔧")
+    skeleton(site, Vector3.new(-150, 0, 92), Vector3.new(0, 0, -1), 30, 14, 4)
+    skeleton(site, Vector3.new(150, 0, 92), Vector3.new(0, 0, -1), 36, 16, 3)
     -- Cones along the lane, barriers at the forecourt corners.
     local cones = folder(site, "Cones")
     for z = Layout.Lane.z0 + 20, Layout.Spawn.Z - 16, 24 do
