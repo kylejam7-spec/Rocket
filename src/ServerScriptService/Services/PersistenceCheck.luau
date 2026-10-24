@@ -161,8 +161,22 @@ return function()
     local trips = fakeStore()
     local m = server(trips)
     assert(m:load(10))
+    local writesBefore = trips.writes
     assert(m:lockLaunch(10, "T1", { ticks = 8, launches = 4, blackHole = true }))
-    assert(waitFor(function() return trips.data.Player_10 and trips.data.Player_10.openLaunches and trips.data.Player_10.openLaunches.T1 end), "open launch not saved at lock")
+    -- The lock alone writes nothing; commitLaunch returns only once the trip is stored
+    -- (Launch waits on it before liftoff).
+    assert(trips.writes == writesBefore)
+    local committed = m:commitLaunch({ [10] = true }, 5)
+    assert(committed[10] and trips.data.Player_10.openLaunches.T1 and trips.data.Player_10.openLaunches.T1.ticks == 8, "commitLaunch returned before the trip was stored")
+    -- A save that can't finish in time: commitLaunch gives up at its timeout, unconfirmed.
+    local stuck = fakeStore()
+    local stuckServer = server(stuck)
+    assert(stuckServer:load(13) and stuckServer:lockLaunch(13, "Ts", { ticks = 1, launches = 1 }))
+    local realStuck = stuck.UpdateAsync
+    stuck.UpdateAsync = function(...) task.wait(3); return realStuck(...) end
+    local started = os.clock()
+    assert(not stuckServer:commitLaunch({ [13] = true }, 0.3)[13] and os.clock() - started < 1, "commitLaunch ignored its timeout")
+    stuck.UpdateAsync = realStuck
     -- The server dies: its lease runs out, another server loads them.
     trips.data.Player_10.session.expires = 0
     local n = server(trips)
@@ -175,6 +189,18 @@ return function()
     n:remove(10)
     assert(waitFor(function() return n.records[10].released end))
     assert(server(trips):load(10) and trips.data.Player_10.completedLaunches == 4 and trips.data.Player_10.planetBonuses.strength == 8 * unit)
+    -- A stay that grew (ExtraStay: 8 ticks -> 12) and was then lost: the whole longer stay
+    -- is paid, not just the base one.
+    local longer = fakeStore()
+    local lg = server(longer)
+    assert(lg:load(14) and lg:lockLaunch(14, "Tx", { ticks = 8, launches = 1 }) and lg:commitLaunch({ [14] = true }, 5)[14])
+    lg:extendLaunch(14, "Tx", 12)
+    lg:extendLaunch(14, "Tx", 10) -- never shrinks
+    lg:queueReward(14, "Tx", 2)
+    assert(waitFor(function() return longer.data.Player_14.openLaunches.Tx.ticks == 12 and not lg.records[14].busy and not lg.records[14].saveQueued end), "extension not saved")
+    longer.data.Player_14.session.expires = 0
+    assert(server(longer):load(14))
+    assert(longer.data.Player_14.planetBonuses.strength == 12 * unit and longer.data.Player_14.completedLaunches == 1, "extended stay not recovered in full")
     -- A stay paid part-way (3 ticks saved) and then lost: only the rest is paid.
     local part = fakeStore()
     local q = server(part)

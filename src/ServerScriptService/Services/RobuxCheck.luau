@@ -89,6 +89,16 @@ return function()
     assert(Upgrades.level(refunded, "BulkPickup") == 2, "saved pass beat Roblox outside Studio")
     Service.sync(config, refunded, (owning({})), saved, true)
     assert(Upgrades.level(refunded, "BulkPickup") == 4, "Studio test purchase lost")
+    -- Rejoining the same server (the profile kept in memory with its old pass level): a
+    -- pass refunded meanwhile drops; only a pass bought while the checks ran is kept.
+    local kept = Profiles.validate(nil, config)
+    kept.passLevels = { BulkPickup = 5, BulkPlace = 2 }
+    local probe = { upgrades = table.clone(kept.upgrades) }
+    Service.sync(config, probe, (owning({})))
+    Service.install(kept, probe.passLevels, nil)
+    assert(Upgrades.level(kept, "BulkPickup") == 0 and Upgrades.level(kept, "BulkPlace") == 0, "refunded pass came back on a same-server rejoin")
+    Service.install(kept, probe.passLevels, { PlacementRange = 3 })
+    assert(Upgrades.level(kept, "PlacementRange") == 3 and Upgrades.level(kept, "BulkPickup") == 0, "pass bought during the checks lost")
     local maxed = Profiles.validate(nil, config)
     maxed.upgrades = { BulkPickup = MAX, BulkPlace = MAX, PlacementRange = MAX }
     local owns3, calls3 = owning({})

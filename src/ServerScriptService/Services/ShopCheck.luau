@@ -101,6 +101,7 @@ return function()
         return h
     end
     local function ledger() return Service.ledger(store.data.Buyer_1) end
+    local function skipUfo(_, entry) return Service.isUfo(entry.key) end
     local receipt = { PurchaseId = "p1", ProductId = 7, PlayerId = 1 }
     local a, b = server("A"), server("B")
     assert(Service.process(a.state, receipt, a.deps) == Service.GRANTED and a.grants == 1 and a.held.p1 == 2000)
@@ -136,10 +137,10 @@ return function()
     c.held.p2 = 700
     c.settle()
     local taken
-    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, Service.isUfo); return next(taken) ~= nil end)
+    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
     assert(taken.p3 and taken.p3.amount == 1500 and not taken.p2, "crashed server's bank not recovered (or a live one taken)")
     assert(ledger().open.p3.owner == "B")
-    b.update(1, function(l, now) taken = Service.takeover(l, "E", now, Service.isUfo); return next(taken) ~= nil end)
+    b.update(1, function(l, now) taken = Service.takeover(l, "E", now, skipUfo); return next(taken) ~= nil end)
     assert(next(taken) == nil, "a recovered claim was taken twice")
     -- If D comes back it finds the claim gone and drops its own bank of it.
     assert(d.settle().p3 == "gone")
@@ -151,7 +152,7 @@ return function()
     assert(effects.fillBank == 300 and #effects.fills == 1 and #effects.guarantees == 0)
     -- Shutdown lets go: the buyer's next server takes over at once (no lease wait).
     c.settle(true)
-    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, Service.isUfo); return next(taken) ~= nil end)
+    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
     assert(taken.p2 and taken.p2.amount == 700, "released claim not taken over")
     -- A UFO that can't be applied here (buyer gone, or their save failed): NotProcessedYet
     -- and the claim let go, so the server they're on now can claim it at once. Recovery on
@@ -160,7 +161,7 @@ return function()
     a.applyResult = false
     assert(Service.process(a.state, ufo, a.deps) == Service.RETRY and ledger().open.u1.leaseUntil == 0)
     a.applyResult = nil
-    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, Service.isUfo); return next(taken) ~= nil end)
+    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
     assert(not taken.u1, "takeover took a UFO")
     assert(Service.process(b.state, ufo, b.deps) == Service.GRANTED and b.grants == 1 and b.held.u1 == 0)
     -- A UFO's apply repeats safely (the profile's ledger), so its retry applies again.
@@ -172,6 +173,62 @@ return function()
     -- A receipt already being processed (yielding) isn't processed again meanwhile.
     a.state.busy.p5 = true
     assert(Service.process(a.state, { PurchaseId = "p5", ProductId = 7, PlayerId = 1 }, a.deps) == Service.RETRY and a.grants == 1)
+    -- A buyer who rejoins while a crashed server's lease still runs gets nothing yet, and
+    -- is told when to try again: the moment that lease runs out.
+    local retryStore = Service.memoryStore()
+    local function retryUpdate(owner, now)
+        local taken, retryAt
+        retryStore:UpdateAsync("Buyer_1", function(raw)
+            local l = Service.ledger(raw)
+            -- (Claims it took are held, so skipped, as the service does.)
+            taken, retryAt = Service.takeover(l, owner, now, function(_, e) return Service.isUfo(e.key) or e.owner == owner end)
+            return l
+        end)
+        return taken, retryAt
+    end
+    retryStore:UpdateAsync("Buyer_1", function(raw)
+        local l = Service.ledger(raw)
+        Service.claim(l, "m1", { key = "NextMars", amount = 1 }, "Crashed", 5000)
+        Service.claim(l, "m2", { key = "ExtraStay", amount = 60 }, "Crashed", 5100)
+        return l
+    end)
+    local taken2, retryAt = retryUpdate("New", 5001)
+    assert(next(taken2) == nil and retryAt == 5000 + Service.LeaseSeconds, "no retry time for a live lease")
+    taken2, retryAt = retryUpdate("New", retryAt)
+    assert(taken2.m1 and not taken2.m2 and retryAt == 5100 + Service.LeaseSeconds, "retry didn't take the expired claim")
+    taken2, retryAt = retryUpdate("New", retryAt)
+    assert(taken2.m2 and retryAt == nil)
+    -- A claim this server still holds is never taken back from itself; one it stopped
+    -- using (fenced) is, once its lease has run out.
+    retryStore:UpdateAsync("Buyer_1", function(raw)
+        local l = Service.ledger(raw)
+        Service.claim(l, "m3", { key = "Fill2000", amount = 2000 }, "New", 9000)
+        return l
+    end)
+    local stillHeld = { m3 = true }
+    local function skipHeld(id, entry) return Service.isUfo(entry.key) or stillHeld[id] end
+    local t3
+    retryStore:UpdateAsync("Buyer_1", function(raw)
+        local l = Service.ledger(raw)
+        t3 = Service.takeover(l, "New", 9000 + Service.LeaseSeconds, skipHeld)
+        return l
+    end)
+    assert(not t3.m3, "took back a claim it still holds")
+    stillHeld.m3 = nil
+    retryStore:UpdateAsync("Buyer_1", function(raw)
+        local l = Service.ledger(raw)
+        t3 = Service.takeover(l, "New", 9000 + Service.LeaseSeconds, skipHeld)
+        return l
+    end)
+    assert(t3.m3 and t3.m3.amount == 2000, "a fenced claim wasn't recovered")
+    -- The fence: a bank whose lease can't be renewed stops being used FenceSeconds before
+    -- it runs out, before any other server could take the claim over and apply it too.
+    local item = { left = 2000, leaseUntil = 10000 }
+    assert(not Service.fenced(item, 10000 - Service.FenceSeconds - 1))
+    assert(Service.fenced(item, 10000 - Service.FenceSeconds), "a bank kept being used up to its lease's end")
+    assert(not Service.fenced({ left = 0, leaseUntil = 0 }, 10000), "a used-up purchase fenced")
+    assert(Service.FenceSeconds >= 30 and Service.FenceSeconds < Service.LeaseSeconds - 60, "fence leaves no time to renew")
+
     -- The done list stays bounded.
     local long = Service.ledger(nil)
     for index = 1, Service.DoneLimit + 20 do

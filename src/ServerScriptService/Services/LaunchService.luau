@@ -34,6 +34,8 @@ local SATURN = 4
 -- destination folder; DustStormController).
 Launch.StormDelay = 25
 local MARS = 2
+-- Liftoff waits at most this long for the passengers' trips to be saved.
+local COMMIT_SECONDS = 5
 
 function Launch.new(ctx)
     local config, World, Remote, Movement, Cycle = ctx.config, ctx.World, ctx.Remote, ctx.Movement, ctx.Cycle
@@ -184,13 +186,19 @@ function Launch.new(ctx)
             local blackHole = definition.ModelTier == BLACK_HOLE
             -- Each passenger's suit boost (SkinService: the ride counts for more launches)
             -- is taken now, so one who disconnects during the flight keeps it. The trip goes
-            -- on their profile at once (its whole stay's ticks), so a server lost before the
-            -- stay is saved still pays it on their next join.
+            -- on their profile (its whole stay's ticks) and liftoff waits until those saves
+            -- are done (up to COMMIT_SECONDS), so a server lost from here on still pays it on
+            -- their next join.
             local suits = {}
+            local entitled = rewardSeconds * rate * multiplier
             for userId in passengers do
                 local player = Players:GetPlayerByUserId(userId)
                 suits[userId] = player and ctx.Skins and ctx.Skins.multiplier(player) or 1
-                ctx.profiles:lockLaunch(userId, cycle, { ticks = rewardSeconds * rate * multiplier, launches = suits[userId], blackHole = blackHole })
+                ctx.profiles:lockLaunch(userId, cycle, { ticks = entitled, launches = suits[userId], blackHole = blackHole })
+            end
+            local committed = ctx.profiles:commitLaunch(passengers, COMMIT_SECONDS)
+            for userId in passengers do
+                if not committed[userId] then warn("Rocket launch: trip not saved before liftoff (it saves with the stay)", userId) end
             end
             -- Anyone left in the cabin without a lock (profile not ready) goes home.
             for _, player in Players:GetPlayers() do
@@ -229,6 +237,15 @@ function Launch.new(ctx)
             -- The stay can grow while it runs (ShopService ExtraStay moves the deadline too).
             local stay = ctx.Shop and ctx.Shop.beginStay(rewardSeconds) or { total = rewardSeconds, extra = 0 }
             Cycle.deadline = workspace:GetServerTimeNow() + stay.total
+            -- A longer stay (time bought now or banked before) is worth more if the server is
+            -- lost: each open launch grows first, saved with the extra ticks it pays.
+            local function extendTrips()
+                local worth = stay.total * rate * multiplier
+                if worth <= entitled then return end
+                entitled = worth
+                for userId in rocket.passengers do ctx.profiles:extendLaunch(userId, cycle, entitled) end
+            end
+            extendTrips()
             for userId in rocket.passengers do
                 local player = Players:GetPlayerByUserId(userId)
                 if player then
@@ -243,6 +260,7 @@ function Launch.new(ctx)
                 task.wait(1 / rate)
                 tick += 1
                 local elapsed, second = tick / rate, tick % rate == 0
+                extendTrips()
                 for userId in rocket.passengers do
                     local player = Players:GetPlayerByUserId(userId)
                     ctx.profiles:queueReward(userId, cycle, tick * multiplier, blackHole, suits[userId])

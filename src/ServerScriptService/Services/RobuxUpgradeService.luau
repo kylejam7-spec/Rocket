@@ -86,12 +86,22 @@ function RobuxUpgradeService.sync(config, profile, owns, saved, trustSaved)
     return changed
 end
 
+-- Puts sync's freshly worked-out pass levels (`computed`) on the profile, plus only the
+-- passes bought while the ownership checks ran (`boughtDuring`, track -> level). Levels
+-- the profile held before the checks are not kept: a refunded pass must drop.
+function RobuxUpgradeService.install(profile, computed, boughtDuring)
+    local levels = table.clone(computed)
+    for track, level in boughtDuring or {} do levels[track] = math.max(levels[track] or 0, level) end
+    profile.passLevels = levels
+end
+
 function RobuxUpgradeService.new(ctx)
     local config = ctx.config
     local MarketplaceService = game:GetService("MarketplaceService")
     local Players = ctx.players
     local passes = RobuxUpgradeService.passes(config)
     local prompting = {} -- userId -> os.clock() until which no new prompt opens
+    local syncing = {} -- userId -> { track = level } bought while their ownership checks run
     local service = {}
 
     local function changed(player, track)
@@ -108,16 +118,17 @@ function RobuxUpgradeService.new(ctx)
         if not ctx.profiles:ready(player.UserId) then return end
         local profile = ctx.profiles.records[player.UserId].profile
         -- Worked out on a copy (the checks yield), then put on the live profile.
-        local probe = { upgrades = table.clone(profile.upgrades), passLevels = profile.passLevels }
+        local probe = { upgrades = table.clone(profile.upgrades) }
+        syncing[player.UserId] = {}
         RobuxUpgradeService.sync(config, probe, function(id)
             return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
         end, profile.passes, RunService:IsStudio())
+        local boughtDuring = syncing[player.UserId]
+        syncing[player.UserId] = nil
         if not player.Parent or not ctx.profiles:ready(player.UserId) then return end
         local before = {}
         for _, track in config.UpgradeOrder do before[track] = Upgrades.level(profile, track) end
-        -- A pass bought while the checks ran stays.
-        for track, level in profile.passLevels or {} do probe.passLevels[track] = math.max(probe.passLevels[track] or 0, level) end
-        profile.passLevels = probe.passLevels
+        RobuxUpgradeService.install(profile, probe.passLevels, boughtDuring)
         for _, track in config.UpgradeOrder do
             local level = Upgrades.level(profile, track)
             if level > before[track] then changed(player, track)
@@ -145,6 +156,8 @@ function RobuxUpgradeService.new(ctx)
         local pass = passes[passId]
         if not purchased or not pass or not ctx.profiles:ready(player.UserId) then return end
         local profile = ctx.profiles.records[player.UserId].profile
+        local during = syncing[player.UserId]
+        if during then during[pass.track] = math.max(during[pass.track] or 0, pass.level) end
         -- Saved too (see the header): kept when a later ownership check fails, and in Studio.
         local key = RobuxUpgradeService.savedKey(pass.track, pass.level)
         if not table.find(profile.passes, key) then
@@ -154,7 +167,7 @@ function RobuxUpgradeService.new(ctx)
         if RobuxUpgradeService.apply(config, profile, pass.track, pass.level) then changed(player, pass.track)
         else task.spawn(function() ctx.profiles:save(player.UserId) end) end
     end)
-    Players.PlayerRemoving:Connect(function(player) prompting[player.UserId] = nil end)
+    Players.PlayerRemoving:Connect(function(player) prompting[player.UserId], syncing[player.UserId] = nil, nil end)
     return service
 end
 

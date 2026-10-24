@@ -428,8 +428,36 @@ function Profiles:lockLaunch(userId, launchId, entry)
         record.blackHoles[launchId] = true
     end
     self:dirty(userId)
-    self:saveSoon(userId)
     return true
+end
+
+-- Saves every locked passenger in `userIds` (userId = true) at once and waits, up to
+-- `timeout` seconds, until each save is done: the launch goes ahead only once its trips
+-- are on the profiles (Launch). Returns the set whose save succeeded; a save still
+-- running at the timeout carries on (their stay's rewards save as usual).
+function Profiles:commitLaunch(userIds, timeout)
+    local saved, left = {}, 0
+    for userId in userIds do
+        left += 1
+        task.spawn(function()
+            if self:saveNow(userId) then saved[userId] = true end
+            left -= 1
+        end)
+    end
+    local deadline = os.clock() + (timeout or 5)
+    while left > 0 and os.clock() < deadline do task.wait(0.05) end
+    return saved
+end
+
+-- The stay of `launchId` grew (bought or banked time): its open launch is worth
+-- `ticks` now, saved in the same write as the extra ticks it pays.
+function Profiles:extendLaunch(userId, launchId, ticks)
+    local record = self.records[userId]
+    local entry = record and record.loaded and record.profile.openLaunches[launchId]
+    if not entry or ticks <= entry.ticks then return end
+    entry.ticks = ticks
+    self:dirty(userId)
+    self:saveSoon(userId)
 end
 
 -- The stay of `launchId` is over: its rewards are all queued, so the open launch closes
