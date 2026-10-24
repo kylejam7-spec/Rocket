@@ -2,13 +2,11 @@
 -- glossy fill and a big stroked "9 / 171,700" label on top.
 -- Options: fillColor, rimColor, rim (thickness, 0 for none), label (true to add
 -- text), textSize, animate (tween fill changes).
--- pill:set(progress, color?, text?, image?) updates it (image: a Shared.ProductImages key
--- shown after the text, nil for none); call it as often as you like.
+-- pill:set(progress, color?, text?) updates it; call it as often as you like.
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
 local Tween = require(script.Parent.Tween)
-local Icon = require(script.Parent.Icon)
 local Pill = {}
 Pill.__index = Pill
 
@@ -54,7 +52,7 @@ function Pill.new(props)
     return setmetatable({ instance = track, fill = fill, label = label, animate = props.animate, cap = cap, target = -1 }, Pill)
 end
 
-function Pill:set(progress, color, text, image)
+function Pill:set(progress, color, text)
     local alpha = math.clamp(progress, 0, 1)
     if alpha ~= self.target then
         local grew = self.target >= 0 and alpha > self.target
@@ -71,10 +69,6 @@ function Pill:set(progress, color, text, image)
     end
     if color then self.fill.BackgroundColor3 = color end
     if text and self.label then self.label.Text = text end
-    if self.label and image ~= self.image then
-        self.image = image
-        Icon.attach(self.label, image, "after")
-    end
 end
 
 return Pill

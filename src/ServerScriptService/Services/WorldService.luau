@@ -229,7 +229,7 @@ function World.new(ctx)
         part("GymArchPost", Vector3.new(side * 10, 7, archZ), Vector3.new(2, 14, 2), Color3.fromRGB(165, 175, 190))
     end
     Signs.decorate(part("GymArchSign", Vector3.new(0, 15.5, archZ), Vector3.new(24, 4.4, 1), Signs.Backing), Enum.NormalId.Front,
-        { title = "GYM DISTRICT", subtitle = "TRAIN STRENGTH & SPEED", icon = "💪", image = "Strength", accent = Color3.fromRGB(255, 204, 40) })
+        { title = "GYM DISTRICT", subtitle = "TRAIN STRENGTH & SPEED", icon = "💪", accent = Color3.fromRGB(255, 204, 40) })
     -- Low walls on the open sides and back so nobody walks off the plaza.
     -- Brick, with a pale cap.
     local wallColor = Color3.fromRGB(150, 84, 66)

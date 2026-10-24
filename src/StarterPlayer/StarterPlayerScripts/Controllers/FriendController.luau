@@ -10,7 +10,6 @@ local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local StrokedText = require(UI.StrokedText)
-local Icon = require(UI.Icon)
 local Tween = require(UI.Tween)
 local FriendController = {}
 
@@ -23,15 +22,14 @@ function FriendController.start()
     -- Right under ShopController's SHOP row (52 tall at the same left edge).
     local holder = Create.new("Frame", { Name = "InviteHolder", BackgroundTransparency = 1, Size = UDim2.fromOffset(150, 92),
         Position = UDim2.fromOffset(Theme.gutter, (Actions.touch and 8 + 276 * 1.25 + 8 or 150 + 276 + 6) + 58), Parent = gui })
-    local invite = Button.new({
-        Name = "InviteButton", Text = Icon.text("Invite", "👋") .. "INVITE", TextSize = 26, color = FRIEND, Size = UDim2.fromOffset(150, 50),
+    Button.new({
+        Name = "InviteButton", Text = "👋 INVITE", TextSize = 26, color = FRIEND, Size = UDim2.fromOffset(150, 50),
         onActivated = function()
             local ok, can = pcall(SocialService.CanSendGameInviteAsync, SocialService, player)
             if ok and can then pcall(SocialService.PromptGameInvite, SocialService, player) end
         end,
         Parent = holder,
     })
-    Icon.attach(invite.Label, "Invite")
     local chip = StrokedText.new({
         Name = "FriendChip", Position = UDim2.fromOffset(0, 54), Size = UDim2.fromOffset(150, 38), BackgroundTransparency = 0.2,
         BackgroundColor3 = Theme.color.Panel, Font = Theme.font.Display, TextSize = 16, TextColor3 = Theme.color.Muted,

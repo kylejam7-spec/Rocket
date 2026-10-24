@@ -1,4 +1,4 @@
--- World billboards (rank tags, gym equipment tags, "+2" stat pops) are sized in screen
+-- World billboards (rank tags, gym equipment tags, "+2 💪" pops) are sized in screen
 -- pixels, so on a short phone screen they cover far more of the view than on a
 -- monitor. WorldScale.apply(gui) shrinks a BillboardGui and its contents by
 -- viewport height / ReferenceHeight (never above 1, so desktops are unchanged) and

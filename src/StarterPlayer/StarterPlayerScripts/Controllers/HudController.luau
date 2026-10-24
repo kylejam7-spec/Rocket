@@ -1,6 +1,6 @@
 -- The reference-style HUD: left stat stack (Coins, Strength, Speed, Launches), the
 -- top-centre objective line, Feedback toasts above the pill, the save-status tag,
--- and stat-gain juice ("+2" and the strength picture over your head, "Strength Level 5!" on each new
+-- and stat-gain juice ("+2 💪" over your head, "Strength Level 5!" on each new
 -- level, coins that fly from your head to the Coins row on delivery).
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,7 +14,6 @@ local UI = script.Parent.Parent:WaitForChild("UI")
 local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
-local Icon = require(UI.Icon)
 local StatRow = require(UI.StatRow)
 local WorldScale = require(UI.WorldScale)
 local Popup = require(UI.Popup)
@@ -72,11 +71,11 @@ function HudController.start()
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
     if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.25, Parent = stack }) end
-    local coins = StatRow.new({ Name = "Coins", icon = Icon.image("Coin") or icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
+    local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
-    local strength = StatRow.new({ Name = "Strength", icon = Icon.image("Strength") or icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
-    local speed = StatRow.new({ Name = "Speed", icon = Icon.image("Speed") or icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 24", badge = "LV 0", progress = true, LayoutOrder = 2, Parent = stack })
-    local launches = StatRow.new({ Name = "Launches", icon = Icon.image("Launch") or icon.Launch, color = Theme.color.Launch, sub = "Delivered: 0", LayoutOrder = 3, Parent = stack })
+    local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
+    local speed = StatRow.new({ Name = "Speed", icon = icon.Speed, color = Theme.color.Speed, sub = "Walk Speed: 24", badge = "LV 0", progress = true, LayoutOrder = 2, Parent = stack })
+    local launches = StatRow.new({ Name = "Launches", icon = icon.Launch, color = Theme.color.Launch, sub = "Delivered: 0", LayoutOrder = 3, Parent = stack })
 
     local goal = StrokedText.new({
         Name = "Objective", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 64),
@@ -136,14 +135,14 @@ function HudController.start()
         lane.last = Vector2.new(x, y)
         return x, y
     end
-    local function worldPop(text, color, lane, size, image)
+    local function worldPop(text, color, lane, size)
         local adornee = head()
         if adornee then
             lane = lanes[lane]
             local jitter, shift = lane.jitter, lane.shift
             if lane.x then jitter, shift = spot(lane) end
             Popup.world(adornee, { Text = text, TextColor3 = color, TextSize = size or (lane.x and math.random(26, 34)) or 30,
-                jitter = jitter, shift = shift, image = image })
+                jitter = jitter, shift = shift })
         end
     end
 
@@ -176,9 +175,10 @@ function HudController.start()
             if inFlight >= 15 then break end
             inFlight += 1
             spawned += 1
-            local coin = Icon.new("Coin", icon.Coin, {
+            local coin = StrokedText.new({
                 Name = "FlyingCoin", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(40, 40),
-                Position = UDim2.fromOffset(origin.X, origin.Y), TextSize = 34, ZIndex = 5, Parent = gui,
+                Position = UDim2.fromOffset(origin.X, origin.Y), Text = icon.Coin, Font = Theme.font.Display,
+                TextSize = 34, stroke = 2, ZIndex = 5, Parent = gui,
             })
             -- Pop outward first, then fly to the counter, staggered.
             local spread = Vector2.new(math.random(-70, 70), math.random(-60, -10))
@@ -259,11 +259,11 @@ function HudController.start()
                 -- level-up sound on top of it when a stat levels (once if both do).
                 local levelled = false
                 if p.strength > before.strength then
-                    worldPop("+" .. p.strength - before.strength, Theme.color.Strength, "strengthGain", nil, "Strength")
+                    worldPop("+" .. p.strength - before.strength .. " " .. icon.Strength, Theme.color.Strength, "strengthGain")
                     Sfx.play("gain", { pitch = 0.9 })
                 end
                 if p.speed > before.speed then
-                    worldPop("+" .. p.speed - before.speed, Theme.color.Speed, "speedGain", nil, "Speed")
+                    worldPop("+" .. p.speed - before.speed .. " " .. icon.Speed, Theme.color.Speed, "speedGain")
                     Sfx.play("gain", { pitch = 1.25 })
                 end
                 if strengthLevel > StatLevels.level(Config, before.strength) then

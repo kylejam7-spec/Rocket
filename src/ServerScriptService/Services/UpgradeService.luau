@@ -64,7 +64,7 @@ function UpgradeService.new(ctx)
         return label
     end
 
-    -- Nameplate over the head, visible to everyone: a rocket and the lifetime launch count and the
+    -- Nameplate over the head, visible to everyone: a 🚀 lifetime launch count and the
     -- rank title on top, the display name just above the head (it replaces Roblox's own).
     function service.showRank(player, profile)
         local _, name = Upgrades.rank(config, profile.completedLaunches)
@@ -110,9 +110,6 @@ function UpgradeService.new(ctx)
             local count = text("Count", 16, Color3.new(1, 1, 1), badge)
             count.Size = UDim2.fromScale(0, 1)
             count.AutomaticSize = Enum.AutomaticSize.X
-            -- The rocket picture before the count (InlineIconController).
-            count:SetAttribute("Image", "Launch")
-            game:GetService("CollectionService"):AddTag(count, "InlineIcon")
             local title = text("Title", 22, Color3.fromRGB(255, 204, 40), row)
             title.Size = UDim2.fromScale(0, 1)
             title.AutomaticSize = Enum.AutomaticSize.X
@@ -124,7 +121,7 @@ function UpgradeService.new(ctx)
             tag.Parent = head
         end
         local title, count = tag.RankRow.Title, tag.RankRow.Launches.Count
-        local launches = tostring(profile.completedLaunches)
+        local launches = "🚀 " .. profile.completedLaunches
         if title.Text ~= name then title.Text = name end
         if count.Text ~= launches then count.Text = launches end
     end

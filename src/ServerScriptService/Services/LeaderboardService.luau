@@ -26,13 +26,13 @@ local Images = require(game:GetService("ReplicatedStorage").Shared.ProductImages
 local Leaderboards = {}
 
 Leaderboards.Categories = table.freeze({
-    table.freeze({ key = "Strength", title = "STRENGTH", icon = "💪", image = "Strength", accent = Color3.fromRGB(255, 110, 80),
+    table.freeze({ key = "Strength", title = "STRENGTH", icon = "💪", accent = Color3.fromRGB(255, 110, 80),
         value = function(p) return p.strengthLevel + p.planetBonuses.strength end }),
-    table.freeze({ key = "Speed", title = "SPEED", icon = "👟", image = "Speed", accent = Color3.fromRGB(90, 200, 255),
+    table.freeze({ key = "Speed", title = "SPEED", icon = "👟", accent = Color3.fromRGB(90, 200, 255),
         value = function(p) return p.speedLevel + p.planetBonuses.speed end }),
-    table.freeze({ key = "Coins", title = "COINS", icon = "💰", image = "Coin", accent = Color3.fromRGB(255, 204, 40),
+    table.freeze({ key = "Coins", title = "COINS", icon = "💰", accent = Color3.fromRGB(255, 204, 40),
         value = function(p) return p.coins end }),
-    table.freeze({ key = "Launches", title = "ROCKETS DELIVERED", icon = "🚀", image = "Launch", accent = Color3.fromRGB(255, 150, 60),
+    table.freeze({ key = "Launches", title = "ROCKETS DELIVERED", icon = "🚀", accent = Color3.fromRGB(255, 150, 60),
         value = function(p) return p.completedLaunches end }),
     table.freeze({ key = "Delivered", title = "MATERIALS DELIVERED", icon = "🔩", accent = Color3.fromRGB(150, 220, 120),
         value = function(p) return p.lifetimeDeliveries end }),
