@@ -173,6 +173,25 @@ function Launch.new(ctx)
             aboard = {}
             if not rocket:lockPassengers(passengers) then return end
             Cycle.boarded = passengers
+            local place = destination()
+            local rewardSeconds = service.debug and service.debug.stay or definition.RewardSeconds or config.RewardSeconds
+            -- Rarer destinations pay more (Config.Destinations reward x the mission's multiplier).
+            local multiplier = definition.RewardMultiplier * place.reward
+            -- Cumulative tick counts are idempotent even when a save retries; the
+            -- multiplier scales the ticks so the ledger stays an integer total.
+            -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
+            local rate = config.Planet.TicksPerSecond
+            local blackHole = definition.ModelTier == BLACK_HOLE
+            -- Each passenger's suit boost (SkinService: the ride counts for more launches)
+            -- is taken now, so one who disconnects during the flight keeps it. The trip goes
+            -- on their profile at once (its whole stay's ticks), so a server lost before the
+            -- stay is saved still pays it on their next join.
+            local suits = {}
+            for userId in passengers do
+                local player = Players:GetPlayerByUserId(userId)
+                suits[userId] = player and ctx.Skins and ctx.Skins.multiplier(player) or 1
+                ctx.profiles:lockLaunch(userId, cycle, { ticks = rewardSeconds * rate * multiplier, launches = suits[userId], blackHole = blackHole })
+            end
             -- Anyone left in the cabin without a lock (profile not ready) goes home.
             for _, player in Players:GetPlayers() do
                 if not passengers[player.UserId] and service.inCabin(player) then Movement.relocate(player, spawn.Position + Vector3.new(0, 5, 0)) end
@@ -190,7 +209,6 @@ function Launch.new(ctx)
             local flight = tier.LaunchSeconds + tier.LandingSeconds
             Cycle.deadline = launchAt + flight
             rocketBuild:launch(launchAt, tier, definition.IsLegendary)
-            local place = destination()
             for _, other in World.destinations do
                 local old = other.folder:FindFirstChild("LandedRocket")
                 if old then old:Destroy() end
@@ -202,9 +220,6 @@ function Launch.new(ctx)
             Cycle.broadcast()
             task.wait(flight)
             rocket.phase = "Rewarding"
-            local rewardSeconds = service.debug and service.debug.stay or definition.RewardSeconds or config.RewardSeconds
-            -- Rarer destinations pay more (Config.Destinations reward x the mission's multiplier).
-            local multiplier = definition.RewardMultiplier * place.reward
             for _, station in World.stations do
                 if station.destination == definition.ModelTier then
                     station.gain = config.Planet.GymGain * multiplier
@@ -223,10 +238,6 @@ function Launch.new(ctx)
                 end
             end
             Cycle.broadcast()
-            -- Cumulative tick counts are idempotent even when a save retries; the
-            -- multiplier scales the ticks so the ledger stays an integer total.
-            -- Planet.TicksPerSecond ticks a second; the rest of the stay runs in seconds.
-            local rate = config.Planet.TicksPerSecond
             local tick, spun, swallowed, breached, crashed, stormed = 0, false, false, false, false, false
             while tick < stay.total * rate do
                 task.wait(1 / rate)
@@ -234,8 +245,7 @@ function Launch.new(ctx)
                 local elapsed, second = tick / rate, tick % rate == 0
                 for userId in rocket.passengers do
                     local player = Players:GetPlayerByUserId(userId)
-                    -- A suit makes the ride count for more launches (SkinService).
-                    ctx.profiles:queueReward(userId, cycle, tick * multiplier, definition.ModelTier == BLACK_HOLE, player and ctx.Skins and ctx.Skins.multiplier(player))
+                    ctx.profiles:queueReward(userId, cycle, tick * multiplier, blackHole, suits[userId])
                     if player and second then Remote.feedback(player, place.name .. " +" .. config.Planet.StrengthBonus * multiplier * rate .. " strength / +" .. config.Planet.SpeedBonus * multiplier * rate .. " speed (" .. elapsed .. "/" .. stay.total .. ")") end
                 end
                 if not spun and stay.total - elapsed <= config.WheelLeadSeconds then
@@ -270,6 +280,8 @@ function Launch.new(ctx)
                 end
                 if second then Cycle.broadcast() end
             end
+            -- Every tick is queued: the open launch closes with the save that commits them.
+            for userId in rocket.passengers do ctx.profiles:finishLaunch(userId, cycle) end
             if ctx.Shop then ctx.Shop.endStay() end
             if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end
             place.folder:SetAttribute("SingularityAt", nil)

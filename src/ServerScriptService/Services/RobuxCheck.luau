@@ -1,7 +1,8 @@
 -- Robux upgrade levels (Game Passes): the configured passes, the next-level lookup the panel
--- and prompt use, raising a level from a pass (never lowering it, capped at max), the
--- join-time ownership sync (highest pass wins, failed checks change nothing), and the v6
--- profile cap.
+-- and prompt use, raising a pass level (never lowering it, capped at max, kept apart from
+-- the saved coin levels), the join-time ownership sync (highest pass wins, a refunded pass
+-- stops counting, failed checks fall back to passes saved as bought here, Studio test
+-- purchases count), and the v6 profile cap.
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
@@ -35,12 +36,14 @@ return function()
     partial.RobuxUpgrades = { prices = robux.prices, passes = { BulkPickup = { 101 } } }
     assert(Upgrades.robux(partial, "BulkPickup", 1) == nil and Upgrades.robux(partial, "BulkPlace", 0) == nil, "missing pass shows")
 
-    -- apply: raises only, capped at max, ignores unknown tracks.
+    -- apply: raises only, capped at max, ignores unknown tracks; never touches the saved
+    -- coin levels.
     local profile = Profiles.validate(nil, config)
-    assert(Service.apply(config, profile, "BulkPickup", 3) and profile.upgrades.BulkPickup == 3)
-    assert(not Service.apply(config, profile, "BulkPickup", 2) and profile.upgrades.BulkPickup == 3, "pass lowered a level")
+    assert(Service.apply(config, profile, "BulkPickup", 3) and Upgrades.level(profile, "BulkPickup") == 3 and profile.upgrades.BulkPickup == nil)
+    assert(not Service.apply(config, profile, "BulkPickup", 2) and Upgrades.level(profile, "BulkPickup") == 3, "pass lowered a level")
     assert(not Service.apply(config, profile, "BulkPickup", 3), "same level counted as a change")
-    assert(Service.apply(config, profile, "BulkPlace", 99) and profile.upgrades.BulkPlace == MAX, "pass level not capped")
+    assert(Service.apply(config, profile, "BulkPlace", 99) and Upgrades.level(profile, "BulkPlace") == MAX, "pass level not capped")
+    assert(Upgrades.levels(config, profile).BulkPickup == 3, "snapshot levels miss the pass level")
     assert(not Service.apply(config, profile, "Nope", 1) and not Service.apply(config, profile, "BulkPickup", "5"))
 
     -- Coin levels continue from a pass level.
@@ -59,7 +62,8 @@ return function()
     local fresh = Profiles.validate(nil, config)
     local owns = owning({ robux.passes.BulkPickup[2], robux.passes.BulkPickup[5], robux.passes.PlacementRange[1] })
     local raised = Service.sync(config, fresh, owns)
-    assert(fresh.upgrades.BulkPickup == 5 and (fresh.upgrades.BulkPlace or 0) == 0 and fresh.upgrades.PlacementRange == 1)
+    assert(Upgrades.level(fresh, "BulkPickup") == 5 and Upgrades.level(fresh, "BulkPlace") == 0 and Upgrades.level(fresh, "PlacementRange") == 1)
+    assert(next(fresh.upgrades) == nil, "pass levels went into the saved coin levels")
     assert(#raised == 2 and table.find(raised, "BulkPickup") and table.find(raised, "PlacementRange"))
     assert(#Service.sync(config, fresh, owns) == 0, "re-sync changed levels")
     local coined = Profiles.validate(nil, config)
@@ -69,6 +73,22 @@ return function()
     assert(calls2() == 3 + MAX + MAX, "sync checked passes at or below the current level")
     local failing = Profiles.validate(nil, config)
     assert(#Service.sync(config, failing, function() error("Marketplace down") end) == 0 and next(failing.upgrades) == nil)
+    -- A refunded pass stops counting on the next sync: back to the coin level.
+    local refunded = Profiles.validate(nil, config)
+    refunded.upgrades.BulkPickup = 2
+    Service.sync(config, refunded, (owning({ robux.passes.BulkPickup[6] })))
+    assert(Upgrades.level(refunded, "BulkPickup") == 6)
+    local dropped = Service.sync(config, refunded, (owning({})))
+    assert(Upgrades.level(refunded, "BulkPickup") == 2 and table.find(dropped, "BulkPickup"), "refunded pass still counts")
+    -- A failed check falls back to the pass saved as bought here; Studio (trustSaved)
+    -- counts saved passes even when Roblox says no.
+    local saved = { Service.savedKey("BulkPickup", 4), "DoubleCoins" }
+    Service.sync(config, refunded, function() error("Marketplace down") end, saved)
+    assert(Upgrades.level(refunded, "BulkPickup") == 4, "saved pass not used when the check failed")
+    Service.sync(config, refunded, (owning({})), saved)
+    assert(Upgrades.level(refunded, "BulkPickup") == 2, "saved pass beat Roblox outside Studio")
+    Service.sync(config, refunded, (owning({})), saved, true)
+    assert(Upgrades.level(refunded, "BulkPickup") == 4, "Studio test purchase lost")
     local maxed = Profiles.validate(nil, config)
     maxed.upgrades = { BulkPickup = MAX, BulkPlace = MAX, PlacementRange = MAX }
     local owns3, calls3 = owning({})

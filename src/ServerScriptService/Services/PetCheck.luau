@@ -72,9 +72,15 @@ return function()
     assert(Service.buy(profile, 0, "a", random) == nil and Service.buy(profile, "1", "a", random) == nil)
     assert(Service.buy(profile, 1, "", random) == nil and Service.buy(profile, 1, string.rep("x", 65), random) == nil)
     assert(select(2, Service.buy(profile, 4, "a", random)) == "robux only" and select(2, Service.buy(profile, 5, "a", random)) == "robux only")
+    -- Request IDs: bounded ASCII only, checked before any coins move. Bytes that aren't
+    -- UTF-8 (or a multi-byte character) would make every later DataStore save fail.
+    for _, badId in { string.char(255), "é", "a:b", "a;b", "a b", ("é"):rep(4):sub(1, 7) } do
+        assert(Service.buy(profile, 1, badId, random) == nil and profile.coins == 600 and #profile.ufos == 0, "bad request id accepted")
+    end
     assert(Service.buy(profile, 1, "a", random) == 500 and profile.coins == 100)
     local first = profile.ufos[1]
-    assert(#profile.ufos == 1 and first.tier == 1 and first.remaining == 300 and Pets.get(first.pet) and first.id == "a")
+    -- The UFO's id is made on the server: 8 hex digits, whatever the request ID was.
+    assert(#profile.ufos == 1 and first.tier == 1 and first.remaining == 300 and Pets.get(first.pet) and first.id:match("^%x%x%x%x%x%x%x%x$"))
     assert(Service.buy(profile, 1, "a", random) == 0 and profile.coins == 100, "retry charged twice")
     profile.coins = 1e6
     assert(select(2, Service.buy(profile, 2, "b", random)) == "busy" and profile.coins == 1e6)
@@ -122,6 +128,14 @@ return function()
     legacy.ufos, legacy.ufo = nil, { tier = 2, pet = "Blob_Cat", remaining = 30 }
     legacy = Profiles.validate(legacy, config)
     assert(#legacy.ufos == 1 and legacy.ufos[1].tier == 2 and legacy.ufos[1].id and legacy.ufo == nil)
+    -- A UFO id clients can't parse (or not UTF-8) is renamed on load; so are ledgers
+    -- holding IDs that aren't UTF-8 (they'd fail every save) cleaned.
+    local odd = Profiles.validate(nil, config)
+    odd.ufos = { { id = "x:" .. string.char(255), tier = 1, pet = "Blob_Cat", remaining = 30 } }
+    odd.purchaseIds = { "ok-1", string.char(200), "ok-2" }
+    odd = Profiles.validate(odd, config)
+    assert(odd.ufos[1].id == "u1" and #odd.purchaseIds == 2 and odd.purchaseIds[2] == "ok-2", "unsafe ids kept")
+    assert(pcall(game:GetService("HttpService").JSONEncode, game:GetService("HttpService"), odd), "cleaned profile still can't be stored")
     local saved = Profiles.validate(profile, config)
     assert(Profiles.samePets(saved, profile) and saved.pets ~= profile.pets, "pets didn't round-trip as a copy")
     local function bad(change)

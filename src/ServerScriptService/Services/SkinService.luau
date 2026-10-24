@@ -18,6 +18,9 @@ local Signs = require(script.Parent.SignService)
 local Skin = {}
 
 Skin.StandTag = "SuitStand" -- each stand's prompt, its Suit attribute the suit's key
+-- Re-dressing a character (Humanoid:ApplyDescription) runs at most once per this many
+-- seconds per player; changes in between are coalesced into one re-dress at the end.
+Skin.DressCooldown = 1.5
 local MANNEQUIN_SCALE = 1.3
 local PLINTH_HEIGHT, PLINTH_SIZE = 1.2, 6
 
@@ -225,8 +228,22 @@ function Skin.stand(parent, base, facing, skin)
     return prompt
 end
 
+-- The cooldown gate: "now" when a re-dress may run (and it's stamped), the seconds to
+-- wait when one should be scheduled, or nil when one is already scheduled.
+function Skin.gate(state, key, now, cooldown)
+    if state.queued[key] then return nil end
+    local wait = (state.last[key] or -math.huge) + cooldown - now
+    if wait > 0 then
+        state.queued[key] = true
+        return wait
+    end
+    state.last[key] = now
+    return "now"
+end
+
 function Skin.new(ctx)
     local service = {}
+    local dressing = { last = {}, queued = {} }
     local function owns(player, key) return ctx.Shop ~= nil and ctx.Shop.owns(player, key) end
     -- Each player's own avatar (a web call, once per join), for their head.
     local avatars = {}
@@ -240,6 +257,7 @@ function Skin.new(ctx)
     game:GetService("Players").PlayerRemoving:Connect(function(player)
         if avatars[player] then avatars[player]:Destroy() end
         avatars[player] = nil
+        dressing.last[player], dressing.queued[player] = nil, nil
     end)
     -- The best suit `player` owns: its boost is theirs whatever they wear.
     function service.best(player)
@@ -266,10 +284,21 @@ function Skin.new(ctx)
         character:WaitForChild("Head", 10)
         Skin.dress(character, skin)
     end
-    -- After passes change: a new suit goes on the current character in place.
+    -- After passes change: a new suit goes on the current character in place (at most
+    -- once per DressCooldown; the latest choice wins).
     function service.refresh(player)
         local skin = service.skin(player)
-        if player:GetAttribute("Suit") == skin.key then return end
+        if player:GetAttribute("Suit") == skin.key or dressing.queued[player] then return end
+        local gate = Skin.gate(dressing, player, os.clock(), Skin.DressCooldown)
+        if gate ~= "now" then
+            if gate then
+                task.delay(gate, function()
+                    dressing.queued[player] = nil
+                    if player.Parent then service.refresh(player) end
+                end)
+            end
+            return
+        end
         player:SetAttribute("Suit", skin.key)
         local character = player.Character
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")

@@ -62,5 +62,16 @@ return function()
     assert(gear:FindFirstChild("Halo") and gear:FindFirstChild("ShoulderPad_Left") and gear.HelmetLamps.Material == Enum.Material.Neon, "galaxy gear")
     assert(gear.ThrusterGlow:FindFirstChild("Flame") and gear.Backpack:FindFirstChildOfClass("Trail"), "galaxy effects")
     body:Destroy()
+    -- Re-dressing (ApplyDescription) is gated per player: the first runs at once, a
+    -- burst of suit swaps after it becomes one re-dress when the cooldown ends.
+    local state, cooldown = { last = {}, queued = {} }, SkinService.DressCooldown
+    assert(cooldown >= 1, "suit swaps not throttled")
+    assert(SkinService.gate(state, "p", 100, cooldown) == "now")
+    local wait = SkinService.gate(state, "p", 100.2, cooldown)
+    assert(type(wait) == "number" and math.abs(wait - (cooldown - 0.2)) < 1e-6, "second swap not delayed")
+    for t = 1, 20 do assert(SkinService.gate(state, "p", 100.2 + t * 0.01, cooldown) == nil, "swaps not coalesced") end
+    assert(SkinService.gate(state, "q", 100.3, cooldown) == "now", "players share a cooldown")
+    state.queued.p = nil -- the scheduled re-dress runs
+    assert(SkinService.gate(state, "p", 100 + cooldown, cooldown) == "now")
     return "Suit checks passed"
 end

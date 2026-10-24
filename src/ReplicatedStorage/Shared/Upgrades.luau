@@ -2,8 +2,23 @@
 -- (panel prices). Tunables live in Config.Upgrades / Config.UpgradePrices / Config.Ranks.
 local Upgrades = {}
 
+-- The level in effect: the coin-bought level (profile.upgrades, saved) or the highest
+-- Robux level pass owned now (profile.passLevels, set each join by RobuxUpgradeService
+-- and never saved), whichever is higher.
 function Upgrades.level(profile, track)
-    return profile.upgrades and profile.upgrades[track] or 0
+    local coins = profile.upgrades and profile.upgrades[track] or 0
+    local pass = profile.passLevels and profile.passLevels[track] or 0
+    return math.max(coins, pass)
+end
+
+-- Every track's level in effect (the snapshot clients draw the upgrade panel from).
+function Upgrades.levels(config, profile)
+    local levels = {}
+    for track in config.Upgrades do
+        local level = Upgrades.level(profile, track)
+        if level > 0 then levels[track] = level end
+    end
+    return levels
 end
 
 -- Unrounded price of level n (1-based) on Config.UpgradePrices.

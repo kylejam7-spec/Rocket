@@ -39,6 +39,13 @@ return function()
     assert(Service.buy(config, profile, "Nope", "a") == nil and Service.buy(config, profile, "BulkPickup", "") == nil)
     assert(Service.buy(config, profile, "CarryCapacity", "a") == nil, "retired track still sells")
     assert(Service.buy(config, profile, "BulkPickup", 7) == nil and Service.buy(config, profile, "BulkPickup", string.rep("x", 65)) == nil)
+    -- Only bounded ASCII IDs reach the ledger (a byte that isn't UTF-8 fails every save);
+    -- the GUIDs clients send pass.
+    local coinsBefore = profile.coins
+    for _, badId in { string.char(255), "é", ("é"):rep(4):sub(1, 7), "a b", "a\0b" } do
+        assert(Service.buy(config, profile, "BulkPickup", badId) == nil and profile.coins == coinsBefore and #profile.purchaseIds == 0, "bad request id accepted")
+    end
+    assert(Service.validId(game:GetService("HttpService"):GenerateGUID(false)) and Service.validId(string.rep("x", 64)) and not Service.validId(""))
     assert(Service.buy(config, profile, "BulkPickup", "a") == 50 and profile.coins == 150 and profile.upgrades.BulkPickup == 1)
     assert(Service.buy(config, profile, "BulkPickup", "a") == 0 and profile.coins == 150 and profile.upgrades.BulkPickup == 1, "retry charged twice")
     assert(Service.buy(config, profile, "BulkPickup", "b") == 150 and profile.coins == 0 and profile.upgrades.BulkPickup == 2)

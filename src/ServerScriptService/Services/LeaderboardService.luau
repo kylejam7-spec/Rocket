@@ -11,7 +11,8 @@
         BlackHoles        lifetime Black Hole visits
 
     Each category is an OrderedDataStore keyed by user ID. Every PushSeconds, and when a
-    player leaves, a player's changed values are written; every RefreshSeconds each board
+    player leaves, a player's changed values are written (from the profile as last saved,
+    record.committed, never unsaved progress or a server whose saves are failing); every RefreshSeconds each board
     reads its top ten. Panels redraw every RenderSeconds from that top ten with the live
     values of everyone in this server laid over it, so players here move at once (and a
     player here who spends their coins drops at once). Writes and reads wait for their
@@ -256,15 +257,17 @@ function Leaderboards.new(ctx)
         end
     end
 
-    -- A leaving player's last values go out before their record is let go.
+    -- A leaving player's last saved values go out before their record is let go.
     function service.leave(player)
         local record = ctx.profiles.records[player.UserId]
         if not record or not ctx.profiles:ready(player.UserId) then return end
-        local snapshot = table.clone(record.profile)
-        snapshot.planetBonuses = table.clone(record.profile.planetBonuses)
+        local userId = player.UserId
         task.spawn(function()
-            push(player.UserId, snapshot)
-            pushed[player.UserId] = nil
+            -- The leaving save first (up to a minute; a locked passenger's stay may run on).
+            local deadline = os.clock() + 60
+            while (record.busy or record.dirty or record.saveQueued or next(record.pending)) and os.clock() < deadline do task.wait(1) end
+            if record.committed then push(userId, record.committed) end
+            pushed[userId] = nil
         end)
     end
 
@@ -289,7 +292,7 @@ function Leaderboards.new(ctx)
                 task.wait(settings.PushSeconds)
                 for _, player in Players:GetPlayers() do
                     local record = ctx.profiles.records[player.UserId]
-                    if record and ctx.profiles:ready(player.UserId) then push(player.UserId, record.profile) end
+                    if record and record.committed and ctx.profiles:ready(player.UserId) then push(player.UserId, record.committed) end
                 end
             end
         end)

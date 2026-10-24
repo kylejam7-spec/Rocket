@@ -25,23 +25,30 @@ local EXTRA_LANDING_GAP = 6
 function PetService.buy(profile, tier, requestId, random, maxUfos)
     local ufo = type(tier) == "number" and Pets.Ufos[tier]
     if not ufo then return nil, "unknown tier" end
-    if type(requestId) ~= "string" or #requestId == 0 or #requestId > 64 then return nil, "bad request id" end
+    if not UpgradeService.validId(requestId) then return nil, "bad request id" end
     if table.find(profile.purchaseIds, requestId) then return 0 end
     if not ufo.Price then return nil, "robux only" end
     if #profile.ufos >= (maxUfos or 1) then return nil, "busy" end
     if profile.coins < ufo.Price then return nil, "not enough coins" end
     profile.coins -= ufo.Price
-    PetService.add(profile, tier, requestId, random)
+    PetService.add(profile, tier, random)
     table.insert(profile.purchaseIds, requestId)
     while #profile.purchaseIds > UpgradeService.LedgerSize do table.remove(profile.purchaseIds, 1) end
     return ufo.Price
 end
 
--- Puts a UFO of `tier` on its way (the pet rolled now). `id` (request or purchase ID) names
--- it for clients. False when all 3 UFO slots any profile can hold are taken.
-function PetService.add(profile, tier, id, random)
+-- Puts a UFO of `tier` on its way (the pet rolled now), named for clients by a short id
+-- made here (8 hex digits, unique on the profile). False when all 3 UFO slots any profile
+-- can hold are taken.
+function PetService.add(profile, tier, random)
     if #profile.ufos >= 3 then return false end
-    table.insert(profile.ufos, { id = id:sub(1, 8), tier = tier, pet = Pets.roll(random, tier), remaining = Pets.Ufos[tier].Seconds })
+    local id
+    repeat
+        id = ("%08x"):format(random:NextInteger(0, 0x7FFFFFFF))
+        local taken = false
+        for _, ufo in profile.ufos do if ufo.id == id then taken = true end end
+    until not taken
+    table.insert(profile.ufos, { id = id, tier = tier, pet = Pets.roll(random, tier), remaining = Pets.Ufos[tier].Seconds })
     return true
 end
 
@@ -160,7 +167,7 @@ function PetService.new(ctx)
         -- The PurchaseId goes in the profile's purchase ledger with the UFO, so a retry
         -- after a failed save never adds a second one.
         if table.find(profile.purchaseIds, purchaseId) then return true end
-        if not PetService.add(profile, tier, purchaseId, random) then return false end
+        if not PetService.add(profile, tier, random) then return false end
         table.insert(profile.purchaseIds, purchaseId)
         while #profile.purchaseIds > UpgradeService.LedgerSize do table.remove(profile.purchaseIds, 1) end
         local ufo = Pets.Ufos[tier]

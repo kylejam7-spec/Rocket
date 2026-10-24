@@ -9,11 +9,18 @@ local UpgradeService = {}
 -- Recent request IDs kept per profile; a retry arrives within seconds, not 32 buys later.
 UpgradeService.LedgerSize = 32
 
+-- A client request ID the purchase ledger may keep: 1-64 ASCII letters, digits, - or _
+-- (clients send GUIDs). Anything else (bytes that aren't valid UTF-8 above all) would
+-- make every DataStore save of the profile fail.
+function UpgradeService.validId(id)
+    return type(id) == "string" and #id >= 1 and #id <= 64 and id:match("^[%w%-_]+$") ~= nil
+end
+
 -- Pure purchase rule (UpgradeCheck runs it offline). Returns the price paid, or nil
 -- and a reason; a repeated request ID returns 0 ("already done").
 function UpgradeService.buy(config, profile, track, requestId)
     if type(track) ~= "string" or not config.Upgrades[track] then return nil, "unknown track" end
-    if type(requestId) ~= "string" or #requestId == 0 or #requestId > 64 then return nil, "bad request id" end
+    if not UpgradeService.validId(requestId) then return nil, "bad request id" end
     if table.find(profile.purchaseIds, requestId) then return 0 end
     local level = Upgrades.level(profile, track)
     local price = Upgrades.price(config, track, level)

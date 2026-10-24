@@ -10,7 +10,7 @@ Profiles.__index = Profiles
 local function defaults()
     return { schemaVersion = 7, strengthLevel = 0, speedLevel = 0, planetBonuses = { strength = 0, speed = 0 }, completedLaunches = 0, lifetimeDeliveries = 0, coins = 0, rewardedLaunchIds = {},
         blackHolesVisited = 0, tutorialStep = Tutorial.Steps[1], seenCallouts = {}, upgrades = {}, purchaseIds = {},
-        pets = {}, equippedPets = {}, ufos = {}, passes = {} }
+        pets = {}, equippedPets = {}, ufos = {}, passes = {}, openLaunches = {} }
 end
 
 local function copy(profile)
@@ -26,7 +26,14 @@ local function copy(profile)
     result.passes = table.clone(profile.passes or {})
     result.ufos = {}
     for index, ufo in profile.ufos or {} do result.ufos[index] = table.clone(ufo) end
+    result.openLaunches = {}
+    for id, entry in profile.openLaunches or {} do result.openLaunches[id] = table.clone(entry) end
     return result
+end
+
+-- A UFO id clients can parse out of the Ufos attribute ("id:tier:hatchAt;…").
+local function ufoIdOk(id)
+    return type(id) == "string" and #id >= 1 and #id <= 16 and id:match("^[%w%-_]+$") ~= nil
 end
 
 local function validate(raw, config)
@@ -78,6 +85,16 @@ local function validate(raw, config)
         if not spec or type(level) ~= "number" or level < 0 or level % 1 ~= 0 or level > spec.max then error("Invalid upgrade " .. tostring(track)) end
     end
     for _, id in raw.purchaseIds do if type(id) ~= "string" then error("Invalid purchase ledger") end end
+    -- An ID that isn't valid UTF-8 would make every DataStore write fail: dropped.
+    for _, id in raw.purchaseIds do
+        if not utf8.len(id) then
+            raw = table.clone(raw)
+            local kept = {}
+            for _, other in raw.purchaseIds do if utf8.len(other) then table.insert(kept, other) end end
+            raw.purchaseIds = kept
+            break
+        end
+    end
     if type(raw.seenCallouts) ~= "table" then error("Invalid callouts") end
     for _, name in raw.seenCallouts do if type(name) ~= "string" then error("Invalid callouts") end end
     -- blackHolesVisited came later without a schema bump (older servers keep it untouched).
@@ -130,6 +147,18 @@ local function validate(raw, config)
             error("Invalid UFO")
         end
     end
+    -- Launches a passenger was locked into but whose stay hadn't finished saving
+    -- (LaunchService; Profiles:lockLaunch). Came later without a schema bump.
+    if raw.openLaunches ~= nil then
+        if type(raw.openLaunches) ~= "table" then error("Invalid open launches") end
+        for id, entry in raw.openLaunches do
+            if type(id) ~= "string" or type(entry) ~= "table" or type(entry.ticks) ~= "number" or entry.ticks ~= entry.ticks or entry.ticks < 0
+                or entry.ticks % 1 ~= 0 or entry.ticks == math.huge or type(entry.launches) ~= "number" or entry.launches < 1 or entry.launches % 1 ~= 0
+                or entry.launches > 100 or (entry.blackHole ~= nil and type(entry.blackHole) ~= "boolean") then
+                error("Invalid open launches")
+            end
+        end
+    end
     local result = copy(raw)
     -- Pets that left the catalog are dropped, not refused; so is an equip of a pet not owned.
     for id in raw.pets do if not Pets.get(id) then result.pets[id] = nil end end
@@ -142,7 +171,7 @@ local function validate(raw, config)
     for index, ufo in result.ufos do
         if not Pets.get(ufo.pet) then ufo.pet = Pets.ByRarity[Pets.Ufos[ufo.tier].Rarity][1] end
         -- A stable id per UFO lets clients keep drawing the same saucer.
-        ufo.id = ufo.id or ("u" .. index)
+        if not ufoIdOk(ufo.id) then ufo.id = "u" .. index end
     end
     for _, id in result.rewardedLaunchIds do
         if result.rewardedLaunchTicks[id] == nil then result.rewardedLaunchTicks[id] = 1 end
@@ -189,6 +218,55 @@ function Profiles.credit(profile, delivered, config, multiplier)
     return coins
 end
 
+-- Commits stay rewards: `batch[launchId]` = cumulative ticks earned. Idempotent per launch
+-- ID (the ledger keeps the ticks already paid), so a retried or recovered batch never pays
+-- twice. `launches[id]` (default 1) and `blackHoles[id]` count on a launch's first reward.
+function Profiles.applyBatch(profile, batch, config, launches, blackHoles)
+    profile.rewardedLaunchTicks = profile.rewardedLaunchTicks or {}
+    for id, ticks in batch do
+        local previous = profile.rewardedLaunchTicks[id] or (table.find(profile.rewardedLaunchIds, id) and 1 or 0)
+        local delta = math.max(0, ticks - previous)
+        if not table.find(profile.rewardedLaunchIds, id) then
+            profile.completedLaunches += launches and launches[id] or 1
+            if blackHoles and blackHoles[id] then profile.blackHolesVisited = (profile.blackHolesVisited or 0) + 1 end
+            table.insert(profile.rewardedLaunchIds, id)
+        end
+        local cap = config.MaxPlanetBonus
+        profile.planetBonuses.strength = math.min(cap, profile.planetBonuses.strength + delta * config.Planet.StrengthBonus)
+        profile.planetBonuses.speed = math.min(cap, profile.planetBonuses.speed + delta * config.Planet.SpeedBonus)
+        profile.rewardedLaunchTicks[id] = math.max(previous, ticks)
+    end
+    while #profile.rewardedLaunchIds > config.RecentRewardLimit do
+        -- Never evict an ID in this transaction's batch.
+        local evicted = false
+        for index, id in profile.rewardedLaunchIds do
+            if not batch[id] then profile.rewardedLaunchTicks[id] = nil; table.remove(profile.rewardedLaunchIds, index); evicted = true; break end
+        end
+        if not evicted then break end
+    end
+    return profile
+end
+
+-- A launch left open by a server that closed or crashed during the flight or stay: the
+-- whole trip is paid (its stay's ticks, less any already saved) and closed. Runs inside
+-- the load's UpdateAsync, so only the server taking the session does it. True if any.
+function Profiles.recoverLaunches(profile, config)
+    if not next(profile.openLaunches or {}) then return false end
+    local batch, launches, blackHoles = {}, {}, {}
+    for id, entry in profile.openLaunches do
+        batch[id], launches[id], blackHoles[id] = entry.ticks, entry.launches, entry.blackHole
+    end
+    Profiles.applyBatch(profile, batch, config, launches, blackHoles)
+    profile.openLaunches = {}
+    return true
+end
+
+local function sameKeys(a, b)
+    for key in a do if b[key] == nil then return false end end
+    for key in b do if a[key] == nil then return false end end
+    return true
+end
+
 function Profiles.new(config, changed)
     return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil,
         -- A load finding another server's lock retries every `retrySeconds` for up to
@@ -233,6 +311,9 @@ function Profiles:load(userId)
             return self.store:UpdateAsync("Player_" .. userId, function(raw)
                 local current = validate(raw, self.config)
                 if current.session and current.session.owner ~= self.owner and current.session.expires > now then return nil end
+                -- A record still held here (rejoining this server) never reaches this
+                -- load, so open launches found now belong to a server that's gone.
+                Profiles.recoverLaunches(current, self.config)
                 current.session = { owner = self.owner, expires = now + self.config.LeaseSeconds }
                 -- The user ID tags the key for Roblox's data-erasure requests.
                 return current, { userId }
@@ -258,6 +339,11 @@ function Profiles:load(userId)
         return false
     end
     record.profile = profile
+    -- `loaded`: the real profile is in. Until then the record holds placeholder defaults
+    -- that nothing may change or save (a grant made to them would be lost).
+    record.loaded = true
+    -- The last profile known to be in the DataStore (leaderboards publish only this).
+    record.committed = copy(profile)
     record.status = self.store and "Saved" or "Studio only — progress is not permanent"
     self.changed(userId)
     return true
@@ -265,7 +351,7 @@ end
 
 function Profiles:ready(userId)
     local record = self.records[userId]
-    return record and not record.blocked and not record.leaving and record.status ~= "Loading" and not string.find(record.status, "Load failed", 1, true)
+    return record ~= nil and record.loaded == true and not record.blocked and not record.leaving
 end
 
 function Profiles:dirty(userId)
@@ -296,7 +382,7 @@ end
 -- `launches`: how many launches it counts for (a suit's boost; 1 by default).
 function Profiles:queueReward(userId, launchId, ticks, blackHole, launches)
     local record = self.records[userId]
-    if not record or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return end
+    if not record or not record.loaded then return end
     record.pending[launchId] = math.max(record.pending[launchId] or 0, ticks or 1)
     if launches and launches > 1 then
         record.launchCounts = record.launchCounts or {}
@@ -309,18 +395,57 @@ function Profiles:queueReward(userId, launchId, ticks, blackHole, launches)
     record.status = "Reward pending — saving"
     self:preview(record)
     self.changed(userId)
-    if record.saveQueued then return end
+    self:saveSoon(userId)
+end
+
+-- A save within RewardSaveSeconds (at most one per that long).
+function Profiles:saveSoon(userId)
+    local record = self.records[userId]
+    if not record or record.saveQueued then return end
     record.saveQueued = true
     task.delay(math.max(0, (record.rewardSavedAt or -math.huge) + self.config.RewardSaveSeconds - os.clock()), function()
         record.saveQueued = false
         record.rewardSavedAt = os.clock()
-        self:save(userId)
+        -- A save still running (its snapshot predates this change) is waited out.
+        self:saveNow(userId)
     end)
+end
+
+-- A passenger locked into launch `launchId`: the trip is saved on their profile at once
+-- (`entry`: ticks = the stay's full reward ticks, launches = how many launches it counts
+-- for, blackHole), so a server that closes or crashes before the stay is saved still
+-- pays it on their next load (Profiles.recoverLaunches). False without a loaded profile.
+function Profiles:lockLaunch(userId, launchId, entry)
+    local record = self.records[userId]
+    if not record or not record.loaded then return false end
+    record.profile.openLaunches[launchId] = { ticks = entry.ticks, launches = entry.launches or 1, blackHole = entry.blackHole == true }
+    if (entry.launches or 1) > 1 then
+        record.launchCounts = record.launchCounts or {}
+        record.launchCounts[launchId] = math.max(record.launchCounts[launchId] or 1, entry.launches)
+    end
+    if entry.blackHole then
+        record.blackHoles = record.blackHoles or {}
+        record.blackHoles[launchId] = true
+    end
+    self:dirty(userId)
+    self:saveSoon(userId)
+    return true
+end
+
+-- The stay of `launchId` is over: its rewards are all queued, so the open launch closes
+-- in the same save that commits them. A passenger who left can now let go of the session.
+function Profiles:finishLaunch(userId, launchId)
+    local record = self.records[userId]
+    if not record or not record.loaded or not record.profile.openLaunches[launchId] then return end
+    record.profile.openLaunches[launchId] = nil
+    if record.leaving then record.keepLease = false end
+    self:dirty(userId)
+    self:saveSoon(userId)
 end
 
 function Profiles:save(userId)
     local record = self.records[userId]
-    if not record or record.busy or record.status == "Loading" or string.find(record.status, "Load failed", 1, true) then return false end
+    if not record or record.busy or not record.loaded or record.released then return false end
     record.busy = true
     local snapshot = copy(record.profile)
     -- Saves start from the stored bonuses; the preview of pending ticks isn't real yet.
@@ -337,29 +462,9 @@ function Profiles:save(userId)
     end
     -- Leaving with nothing left to save: let go of the session so another server can
     -- load them at once (kept for a locked passenger whose rewards may still come).
-    local release = record.leaving and not record.keepLease and batchCount == pendingCount
+    local release = record.leaving and not record.keepLease and batchCount == pendingCount and not next(snapshot.openLaunches)
     local function applyRewards(profile)
-        profile.rewardedLaunchTicks = profile.rewardedLaunchTicks or {}
-        for id, ticks in batch do
-            local previous = profile.rewardedLaunchTicks[id] or (table.find(profile.rewardedLaunchIds, id) and 1 or 0)
-            local delta = math.max(0, ticks - previous)
-            if not table.find(profile.rewardedLaunchIds, id) then
-                profile.completedLaunches += record.launchCounts and record.launchCounts[id] or 1
-                if record.blackHoles and record.blackHoles[id] then profile.blackHolesVisited = (profile.blackHolesVisited or 0) + 1 end
-                table.insert(profile.rewardedLaunchIds, id)
-            end
-            local cap = self.config.MaxPlanetBonus
-            profile.planetBonuses.strength = math.min(cap, profile.planetBonuses.strength + delta * self.config.Planet.StrengthBonus)
-            profile.planetBonuses.speed = math.min(cap, profile.planetBonuses.speed + delta * self.config.Planet.SpeedBonus)
-            profile.rewardedLaunchTicks[id] = math.max(previous, ticks)
-        end
-        while #profile.rewardedLaunchIds > self.config.RecentRewardLimit do
-            -- Never evict an ID in this transaction's retry batch.
-            for index, id in profile.rewardedLaunchIds do
-                if not batch[id] then profile.rewardedLaunchTicks[id] = nil; table.remove(profile.rewardedLaunchIds, index); break end
-            end
-        end
-        return profile
+        return Profiles.applyBatch(profile, batch, self.config, record.launchCounts, record.blackHoles)
     end
     local ok, saved
     for attempt = 1, 3 do
@@ -381,6 +486,8 @@ function Profiles:save(userId)
                 current.equippedPets = snapshot.equippedPets
                 current.ufos = snapshot.ufos
                 current.suit = snapshot.suit
+                -- Closed in the same write that commits the stay's last rewards.
+                current.openLaunches = snapshot.openLaunches
                 -- Passes only ever add up: one recorded by any server stays.
                 current.passes = Profiles.mergePasses(current.passes, snapshot.passes)
                 applyRewards(current)
@@ -393,6 +500,7 @@ function Profiles:save(userId)
     end
     record.busy = false
     if ok and saved then
+        record.committed = saved
         -- Preserve training/deliveries earned while UpdateAsync was yielding.
         record.profile.completedLaunches = saved.completedLaunches
         record.profile.blackHolesVisited = saved.blackHolesVisited or 0
@@ -410,7 +518,7 @@ function Profiles:save(userId)
         record.dirty = record.profile.strengthLevel ~= snapshot.strengthLevel or record.profile.speedLevel ~= snapshot.speedLevel or record.profile.lifetimeDeliveries ~= snapshot.lifetimeDeliveries or record.profile.coins ~= snapshot.coins
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
-            or #record.profile.passes ~= #snapshot.passes
+            or #record.profile.passes ~= #snapshot.passes or not sameKeys(record.profile.openLaunches, snapshot.openLaunches)
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if release and self.store then
             -- Nothing more may be written for them here; a rejoin loads afresh.
@@ -437,7 +545,8 @@ function Profiles:remove(userId, keepLease)
     local record = self.records[userId]
     if not record then return end
     record.leaving = true
-    record.keepLease = keepLease == true
+    -- Only while a launch they're locked into is still open (finishLaunch lets go).
+    record.keepLease = keepLease == true and next(record.profile.openLaunches or {}) ~= nil
     record.dirty = true
     task.spawn(function() self:save(userId) end)
 end
@@ -450,12 +559,27 @@ function Profiles:saveNow(userId)
     return self:save(userId)
 end
 
+-- Lets go of departed players' records once nothing more can be written for them: the
+-- session released (or never loaded, or Studio-only and saved), no save running or
+-- queued, no rewards pending and no launch still open. Returns how many went.
+function Profiles:prune()
+    local pruned = 0
+    for userId, record in self.records do
+        local settled = not record.busy and not record.saveQueued and not next(record.pending) and not next(record.profile.openLaunches or {})
+        if record.leaving and settled and (record.released or not record.loaded or (not self.store and not record.dirty)) then
+            self.records[userId] = nil
+            pruned += 1
+        end
+    end
+    return pruned
+end
+
 function Profiles:start()
-    -- ponytail: retain disconnected records for late locked rewards; prune after
-    -- cycle completion if long-lived servers make historical player count large.
     task.spawn(function()
         while true do
             task.wait(self.config.AutosaveSeconds)
+            -- Disconnected records stay while a locked passenger's rewards may still come.
+            self:prune()
             for userId, record in self.records do
                 if not record.released and (not record.leaving or record.dirty or next(record.pending)) then task.spawn(function() self:save(userId) end) end
             end

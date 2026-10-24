@@ -26,9 +26,13 @@ return table.freeze({
     SpeedEarly = 40,
     SpeedHalfLevel = 8,
     SpeedPerLevel = 0.6,
-    -- The anti-teleport check allows this times a player's walk speed (never below 70).
+    -- The move check (MovementService): a player earns MoveLimitFactor x their walk speed
+    -- (from their profile) in studs of horizontal movement a second, banked up to
+    -- MoveBurstSeconds of it plus MoveSlackStuds (moves that arrive in a burst after lag),
+    -- and every sample spends what they moved. Overspending snaps them back.
     MoveLimitFactor = 1.5,
-    MinMoveLimit = 70,
+    MoveBurstSeconds = 1.5,
+    MoveSlackStuds = 6,
     -- Carried cargo is one scrap ball overhead: diameter = Base * (count / BaseCarryCapacity) ^ Growth,
     -- with no cap (only Roblox's largest part size).
     ScrapBallBaseDiameter = 2,
@@ -134,7 +138,9 @@ return table.freeze({
         ServerTrainingSeconds = 600, -- each purchase adds this much (stacks)
         ExtraStaySeconds = 60,
         ExtraStayMax = 300, -- per stay; prompts stop opening past it
-        ReceiptStore = "RocketReceipts",
+        -- Studio's own ledgers (as for profiles): a purchase still banked when a Studio
+        -- test closes must never be taken over by a live server.
+        ReceiptStore = game:GetService("RunService"):IsStudio() and "RocketReceipts_studio" or "RocketReceipts",
     }),
     -- Rank titles above names: the highest rank whose completed launches you have
     -- (user, 2026-10-20: launches only, Intern to NASA CEO at 100).
