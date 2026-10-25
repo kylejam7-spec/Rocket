@@ -484,7 +484,8 @@ function Build:erect(serverTime, seconds)
         if self.vehicle ~= vehicle or not vehicle.Parent then return end
         vehicle:PivotTo(self.origin)
         self.pivot = self.origin
-        -- The rocket stands complete: the boarding station appears in front of it.
+        -- The rocket stands complete (the boarding station, there all along, opens with
+        -- the Boarding phase).
         if self.boarding then self.boarding.reveal() end
     end)
 end

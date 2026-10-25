@@ -3,8 +3,9 @@
 -- server, stay inside the launch complex, have no ledge at the mount, and anyone
 -- standing on a ramp or the hull beside the fill line can place, at every fill level.
 -- Nothing of the ramps (bridges, rails, posts) touches the rocket, bridges join them all
--- the way up, the boarding walkway's top is clear of the mount's trim, and the upright
--- rocket leaves the boarding station, its door and the walk from the ramp to it clear.
+-- the way up, the boarding walkway's top is clear of the mount's trim, the rocket being
+-- built and its ramps leave the boarding station (standing in every phase) clear, and the
+-- upright rocket leaves the station, its door and the walk from the ramp to it clear.
 -- An unupgraded player (Upgrades.reachAt 0) can place every Metal segment and Fuel cell
 -- from where the ramp's slide stops them.
 return function()
@@ -93,6 +94,17 @@ return function()
                 overlap.FilterDescendantsInstances = trims
                 local station = build.site.LaunchComplex.BoardingStation
                 assert(#workspace:GetPartsInPart(station.BoardingRamp, overlap) == 0, name .. " mount trim stands up through the boarding walkway")
+                -- The station stands in every phase: the rocket lying at its build angle and
+                -- the build ramps, bridges, rails and posts don't cut through any of it either.
+                local building = table.clone(hull)
+                for _, part in build.ramps do
+                    if part:IsA("BasePart") then part.CanQuery = true; table.insert(building, part) end
+                end
+                overlap.FilterDescendantsInstances = building
+                for _, part in station:GetDescendants() do
+                    local hit = part:IsA("BasePart") and workspace:GetPartsInPart(part, overlap)[1]
+                    assert(not hit, ("%s rocket being built (its %s) cuts the boarding station's %s"):format(name, hit and hit.Name or "", part.Name))
+                end
                 -- With the rocket upright for boarding, nothing of it touches the station or
                 -- stands in front of the door; the door is on the mount.
                 build.vehicle:PivotTo(ORIGIN)

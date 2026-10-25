@@ -10,10 +10,9 @@
 -- forward the finished rocket stands in that column, so the hatch module goes in front
 -- of engine pods and skirts and nothing stands before its door). Returns
 -- { trigger = { cframe, size }, setPhase = function(phase), reveal = function() }.
--- The station is hidden while the rocket is built and fuelled: reveal() (the rocket
--- stands upright and complete) fades it in for boarding, and any other phase hides it
--- again. The door and its strips light for "Boarding".
-local TweenService = game:GetService("TweenService")
+-- The station stands in every phase (user, 2026-10-24); the BOARD sign says what has to
+-- happen before boarding, and the door and its strips light for "Boarding". reveal() is
+-- kept for RocketBuildService (the rocket stands upright) and changes nothing.
 local Signs = require(script.Parent.SignService)
 local BoardingStation = {}
 
@@ -129,42 +128,16 @@ function BoardingStation.build(parent, origin, site)
         trigger = { cframe = origin * CFrame.new(0, top + DOOR_HEIGHT / 2, face + 2.4), size = Vector3.new(DOOR_WIDTH + 2, DOOR_HEIGHT, 4) },
         model = model,
     }
-    -- Hidden until reveal(): every part's look and collision, remembered (the BOARD sign
-    -- is drawn by each client, WorldSignController, which hides it while it's Hidden).
-    local looks = {}
-    for _, part in model:GetDescendants() do
-        if part:IsA("BasePart") then looks[part] = { part.Transparency, part.CanCollide, part.CanQuery } end
-    end
-    local shown = true
-    local function show(visible, seconds)
-        if visible == shown then return end
-        shown = visible
-        sign:SetAttribute("Hidden", not visible)
-        for part, look in looks do
-            part.CanCollide, part.CanQuery = visible and look[2], visible and look[3]
-            local goal = visible and look[1] or 1
-            if seconds then
-                part.Transparency = 1
-                TweenService:Create(part, TweenInfo.new(seconds, Enum.EasingStyle.Quad), { Transparency = goal }):Play()
-            else
-                part.Transparency = goal
-            end
-        end
-    end
     local current
-    function station.reveal()
-        if current == "Boarding" then show(true, 0.8) end
-    end
+    function station.reveal() end
     function station.setPhase(phase)
         if phase == current then return end
         current = phase
-        if phase ~= "Boarding" then show(false) end
         local open = phase == "Boarding"
         for _, part in glow do
             if part.Parent then part.Color = open and OPEN or CLOSED end
         end
-        looks[door][1] = open and 0.1 or 0
-        if shown then door.Transparency = looks[door][1] end
+        door.Transparency = open and 0.1 or 0
         local status = STATUS[phase] or AFTER
         sign:SetAttribute("Subtitle", status[1])
         sign:SetAttribute("Accent", status[2])
