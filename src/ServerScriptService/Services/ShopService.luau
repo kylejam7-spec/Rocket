@@ -30,6 +30,9 @@
 --     takes over what's still owed once the claim's lease runs out, and what was marked
 --     but never confirmed PendingGraceSeconds after that (so nothing paid for is lost),
 --     and tries again, while they stay, when a claim not yet free becomes free.
+-- Robux UFOs are paid random items: BuyShop won't prompt them for a player PolicyService
+-- marks ArePaidRandomItemsRestricted, or whose lookup never answered (fail closed). A
+-- receipt that arrives anyway is still granted.
 -- A PurchaseId on the done list is granted with nothing applied. ShopCheck runs the
 -- pure parts and the receipt path against an in-memory store.
 local Players = game:GetService("Players")
@@ -207,6 +210,27 @@ function ShopService.memoryStore()
 end
 
 function ShopService.isUfo(key) return key:match("^Ufo%a+$") ~= nil end
+
+-- Paid random items (Robux UFOs; Shop.paidRandom): PolicyService's
+-- ArePaidRandomItemsRestricted, asked with `lookup()` (may yield or error) up to `tries`
+-- times, `pause(attempt)` between. A lookup that never answers counts as restricted (fail
+-- closed). Returns restricted, answered.
+function ShopService.policyRestricted(lookup, tries, pause)
+    for attempt = 1, tries do
+        local ok, info = pcall(lookup)
+        if ok and type(info) == "table" and type(info.ArePaidRandomItemsRestricted) == "boolean" then
+            return info.ArePaidRandomItemsRestricted, true
+        end
+        if attempt < tries and pause then pause(attempt) end
+    end
+    return true, false
+end
+-- Why BuyShop won't prompt `key` for a player (`restricted`: true, or nil while unknown,
+-- for paid random items), or nil. Receipts that do arrive are still granted.
+function ShopService.policyRefusal(key, restricted)
+    if Shop.paidRandom(key) and restricted ~= false then return "Robux UFOs aren't available on your account. Coin UFOs still are!" end
+    return nil
+end
 
 -- One receipt; `state.owner` is this server, `state.applied[purchaseId]` marks server
 -- effects applied here. deps:
@@ -458,6 +482,8 @@ function ShopService.new(ctx)
     -- and every RENEW_SECONDS anyway (renewing the leases).
     local held, holder, settling = {}, {}, false
     local owned, checked, prompting = {}, {}, {}
+    -- Paid random items, per userId: PolicyService's answer, and DebugService's override.
+    local policy, policyOverride = {}, {}
     local stay = nil
     local service = { effects = effects }
 
@@ -468,6 +494,12 @@ function ShopService.new(ctx)
     function service.coinMultiplier(player) return service.owns(player, "DoubleCoins") and config.Shop.DoubleCoinsMultiplier or 1 end
     function service.trainingMultiplier() return ShopService.trainingMultiplier(config, effects, workspace:GetServerTimeNow()) end
     function service.gymUnlocked(player, tier) return tier ~= nil and service.owns(player, Shop.gymKey(tier)) end
+    -- Restricted from paid random items (true until PolicyService answers).
+    function service.paidRandomRestricted(player)
+        local override = policyOverride[player.UserId]
+        if override ~= nil then return override end
+        return policy[player.UserId] ~= false
+    end
 
     local function view(player)
         local rocket = ctx.Cycle.rocket
@@ -480,7 +512,7 @@ function ShopService.new(ctx)
         local guaranteed = effects.guarantees[1]
         return { owned = table.clone(mine), petSlots = Shop.petSlots(mine), maxUfos = service.maxUfos(player), boostUntil = effects.boostUntil,
             guaranteed = guaranteed and Missions.get(guaranteed.mission).Id or nil, stayExtra = stay and stay.extra or 0,
-            fillBank = effects.fillBank }
+            fillBank = effects.fillBank, paidRandomRestricted = service.paidRandomRestricted(player) }
     end
 
     -- Asks for `n` more units of purchase `id` to be marked used at the next write (never
@@ -814,6 +846,26 @@ function ShopService.new(ctx)
         refresh(player)
     end
 
+    -- On join: PolicyService's paid random items answer (3 tries; restricted if none).
+    local PolicyService = game:GetService("PolicyService")
+    local function lookupPolicy(player)
+        local restricted, answered = ShopService.policyRestricted(function()
+            return PolicyService:GetPolicyInfoForPlayerAsync(player)
+        end, 3, function(attempt) task.wait(2 * attempt) end)
+        if not answered then warn("Rocket shop: no policy answer for", player.Name, "- paid random items off") end
+        if not player.Parent then return end
+        policy[player.UserId] = restricted
+        if ctx.profiles:ready(player.UserId) then refresh(player) end
+    end
+    Players.PlayerAdded:Connect(lookupPolicy)
+    for _, player in Players:GetPlayers() do task.spawn(lookupPolicy, player) end
+    -- Studio playtests: forces paid random items restricted (true), allowed (false) or
+    -- back to PolicyService's answer (nil).
+    function service.debugPolicy(player, restricted)
+        policyOverride[player.UserId] = restricted
+        refresh(player)
+    end
+
     function service.debugOwn(player, key, on)
         owned[player.UserId] = owned[player.UserId] or {}
         owned[player.UserId][key] = on ~= false or nil
@@ -828,6 +880,8 @@ function ShopService.new(ctx)
         if type(key) ~= "string" or not Shop.entry(config, key) then return end
         if not ctx.profiles:ready(player.UserId) or not ctx.Interaction.allowed(player, "shop") then return end
         if not Shop.enabled(config, key) then return ctx.Remote.feedback(player, "That's coming soon!") end
+        local refusal = ShopService.policyRefusal(key, service.paidRandomRestricted(player))
+        if refusal then return ctx.Remote.feedback(player, refusal) end
         if (prompting[player.UserId] or 0) > os.clock() then return end
         local entry = Shop.entry(config, key)
         if Shop.isPass(config, key) then
@@ -917,6 +971,7 @@ function ShopService.new(ctx)
     end)
     Players.PlayerRemoving:Connect(function(player)
         owned[player.UserId], checked[player.UserId], prompting[player.UserId] = nil, nil, nil
+        policy[player.UserId], policyOverride[player.UserId] = nil, nil
     end)
     return service
 end

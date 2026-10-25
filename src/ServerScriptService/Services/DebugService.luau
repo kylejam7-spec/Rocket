@@ -13,7 +13,9 @@
 -- takes) everyone that Game Pass for this session; Invoke("bought", key) runs a finished
 -- Game Pass purchase for everyone (saved on their profiles, as a real one is);
 -- Invoke("receipt", key, purchaseId) runs a product receipt for the first player
--- through the real journal path and returns its outcome.
+-- through the real journal path and returns its outcome. Invoke("policy", restricted)
+-- forces everyone restricted from paid random items (Robux UFOs) with true, allowed with
+-- false, or back to PolicyService's answer with nil.
 -- Invoke("board") puts everyone aboard the rocket's cabin, as the BOARD door does (during
 -- boarding, they fly).
 -- Invoke("tp", position or cframe) puts everyone there.
@@ -119,6 +121,8 @@ function Debug.new(ctx, parent)
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, value) end
         elseif action == "own" then
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.debugOwn(player, value, extra) end
+        elseif action == "policy" then
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Shop.debugPolicy(player, value) end
         elseif action == "oarfish" then
             ctx.World.destinations[3].folder:SetAttribute("OarfishAt", workspace:GetServerTimeNow())
         elseif action == "crash" then

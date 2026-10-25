@@ -13,6 +13,9 @@
         Next<Id>        the next mission wheel lands on that destination
         Ufo<Rarity>     a Rare, Epic or Legendary UFO (one of your UFO slots: 1, Triple Hatch 3)
     Paying never decides who flies: boarding stays open to everyone.
+    Robux UFOs roll a random pet, so they're paid random items: players whose
+    PolicyService says ArePaidRandomItemsRestricted can't buy them (Shop.paidRandom).
+    Coin UFOs stay open to everyone (coins can't be bought with Robux here).
 ]]
 local Pets = require(script.Parent.Pets)
 local Missions = require(script.Parent.Missions)
@@ -32,6 +35,8 @@ function Shop.gymKey(tier) return "Gym" .. tier end
 function Shop.nextKey(mission) return "Next" .. Missions.get(mission).Id end
 function Shop.fillKey(units) return "Fill" .. units end
 function Shop.ufoKey(tier) return Pets.Ufos[tier] and "Ufo" .. Pets.Ufos[tier].Rarity end
+-- A paid random item (a Robux UFO): off for players restricted from those.
+function Shop.paidRandom(key) return key:match("^Ufo%a+$") ~= nil end
 
 -- The {id, price} entry for a pass or product key, or nil.
 function Shop.entry(config, key)

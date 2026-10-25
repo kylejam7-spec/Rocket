@@ -5,7 +5,9 @@
 -- Rare, Epic and Legendary UFOs also sell for Robux (Config.Shop UfoRare/UfoEpic/
 -- UfoLegendary; Epic and Legendary only for Robux): the purple button sends BuyShop and
 -- the server opens the prompt. One UFO flies at a time; the SHOP's Triple Hatch pass lets
--- 3 (state.shop.maxUfos), each at its own price.
+-- 3 (state.shop.maxUfos), each at its own price. Players restricted from paid random
+-- items (state.shop.paidRandomRestricted, from PolicyService) don't get the Robux buttons;
+-- coin UFOs stay.
 local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -109,6 +111,8 @@ function UfoShopController.start()
         local max = state and state.shop and state.shop.maxUfos or 1
         return profile ~= nil and #(profile.ufos or {}) < max, max
     end
+    -- No Robux UFOs (paid random items) for this account, or not known yet.
+    local function restricted(state) return not (state and state.shop and state.shop.paidRandomRestricted == false) end
     for tier, ufo in Pets.Ufos do
         local color = Theme.rarity[ufo.Rarity]
         local row = Create.new("Frame", {
@@ -136,12 +140,18 @@ function UfoShopController.start()
                 AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, ufo.Price and -156 or -8, 0.5, 0),
                 Size = UDim2.fromOffset(ufo.Price and 110 or 140, 44), Parent = row, sound = false,
                 onActivated = function()
-                    if not current or not room(current) or not Shop.enabled(Config, key) then return Sfx.play("error") end
+                    if not current or not room(current) or not Shop.enabled(Config, key) or restricted(current) then return Sfx.play("error") end
                     Sfx.play("click")
                     State.remote("BuyShop"):FireServer(key)
                 end,
             })
         end
+        -- Robux-only tiers, for a restricted account: said in place of the button.
+        local unavailable = robux and not ufo.Price and StrokedText.new({
+            Name = "Unavailable", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.fromOffset(140, 44),
+            Text = "Not available", Font = Theme.font.Display, TextSize = 18, TextColor3 = Theme.color.Muted, stroke = 1.5,
+            Visible = false, Parent = row,
+        }) or nil
         local buy = ufo.Price and Button.new({
             Name = "Buy", Text = Theme.icon.Coin .. " " .. Theme.short(ufo.Price), TextSize = 22,
             color = Theme.color.Go,
@@ -157,7 +167,7 @@ function UfoShopController.start()
                 task.delay(1, function() pending[tier] = nil end)
             end,
         })
-        rows[tier] = { buy = buy, robux = robux, key = key, odds = oddsLabel }
+        rows[tier] = { buy = buy, robux = robux, unavailable = unavailable, key = key, odds = oddsLabel }
     end
 
     function render(state)
@@ -185,6 +195,8 @@ function UfoShopController.start()
                 row.buy.BackgroundColor3 = (free and profile.coins >= price) and Theme.color.Go or CANT_AFFORD
             end
             if row.robux then
+                row.robux.Visible = not restricted(state)
+                if row.unavailable then row.unavailable.Visible = restricted(state) end
                 row.robux.BackgroundColor3 = (free and Shop.enabled(Config, row.key)) and Theme.color.Purple or CANT_AFFORD
             end
         end

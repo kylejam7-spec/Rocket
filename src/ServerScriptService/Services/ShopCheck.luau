@@ -6,7 +6,8 @@
 -- locked mission a spin); product effects (boost stacking, fill banked across phases,
 -- stay extensions, guaranteed missions) and pass effects (pet slots, Triple Hatch's 3 UFOs
 -- at once, 2x Coins, trims when a slot pass is gone, refunded passes, failed ownership
--- checks, Studio test purchases).
+-- checks, Studio test purchases); Robux UFOs (paid random items) off for players
+-- PolicyService restricts or doesn't answer for, coin UFOs open to everyone.
 return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
@@ -64,6 +65,41 @@ return function()
     -- Robux UFOs: only with a free UFO slot (1, or 3 with Triple Hatch), in any phase.
     assert(Shop.available(config, "UfoEpic", { phase = "Launching", ufos = 0, maxUfos = 1 }))
     assert(not Shop.available(config, "UfoEpic", { ufos = 1, maxUfos = 1 }) and Shop.available(config, "UfoRare", { ufos = 2, maxUfos = 3 }))
+
+    -- Paid random items (PolicyService): Robux UFOs don't prompt for a restricted player,
+    -- or one whose lookup never answered (fail closed: unknown counts as restricted); they
+    -- do for an unrestricted one. Nothing else in the shop is a paid random item.
+    for tier = 3, #Pets.Ufos do
+        local key = Shop.ufoKey(tier)
+        assert(Shop.paidRandom(key) and Service.policyRefusal(key, true) and Service.policyRefusal(key, nil), key .. " prompted for a restricted player")
+        assert(Service.policyRefusal(key, false) == nil, key .. " refused for an unrestricted player")
+    end
+    for _, key in keys do
+        if not key:match("^Ufo") then assert(not Shop.paidRandom(key) and Service.policyRefusal(key, true) == nil, key .. " counted as paid random") end
+    end
+    local tries, pauses = 0, 0
+    local function asked(answer) return function() tries += 1; return answer() end end
+    local function pause() pauses += 1 end
+    assert(select(1, Service.policyRestricted(asked(function() return { ArePaidRandomItemsRestricted = true } end), 3, pause)) == true and tries == 1)
+    tries = 0
+    local restricted, answered = Service.policyRestricted(asked(function() return { ArePaidRandomItemsRestricted = false } end), 3, pause)
+    assert(restricted == false and answered and tries == 1 and pauses == 0)
+    -- Failing every time: restricted, after all 3 tries.
+    tries = 0
+    restricted, answered = Service.policyRestricted(asked(function() error("PolicyService down") end), 3, pause)
+    assert(restricted == true and not answered and tries == 3 and pauses == 2, "a failed policy lookup must count as restricted")
+    -- A bad answer counts as a failure; a retry that answers wins.
+    tries = 0
+    restricted = Service.policyRestricted(asked(function()
+        if tries < 2 then return {} end
+        return { ArePaidRandomItemsRestricted = false }
+    end), 3, pause)
+    assert(restricted == false and tries == 2)
+    -- Coin UFOs (BuyUfo, PetService.buy) never ask the policy: a restricted player buys
+    -- the Rare UFO for coins.
+    local coinBuyer = Profiles.validate(nil, config)
+    coinBuyer.coins = Pets.Ufos[3].Price
+    assert(PetService.buy(coinBuyer, 3, "policy1", Random.new(1)) == Pets.Ufos[3].Price and #coinBuyer.ufos == 1, "coin UFOs must stay buyable")
 
     -- Receipts: claimed atomically in the buyer's ledger (one store, many servers). Units
     -- are marked used there before any server uses them (write-ahead), so failed writes,
