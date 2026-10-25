@@ -271,7 +271,21 @@ function Profiles.new(config, changed)
     return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil,
         -- A load finding another server's lock retries every `retrySeconds` for up to
         -- `waitSeconds` (default: the lease plus 10 s). PersistenceCheck shortens both.
-        retrySeconds = 5, waitSeconds = nil }, Profiles)
+        retrySeconds = 5, waitSeconds = nil,
+        -- Save-soon spacing (default Config.RewardSaveSeconds) and the write budget left
+        -- (default: DataStoreService's for UpdateAsync). PersistenceCheck replaces both.
+        rewardSaveSeconds = nil, budget = nil }, Profiles)
+end
+
+-- Whether a save that can wait may go now: the DataStore write budget is above
+-- Config.SaveBudgetReserve (receipts and launch commits use saveNow, which never waits).
+function Profiles:canSaveLater()
+    if not self.store then return true end
+    local ok, left = pcall(function()
+        if self.budget then return self.budget() end
+        return DataStoreService:GetRequestBudgetForRequestType(Enum.DataStoreRequestType.UpdateAsync)
+    end)
+    return not ok or left > self.config.SaveBudgetReserve
 end
 
 -- Whether progress is really saved (false in Studio without API access).
@@ -357,6 +371,8 @@ end
 function Profiles:dirty(userId)
     local record = self.records[userId]
     record.dirty = true
+    -- Every change counts: a save that started before it can't mark the record clean.
+    record.revision = (record.revision or 0) + 1
     if self.store and not next(record.pending) then record.status = "Unsaved changes — autosave pending" end
 end
 
@@ -403,12 +419,19 @@ function Profiles:saveSoon(userId)
     local record = self.records[userId]
     if not record or record.saveQueued then return end
     record.saveQueued = true
-    task.delay(math.max(0, (record.rewardSavedAt or -math.huge) + self.config.RewardSaveSeconds - os.clock()), function()
+    local spacing = self.rewardSaveSeconds or self.config.RewardSaveSeconds
+    local function run()
+        -- Low on DataStore budget: wait a little (receipts and commits go first).
+        if not self:canSaveLater() and not record.leaving then
+            task.delay(2, run)
+            return
+        end
         record.saveQueued = false
         record.rewardSavedAt = os.clock()
         -- A save still running (its snapshot predates this change) is waited out.
         self:saveNow(userId)
-    end)
+    end
+    task.delay(math.max(0, (record.rewardSavedAt or -math.huge) + spacing - os.clock()), run)
 end
 
 -- A passenger locked into launch `launchId`: the trip is saved on their profile at once
@@ -449,13 +472,24 @@ function Profiles:commitLaunch(userIds, timeout)
     return saved
 end
 
--- The stay of `launchId` grew (bought or banked time): its open launch is worth
--- `ticks` now, saved in the same write as the extra ticks it pays.
+-- The stay of `launchId` is about to grow (bought or banked time): its open launch is
+-- worth `ticks` now. The caller saves it (commitLaunch) before the stay grows.
 function Profiles:extendLaunch(userId, launchId, ticks)
     local record = self.records[userId]
     local entry = record and record.loaded and record.profile.openLaunches[launchId]
     if not entry or ticks <= entry.ticks then return end
     entry.ticks = ticks
+    self:dirty(userId)
+end
+
+-- A passenger whose trip couldn't be saved in time stays behind: the open launch comes
+-- off their profile again (saved soon), so nothing is owed for a ride they didn't take.
+function Profiles:cancelLaunch(userId, launchId)
+    local record = self.records[userId]
+    if not record or not record.loaded or not record.profile.openLaunches[launchId] then return end
+    record.profile.openLaunches[launchId] = nil
+    if record.launchCounts then record.launchCounts[launchId] = nil end
+    if record.blackHoles then record.blackHoles[launchId] = nil end
     self:dirty(userId)
     self:saveSoon(userId)
 end
@@ -475,6 +509,7 @@ function Profiles:save(userId)
     local record = self.records[userId]
     if not record or record.busy or not record.loaded or record.released then return false end
     record.busy = true
+    local revision = record.revision
     local snapshot = copy(record.profile)
     -- Saves start from the stored bonuses; the preview of pending ticks isn't real yet.
     local added = record.preview or { strength = 0, speed = 0 }
@@ -547,6 +582,7 @@ function Profiles:save(userId)
             or record.profile.tutorialStep ~= snapshot.tutorialStep or #record.profile.seenCallouts ~= #snapshot.seenCallouts
             or #record.profile.purchaseIds ~= #snapshot.purchaseIds or not Profiles.samePets(record.profile, snapshot)
             or #record.profile.passes ~= #snapshot.passes or not sameKeys(record.profile.openLaunches, snapshot.openLaunches)
+            or record.profile.suit ~= snapshot.suit or record.revision ~= revision
         record.status = next(record.pending) and "Reward pending — saving" or (self.store and (record.dirty and "Unsaved changes — autosave pending" or "Saved") or "Studio only — progress is not permanent")
         if release and self.store then
             -- Nothing more may be written for them here; a rejoin loads afresh.
@@ -576,7 +612,8 @@ function Profiles:remove(userId, keepLease)
     -- Only while a launch they're locked into is still open (finishLaunch lets go).
     record.keepLease = keepLease == true and next(record.profile.openLaunches or {}) ~= nil
     record.dirty = true
-    task.spawn(function() self:save(userId) end)
+    -- Waits out a save already running (its snapshot predates the last changes).
+    task.spawn(function() self:saveNow(userId) end)
 end
 
 -- Saves now, waiting out a save in progress (up to 30 s). True when it saved.
@@ -609,7 +646,11 @@ function Profiles:start()
             -- Disconnected records stay while a locked passenger's rewards may still come.
             self:prune()
             for userId, record in self.records do
-                if not record.released and (not record.leaving or record.dirty or next(record.pending)) then task.spawn(function() self:save(userId) end) end
+                -- Low on budget, only the leaving and those with rewards pending go now.
+                local wanted = not record.released and (not record.leaving or record.dirty or next(record.pending))
+                if wanted and (record.leaving or next(record.pending) or self:canSaveLater()) then
+                    task.spawn(function() self:save(userId) end)
+                end
             end
         end
     end)

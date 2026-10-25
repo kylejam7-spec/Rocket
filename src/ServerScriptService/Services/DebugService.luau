@@ -14,7 +14,8 @@
 -- Game Pass purchase for everyone (saved on their profiles, as a real one is);
 -- Invoke("receipt", key, purchaseId) runs a product receipt for the first player
 -- through the real journal path and returns its outcome.
--- Invoke("board") puts everyone in the rocket's cabin (during boarding, they fly).
+-- Invoke("board") puts everyone aboard the rocket's cabin, as the BOARD door does (during
+-- boarding, they fly).
 -- Invoke("tp", position or cframe) puts everyone there.
 -- Invoke("oarfish") starts Europa's oarfish breach now (seen by anyone at Europa).
 -- Invoke("crash") starts Saturn's UFO crash now (seen by anyone at Saturn; it stays down
@@ -68,7 +69,7 @@ function Debug.new(ctx, parent)
             end
             local cabin = ctx.World.cabin
             for slot, player in game:GetService("Players"):GetPlayers() do
-                ctx.Movement.relocate(player, cabin.arrival + Vector3.new((slot % 4) * 2 - 3, 0, (slot // 4) * 2))
+                ctx.Launch.board(player, cabin.arrival + Vector3.new((slot % 4) * 2 - 3, 0, (slot // 4) * 2))
             end
             Cycle.broadcast()
         elseif action == "mission" and material then
@@ -111,7 +112,8 @@ function Debug.new(ctx, parent)
             Cycle.broadcast()
         end
         if action == "board" then
-            for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, ctx.World.cabin.arrival) end
+            -- Aboard as through the BOARD door (only players aboard fly).
+            for _, player in game:GetService("Players"):GetPlayers() do ctx.Launch.board(player) end
         elseif action == "tp" then
             -- Place everyone at a Vector3 or CFrame (the move check accepts it).
             for _, player in game:GetService("Players"):GetPlayers() do ctx.Movement.relocate(player, value) end

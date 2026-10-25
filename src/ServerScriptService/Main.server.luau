@@ -101,7 +101,8 @@ local function joined(player)
         end
         local root = character:WaitForChild("HumanoidRootPart", 10)
         if not root or player.Character ~= character then return end
-        ctx.Movement.track(player, root, 1, 1)
+        -- Settles onto the spawn (Roblox places it there just after CharacterAdded).
+        ctx.Movement.track(player, root, 1, 1, ctx.World.spawn.Position + Vector3.new(0, 4, 0))
         ctx.Stats.update(player)
         ctx.Cargo.visual(player)
         ctx.Launch.characterAdded(player)

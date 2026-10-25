@@ -45,6 +45,23 @@ function Launch.new(ctx)
     local service = { debug = nil }
     -- Boarded this countdown and not since let out by the exit hatch (userId = true).
     local aboard = {}
+    -- The launch whose stay is running or about to: its passengers' trips grow with it.
+    local current = nil
+    -- A stay about to grow by `extraSeconds` (time bought, or banked): every passenger's
+    -- open launch is raised to the longer stay's ticks and saved first (waiting up to
+    -- COMMIT_SECONDS). True when that went through and the stay may grow.
+    function service.growTrips(extraSeconds)
+        if not current then return false end
+        local worth = (current.seconds() + extraSeconds) * current.rate * current.multiplier
+        if worth <= current.entitled then return true end
+        for userId in current.rocket.passengers do ctx.profiles:extendLaunch(userId, current.cycle, worth) end
+        local saved = ctx.profiles:commitLaunch(current.rocket.passengers, COMMIT_SECONDS)
+        for userId in current.rocket.passengers do
+            if not saved[userId] then return false end
+        end
+        current.entitled = worth
+        return true
+    end
     local random = Random.new()
     -- Spins once per stay: stamps Cycle.wheel (clients animate it in sync), updates
     -- the pity counter and announces the result when the wheel stops.
@@ -99,6 +116,13 @@ function Launch.new(ctx)
         if math.abs(here.X) <= half.X and math.abs(here.Y) <= half.Y and math.abs(here.Z) <= half.Z then return true end
         return from ~= nil and crosses(boarding.CFrame:PointToObjectSpace(from), boarding.CFrame:PointToObjectSpace(to), half)
     end
+    -- Just outside the BOARD hatch, on the side away from the rocket.
+    local function besideHatch()
+        local away = boarding.Position - rocketBuild.origin.Position
+        away = Vector3.new(away.X, 0, away.Z)
+        away = away.Magnitude > 0.1 and away.Unit or Vector3.zAxis
+        return boarding.Position + away * (boarding.Size.Z / 2 + 6) + Vector3.new(0, 4, 0)
+    end
     -- Inside the cabin box. Uses the raw body: a just-teleported player still counts.
     function service.inCabin(player)
         local root = Movement.body(player)
@@ -106,26 +130,29 @@ function Launch.new(ctx)
         local offset = root.Position - cabin.center
         return math.abs(offset.X) <= cabin.size.X / 2 and math.abs(offset.Z) <= cabin.size.Z / 2 and offset.Y >= -2 and offset.Y <= cabin.size.Y + 2
     end
+    -- Boarding is only ever through the BOARD door (onHatch, checked against the movement
+    -- guard): that sets `aboard`, and only players aboard fly. Anyone found in the cabin
+    -- without it (a client that put itself there) is put back outside the door.
     function service.trackBoarding(player)
         if Cycle.rocket.phase ~= "Boarding" then return end
-        if not service.inCabin(player) then
-            if aboard[player.UserId] then
-                -- Out of the cabin without the exit hatch: back in.
-                Movement.relocate(player, spread(cabin.arrival, 6))
-            elseif service.onHatch(player) then
-                aboard[player.UserId] = true
-                Movement.relocate(player, spread(cabin.arrival, 6))
-                Remote.feedback(player, "You're aboard! Liftoff when the countdown ends. Use the hatch to get out.")
-            end
+        local inside = service.inCabin(player)
+        if aboard[player.UserId] then
+            -- Out of the cabin without the exit hatch: back in.
+            if not inside then Movement.relocate(player, spread(cabin.arrival, 6)) end
+        elseif service.onHatch(player) then
+            aboard[player.UserId] = true
+            Movement.relocate(player, spread(cabin.arrival, 6))
+            Remote.feedback(player, "You're aboard! Liftoff when the countdown ends. Use the hatch to get out.")
+        elseif inside then
+            Movement.relocate(player, besideHatch())
         end
-        Cycle.boarded[player.UserId] = service.inCabin(player)
+        Cycle.boarded[player.UserId] = aboard[player.UserId] == true
     end
-    -- Just outside the BOARD hatch, on the side away from the rocket.
-    local function besideHatch()
-        local away = boarding.Position - rocketBuild.origin.Position
-        away = Vector3.new(away.X, 0, away.Z)
-        away = away.Magnitude > 0.1 and away.Unit or Vector3.zAxis
-        return boarding.Position + away * (boarding.Size.Z / 2 + 6) + Vector3.new(0, 4, 0)
+    -- Puts `player` aboard as the BOARD door does (DebugService "board" and "launch").
+    function service.board(player, position)
+        if not ctx.profiles:ready(player.UserId) then return end
+        aboard[player.UserId] = true
+        Movement.relocate(player, position or spread(cabin.arrival, 6))
     end
     -- The exit hatch: back out in front of the BOARD hatch until liftoff.
     local exitPrompt = World.prompt(cabin.exit, "Leave rocket")
@@ -160,15 +187,13 @@ function Launch.new(ctx)
         local cycle = rocket.cycle
         task.delay(countdown, function()
             if Cycle.rocket.cycle ~= cycle or rocket.phase ~= "Boarding" then return end
+            -- Everyone who boarded through the door; one outside the cabin this very tick
+            -- (put back next tick) is put back in now.
             local passengers = {}
-            for _, player in Players:GetPlayers() do
-                if service.inCabin(player) then passengers[player.UserId] = true end
-            end
-            -- Boarded but outside the cabin this very tick (put back next tick): still flying.
             for userId in aboard do
                 local player = Players:GetPlayerByUserId(userId)
-                if player and not passengers[userId] and ctx.profiles:ready(userId) then
-                    Movement.relocate(player, spread(cabin.arrival, 6))
+                if player and ctx.profiles:ready(userId) then
+                    if not service.inCabin(player) then Movement.relocate(player, spread(cabin.arrival, 6)) end
                     passengers[userId] = true
                 end
             end
@@ -186,9 +211,10 @@ function Launch.new(ctx)
             local blackHole = definition.ModelTier == BLACK_HOLE
             -- Each passenger's suit boost (SkinService: the ride counts for more launches)
             -- is taken now, so one who disconnects during the flight keeps it. The trip goes
-            -- on their profile (its whole stay's ticks) and liftoff waits until those saves
-            -- are done (up to COMMIT_SECONDS), so a server lost from here on still pays it on
-            -- their next join.
+            -- on their profile (its whole stay's ticks), and only passengers whose trip is
+            -- saved within COMMIT_SECONDS fly, so a server lost from here on still pays every
+            -- rider on their next join. Anyone whose save didn't go through stays behind,
+            -- their trip taken back off the profile.
             local suits = {}
             local entitled = rewardSeconds * rate * multiplier
             for userId in passengers do
@@ -197,9 +223,21 @@ function Launch.new(ctx)
                 ctx.profiles:lockLaunch(userId, cycle, { ticks = entitled, launches = suits[userId], blackHole = blackHole })
             end
             local committed = ctx.profiles:commitLaunch(passengers, COMMIT_SECONDS)
-            for userId in passengers do
-                if not committed[userId] then warn("Rocket launch: trip not saved before liftoff (it saves with the stay)", userId) end
+            for userId in table.clone(passengers) do
+                if not committed[userId] then
+                    warn("Rocket launch: trip not saved before liftoff; staying behind", userId)
+                    ctx.profiles:cancelLaunch(userId, cycle)
+                    passengers[userId], rocket.passengers[userId] = nil, nil
+                    local player = Players:GetPlayerByUserId(userId)
+                    if player then
+                        Movement.relocate(player, besideHatch())
+                        Remote.feedback(player, "Your seat couldn't be saved in time, so you stayed behind. Catch the next rocket!")
+                    end
+                end
             end
+            -- The running launch, for stay growth (growTrips).
+            current = { rocket = rocket, cycle = cycle, rate = rate, multiplier = multiplier, entitled = entitled,
+                seconds = function() return rewardSeconds end }
             -- Anyone left in the cabin without a lock (profile not ready) goes home.
             for _, player in Players:GetPlayers() do
                 if not passengers[player.UserId] and service.inCabin(player) then Movement.relocate(player, spawn.Position + Vector3.new(0, 5, 0)) end
@@ -235,17 +273,13 @@ function Launch.new(ctx)
                 end
             end
             -- The stay can grow while it runs (ShopService ExtraStay moves the deadline too).
-            local stay = ctx.Shop and ctx.Shop.beginStay(rewardSeconds) or { total = rewardSeconds, extra = 0 }
+            -- Banked time joins it only once every passenger's longer trip is saved
+            -- (growTrips); otherwise it stays banked for a later stay.
+            local banked = ctx.Shop and ctx.Shop.prepareStay(3) or 0
+            if banked > 0 and not service.growTrips(banked) then banked = 0 end
+            local stay = ctx.Shop and ctx.Shop.beginStay(rewardSeconds, banked) or { total = rewardSeconds, extra = 0 }
+            current.seconds = function() return stay.total end
             Cycle.deadline = workspace:GetServerTimeNow() + stay.total
-            -- A longer stay (time bought now or banked before) is worth more if the server is
-            -- lost: each open launch grows first, saved with the extra ticks it pays.
-            local function extendTrips()
-                local worth = stay.total * rate * multiplier
-                if worth <= entitled then return end
-                entitled = worth
-                for userId in rocket.passengers do ctx.profiles:extendLaunch(userId, cycle, entitled) end
-            end
-            extendTrips()
             for userId in rocket.passengers do
                 local player = Players:GetPlayerByUserId(userId)
                 if player then
@@ -260,7 +294,6 @@ function Launch.new(ctx)
                 task.wait(1 / rate)
                 tick += 1
                 local elapsed, second = tick / rate, tick % rate == 0
-                extendTrips()
                 for userId in rocket.passengers do
                     local player = Players:GetPlayerByUserId(userId)
                     ctx.profiles:queueReward(userId, cycle, tick * multiplier, blackHole, suits[userId])
@@ -299,6 +332,7 @@ function Launch.new(ctx)
                 if second then Cycle.broadcast() end
             end
             -- Every tick is queued: the open launch closes with the save that commits them.
+            current = nil
             for userId in rocket.passengers do ctx.profiles:finishLaunch(userId, cycle) end
             if ctx.Shop then ctx.Shop.endStay() end
             if definition.ModelTier == BLACK_HOLE then task.wait(Launch.SingularityLength - Launch.SingularitySeconds) end

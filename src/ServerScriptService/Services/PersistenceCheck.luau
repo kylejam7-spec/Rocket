@@ -31,6 +31,8 @@ return function()
     local function server(store)
         local profiles = Profiles.new(config, function() end)
         profiles.store, profiles.retrySeconds, profiles.waitSeconds = store, 0.05, 0.3
+        -- Save-soon spacing shortened; a full write budget unless a test says otherwise.
+        profiles.rewardSaveSeconds, profiles.budget = 0.3, function() return 1000 end
         return profiles
     end
     local function waitFor(condition)
@@ -242,6 +244,73 @@ return function()
     assert(s:prune() == 1 and s.records[21] == nil and s.records[22])
     -- A rejoin after pruning loads afresh.
     assert(s:load(20) and s:ready(20) and pool.data.Player_20.session.owner == s.owner)
+
+    -- A passenger whose trip couldn't be saved in time stays behind: the trip comes off
+    -- the profile again, so even the late save that finally lands owes nothing.
+    local late = fakeStore()
+    local lt = server(late)
+    assert(lt:load(30) and lt:lockLaunch(30, "Tc", { ticks = 9, launches = 1 }))
+    local realLate = late.UpdateAsync
+    late.UpdateAsync = function(...) task.wait(0.6); return realLate(...) end
+    assert(not lt:commitLaunch({ [30] = true }, 0.2)[30])
+    lt:cancelLaunch(30, "Tc")
+    late.UpdateAsync = realLate
+    assert(waitFor(function() return not lt.records[30].busy and not lt.records[30].saveQueued and not lt.records[30].dirty end), "cancel not saved")
+    assert(late.data.Player_30.openLaunches.Tc == nil and next(lt.records[30].profile.openLaunches) == nil, "a cancelled trip is still owed")
+    late.data.Player_30.session.expires = 0
+    assert(server(late):load(30) and late.data.Player_30.completedLaunches == 0, "a trip not taken was paid")
+
+    -- A suit chosen while a save is running, then leaving: the leaving save waits for the
+    -- running one and then stores the suit (it used to be lost, the record marked clean).
+    local suits = fakeStore()
+    local su = server(suits)
+    assert(su:load(31))
+    local realSuits = suits.UpdateAsync
+    suits.UpdateAsync = function(...) task.wait(0.4); return realSuits(...) end
+    su:dirty(31)
+    task.spawn(function() su:save(31) end)
+    task.wait(0.1)
+    su.records[31].profile.suit = "SuitGold"
+    su:dirty(31)
+    su:remove(31)
+    suits.UpdateAsync = realSuits
+    assert(waitFor(function() return su.records[31].released end), "leaving save didn't run after the busy one")
+    assert(suits.data.Player_31.suit == "SuitGold", "suit lost on departure")
+    -- A change made during a save keeps the record dirty even if no compared field moved.
+    local rev = fakeStore()
+    local rv = server(rev)
+    assert(rv:load(32))
+    local realRev = rev.UpdateAsync
+    rev.UpdateAsync = function(...) task.wait(0.3); return realRev(...) end
+    rv:dirty(32)
+    task.spawn(function() rv:save(32) end)
+    task.wait(0.1)
+    rv.records[32].profile.suit = "SuitGalaxy"
+    rv:dirty(32)
+    assert(waitFor(function() return not rv.records[32].busy end))
+    rev.UpdateAsync = realRev
+    assert(rv.records[32].dirty, "a change during a save was marked saved")
+
+    -- Saves that can wait: many changes make one save per spacing, and none goes while the
+    -- DataStore write budget is at the reserve (saveNow, for receipts and commits, does).
+    local budgeted = fakeStore()
+    local bu = server(budgeted)
+    assert(bu:load(33))
+    local writes0 = budgeted.writes
+    for _ = 1, 20 do bu:dirty(33); bu:saveSoon(33) end
+    assert(waitFor(function() return budgeted.writes > writes0 and not bu.records[33].busy end))
+    task.wait(0.4)
+    assert(budgeted.writes == writes0 + 1, "save-soon calls weren't coalesced")
+    local left = 5
+    bu.budget = function() return left end
+    bu.records[33].profile.coins = 7
+    bu:dirty(33)
+    bu:saveSoon(33)
+    task.wait(0.8)
+    assert(budgeted.writes == writes0 + 1, "a save that could wait went out with no budget left")
+    assert(bu:saveNow(33) and budgeted.writes == writes0 + 2, "saveNow waited for budget")
+    left = 1000
+    assert(waitFor(function() return not bu.records[33].saveQueued end), "deferred save never went")
 
     -- Studio without API access: unsaved progress instead of a failed load.
     local denied = Profiles.new(config, function() end)

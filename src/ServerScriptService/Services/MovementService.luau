@@ -5,8 +5,13 @@
 -- server sample spends what they moved. Moves that arrive bunched up after lag fit in the
 -- bank; going faster than the limit for longer drains it and snaps them back. Vertical
 -- movement (falls, jumps) isn't counted. Server teleports (relocate) start a fresh budget.
+-- Interaction checks (observed) spend from the same budget, so a client can't dart out to
+-- a prompt and back between samples. A new character settles onto its SpawnLocation
+-- freely, but only there: anywhere else is put back on the spawn.
 -- MovementCheck runs the budget.
 local Movement = {}
+-- How far from the spawn point a settling character may land (the SpawnLocation is 8x8).
+Movement.SpawnRadius = 20
 
 local function finite(vector)
     return vector.X == vector.X and vector.Y == vector.Y and vector.Z == vector.Z and vector.Magnitude < 1e7
@@ -45,19 +50,24 @@ function Movement.new(ctx)
         local root = service.body(player)
         if not root then return nil end
         local sample = motion[player.UserId]
-        if not sample or sample.root ~= root or os.clock() < sample.blockedUntil then return nil end
-        -- Check again in the interaction handler, covering the gap between samples.
+        local now = os.clock()
+        if not sample or sample.root ~= root or now < sample.blockedUntil then return nil end
+        -- Check again in the interaction handler, covering the gap between samples, and
+        -- charge it: the next sample measures from here.
         local moved = horizontal(root.Position - sample.position)
-        if Movement.spend(config, sample.budget, limit(player), os.clock() - sample.time, moved) < 0 then return nil end
+        local budget = Movement.spend(config, sample.budget, limit(player), now - sample.time, moved)
+        if budget < 0 then return nil end
+        sample.budget, sample.position, sample.time = budget, root.Position, now
         return root
     end
-    -- `settle` seconds of free movement before the check applies: CharacterAdded fires
-    -- before Roblox moves the new character onto its SpawnLocation, so without it the
-    -- spawn move looks like a teleport and snaps players back to the map centre.
-    function service.track(player, root, grace, settle)
+    -- `settle` seconds before the check applies: CharacterAdded fires before Roblox moves
+    -- the new character onto its SpawnLocation (at `spawnAt`), so that move mustn't look
+    -- like a teleport. While settling, landing within SpawnRadius of `spawnAt` (or a move
+    -- the budget allows) is accepted; anywhere else the character is put on the spawn.
+    function service.track(player, root, grace, settle, spawnAt)
         motion[player.UserId] = { root = root, position = root.Position, safe = root.CFrame, time = os.clock(),
             blockedUntil = os.clock() + grace, settledAt = os.clock() + (settle or 0), from = nil,
-            budget = Movement.cap(config, limit(player)) }
+            budget = Movement.cap(config, limit(player)), spawnAt = spawnAt }
     end
     -- Takes a position (stands upright) or a full CFrame (gym poses).
     function service.relocate(player, position)
@@ -74,6 +84,12 @@ function Movement.new(ctx)
         if not root or not sample or sample.root ~= root then return end
         local rate = limit(player)
         if now < sample.settledAt then
+            local moved = horizontal(root.Position - sample.position)
+            local onSpawn = sample.spawnAt == nil or horizontal(root.Position - sample.spawnAt) <= Movement.SpawnRadius
+            if not onSpawn and Movement.spend(config, sample.budget, rate, now - sample.time, moved) < 0 then
+                root.CFrame = CFrame.new(sample.spawnAt)
+                root.AssemblyLinearVelocity = Vector3.zero
+            end
             sample.budget = Movement.cap(config, rate)
         else
             sample.budget = Movement.spend(config, sample.budget, rate, now - sample.time, horizontal(root.Position - sample.position))

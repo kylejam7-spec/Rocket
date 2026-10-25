@@ -51,7 +51,7 @@ function UpgradeService.new(ctx)
         if paid > 0 then
             ctx.profiles:dirty(player.UserId)
             -- Save soon so a purchase survives a quick rejoin.
-            task.spawn(function() ctx.profiles:save(player.UserId) end)
+            ctx.profiles:saveSoon(player.UserId)
             ctx.Remote.feedback(player, config.Upgrades[track].name .. " upgraded to level " .. profile.upgrades[track] .. "!")
             ctx.Tutorial.observe(player, "Upgrade")
             ctx.Stats.update(player)

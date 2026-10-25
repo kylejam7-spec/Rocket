@@ -100,6 +100,41 @@ return function()
         service.sample(player, now)
     end
     assert((root.Position - there).Magnitude > 150, "a fast profile was held to base speed")
+    -- Interaction checks are charged: darting 50 studs out to a prompt and back between
+    -- samples (each out-and-back within the budget alone) is caught within a few tries.
+    profile.speedLevel = 0
+    service.track(player, root, 0)
+    now = os.clock()
+    local home = root.Position
+    local caughtAt
+    for try = 1, 5 do
+        root.Position = home + Vector3.new(50, 0, 0)
+        local seen = service.observed(player)
+        root.Position = home
+        now = os.clock()
+        service.sample(player, now)
+        if not seen or (root.Position - home).Magnitude > 0.01 then caughtAt = try break end
+        task.wait(0.05)
+    end
+    assert(caughtAt and caughtAt <= 2, "out-and-back interaction moves weren't charged")
+    -- A walk to a prompt within the budget is still fine (and charged once).
+    task.wait(2.2) -- past the snap-back's interaction block
+    service.track(player, root, 0)
+    root.Position += Vector3.new(10, 0, 0)
+    assert(service.observed(player), "a normal step to a prompt was refused")
+
+    -- Respawn: while settling, landing on the SpawnLocation (or near it) is accepted from
+    -- wherever CharacterAdded put the character; a client moving itself 1,000 studs away
+    -- is put back on the spawn.
+    local spawnAt = Vector3.new(0, 1004, 0)
+    root.Position = Vector3.new(300, 1000, 300) -- where the new character first appears
+    service.track(player, root, 1, 1, spawnAt)
+    root.Position = spawnAt + Vector3.new(3, 0, 2) -- Roblox puts it on the spawn
+    service.sample(player, os.clock() + 0.2)
+    assert((root.Position - (spawnAt + Vector3.new(3, 0, 2))).Magnitude < 0.01, "the spawn placement was refused")
+    root.Position = spawnAt + Vector3.new(1000, 0, 0)
+    service.sample(player, os.clock() + 0.4)
+    assert((root.Position - spawnAt).Magnitude < 0.01, "a move during settling wasn't put back on the spawn")
     service.forget(player)
     rig:Destroy()
 end

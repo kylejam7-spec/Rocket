@@ -63,11 +63,13 @@ function PetService.grant(profile, id, slots)
     return false
 end
 
--- Counts every UFO down by `seconds` of play. Returns the pet id of the first to land,
--- whether it was equipped, and the pets of any others landing on the same tick (all granted).
-function PetService.advance(profile, seconds, slots)
+-- Counts the first `flying` UFOs down by `seconds` of play (1, or 3 with Triple Hatch;
+-- all by default): any past that, from Robux receipts beyond the limit, wait their turn.
+-- Returns the pet id of the first to land, whether it was equipped, and the pets of any
+-- others landing on the same tick (all granted).
+function PetService.advance(profile, seconds, slots, flying)
     local landed = {}
-    for index = 1, #profile.ufos do
+    for index = 1, math.min(#profile.ufos, flying or 3) do
         local ufo = profile.ufos[index]
         ufo.remaining = math.max(0, ufo.remaining - seconds)
         if ufo.remaining <= 0 then table.insert(landed, ufo) end
@@ -85,6 +87,22 @@ end
 
 -- Equips (on) or unequips one copy of `id`; "*" unequips them all. Returns true, or
 -- nil and a reason.
+-- When each UFO lands, in seconds of play from now: the first `flying` count down at
+-- once; each waiting one starts when a slot frees up (the soonest to land).
+function PetService.landings(profile, flying)
+    local slots, times = {}, {}
+    for index, ufo in profile.ufos do
+        local start = 0
+        if index > flying then
+            table.sort(slots)
+            start = table.remove(slots, 1) or 0
+        end
+        times[index] = start + ufo.remaining
+        table.insert(slots, times[index])
+    end
+    return times
+end
+
 function PetService.equip(profile, id, on, slots)
     slots = slots or Pets.MaxEquipped
     if id == "*" and not on then
@@ -143,8 +161,9 @@ function PetService.new(ctx)
             if id then shown[id], count = tonumber(at), count + 1 end
         end
         local parts, stale = {}, count ~= #profile.ufos
-        for _, ufo in profile.ufos do
-            local at = now + ufo.remaining / rate
+        local landings = PetService.landings(profile, service.maxUfos(player))
+        for index, ufo in profile.ufos do
+            local at = now + landings[index] / rate
             if not shown[ufo.id] or math.abs(shown[ufo.id] - at) > 0.5 then stale = true else at = shown[ufo.id] end
             table.insert(parts, ("%s:%d:%.1f"):format(ufo.id, ufo.tier, at))
         end
@@ -152,9 +171,12 @@ function PetService.new(ctx)
         local pets = table.concat(profile.equippedPets, ",")
         if player:GetAttribute("Pets") ~= pets then player:SetAttribute("Pets", pets) end
     end
-    local function changed(player)
+    -- `soon`: coins spent or a pet won, saved within RewardSaveSeconds. Equipping only
+    -- marks the profile changed (autosave and the leaving save take it), so toggling pets
+    -- can't flood the DataStore.
+    local function changed(player, soon)
         ctx.profiles:dirty(player.UserId)
-        task.spawn(function() ctx.profiles:save(player.UserId) end)
+        if soon then ctx.profiles:saveSoon(player.UserId) end
         service.refresh(player)
         ctx.Cycle.send(player)
     end
@@ -173,7 +195,7 @@ function PetService.new(ctx)
         local ufo = Pets.Ufos[tier]
         local minutes = ufo.Minutes / service.hatchRate(player)
         ctx.Remote.feedback(player, ufo.Name .. " summoned! It lands in " .. (minutes % 1 == 0 and minutes or ("%.1f"):format(minutes)) .. " minutes of play.")
-        changed(player)
+        changed(player, true)
         return true
     end
     local function nearShop(player)
@@ -204,7 +226,7 @@ function PetService.new(ctx)
             local minutes = ufo.Minutes / service.hatchRate(player)
             ctx.Remote.feedback(player, ufo.Name .. " summoned! It lands in "
                 .. (minutes % 1 == 0 and minutes or ("%.1f"):format(minutes)) .. " minutes of play.")
-            changed(player)
+            changed(player, true)
         end
     end)
     equipRemote.OnServerEvent:Connect(function(player, id, on)
@@ -226,7 +248,7 @@ function PetService.new(ctx)
         for _, player in Players:GetPlayers() do
             local profile = profileOf(player)
             if profile and #profile.ufos > 0 then
-                local id, _, extra = PetService.advance(profile, step * service.hatchRate(player), service.slots(player))
+                local id, _, extra = PetService.advance(profile, step * service.hatchRate(player), service.slots(player), service.maxUfos(player))
                 if id then
                     -- The landing cue goes first so clients hold the UFO for it; the owner's
                     -- client shows the reveal card (no toast). UFOs landing on the same tick
@@ -237,7 +259,7 @@ function PetService.new(ctx)
                             if player.Parent then hatched:FireAllClients(player, other) end
                         end)
                     end
-                    changed(player)
+                    changed(player, true)
                 else
                     -- Not marked dirty: autosave and leaving save the countdown anyway.
                     service.refresh(player)

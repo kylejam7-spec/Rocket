@@ -183,9 +183,14 @@ return table.freeze({
     -- Each destination's bench and treadmill pay GymGain x reward per training tick
     -- (unchanged by the stay rewards: 6-30 per tick, 3 ticks a second).
     Planet = table.freeze({ StrengthBonus = 6, SpeedBonus = 6, TicksPerSecond = 4, GymGain = 6 }),
-    -- Stay rewards save to the DataStore at most this often; ticks in between show at once
-    -- (Profiles:queueReward previews them) and go out with the next save.
-    RewardSaveSeconds = 1,
+    -- Saves for stay rewards (and other changes that save soon: purchases, UFOs) go out
+    -- at most this often per player; ticks in between show at once (Profiles:queueReward
+    -- previews them). A trip is safe meanwhile: its open launch pays the whole stay if the
+    -- server is lost (ProfileService).
+    RewardSaveSeconds = 10,
+    -- Saves that can wait (save-soon, autosave) hold off while the server's DataStore
+    -- write budget is at or below this, keeping room for receipts and launch commits.
+    SaveBudgetReserve = 20,
     -- Mission wheel: it starts this many seconds before a reward stay ends and spins
     -- for WheelSpinSeconds; everyone sees it (WheelController).
     WheelLeadSeconds = 10,
