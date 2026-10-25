@@ -396,6 +396,10 @@ local function land(rocket)
     local name = "RocketLanding" .. launches
     local function cleanup()
         RunService:UnbindFromRenderStep(name)
+        -- Always back on the landing spot: a frame hitch (a phone loading the destination)
+        -- can run from before the descent to past its end, which left the rocket parked
+        -- 20,000 studs up and the destination without it.
+        if rocket.Parent then rocket:PivotTo(rest) end
         if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
         if fadeGui then fadeGui:Destroy() end
         if engine then engine:Destroy() end
