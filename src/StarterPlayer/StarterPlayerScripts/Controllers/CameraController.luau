@@ -5,6 +5,10 @@
 -- which the touch/controller camera uses too: StarterPlayer's DevCameraOcclusionMode). Only ground under the camera, a surface
 -- facing up, stops it, so looking up never shows the underside of the map. Phones keep
 -- Roblox's touch camera but get the same ground stop (keepAboveGround).
+-- Inside the rocket's cabin (a small room far off the map) both cameras stay within its
+-- walls, floor and ceiling and the zoom is capped, so nobody sees out of it (user,
+-- 2026-10-25).
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
@@ -16,6 +20,8 @@ local CameraController = {}
 -- and controller camera's limit). Each scroll notch zooms by ZOOM_STEP, so the long
 -- range is quick to cross.
 local MIN_ZOOM, MAX_ZOOM, DEFAULT_ZOOM = 8, 250, 12
+-- In the cabin: the zoom limit, and how far the camera stays off its walls.
+local CABIN_ZOOM, CABIN_MARGIN = 30, 1
 local ZOOM_STEP = 1.18
 local SENSITIVITY = 0.003
 
@@ -106,6 +112,41 @@ function CameraController.start()
             camera.CFrame = CFrame.new(focus + offset.Unit * math.max(0.5, hit.Distance - 0.3)) * camera.CFrame.Rotation
         end
     end
+    -- The cabin's inside (DestinationService tags its floor RocketCabin, CabinSize = the
+    -- room): the lowest and highest corners the camera may reach, or nil.
+    local function cabinBounds()
+        local floor = CollectionService:GetTagged("RocketCabin")[1]
+        local size = floor and floor:GetAttribute("CabinSize")
+        if not size then return nil end
+        local low = floor.Position + Vector3.new(-size.X / 2, floor.Size.Y / 2, -size.Z / 2)
+        local margin = Vector3.one * CABIN_MARGIN
+        return low + margin, low + size - margin
+    end
+    local function inCabin(position)
+        local low, high = cabinBounds()
+        if not low then return nil end
+        local inside = position.X >= low.X - 2 and position.X <= high.X + 2 and position.Z >= low.Z - 2 and position.Z <= high.Z + 2
+            and position.Y >= low.Y - 3 and position.Y <= high.Y + 2
+        if not inside then return nil end
+        return low, high
+    end
+    -- The farthest share of `offset` from `focus` (inside the box) that stays in the box.
+    local function withinBox(focus, offset, low, high)
+        local t = 1
+        for _, axis in { "X", "Y", "Z" } do
+            local o, f = offset[axis], focus[axis]
+            if o > 1e-4 then t = math.min(t, math.max(0, (high[axis] - f) / o))
+            elseif o < -1e-4 then t = math.min(t, math.max(0, (low[axis] - f) / o)) end
+        end
+        return offset * t
+    end
+    -- The zoom limit follows the cabin (Roblox's touch/controller camera reads it).
+    local cabinZoom = false
+    local function setCabinZoom(on)
+        if on == cabinZoom then return end
+        cabinZoom = on
+        player.CameraMaxZoomDistance = on and CABIN_ZOOM or MAX_ZOOM
+    end
     local function restore(camera)
         if active then
             camera.CameraType = previousType or Enum.CameraType.Custom
@@ -132,6 +173,14 @@ function CameraController.start()
             restore(camera)
             if root and humanoid and humanoid.Health > 0 and Input.PreferredInput == Enum.PreferredInput.Touch then
                 keepAboveGround(camera, character)
+            end
+            local low, high
+            if root then low, high = inCabin(root.Position) end
+            setCabinZoom(low ~= nil)
+            if low and camera.CameraType == Enum.CameraType.Custom then
+                local focus = camera.Focus.Position
+                local clamped = Vector3.new(math.clamp(focus.X, low.X, high.X), math.clamp(focus.Y, low.Y, high.Y), math.clamp(focus.Z, low.Z, high.Z))
+                camera.CFrame = CFrame.new(clamped + withinBox(clamped, camera.CFrame.Position - clamped, low, high)) * camera.CFrame.Rotation
             end
             return
         end
@@ -182,6 +231,14 @@ function CameraController.start()
         end
         if skipped then params.FilterDescendantsInstances = { character, table.unpack(seeThrough) } end
         if hit then offset = -direction * math.max(0.5, hit.Distance - 0.3) end
+        local low, high = inCabin(root.Position)
+        setCabinZoom(low ~= nil)
+        if low then
+            zoom = math.min(zoom, CABIN_ZOOM)
+            focus = Vector3.new(math.clamp(focus.X, low.X, high.X), math.clamp(focus.Y, low.Y, high.Y), math.clamp(focus.Z, low.Z, high.Z))
+            offset = withinBox(focus, offset, low, high)
+            if offset.Magnitude < 0.5 then offset = -direction * 0.5 end
+        end
         camera.CFrame = CFrame.lookAt(focus + offset, focus)
         camera.Focus = CFrame.new(focus)
         fade(camera, focus, character)
