@@ -482,6 +482,40 @@ function Profiles:extendLaunch(userId, launchId, ticks)
     self:dirty(userId)
 end
 
+-- Raises every rider's (`userIds`, userId = true) open launch `launchId` to `ticks` as one
+-- step: saved for all within `timeout` seconds, or not at all. If any save fails, each
+-- rider goes back to their previous ticks, saved again (also within `timeout`), so no
+-- rider is left owed a longer stay that didn't happen. True when every rider's longer
+-- trip is saved (the stay may grow); false when it was rolled back.
+function Profiles:growLaunch(userIds, launchId, ticks, timeout)
+    local before = {}
+    for userId in userIds do
+        local record = self.records[userId]
+        local entry = record and record.loaded and record.profile.openLaunches[launchId]
+        if entry then before[userId] = entry.ticks end
+        self:extendLaunch(userId, launchId, ticks)
+    end
+    local saved = self:commitLaunch(userIds, timeout)
+    local all = true
+    for userId in before do
+        if not saved[userId] then all = false end
+    end
+    if all then return true end
+    for userId, ticksBefore in before do
+        local entry = self.records[userId].profile.openLaunches[launchId]
+        if entry and entry.ticks ~= ticksBefore then
+            entry.ticks = ticksBefore
+            self:dirty(userId)
+        end
+    end
+    -- Saved after any save still running (saveNow waits it out), so the lower value lands last.
+    local undone = self:commitLaunch(before, timeout)
+    for userId in before do
+        if not undone[userId] then warn("Rocket launch: couldn't save a rolled-back stay extension yet (it saves with the stay)", userId) end
+    end
+    return false
+end
+
 -- A passenger whose trip couldn't be saved in time stays behind: the open launch comes
 -- off their profile again (saved soon), so nothing is owed for a ride they didn't take.
 function Profiles:cancelLaunch(userId, launchId)

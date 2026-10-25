@@ -49,16 +49,14 @@ function Launch.new(ctx)
     local current = nil
     -- A stay about to grow by `extraSeconds` (time bought, or banked): every passenger's
     -- open launch is raised to the longer stay's ticks and saved first (waiting up to
-    -- COMMIT_SECONDS). True when that went through and the stay may grow.
+    -- COMMIT_SECONDS), all of them or none. True when that went through and the stay may
+    -- grow; otherwise the time stays banked.
     function service.growTrips(extraSeconds)
         if not current then return false end
         local worth = (current.seconds() + extraSeconds) * current.rate * current.multiplier
         if worth <= current.entitled then return true end
-        for userId in current.rocket.passengers do ctx.profiles:extendLaunch(userId, current.cycle, worth) end
-        local saved = ctx.profiles:commitLaunch(current.rocket.passengers, COMMIT_SECONDS)
-        for userId in current.rocket.passengers do
-            if not saved[userId] then return false end
-        end
+        -- All riders or none (Profiles:growLaunch rolls back if any save fails).
+        if not ctx.profiles:growLaunch(current.rocket.passengers, current.cycle, worth, COMMIT_SECONDS) then return false end
         current.entitled = worth
         return true
     end

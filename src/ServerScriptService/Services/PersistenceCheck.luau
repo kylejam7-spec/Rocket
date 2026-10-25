@@ -35,8 +35,8 @@ return function()
         profiles.rewardSaveSeconds, profiles.budget = 0.3, function() return 1000 end
         return profiles
     end
-    local function waitFor(condition)
-        local deadline = os.clock() + 5
+    local function waitFor(condition, seconds)
+        local deadline = os.clock() + (seconds or 5)
         while not condition() and os.clock() < deadline do task.wait(0.02) end
         return condition()
     end
@@ -244,6 +244,34 @@ return function()
     assert(s:prune() == 1 and s.records[21] == nil and s.records[22])
     -- A rejoin after pruning loads afresh.
     assert(s:load(20) and s:ready(20) and pool.data.Player_20.session.owner == s.owner)
+
+    -- A stay growing for two riders whose second save fails: neither is left owed the longer
+    -- stay. The audit's case: base 8 ticks, proposed 12; rider 41 saved 12, rider 42's save
+    -- failed, so rider 41 goes back to 8 (saved), the stay doesn't grow, and a server lost
+    -- afterwards pays rider 41 the 8 they rode.
+    local both = fakeStore()
+    local realBoth = both.UpdateAsync
+    local failing = false
+    function both:UpdateAsync(key, transform)
+        if failing and key == "Player_42" then error("DataStore throttled") end
+        return realBoth(self, key, transform)
+    end
+    local g2 = server(both)
+    assert(g2:load(41) and g2:load(42))
+    for _, userId in { 41, 42 } do assert(g2:lockLaunch(userId, "Tg", { ticks = 8, launches = 1 })) end
+    local riders = { [41] = true, [42] = true }
+    assert(g2:commitLaunch(riders, 5)[41] and both.data.Player_41.openLaunches.Tg.ticks == 8)
+    -- (Each failed save retries with backoff: a short timeout here.)
+    failing = true
+    assert(not g2:growLaunch(riders, "Tg", 12, 1), "a stay grew with a rider's save failed")
+    assert(g2.records[41].profile.openLaunches.Tg.ticks == 8 and g2.records[42].profile.openLaunches.Tg.ticks == 8, "the extension wasn't rolled back")
+    assert(waitFor(function() return both.data.Player_41.openLaunches.Tg.ticks == 8 and not g2.records[41].busy end), "rider 41's rollback not saved")
+    failing = false
+    both.data.Player_41.session.expires = 0
+    assert(server(both):load(41) and both.data.Player_41.planetBonuses.strength == 8 * unit, "a rolled-back extension was paid")
+    -- All saves through: every rider gets the longer stay.
+    assert(waitFor(function() return not g2.records[42].busy and both.data.Player_42.openLaunches.Tg.ticks == 8 end, 20), "rider 42's rollback not saved")
+    assert(g2:growLaunch({ [42] = true }, "Tg", 12, 5) and both.data.Player_42.openLaunches.Tg.ticks == 12)
 
     -- A passenger whose trip couldn't be saved in time stays behind: the trip comes off
     -- the profile again, so even the late save that finally lands owes nothing.

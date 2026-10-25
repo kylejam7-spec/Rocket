@@ -17,18 +17,19 @@
 --   * A UFO goes onto the profile with the PurchaseId in its ledger (so a retry never
 --     adds a second), and PurchaseGranted only once the profile is saved. Otherwise the
 --     claim is let go and NotProcessedYet, so Roblox retries wherever the buyer is.
---   * A server effect: units are marked used in the ledger BEFORE this server uses them
---     (write-ahead), and only marked units are ever used, so no two servers can use the
---     same units. The claim's own write marks what's used at once (the boost, time on a
---     running stay, the fill the rocket can take now), and PurchaseGranted follows. The
---     rest is banked by PurchaseId (fill for the next delivery phase, time for the next
---     stay, a mission for the next spin) and marked as it's needed. Offer limits hold for
---     receipts too: a stay takes at most ExtraStayMax extra (the rest banks), one locked
---     mission a spin (the rest queue). A crash between marking and using loses those few
---     units; shutdown hands marked-but-unused units back. When this server closes or
---     crashes, the buyer's next join anywhere takes over every claim whose lease has run
---     out and banks what's owed there (and tries again, while they stay, when a claim
---     still leased elsewhere runs out).
+--   * A server effect: units are marked in the ledger BEFORE this server uses them, and
+--     only marked units are ever used, so two live servers never use the same units. The
+--     claim's own write marks what's used at once (the boost, recorded used outright;
+--     time on a running stay, the fill the rocket can take now), and PurchaseGranted
+--     follows. The rest is banked by PurchaseId (fill for the next delivery phase, time
+--     for the next stay, a mission for the next spin) and marked as it's needed. Marked
+--     units stay pending in the ledger until this server confirms it used them. Offer
+--     limits hold for receipts too: a stay takes at most ExtraStayMax extra (the rest
+--     banks), one locked mission a spin (the rest queue). Shutdown hands marked-but-unused
+--     units back. When this server closes or crashes, the buyer's next join anywhere
+--     takes over what's still owed once the claim's lease runs out, and what was marked
+--     but never confirmed PendingGraceSeconds after that (so nothing paid for is lost),
+--     and tries again, while they stay, when a claim not yet free becomes free.
 -- A PurchaseId on the done list is granted with nothing applied. ShopCheck runs the
 -- pure parts and the receipt path against an in-memory store.
 local Players = game:GetService("Players")
@@ -53,11 +54,19 @@ function ShopService.ids(config, kind)
 end
 
 -- The buyer's receipt ledger, as stored: { open = { [purchaseId] = entry }, done = { purchaseId, ... } }
--- with entry = { key, productId, amount (owed: not yet marked used), owner (server), leaseUntil, at }.
--- Units are marked used here BEFORE any server uses them (write-ahead): a server only ever
--- uses units it has marked, and marking needs the claim, so no two servers can use the same
--- units. A crash between marking and using loses those few units; it never doubles them.
+-- with entry = { key, productId, amount (owed: not yet marked), pending (marked for use by
+-- the owner, not yet confirmed used), claimed (marked by the owner's claim), owner (server),
+-- leaseUntil, at }.
+-- A server marks units BEFORE it uses them (moving them from `amount` to `pending`) and
+-- confirms them once used (taking them off `pending`); it only ever uses units it marked,
+-- and marking needs the claim, so two live servers never use the same units. When a
+-- server is gone, the next takes over what's owed once its lease runs out, and what it
+-- had marked but never confirmed (pending) PendingGraceSeconds after that: long enough
+-- that a server merely unable to write meanwhile has long stopped, so nothing paid for is
+-- lost and nothing is used twice. A boost is used in the same instant as its claim, so
+-- the claim records it used outright.
 ShopService.LeaseSeconds = 300
+ShopService.PendingGraceSeconds = 900
 ShopService.DoneLimit = 100
 function ShopService.ledger(raw)
     local ledger = type(raw) == "table" and raw or {}
@@ -66,27 +75,43 @@ function ShopService.ledger(raw)
     return ledger
 end
 
+-- When a claim whose lease has run out may be taken by another server: at once, unless
+-- units its server marked are still unconfirmed (then PendingGraceSeconds later).
+function ShopService.freeAt(entry)
+    local leaseUntil = entry.leaseUntil or 0
+    return (entry.pending or 0) > 0 and leaseUntil + ShopService.PendingGraceSeconds or leaseUntil
+end
+-- Takes `entry` for `owner`: what its last server marked but never confirmed is owed again.
+local function adopt(entry, owner, now)
+    if entry.owner ~= owner then
+        entry.amount = (entry.amount or 0) + (entry.pending or 0)
+        entry.pending, entry.claimed = 0, 0
+    end
+    entry.owner, entry.leaseUntil = owner, now + ShopService.LeaseSeconds
+end
+
 -- Claims `id` for server `owner` (changes `ledger`): "done" (granted before), "busy"
--- (another server's live claim), or "mine", the entry (new, ours already, or taken from a
--- server whose lease ran out) and how many units are marked used for this server to
--- apply now: use(owed) says how much of the owed amount it uses at once (a boost, time on
--- a running stay, fill the rocket needs now). The entry keeps those (`claimed`) so the
--- same server, retrying after a write whose answer was lost, applies the units it marked
--- rather than marking more; it stays open (amount 0) until settle closes it once applied.
--- Another server never reuses them: units marked by a server that's gone count as used.
-function ShopService.claim(ledger, id, fields, owner, now, use)
+-- (another server's claim, not yet free: ShopService.freeAt), or "mine", the entry (new,
+-- ours already, or taken over) and how many units are marked for this server to apply
+-- now: use(owed) says how much of the owed amount it uses at once (a boost, time on a
+-- running stay, fill the rocket can take now). `instant` (a boost, applied in the same
+-- instant) records them used outright; anything else is marked pending until settle
+-- confirms it. The entry keeps them (`claimed`) so the same server, retrying after a write
+-- whose answer was lost, applies the units it marked rather than marking more.
+function ShopService.claim(ledger, id, fields, owner, now, use, instant)
     if table.find(ledger.done, id) then return "done" end
     local entry = ledger.open[id]
-    if entry and entry.owner ~= owner and (entry.leaseUntil or 0) > now then return "busy", entry end
+    if entry and entry.owner ~= owner and ShopService.freeAt(entry) > now then return "busy", entry end
     if not entry then
-        entry = { key = fields.key, productId = fields.productId, amount = fields.amount, at = now }
+        entry = { key = fields.key, productId = fields.productId, amount = fields.amount, pending = 0, at = now }
         ledger.open[id] = entry
     end
-    local previous = entry.owner == owner and entry.claimed or 0
+    adopt(entry, owner, now)
+    local previous = entry.claimed or 0
     local used = math.clamp(use and use(entry.amount) or 0, 0, entry.amount)
     entry.amount -= used
+    if not instant then entry.pending = (entry.pending or 0) + used end
     entry.claimed = previous + used
-    entry.owner, entry.leaseUntil = owner, now + ShopService.LeaseSeconds
     return "mine", entry, previous + used
 end
 
@@ -94,28 +119,38 @@ local function trimDone(ledger)
     while #ledger.done > ShopService.DoneLimit do table.remove(ledger.done, 1) end
 end
 
--- This server's writes to its claims, by id: { use = n (mark n more of the owed amount
--- used, before using them), close = true (nothing of it left here: move it to done),
--- give = n (hand back n marked but unused: shutdown) }. Every claim written has its lease
--- renewed, or let go with `release` (shutdown, or a claim that couldn't be applied) so the
--- next server takes it at once. Returns { [id] = { status, used } }: status "held",
--- "done", or "gone" (no longer ours: another server took it over), and the units marked.
+-- This server's writes to its claims, by id: { use = n (mark n more of the owed amount,
+-- before using them), deliver = n (confirm n marked units used), close = true (nothing of
+-- it left here: move it to done), give = n (hand back n marked but unused: shutdown) }.
+-- Every claim written has its lease renewed, or let go with `release` (shutdown, or a
+-- claim that couldn't be applied) so the next server takes it at once. Returns
+-- { [id] = { status, used, delivered } }: status "held", "done", or "gone" (no longer
+-- ours: another server took it over), the units marked and the units confirmed.
 function ShopService.settle(ledger, owner, changes, now, release)
     local results = {}
     for id, change in changes do
         local entry = ledger.open[id]
         if not entry or entry.owner ~= owner then
-            results[id] = { status = table.find(ledger.done, id) and "done" or "gone", used = 0 }
+            results[id] = { status = table.find(ledger.done, id) and "done" or "gone", used = 0, delivered = 0 }
         else
+            entry.pending = entry.pending or 0
             local used = math.clamp(change.use or 0, 0, entry.amount)
-            entry.amount = entry.amount - used + (change.give or 0)
-            if change.close and entry.amount <= 0 then
+            entry.amount -= used
+            entry.pending += used
+            local delivered = math.clamp(change.deliver or 0, 0, entry.pending)
+            entry.pending -= delivered
+            local give = math.clamp(change.give or 0, 0, entry.pending)
+            entry.pending -= give
+            entry.amount += give
+            entry.claimed = 0
+            if change.close and entry.amount <= 0 and entry.pending <= 0 then
                 ledger.open[id] = nil
                 table.insert(ledger.done, id)
-                results[id] = { status = "done", used = used }
+                results[id] = { status = "done", used = used, delivered = delivered }
             else
-                entry.leaseUntil = release and 0 or now + ShopService.LeaseSeconds
-                results[id] = { status = "held", used = used }
+                -- Let go: free now (anything still pending waits out its grace from now).
+                entry.leaseUntil = release and now or now + ShopService.LeaseSeconds
+                results[id] = { status = "held", used = used, delivered = delivered }
             end
         end
     end
@@ -123,24 +158,27 @@ function ShopService.settle(ledger, owner, changes, now, release)
     return results
 end
 
--- Takes over the buyer's claims whose lease has run out (their server let go, closed or
--- stopped renewing), except those `skip(id, entry)` leaves (UFOs: Roblox's own receipt
--- retry finishes those; claims this server still holds). A claim with nothing owed is
--- closed instead (its units were all marked used). Returns { [id] = entry } and when the
--- soonest claim still leased elsewhere runs out (nil if none), for a retry.
+-- Takes over the buyer's claims that are free (ShopService.freeAt: the lease has run out,
+-- and any unconfirmed units' grace too), except those `skip(id, entry)` leaves (UFOs:
+-- Roblox's own receipt retry finishes those; claims this server still holds). Units its
+-- last server marked but never confirmed are owed again; a claim with nothing owed is
+-- closed. Returns { [id] = entry } and when the soonest claim not yet free will be (nil
+-- if none), for a retry.
 function ShopService.takeover(ledger, owner, now, skip)
     local taken, retryAt = {}, nil
     for id, entry in ledger.open do
         if not skip(id, entry) then
-            local leaseUntil = entry.leaseUntil or 0
-            if leaseUntil > now then
-                retryAt = math.min(retryAt or math.huge, leaseUntil)
-            elseif (entry.amount or 0) <= 0 then
-                ledger.open[id] = nil
-                table.insert(ledger.done, id)
+            local free = ShopService.freeAt(entry)
+            if free > now then
+                retryAt = math.min(retryAt or math.huge, free)
             else
-                entry.owner, entry.leaseUntil = owner, now + ShopService.LeaseSeconds
-                taken[id] = entry
+                adopt(entry, owner, now)
+                if (entry.amount or 0) <= 0 then
+                    ledger.open[id] = nil
+                    table.insert(ledger.done, id)
+                else
+                    taken[id] = entry
+                end
             end
         end
     end
@@ -175,6 +213,8 @@ function ShopService.isUfo(key) return key:match("^Ufo%a+$") ~= nil end
 --   key(productId)            -> shop key or nil
 --   amount(key)               -> what the purchase is worth (units, seconds or 1)
 --   plan(key, owed)           -> how much of `owed` this server uses at once (no side effects)
+--   instant(key)              -> true when that use happens in the same instant (a boost):
+--                                recorded used in the claim itself, never pending
 --   update(userId, transform) -> ok (UpdateAsync on the buyer's ledger; may yield);
 --                                transform(ledger, now) returns true to write
 --   apply(key, receipt, value, used) -> true, or false: can't yet (a UFO for a buyer who
@@ -194,7 +234,7 @@ function ShopService.process(state, receipt, deps)
         local outcome, entry, used
         local ok = deps.update(receipt.PlayerId, function(ledger, now)
             outcome, entry, used = ShopService.claim(ledger, id, { key = key, productId = receipt.ProductId, amount = deps.amount(key) },
-                state.owner, now, function(owed) return deps.plan(key, owed) end)
+                state.owner, now, function(owed) return deps.plan(key, owed) end, deps.instant and deps.instant(key))
             return outcome == "mine"
         end)
         if not ok then return ShopService.RETRY end
@@ -220,12 +260,22 @@ end
 -- Server-wide effects bought with products. The banks remember which purchase each part
 -- came from (`id`) and how much of it is marked used in the ledger (`reserved`): only
 -- reserved units are ever used. Fills and stays are { id, units / seconds, reserved }
--- oldest first, guarantees { mission, id, reserved = bool }.
+-- oldest first, guarantees { mission, id, reserved = bool }. `delivered[id]` counts units
+-- used since the service last collected them (takeDelivered), to confirm in the ledger.
 function ShopService.newEffects()
-    return { boostUntil = 0, fillBank = 0, fills = {}, stayBank = 0, stays = {}, guarantees = {} }
+    return { boostUntil = 0, fillBank = 0, fills = {}, stayBank = 0, stays = {}, guarantees = {}, delivered = {} }
+end
+local function deliver(effects, id, n)
+    if id ~= nil and n > 0 then effects.delivered[id] = (effects.delivered[id] or 0) + n end
+end
+-- The units used per purchase since the last call (and clears the count).
+function ShopService.takeDelivered(effects)
+    local delivered = effects.delivered
+    effects.delivered = {}
+    return delivered
 end
 -- Uses `amount` reserved units off the front of a bank list (oldest purchase first).
-local function consume(list, field, amount)
+local function consume(effects, list, field, amount)
     for index = 1, #list do
         if amount <= 0 then break end
         local item = list[index]
@@ -233,6 +283,7 @@ local function consume(list, field, amount)
         item[field] -= take
         item.reserved -= take
         amount -= take
+        deliver(effects, item.id, take)
     end
     for index = #list, 1, -1 do
         if list[index][field] <= 0 then table.remove(list, index) end
@@ -319,7 +370,7 @@ function ShopService.fill(rocket, effects)
     if not Rocket.PhaseMaterial[rocket.phase] or ready <= 0 then return 0, false end
     local added, advanced = rocket:fill(ready)
     effects.fillBank -= added
-    consume(effects.fills, "units", added)
+    consume(effects, effects.fills, "units", added)
     return added, advanced
 end
 -- Extra time bought by purchase `id`: `reserved` seconds of it go into the running stay
@@ -331,6 +382,7 @@ function ShopService.extendStay(effects, stay, seconds, id, max, reserved)
     if add > 0 then
         stay.total += add
         stay.extra += add
+        deliver(effects, id, add)
     end
     if seconds - add > 0 then
         effects.stayBank += seconds - add
@@ -346,7 +398,7 @@ end
 function ShopService.beginStay(effects, seconds, banked)
     banked = math.min(banked or 0, reservedIn(effects.stays))
     effects.stayBank -= banked
-    consume(effects.stays, "seconds", banked)
+    consume(effects, effects.stays, "seconds", banked)
     return { total = seconds + banked, extra = banked }
 end
 -- Banks a guaranteed next mission bought by purchase `id` (`reserved`: usable at once).
@@ -359,6 +411,7 @@ function ShopService.takeGuarantee(effects)
     for index, item in effects.guarantees do
         if item.reserved then
             table.remove(effects.guarantees, index)
+            deliver(effects, item.id, 1)
             return item.mission
         end
     end
@@ -399,7 +452,8 @@ function ShopService.new(ctx)
     local effects = ShopService.newEffects()
     local receipts = { owner = HttpService:GenerateGUID(false), applied = {}, busy = {} }
     -- This server's claims, per buyer: held[userId][purchaseId] = { key, ufo, owed (still
-    -- owed in the ledger), want (units to mark used at the next write), leaseUntil };
+    -- owed in the ledger), want (units to mark at the next write), deliver (units used, to
+    -- confirm at the next write), leaseUntil };
     -- holder[purchaseId] = userId. Written whenever there's something to mark or close,
     -- and every RENEW_SECONDS anyway (renewing the leases).
     local held, holder, settling = {}, {}, false
@@ -481,12 +535,20 @@ function ShopService.new(ctx)
     end
     local function hold(userId, id, key, owed, leaseUntil)
         held[userId] = held[userId] or {}
-        held[userId][id] = { key = key, ufo = ShopService.isUfo(key), owed = owed, want = 0, leaseUntil = leaseUntil }
+        held[userId][id] = { key = key, ufo = ShopService.isUfo(key), owed = owed, want = 0, deliver = 0, leaseUntil = leaseUntil }
         holder[id] = userId
     end
-    -- Whether a held claim has something to write now: units to mark, or nothing left here.
+    -- Collects what the banks used into the held claims, to confirm at the next write.
+    local function collect()
+        for id, n in ShopService.takeDelivered(effects) do
+            local h = holder[id] and held[holder[id]] and held[holder[id]][id]
+            if h then h.deliver += n end
+        end
+    end
+    -- Whether a held claim has something to write now: units to mark or confirm, or
+    -- nothing left here.
     local function due(id, h)
-        return h.ufo or h.want > 0 or ShopService.owed(effects, id) == 0
+        return h.ufo or h.want > 0 or h.deliver > 0 or ShopService.owed(effects, id) == 0
     end
     -- Writes every buyer's held claims: marks what's wanted (then those units are usable
     -- here), closes the used up, renews leases; `release` (shutdown) hands back what's
@@ -494,6 +556,7 @@ function ShopService.new(ctx)
     local function settle(release, renew)
         if settling then return false end
         settling = true
+        collect()
         local all = true
         for userId, mine in held do
             local needed = release or renew
@@ -503,11 +566,11 @@ function ShopService.new(ctx)
             for id, h in mine do
                 local _, reserved = ShopService.owed(effects, id)
                 if release then
-                    changes[id] = { give = not h.ufo and reserved or 0 }
+                    changes[id] = { deliver = h.deliver, give = not h.ufo and reserved or 0 }
                 elseif h.ufo then
-                    changes[id] = { use = h.owed, close = true }
+                    changes[id] = { use = h.owed, deliver = h.owed, close = true }
                 else
-                    changes[id] = { use = h.want, close = ShopService.owed(effects, id) == 0 and h.owed - h.want <= 0 }
+                    changes[id] = { use = h.want, deliver = h.deliver, close = ShopService.owed(effects, id) == 0 and h.owed - h.want <= 0 }
                 end
             end
             local results, at
@@ -524,6 +587,7 @@ function ShopService.new(ctx)
                         if outcome.used > 0 and not h.ufo then ShopService.reserve(effects, id, outcome.used) end
                         h.owed -= outcome.used
                         h.want = math.max(0, h.want - outcome.used)
+                        h.deliver = math.max(0, h.deliver - outcome.delivered)
                         h.leaseUntil = at + ShopService.LeaseSeconds
                         if outcome.status ~= "held" then
                             -- Taken over elsewhere (this server stopped renewing): what isn't
@@ -708,6 +772,7 @@ function ShopService.new(ctx)
     end
 
     local deps = { key = function(productId) return productIds[productId] end, amount = amount, plan = plan, update = update, hold = hold,
+        instant = function(key) return key == "ServerTraining" end,
         apply = function(key, receipt, value, used) return apply(key, receipt, value, used, false) end }
     function service.processReceipt(receipt)
         local outcome = ShopService.process(receipts, receipt, deps)
@@ -831,6 +896,7 @@ function ShopService.new(ctx)
         sinceRenew += elapsed
         elapsed = 0
         if effects.fillBank > 0 then drainFill() end
+        collect()
         if next(held) and not settling then
             local renew = sinceRenew >= RENEW_SECONDS
             local pending = renew

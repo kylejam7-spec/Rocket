@@ -88,6 +88,7 @@ return function()
             key = function(productId) return productId == 7 and "Fill2000" or productId == 8 and "UfoRare" or productId == 9 and "ServerTraining" or nil end,
             amount = function(key) return key == "Fill2000" and 2000 or key == "ServerTraining" and 600 or 1 end,
             plan = function(key, owed) return math.min(owed, h.plans[key] or 0) end,
+            instant = function(key) return key == "ServerTraining" end,
             update = h.update,
             apply = function(_, receipt, value, used)
                 if not h.applyOk then return false end
@@ -109,25 +110,29 @@ return function()
     local function skipUfo(_, entry) return Service.isUfo(entry.key) end
     local receipt = { PurchaseId = "p1", ProductId = 7, PlayerId = 1 }
     local a, b = server("A"), server("B")
-    -- A fill the rocket can take 500 of now: those 500 are marked used in the claim itself.
+    -- A fill the rocket can take 500 of now: those 500 are marked (pending) in the claim itself.
     a.plans.Fill2000 = 500
     assert(Service.process(a.state, receipt, a.deps) == Service.GRANTED and a.grants == 1)
     assert(a.applied.p1.value == 2000 and a.applied.p1.used == 500 and a.held.p1 == 1500)
-    assert(ledger().open.p1.owner == "A" and ledger().open.p1.amount == 1500, "claim didn't mark what's used at once")
+    assert(ledger().open.p1.owner == "A" and ledger().open.p1.amount == 1500 and ledger().open.p1.pending == 500, "claim didn't mark what's used at once")
     assert(Service.process(a.state, receipt, a.deps) == Service.GRANTED and a.grants == 1, "repeat receipt granted twice")
     -- Another server while A's claim is live: not granted there (the cross-server double grant).
     assert(Service.process(b.state, receipt, b.deps) == Service.RETRY and b.grants == 0)
-    -- Write-ahead: A marks more before using it; never more than is owed; closes when used up.
-    local r = a.write({ p1 = { use = 1000 } })
-    assert(r.p1.status == "held" and r.p1.used == 1000 and ledger().open.p1.amount == 500)
+    -- Write-ahead: A marks more before using it (never more than is owed) and confirms what
+    -- it used; it closes only once everything marked is confirmed.
+    local r = a.write({ p1 = { use = 1000, deliver = 400 } })
+    assert(r.p1.status == "held" and r.p1.used == 1000 and r.p1.delivered == 400 and ledger().open.p1.amount == 500 and ledger().open.p1.pending == 1100)
     r = a.write({ p1 = { use = 9999, close = true } })
-    assert(r.p1.used == 500 and r.p1.status == "done" and ledger().open.p1 == nil and table.find(ledger().done, "p1"))
+    assert(r.p1.used == 500 and r.p1.status == "held" and ledger().open.p1.pending == 1600, "closed with marked units unconfirmed")
+    r = a.write({ p1 = { deliver = 1600, close = true } })
+    assert(r.p1.status == "done" and ledger().open.p1 == nil and table.find(ledger().done, "p1"))
     assert(Service.process(b.state, receipt, b.deps) == Service.GRANTED and b.grants == 0)
-    -- The audit's case: a boost used at once, then A's writes fail past its lease. The claim
-    -- already marked all 600 seconds used, so no server can apply them again.
+    -- A boost used at once, then A's writes fail past its lease. The claim already recorded
+    -- all 600 seconds used (not pending: it's applied in the same instant), so no server
+    -- can apply them again.
     local boost = { PurchaseId = "p9", ProductId = 9, PlayerId = 1 }
     a.plans.ServerTraining = 600
-    assert(Service.process(a.state, boost, a.deps) == Service.GRANTED and a.applied.p9.used == 600 and ledger().open.p9.amount == 0)
+    assert(Service.process(a.state, boost, a.deps) == Service.GRANTED and a.applied.p9.used == 600 and ledger().open.p9.amount == 0 and ledger().open.p9.pending == 0)
     clock.now += Service.LeaseSeconds + 1
     local taken
     b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return true end)
@@ -153,22 +158,33 @@ return function()
     d.plans.Fill2000 = 0
     assert(Service.process(d.state, r3, d.deps) == Service.GRANTED and d.grants == 1)
     assert(d.applied.p3.used == 300 and d.applied.p3.value == 2000 and ledger().open.p3.amount == 1700, "lost-answer retry lost or doubled the marked units")
-    -- D crashes holding units: after the lease runs out the buyer's next server takes over
-    -- only what's still owed (never what D marked), once. C (alive) renews p2.
+    -- D crashes holding 500 units marked but never confirmed used. When its lease runs out
+    -- the claim isn't free yet: those 500 might still be in use on a D that merely can't
+    -- write. PendingGraceSeconds later the buyer's next server takes over the claim with
+    -- all 2,000 owed again (nothing paid for is lost), once. C (alive) renews p2.
     d.write({ p3 = { use = 200 } })
-    clock.now += Service.LeaseSeconds + 1
+    local dLease = ledger().open.p3.leaseUntil
+    clock.now = dLease + 1
+    c.write({ p2 = {} })
+    local retryAt
+    b.update(1, function(l, now) taken, retryAt = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
+    assert(not taken.p3 and Service.freeAt(ledger().open.p3) == dLease + Service.PendingGraceSeconds and retryAt ~= nil,
+        "a claim with unconfirmed units was taken before its grace")
+    assert(Service.process(b.state, r3, b.deps) == Service.RETRY and b.grants == 0)
+    clock.now = dLease + Service.PendingGraceSeconds
     c.write({ p2 = {} })
     b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
-    assert(taken.p3 and taken.p3.amount == 1500 and not taken.p2, "crashed server's claim not recovered (or a live one taken)")
+    assert(taken.p3 and taken.p3.amount == 2000 and taken.p3.pending == 0 and not taken.p2, "crashed server's marked units not recovered (or a live claim taken)")
     b.update(1, function(l, now) taken = Service.takeover(l, "E", now, skipUfo); return next(taken) ~= nil end)
     assert(next(taken) == nil, "a recovered claim was taken twice")
     -- If D comes back it finds the claim gone and can't mark any more of it.
-    r = d.write({ p3 = { use = 100 } })
-    assert(r.p3.status == "gone" and r.p3.used == 0 and ledger().open.p3.amount == 1500)
-    -- Shutdown hands back marked-but-unused units and lets go: the next server takes them.
-    c.write({ p2 = { use = 400 } })
+    r = d.write({ p3 = { use = 100, deliver = 100 } })
+    assert(r.p3.status == "gone" and r.p3.used == 0 and r.p3.delivered == 0 and ledger().open.p3.amount == 2000)
+    -- Shutdown confirms what was used, hands back marked-but-unused units and lets go: the
+    -- next server takes the rest at once.
+    c.write({ p2 = { use = 400, deliver = 250 } })
     c.write({ p2 = { give = 150 } }, true)
-    assert(ledger().open.p2.amount == 1750 and ledger().open.p2.leaseUntil == 0)
+    assert(ledger().open.p2.amount == 1750 and ledger().open.p2.pending == 0 and ledger().open.p2.leaseUntil == clock.now)
     b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return next(taken) ~= nil end)
     assert(taken.p2 and taken.p2.amount == 1750, "released claim not taken over")
     -- A UFO that can't be applied here (buyer gone, or their save failed): NotProcessedYet
@@ -176,12 +192,28 @@ return function()
     -- join leaves UFOs to Roblox's own retry.
     local ufo = { PurchaseId = "u1", ProductId = 8, PlayerId = 1 }
     a.applyOk = false
-    assert(Service.process(a.state, ufo, a.deps) == Service.RETRY and ledger().open.u1.leaseUntil == 0)
+    assert(Service.process(a.state, ufo, a.deps) == Service.RETRY and ledger().open.u1.leaseUntil == clock.now)
     a.applyOk = true
     b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return true end)
     assert(not taken.u1, "takeover took a UFO")
     local bGrants = b.grants
     assert(Service.process(b.state, ufo, b.deps) == Service.GRANTED and b.grants == bGrants + 1 and b.held.u1 == 1)
+    -- The audit's case: 60 s of ExtraStay marked for a running stay, then the server stops
+    -- before applying them (its trips were still saving). The seconds are pending, not
+    -- lost: the buyer's next server gets all 60 once the lease and the grace have run out.
+    local stop = server("S")
+    stop.update(1, function(l, now)
+        Service.claim(l, "x1", { key = "ExtraStay", amount = 60 }, "S", now, function(owed) return owed end)
+        return true
+    end)
+    local x = ledger().open.x1
+    assert(x.amount == 0 and x.pending == 60)
+    clock.now = x.leaseUntil + 1
+    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return true end)
+    assert(not taken.x1 and ledger().open.x1 and Service.freeAt(ledger().open.x1) == x.leaseUntil + Service.PendingGraceSeconds, "marked seconds closed or taken too soon")
+    clock.now = Service.freeAt(ledger().open.x1)
+    b.update(1, function(l, now) taken = Service.takeover(l, "B", now, skipUfo); return true end)
+    assert(taken.x1 and taken.x1.amount == 60 and taken.x1.pending == 0, "marked but undelivered seconds lost")
     -- A UFO's apply repeats safely (the profile's ledger), so its retry applies again.
     assert(not b.state.applied.u1)
     -- Unknown product, bad PurchaseId or buyer: never granted.
@@ -246,7 +278,7 @@ return function()
     local long = Service.ledger(nil)
     for index = 1, Service.DoneLimit + 20 do
         Service.claim(long, "q" .. index, { key = "Fill2000", amount = 1 }, "A", 0)
-        Service.settle(long, "A", { ["q" .. index] = { use = 1, close = true } }, 0)
+        Service.settle(long, "A", { ["q" .. index] = { use = 1, deliver = 1, close = true } }, 0)
     end
     assert(#long.done == Service.DoneLimit and long.done[1] == "q21" and Service.claim(long, "q30", {}, "B", 0) == "done")
 
