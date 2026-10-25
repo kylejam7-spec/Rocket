@@ -47,6 +47,19 @@ return function()
     for _ in config.Shop.products do counted += 1 end
     assert(counted == #keys, "Config.Shop has keys the catalog doesn't show")
 
+    -- Co-developers (Config.CompedPasses) own every pass and every Robux upgrade level;
+    -- nobody else gets anything for free.
+    assert(Shop.comped(config, 11791915499) and not Shop.comped(config, 1))
+    local compedOwned = Service.sync(config, function() return Shop.comped(config, 11791915499) or error("no Roblox answer") end, nil, false)
+    for key in config.Shop.passes do assert(compedOwned[key], "a comped developer must own " .. key) end
+    assert(next((Service.sync(config, function() return Shop.comped(config, 1) end, nil, false))) == nil, "passes given away")
+    local RobuxUpgrades = require(script.Parent.RobuxUpgradeService)
+    local devProfile = Profiles.validate(nil, config)
+    RobuxUpgrades.sync(config, devProfile, function() return Shop.comped(config, 11791915499) end, nil, false)
+    for _, track in config.UpgradeOrder do
+        assert(devProfile.passLevels[track] == config.Upgrades[track].max, "a comped developer must have every " .. track .. " level")
+    end
+
     -- A missing ID turns the offer off.
     local fake = { Shop = { passes = { DoubleCoins = { price = 5 } }, products = { Fill2000 = { id = 11, price = 5 } } } }
     assert(not Shop.enabled(fake, "DoubleCoins") and Shop.enabled(fake, "Fill2000") and not Shop.enabled(fake, "Nope"))

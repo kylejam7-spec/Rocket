@@ -82,6 +82,12 @@ return table.freeze({
             PlacementRange = table.freeze({ 2039762544, 2036090762, 2039702563, 2036288776, 2037332789, 2037314800, 2036072766, 2040734288, 2038064735, 2036804806 }),
         }),
     }),
+    -- Developers who own every Game Pass (Shop passes and Robux upgrade levels) without
+    -- buying them, by Roblox user ID. The game's owner already does (Roblox counts the
+    -- creator as owning every pass); co-developers don't, so they're listed here.
+    CompedPasses = table.freeze({
+        [11791915499] = "k_b4nd0", -- co-developer (user, 2026-10-25: give him everything)
+    }),
     -- The Robux SHOP (ShopService; names, icons and rules in Shared.Shop). `id` is the
     -- Creator Dashboard Game Pass / Developer Product ID: nil means not set up yet, and
     -- that offer shows its price greyed and can't be bought. `price` mirrors the dashboard's R$

@@ -7,7 +7,7 @@
 -- a refunded pass stops counting on the next join. A purchase made here is also saved on
 -- the buyer's profile (`passes`): it counts when Roblox's check fails (an outage can't
 -- take a pass away), and in Studio, whose test purchases never show up in
--- UserOwnsGamePassAsync at all.
+-- UserOwnsGamePassAsync at all. Co-developers in Config.CompedPasses own every pass.
 --
 -- Developer Products: nearly all are server-wide effects (training boost, rocket fill,
 -- longer stay, the next mission). Robux UFOs go onto the buyer's profile.
@@ -835,7 +835,8 @@ function ShopService.new(ctx)
     function service.sync(player)
         task.spawn(service.recover, player)
         local record = ctx.profiles.records[player.UserId]
-        local has, ok = ShopService.sync(config, function(id) return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id) end,
+        local comped = Shop.comped(config, player.UserId)
+        local has, ok = ShopService.sync(config, function(id) return comped or MarketplaceService:UserOwnsGamePassAsync(player.UserId, id) end,
             record and record.profile.passes, RunService:IsStudio())
         if not player.Parent then return end
         -- A pass bought while the checks ran stays owned.

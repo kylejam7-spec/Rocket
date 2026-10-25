@@ -8,10 +8,11 @@
 -- used when Roblox's check fails, and in Studio, whose test purchases never show up in
 -- UserOwnsGamePassAsync. The client asks the server to open the prompt (BuyUpgradeRobux),
 -- which offers only the next level's pass; a finished purchase raises the level at once.
--- RobuxCheck runs the pure parts.
+-- Co-developers in Config.CompedPasses own every level pass. RobuxCheck runs the pure parts.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Upgrades = require(ReplicatedStorage.Shared.Upgrades)
+local Shop = require(ReplicatedStorage.Shared.Shop)
 local RobuxUpgradeService = {}
 
 -- PassId -> { track, level } from the config.
@@ -116,8 +117,9 @@ function RobuxUpgradeService.new(ctx)
         -- Worked out on a copy (the checks yield), then put on the live profile.
         local probe = { upgrades = table.clone(profile.upgrades) }
         syncing[player.UserId] = {}
+        local comped = Shop.comped(config, player.UserId)
         RobuxUpgradeService.sync(config, probe, function(id)
-            return MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
+            return comped or MarketplaceService:UserOwnsGamePassAsync(player.UserId, id)
         end, profile.passes, RunService:IsStudio())
         local boughtDuring = syncing[player.UserId]
         syncing[player.UserId] = nil

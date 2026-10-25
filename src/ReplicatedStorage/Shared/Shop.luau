@@ -38,6 +38,9 @@ function Shop.ufoKey(tier) return Pets.Ufos[tier] and "Ufo" .. Pets.Ufos[tier].R
 -- A paid random item (a Robux UFO): off for players restricted from those.
 function Shop.paidRandom(key) return key:match("^Ufo%a+$") ~= nil end
 
+-- Whether `userId` owns every Game Pass for free (Config.CompedPasses).
+function Shop.comped(config, userId) return config.CompedPasses[userId] ~= nil end
+
 -- The {id, price} entry for a pass or product key, or nil.
 function Shop.entry(config, key)
     return config.Shop.passes[key] or config.Shop.products[key]
