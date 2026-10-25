@@ -1,22 +1,23 @@
 -- Friend boost: everyone playing with Roblox friends in the same server trains and earns
--- coins faster, 1x more for each friend here (one friend 2x, two 3x, and so on). It
+-- coins 2x, however many of those friends are here (one boost, never stacking). It
 -- multiplies with the Shop's boosts (TrainingService's multiplier, Profiles.credit).
 -- Friendships are looked up once per pair as players join (Player:IsFriendsWith is a web
 -- call; each join runs on its own thread) and each player's boost is published as the
 -- FriendBoost attribute, which the client's INVITE chip shows.
 local Friends = {}
 
+local BOOST = 2
+
 -- The boost for `userId` from `friendships` (friendships[a][b] = true when a and b are
--- friends) among the user ids in `present`.
+-- friends) among the user ids in `present`: 2 with any friend here, otherwise 1.
 function Friends.boost(friendships, userId, present)
-    local count = 0
     local mine = friendships[userId]
     if mine then
         for _, other in present do
-            if other ~= userId and mine[other] then count += 1 end
+            if other ~= userId and mine[other] then return BOOST end
         end
     end
-    return 1 + count
+    return 1
 end
 
 function Friends.new(ctx)
@@ -34,7 +35,7 @@ function Friends.new(ctx)
         for _, player in Players:GetPlayers() do
             if player ~= leaving then
                 local fake = service.debug[player.UserId]
-                player:SetAttribute("FriendBoost", fake and 1 + fake or Friends.boost(friendships, player.UserId, ids))
+                player:SetAttribute("FriendBoost", fake and (fake > 0 and BOOST or 1) or Friends.boost(friendships, player.UserId, ids))
             end
         end
     end

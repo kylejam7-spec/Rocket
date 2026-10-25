@@ -236,10 +236,10 @@ function ShopController.start()
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 1.5, Parent = fillCard })
 
     ------------------------------------------------------------------ HUD button
-    -- Under the stat stack (HudController): 150 + its 276 on desktop; on phones the
-    -- stack sits at the top, enlarged 1.25x.
+    -- Under the stat stack (HudController): 150 + its 276 on desktop; on touch screens the
+    -- stack sits at the top, enlarged by Actions.stackScale.
     local holder = Create.new("Frame", { Name = "ShopHolder", BackgroundTransparency = 1, Size = UDim2.fromOffset(330, 52),
-        Position = UDim2.fromOffset(Theme.gutter, Actions.touch and 8 + 276 * 1.25 + 8 or 150 + 276 + 6), Parent = gui })
+        Position = UDim2.fromOffset(Theme.gutter, Actions.touch and 8 + 276 * Actions.stackScale + 8 or 150 + 276 + 6), Parent = gui })
     local shopButton = Button.new({
         Name = "ShopButton", Text = "🛒 SHOP", TextSize = 26, color = ROBUX, Size = UDim2.fromOffset(150, 50), sound = false,
         onActivated = function()
@@ -261,10 +261,10 @@ function ShopController.start()
 
     ------------------------------------------------------------------ fill row
     -- Right above the progress pill group (ProgressController: 14 from the bottom, 70
-    -- tall, 1.35x on touch).
+    -- tall, Actions.progressScale on touch).
     fillRow = Create.new("Frame", {
         Name = "FillRow", AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1, Size = UDim2.fromOffset(700, 36),
-        Position = UDim2.new(0.5, 0, 1, Actions.touch and -(14 + 70 * 1.35 + 4) or -(14 + 70 + 4)), Visible = false, Parent = gui,
+        Position = UDim2.new(0.5, 0, 1, Actions.touch and -(14 + 70 * Actions.progressScale + 4) or -(14 + 70 + 4)), Visible = false, Parent = gui,
     })
     -- Five buttons: 700 wide, so phones keep it at 1x to stay on screen.
     Create.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center,

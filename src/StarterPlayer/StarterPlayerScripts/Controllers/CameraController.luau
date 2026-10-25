@@ -3,7 +3,8 @@
 -- The zoom stays where the player sets it: walls, hulls and props between the camera and
 -- the character fade see-through instead of pulling the camera in (Roblox's Invisicam,
 -- which the touch/controller camera uses too: StarterPlayer's DevCameraOcclusionMode). Only ground under the camera, a surface
--- facing up, stops it, so looking up never shows the underside of the map.
+-- facing up, stops it, so looking up never shows the underside of the map. Phones keep
+-- Roblox's touch camera but get the same ground stop (keepAboveGround).
 local Players = game:GetService("Players")
 local Input = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
@@ -68,6 +69,43 @@ function CameraController.start()
             faded[part] = true
         end
     end
+    -- Phones: Roblox's touch camera looks through everything (Invisicam), ground included,
+    -- so tilting it to look up sank it under the map. After it moves, slide it back toward
+    -- the character to just above the first surface facing up, by the same rule as the
+    -- desktop camera below. Only its position changes, so its own tilt and zoom carry on.
+    local groundParams = RaycastParams.new()
+    groundParams.FilterType = Enum.RaycastFilterType.Exclude
+    groundParams.RespectCanCollide = true
+    local groundFiltered, groundSeeThrough = nil, {}
+    local function keepAboveGround(camera, character)
+        if camera.CameraType ~= Enum.CameraType.Custom then return end
+        local focus = camera.Focus.Position
+        local offset = camera.CFrame.Position - focus
+        if offset.Magnitude < 0.5 then return end
+        if character ~= groundFiltered then
+            groundFiltered = character
+            groundParams.FilterDescendantsInstances = { character, table.unpack(groundSeeThrough) }
+        end
+        local hit = workspace:Spherecast(focus, 0.4, offset, groundParams)
+        local skipped = false
+        for _ = 1, 8 do
+            if not hit then break end
+            local part = hit.Instance
+            if part.Transparency >= 0.95 or not part.CanQuery then
+                table.insert(groundSeeThrough, part)
+            elseif hit.Normal.Y > 0.6 then
+                break
+            else
+                skipped = true
+            end
+            groundParams:AddToFilter(part)
+            hit = workspace:Spherecast(focus, 0.4, offset, groundParams)
+        end
+        if skipped then groundParams.FilterDescendantsInstances = { character, table.unpack(groundSeeThrough) } end
+        if hit then
+            camera.CFrame = CFrame.new(focus + offset.Unit * math.max(0.5, hit.Distance - 0.3)) * camera.CFrame.Rotation
+        end
+    end
     local function restore(camera)
         if active then
             camera.CameraType = previousType or Enum.CameraType.Custom
@@ -92,6 +130,9 @@ function CameraController.start()
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
         if not desktop() or not root or not humanoid or humanoid.Health <= 0 then
             restore(camera)
+            if root and humanoid and humanoid.Health > 0 and Input.PreferredInput == Enum.PreferredInput.Touch then
+                keepAboveGround(camera, character)
+            end
             return
         end
         if not active then

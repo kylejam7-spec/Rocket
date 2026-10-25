@@ -25,7 +25,7 @@ function ProgressController.start()
         Name = "ProgressGroup", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14),
         Size = UDim2.fromOffset(520, 70), BackgroundTransparency = 1, Parent = gui,
     })
-    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.35, Parent = group }) end
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = Actions.progressScale, Parent = group }) end
     local bar = Pill.new({
         Name = "ProgressPill", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.fromScale(0.5, 1),
         Size = UDim2.fromOffset(340, 40), label = true, animate = true, textSize = 25, rim = 3, Parent = group,

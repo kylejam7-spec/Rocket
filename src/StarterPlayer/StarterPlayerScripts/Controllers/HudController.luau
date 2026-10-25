@@ -70,7 +70,7 @@ function HudController.start()
         Position = UDim2.fromOffset(Theme.gutter, Actions.touch and 8 or 150), Parent = gui,
     })
     Create.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = stack })
-    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = 1.25, Parent = stack }) end
+    if Actions.touch then Create.new("UIScale", { Name = "TouchScale", Scale = Actions.stackScale, Parent = stack }) end
     local coins = StatRow.new({ Name = "Coins", icon = icon.Coin, color = Theme.color.Gold, sub = "Earn by building", LayoutOrder = 0, Parent = stack })
     coins.value.TextColor3 = Theme.color.Gold
     local strength = StatRow.new({ Name = "Strength", icon = icon.Strength, color = Theme.color.Strength, sub = "Capacity: 0/10", badge = "LV 0", progress = true, LayoutOrder = 1, Parent = stack })
@@ -79,7 +79,7 @@ function HudController.start()
 
     local goal = StrokedText.new({
         Name = "Objective", AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 64),
-        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = Actions.touch and 34 or 26, TextWrapped = true,
+        Size = UDim2.new(1, -360, 0, 84), Font = Theme.font.Display, TextSize = Actions.phone and 28 or Actions.touch and 34 or 26, TextWrapped = true,
         TextYAlignment = Enum.TextYAlignment.Top, stroke = 3, Text = "Connecting…", ZIndex = 2, Parent = gui,
     })
     -- A dark gold-rimmed banner hugging the objective text; it bounces on each new line.
@@ -289,7 +289,7 @@ function HudController.start()
     -- Training ticks and destination rewards already show as stat popups; everything else
     -- is a toast above the progress pill, so the objective line always stays up.
     local toasts = Toast.stack({
-        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.touch and -168 or -132),
+        Name = "Toasts", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, Actions.phone and -150 or Actions.touch and -168 or -132),
         Size = UDim2.fromOffset(520, 130), max = 3, Parent = gui,
     })
     -- Rank tags over every player's head are server-made pixel billboards; shrink them

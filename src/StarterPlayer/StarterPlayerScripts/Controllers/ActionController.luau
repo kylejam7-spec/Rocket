@@ -13,6 +13,23 @@ local Theme = require(UI.Theme)
 local Button = require(UI.Button)
 local ActionController = {}
 ActionController.touch = UserInputService.TouchEnabled
+-- Phones: touch on a short screen (Roblox's own small-screen test: the shorter side at
+-- most 500), unlike tablets and touch laptops. The whole HUD is already shrunk to fit a
+-- phone, so there the touch enlargements below are trimmed to keep the view clear.
+-- The camera reports a 1×1 viewport for the first seconds of a session, so touch devices
+-- wait (up to 5 s; then they keep the full touch layout) for the real one.
+local viewport = Vector2.zero
+if ActionController.touch then
+    local deadline = os.clock() + 5
+    while (not workspace.CurrentCamera or workspace.CurrentCamera.ViewportSize.Y <= 1) and os.clock() < deadline do task.wait() end
+    viewport = workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize or viewport
+end
+ActionController.phone = ActionController.touch and viewport.Y > 1 and math.min(viewport.X, viewport.Y) <= 500
+-- How much touch screens enlarge the left stat stack (HudController; SHOP and INVITE sit
+-- under it) and the bottom progress group (ProgressController; the fill row and toasts
+-- sit above it).
+ActionController.stackScale = ActionController.phone and 1 or ActionController.touch and 1.25 or 1
+ActionController.progressScale = ActionController.phone and 1.1 or ActionController.touch and 1.35 or 1
 
 -- Touch layout: a fixed 2×2 grid so a button never shifts when another appears.
 -- Slots by LayoutOrder (cell centres in design px): LEAVE top right, DROP top left,

@@ -1,6 +1,6 @@
 -- The friend boost on screen (FriendService): an INVITE button under the SHOP button
 -- opens Roblox's invite-friends prompt, and a chip beneath it shows this player's boost
--- (the FriendBoost attribute): "FRIEND BOOST x3" in green with friends here, otherwise
+-- (the FriendBoost attribute): "FRIEND BOOST x2" in green with friends here, otherwise
 -- a nudge that friends double training and coins.
 local Players = game:GetService("Players")
 local SocialService = game:GetService("SocialService")
@@ -21,7 +21,7 @@ function FriendController.start()
     gui.DisplayOrder = 10
     -- Right under ShopController's SHOP row (52 tall at the same left edge).
     local holder = Create.new("Frame", { Name = "InviteHolder", BackgroundTransparency = 1, Size = UDim2.fromOffset(150, 92),
-        Position = UDim2.fromOffset(Theme.gutter, (Actions.touch and 8 + 276 * 1.25 + 8 or 150 + 276 + 6) + 58), Parent = gui })
+        Position = UDim2.fromOffset(Theme.gutter, (Actions.touch and 8 + 276 * Actions.stackScale + 8 or 150 + 276 + 6) + 58), Parent = gui })
     Button.new({
         Name = "InviteButton", Text = "👋 INVITE", TextSize = 26, color = FRIEND, Size = UDim2.fromOffset(150, 50),
         onActivated = function()
