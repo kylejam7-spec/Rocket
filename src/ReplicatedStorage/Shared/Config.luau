@@ -9,9 +9,10 @@ return table.freeze({
     -- (the 100x gym: 300 a second). Signs and tags show the per-second total.
     TrainingSeconds = 1 / 3,
     -- Strength and speed are uncapped point totals turned into levels (Shared.StatLevels):
-    -- level 1 costs 10 points, each level after x1.2, never more than 450 (from level 22,
-    -- ~2,700 points in). Free gym (2/s): level 1 in 5 s, level 10 in ~2 min.
-    StatLevels = table.freeze({ base = 10, growth = 1.2, max = 450 }),
+    -- level 1 costs 10 points, each level after x1.008, never more than 450 (user,
+    -- 2026-10-25: the cap kicks in around level 450-500; here 479, ~55,600 points in). Costs
+    -- stay 10 to level ~28, 20 at 100, 110 at 300, 360 at 450.
+    StatLevels = table.freeze({ base = 10, growth = 1.008, max = 450 }),
     MaxPlanetBonus = 1000000,
     -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, uncapped: enough
     -- strength carries a whole rocket's Metal or Fuel in one trip.

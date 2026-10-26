@@ -14,7 +14,23 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-16 gyms +1 each (current)
+## 2026-10-25 gentler level curve (current)
+
+User: levelling was too unfriendly for new players; the 450 cap should kick in around
+level 450-500. `Config.StatLevels.growth` 1.2 → **1.008** (base 10, max 450 unchanged):
+the cap now starts at level 479 (~55,600 points; was level 22, ~2,700).
+
+| Level | 10 | 22 | 50 | 100 | 200 | 300 | 450 | 479 | 560 |
+|---|---|---|---|---|---|---|---|---|---|
+| Cost | 10 | 10 | 15 | 20 | 50 | 110 | 360 | 450 | 450 |
+| Points to reach (was) | 100 (255) | 220 (2,695) | 605 (15.3K) | 1.5K (37.8K) | 4.9K (82.8K) | 12.4K (128K) | 43.9K (195K) | 55.6K (208K) | 92K (245K) |
+
+Levels for the same points: 1K → 75 (was 16), 10K → 275 (38), 50K → 466 (127), 100K → 577
+(238). Carry and walk follow the level, so everyone (existing profiles too: points are
+stored, levels recomputed) gets much stronger and faster; walk 400 now takes ~92K speed
+points (was ~245K). The tables below predate this; re-run ProgressionReport.
+
+## 2026-10-16 gyms +1 each
 
 User: every gym one point higher, free gym +2. Free gym 2/s (FreeGymMultiplier), tiers
 3/4/5/7/9/11/13× (were 2/3/4/6/8/10/12, free 1). The sign badge "xN" equals the gain per
