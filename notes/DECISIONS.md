@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-10-25: Gentler level curve
+
+- User: levels cost 10 points, then ×1.008 a level (was ×1.2), so the 450-point cap kicks
+  in at level 479 instead of 22. Early levels come every 10-20 points for the first ~100.
+  Numbers in `notes/BALANCE.md`. TrainingCheck asserts the cap starts at level 450-500.
+
 ## 2026-10-20: A bigger rocket cabin; tapping a material prompt card works
 
 - User: the cabin has three times the floor (84 x 60, was 48 x 34) and a 20-stud ceiling

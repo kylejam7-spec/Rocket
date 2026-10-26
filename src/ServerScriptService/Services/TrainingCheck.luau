@@ -132,6 +132,10 @@ return function()
         lastCost, lastCarry, lastStep, lastWalk = cost, carry, walk - lastWalk, walk
     end
     assert(StatLevels.cost(config, 2000) == curve.max, "Late levels cost the cap")
+    -- A gentle climb for new players (user, 2026-10-25): the cap kicks in around level 450-500.
+    local capFrom = 1
+    while StatLevels.cost(config, capFrom) < curve.max do capFrom += 1 end
+    assert(capFrom >= 450 and capFrom <= 500, "Level cost cap reached around level 450-500")
     -- The walk curve's shape (user, 2026-10-20): ~29 at level 1, ~121 at 100, top speed 400
     -- reached around level 560 and never passed.
     local function near(level, want) return math.abs(StatLevels.walk(config, level) - want) < 1.5 end
