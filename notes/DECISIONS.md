@@ -463,3 +463,15 @@
 - Desktop players keep a normal cursor and hold right-click to look around (the usual
   Roblox feel), instead of a locked mouse-look with a V toggle.
 - Dropping cargo is the Q key on desktop; touch keeps the round DROP button.
+
+## 2026-10-26: The rocket outlives its server
+
+- With few players online, the last one leaving shut the server and the next server
+  started a fresh rocket at 0. Now a closing server (BindToClose) puts its rocket in a
+  shared pool (CarryoverService, DataStore `RocketCarryover_v1`, key `public` or one per
+  private server): mission, launch count, wheel pity, Metal and Fuel placed. The next
+  server to start takes the furthest-along one; UpdateAsync gives each rocket to one
+  server only. Up to 20 wait; one unclaimed for two weeks is scrapped (Config.Carryover).
+- A rocket that already launched is kept as the next one, empty, its launch counted (the
+  passengers' trips are on their profiles). A full rocket comes back ready to board.
+- Crashed servers (no BindToClose) keep nothing; per-player contributions aren't kept.

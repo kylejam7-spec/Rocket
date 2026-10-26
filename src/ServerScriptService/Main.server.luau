@@ -37,6 +37,7 @@ ctx.Shop = require(Services.ShopService).new(ctx)
 ctx.Friends = require(Services.FriendService).new(ctx)
 ctx.Skins = require(Services.SkinService).new(ctx)
 ctx.Leaderboards = require(Services.LeaderboardService).new(ctx)
+ctx.Carryover = require(Services.CarryoverService).new(ctx)
 require(Services.DebugService).new(ctx, script)
 ctx.Training = require(Services.TrainingService).new({
     players = Players, config = Config, profiles = ctx.profiles, remotes = ctx.Remote.folder,
@@ -133,5 +134,7 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 for _, player in Players:GetPlayers() do task.spawn(joined, player) end
 ctx.Cycle.start()
+-- A rocket the last server left behind replaces the fresh one (CarryoverService).
+ctx.Carryover.start()
 ctx.profiles:start()
 ctx.Leaderboards.start()

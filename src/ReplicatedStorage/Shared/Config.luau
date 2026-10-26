@@ -233,4 +233,11 @@ return table.freeze({
         RefreshSeconds = 120, -- each board reads its top ten this often
         RenderSeconds = 5, -- boards redraw with this server's live values this often
     }),
+    -- Rockets left behind when a server closes (CarryoverService): the next server to
+    -- start carries on the furthest-along one. Studio writes its own pool.
+    Carryover = table.freeze({
+        Store = game:GetService("RunService"):IsStudio() and "RocketCarryover_studio" or "RocketCarryover_v1",
+        PoolSize = 20, -- rockets kept waiting at once (the least built drop off)
+        MaxAgeSeconds = 14 * 24 * 3600, -- a rocket nobody picked up in two weeks is scrapped
+    }),
 })
