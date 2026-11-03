@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-11-02: Destinations 3x the area, more to see, a second gym pair
+
+- User: destinations were too small to hold interest. Radius x1.73 (3x area): Moon, Mars
+  and Europa 75 -> 130, Saturn 65 -> 113, Black Hole 70 -> 121; scatter about 3x. The
+  arrival, sign, shop, first gyms and landing spot stay put. New set pieces in the outer
+  ring: Moon (walk-in crater with central peak, lunar rover and tracks, science array),
+  Mars (second habitat module, crashed lander, supply cache, sandstone arch; canyon rim
+  moved out to 150), Europa (ice-core drill, ice arch, frozen buoy), Saturn (crystal
+  garden, docking gantry, ice quarry; the UFO crash spot moved out to the new rim), Black
+  Hole (ruined observatory, floating stepping stones, crystal spires).
+- User: a second bench and treadmill at every destination (DestinationService.GymOffsets
+  bench2/treadmill2 at (+-30, 0, 75)), same reward and rules as the first pair.
+- Planets.carve builds walkable bowls' rims as separate rings: merged into the ground,
+  precise collision bridged between rims and lifted the flat ground up to 0.7 studs over
+  wide stretches (Europa: 323 of ~700 sampled points). Now 0.
+
 ## 2026-11-02: Faster material moves; bigger early carry
 
 - User: moving 30k material took 25 min unbought (45 s at Bulk level 10). Raising the tick
