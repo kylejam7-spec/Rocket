@@ -3,7 +3,7 @@
     in the sky. Two pieces:
     - A perimeter: construction hoarding round the site and the Gym District, with an
       invisible barrier on the same line that nobody can jump or climb over. `fit(edge)`
-      rebuilds it whenever map expansion widens the site (ground half-width `edge`).
+      builds it round the site (ground half-width `edge`).
     - The land beyond: a grass plain out past the horizon and trees outside the fence.
       The plain has a hole where the site is (refitted with the perimeter), never lying
       under the site's ground: seen from a launching rocket, two surfaces that close
@@ -191,7 +191,7 @@ function Surrounds.build(world, district)
     for _, row in Surrounds.Mountains do
         Mountains.ring(land, center, row, make)
     end
-    -- Trees in loose clumps outside the widest the site ever gets (4 expansions).
+    -- Trees in loose clumps well outside the fence (the meadow where the site once grew).
     local widest = Layout.Ground.x + 4 * 80 + 60
     -- ...and off the spaceport's slabs (with room for a clump's spread).
     local function outsideSite(at)

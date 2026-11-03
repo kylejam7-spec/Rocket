@@ -398,10 +398,9 @@ local function roof(parent, room)
 end
 
 -- The fields round the site. Two kinds:
--- - Filler on the meadow where the site will grow (|x| from the fence out to the widest
---   site): a solar farm to the west, a tank farm and stores to the east. Each piece notes
---   the inner edge of its footprint; Spaceport.fit(edge) clears any the ground has
---   reached, so expansion strips never come up through them.
+-- - Filler on the meadow outside the fence: a solar farm to the west, a tank farm and
+--   stores to the east. Each piece notes the inner edge of its footprint;
+--   Spaceport.fit(edge) clears any the site's ground would reach.
 -- - Wind turbines beyond everything (their rotors turn in SpaceportController).
 local SOLAR, POST = Color3.fromRGB(34, 54, 112), Color3.fromRGB(150, 156, 166)
 local PLAIN = -0.35 -- the plain's top (SiteSurroundsService)

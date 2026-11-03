@@ -45,7 +45,7 @@ return function()
     character:Destroy()
     -- Stations flank spawn either side of the lane (SiteLayout): big enough for a full
     -- server, a short walk from spawn, on the ground, clear of the lane, the apron and the
-    -- Gym District, and never paved over by map expansion.
+    -- Gym District, and never paved over by the ground.
     local stations = require(script.Parent.MaterialStationService)
     local map = require(script.Parent.MapExpansionService)
     local Layout = require(script.Parent.SiteLayout)
@@ -59,7 +59,7 @@ return function()
         assert(math.max(math.abs(rect.x0), math.abs(rect.x1)) <= Layout.Ground.x, "Stations sit on the ground")
         for _, piece in map.carve({ x0 = -500, x1 = 500, z0 = -700, z1 = 200 }, stations.Reserved) do
             assert(piece.x0 >= rect.x1 or piece.x1 <= rect.x0 or piece.z0 >= rect.z1 or piece.z1 <= rect.z0,
-                "Map expansion must not cover a station")
+                "The ground must not cover a station")
         end
     end
     local area = 0
@@ -67,5 +67,5 @@ return function()
         area += (piece.x1 - piece.x0) * (piece.z1 - piece.z0)
     end
     assert(area == 100 * 100 - 20 * 30, "Carving removes exactly the hole")
-    return "Cargo checks passed: overhead scrap ball and jerry can grow without a cap, shrink in place, swap, clear, never collide; stations flank the lane clear of the apron, gyms and expansion"
+    return "Cargo checks passed: overhead scrap ball and jerry can grow without a cap, shrink in place, swap, clear, never collide; stations flank the lane clear of the apron and gyms"
 end

@@ -22,12 +22,10 @@ function Cycle.new(ctx)
         ctx.World.rocketBuild:setProgress(0, 0)
     end
     loadRocket()
-    -- Installs the next cycle: rocket model, map expansion, cargo visuals and prompts.
+    -- Installs the next cycle: rocket model, cargo visuals and prompts.
     function service.replace(rocket)
         service.rocket = rocket
         loadRocket()
-        -- The spaceport grows every three launches, up to four expansions.
-        ctx.World.expandMap(math.min(rocket.launches + 1, 13))
         ctx.Cargo.refreshVisuals()
         ctx.Cargo.refreshPrompts()
     end
