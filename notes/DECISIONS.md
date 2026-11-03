@@ -1,5 +1,16 @@
 # Decisions
 
+## 2026-11-02: Faster material moves; bigger early carry
+
+- User: moving 30k material took 25 min unbought (45 s at Bulk level 10). Raising the tick
+  rate alone tops out at 3x (one transfer per server frame). Bulk levels now move
+  `Config.BulkUnits` (5..50 a tick: 100..1,000 a second, 30k in 5 min unbought and 30 s
+  at level 10, user's numbers). Some middle levels are a little slower than before
+  (smooth curve, user's choice).
+- User: new players should hold more sooner. Carry gains an early boost like walk speed
+  (CarryEarly 90, CarryHalfLevel 15): +6 at level 1 tapering to +1; level costs unchanged
+  (chosen over cheaper levels). Applies to existing profiles too. Numbers in BALANCE.md.
+
 ## 2026-11-02: Camera back to normal after landing; rejoining mid-trip keeps progress
 
 - User: after landing on a planet the camera stayed oddly zoomed until a rejoin. The
