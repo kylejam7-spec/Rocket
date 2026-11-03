@@ -7,7 +7,7 @@
   per stud, none with MaxDistance) and ~60 sign/station badges tweening Scale and Rotation
   every frame forced constant world-GUI redraws. On touch devices (UI.WorldScale.still)
   badges stand still, and WorldSign/GymSign surfaces draw at 0.6x resolution (a UIScale keeps
-  the layout) within 300 studs. Desktop unchanged. Not yet checked on a physical phone.
+  the layout) within 300 studs. Desktop unchanged. User confirmed on a phone: the gym signs no longer flicker.
 - The LandedRocket clone can reach a slow client over several frames. Moving it with
   PivotTo kept the +20,000 hide offset on parts that arrived after the lift, so those parts
   ended 20,000 studs under the spot. LaunchEffectsController now moves every part from its
