@@ -212,15 +212,24 @@ local CLEAR = { { Destinations.GymOffsets.bench, 14 }, { Destinations.GymOffsets
 local builders = {}
 -- 1 (Common): the floor of an old crater on the Moon. Bowl craters carved into the
 -- ground with soft raised rims, rounded boulders, an Apollo-style lander with a blinking
--- beacon, a flag and boot prints between them, and moon dust hanging in the light. A low
--- crater wall rings the platform; beyond it a cratered plain with dark seas runs out to
--- worn, rounded highlands, and a textured, cloudy Earth turns overhead.
+-- beacon, a flag and boot prints between them, and moon dust hanging in the light. Out
+-- past them (the platform is MOON_RADIUS across, about 3x the area it was: user,
+-- 2026-11-02): a big crater to walk down into, ringed by ejected rocks; a parked lunar
+-- rover whose wheel tracks run back to the lander; and a science array (a dish antenna
+-- wired to three stations) under the earthrise. A low crater wall rings the platform;
+-- beyond it a cratered plain with dark seas runs out to worn, rounded highlands, and a
+-- textured, cloudy Earth turns overhead.
 -- The sun stands low (Shared.Skies "Moon"), so every rim and rock throws a long shadow.
 local MOON = { regolith = Color3.fromRGB(166, 166, 170), rock = Color3.fromRGB(128, 128, 134), foil = Color3.fromRGB(222, 170, 60),
     metal = Color3.fromRGB(196, 198, 204), dark = Color3.fromRGB(46, 48, 56) }
 Destinations.LanderOffset = Vector3.new(-18, 0, -16)
 local FLAG_OFFSET = Vector3.new(14, 0, -10)
 local EXPERIMENT_OFFSET = Vector3.new(22, 0, 4)
+local MOON_RADIUS = 130
+-- The outer ring's set pieces: the big crater (its rim reaches 1.5x its radius), the
+-- rover and the science array.
+local BIG_CRATER, BIG_CRATER_RADIUS = Vector3.new(-66, 0, -66), 18
+local ROVER_OFFSET, ARRAY_OFFSET = Vector3.new(78, 0, 54), Vector3.new(70, 0, -84)
 -- True if a feature `reach` wide at `offset` keeps off every clear spot, the given props
 -- ({ offset, radius }) and the platform's edge (`edge` from the centre, 72 by default).
 local function isClear(offset, reach, props, edge)
@@ -248,9 +257,10 @@ local function orbitingMoon(folder, c, name, spec)
     return Planets.globe(folder, name, { center = center + CFrame.fromAxisAngle(axis, peak - spec.lead) * (up * spec.radius), size = spec.size,
         texture = spec.texture, spin = spec.spin, color = spec.color, orbit = { center = center, axis = axis, rate = spec.rate } })
 end
-local MOON_PROPS = { { Destinations.LanderOffset, 8 }, { FLAG_OFFSET, 4 }, { EXPERIMENT_OFFSET, 5 } }
+local MOON_PROPS = { { Destinations.LanderOffset, 8 }, { FLAG_OFFSET, 4 }, { EXPERIMENT_OFFSET, 5 },
+    { BIG_CRATER, BIG_CRATER_RADIUS * 1.5 }, { ROVER_OFFSET, 8 }, { ARRAY_OFFSET, 14 } }
 local function moonClear(offset, reach)
-    return isClear(offset, reach, MOON_PROPS)
+    return isClear(offset, reach, MOON_PROPS, MOON_RADIUS - 3)
 end
 -- A strut between two points.
 local function strut(parent, name, a, b, thickness, color, material)
@@ -311,6 +321,82 @@ local function experiment(parent, at)
     strut(parent, "ExperimentMast", at + Vector3.new(0, 1.2, 0), at + Vector3.new(0, 2.6, 0), 0.1, MOON.metal)
     decor(parent, "ExperimentDish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.15, 1, 1), CFrame = CFrame.new(at + Vector3.new(0, 2.65, 0)) * CFrame.Angles(0, 0.4, math.rad(60)), Color = Color3.fromRGB(235, 235, 240) })
 end
+-- A lunar roving vehicle, parked facing `yaw`: an open frame on four wire-mesh wheels
+-- under fenders, two seats, the console, and the umbrella antenna and TV camera up front.
+local function rover(parent, at, yaw)
+    local model = Instance.new("Model")
+    model.Name = "LunarRover"
+    model.Parent = parent
+    local frame = CFrame.new(at) * CFrame.Angles(0, yaw, 0)
+    make(model, "Chassis", { Size = Vector3.new(4.4, 0.5, 8), CFrame = frame * CFrame.new(0, 1.9, 0), Color = MOON.metal, Material = Enum.Material.DiamondPlate })
+    for _, x in { -2.5, 2.5 } do
+        for _, z in { -2.9, 2.9 } do
+            local hub = frame * CFrame.new(x, 1.2, z)
+            decor(model, "Wheel", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.9, 2.4, 2.4), CFrame = hub, Color = Color3.fromRGB(150, 140, 110), Material = Enum.Material.Fabric })
+            decor(model, "WheelHub", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 0.8, 0.8), CFrame = hub, Color = MOON.dark, Material = Enum.Material.Metal })
+            decor(model, "Fender", { Size = Vector3.new(1.1, 0.12, 2.8), CFrame = hub * CFrame.new(0, 1.35, 0), Color = Color3.fromRGB(220, 160, 50), Material = Enum.Material.SmoothPlastic })
+        end
+    end
+    for _, x in { -1.1, 1.1 } do
+        decor(model, "Seat", { Size = Vector3.new(1.6, 0.3, 1.6), CFrame = frame * CFrame.new(x, 2.4, 0.6), Color = Color3.fromRGB(70, 90, 140), Material = Enum.Material.Fabric })
+        decor(model, "SeatBack", { Size = Vector3.new(1.6, 1.6, 0.25), CFrame = frame * CFrame.new(x, 3.1, 1.45) * CFrame.Angles(-0.2, 0, 0), Color = Color3.fromRGB(70, 90, 140), Material = Enum.Material.Fabric })
+    end
+    decor(model, "Console", { Size = Vector3.new(1.2, 1.3, 0.6), CFrame = frame * CFrame.new(0, 2.8, -1.3) * CFrame.Angles(0.3, 0, 0), Color = MOON.dark, Material = Enum.Material.Metal })
+    strut(model, "AntennaMast", (frame * CFrame.new(-0.9, 2.2, -3.3)).Position, (frame * CFrame.new(-0.9, 5.6, -3.3)).Position, 0.15, MOON.metal)
+    -- The umbrella high-gain antenna: a flat mesh dish facing up, tipped forward.
+    decor(model, "HighGainAntenna", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.12, 3.4, 3.4), CFrame = frame * CFrame.new(-0.9, 5.8, -3.3) * CFrame.Angles(math.rad(-25), 0, math.rad(90)), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.Fabric })
+    strut(model, "CameraMast", (frame * CFrame.new(0.9, 2.2, -3.6)).Position, (frame * CFrame.new(0.9, 3.8, -3.6)).Position, 0.12, MOON.metal)
+    decor(model, "TVCamera", { Size = Vector3.new(0.6, 0.6, 1), CFrame = frame * CFrame.new(0.9, 4, -3.6), Color = Color3.fromRGB(235, 235, 240), Material = Enum.Material.SmoothPlastic })
+    return model
+end
+-- Two lines of tread marks from `from` to `to` (a rover's wheel tracks), skipping bowls.
+local function tracks(parent, from, to, bowls)
+    local step = (to - from) * Vector3.new(1, 0, 1)
+    local count = math.floor(step.Magnitude / 1.2)
+    local across = Vector3.new(-step.Z, 0, step.X).Unit
+    for index = 1, count do
+        for _, side in { -2.5, 2.5 } do
+            local at = from + step * (index / count) + across * side
+            local inBowl = false
+            for _, bowl in bowls do
+                if ((at - bowl.at) * Vector3.new(1, 0, 1)).Magnitude < bowl.radius * 1.5 + 1 then inBowl = true end
+            end
+            if not inBowl then
+                decor(parent, "WheelTrack", { Size = Vector3.new(0.8, 0.03, 0.85), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.015, 0), at + step + Vector3.new(0, 0.015, 0)), Color = Color3.fromRGB(128, 128, 134), Material = Enum.Material.Slate })
+            end
+        end
+    end
+end
+-- The science array: a big dish antenna on a tripod aimed at `toward` (Earth), wired to
+-- three small stations round it.
+local function scienceArray(parent, at, toward)
+    local model = Instance.new("Model")
+    model.Name = "ScienceArray"
+    model.Parent = parent
+    local mount = at + Vector3.new(0, 7, 0)
+    for index = 0, 2 do
+        local angle = index / 3 * math.pi * 2
+        strut(model, "DishLeg", mount - Vector3.new(0, 1, 0), at + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 3.2, 0.3, MOON.metal)
+    end
+    make(model, "DishMount", { Size = Vector3.new(1.4, 1.4, 1.4), CFrame = CFrame.new(mount), Color = MOON.metal, Material = Enum.Material.Metal })
+    -- Cylinders lie along X: turn the dish so its face looks along the aim.
+    local aim = CFrame.lookAt(mount, toward)
+    decor(model, "Dish", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 9, 9), CFrame = aim * CFrame.new(0, 0, -0.9) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromRGB(236, 236, 240), Material = Enum.Material.SmoothPlastic })
+    strut(model, "Feed", (aim * CFrame.new(0, 0, -1)).Position, (aim * CFrame.new(0, 0, -4.2)).Position, 0.2, MOON.metal)
+    decor(model, "FeedHorn", { Size = Vector3.new(0.6, 0.6, 0.6), CFrame = aim * CFrame.new(0, 0, -4.4), Color = MOON.foil, Material = Enum.Material.Foil })
+    local blink = decor(model, "ArrayLight", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.5, CFrame = CFrame.new(mount + Vector3.new(0, 1, 0)), Color = Color3.fromRGB(80, 220, 255), Material = Enum.Material.Neon })
+    blink:SetAttribute("Period", 2.1)
+    CollectionService:AddTag(blink, "Blinker")
+    for index = 0, 2 do
+        local angle = index / 3 * math.pi * 2 + math.pi / 3
+        local station = at + Vector3.new(math.cos(angle), 0, math.sin(angle)) * 9
+        experiment(model, station)
+        -- A cable lying on the ground from the dish to the station.
+        local a, b = at + Vector3.new(0, 0.06, 0), station + Vector3.new(0, 0.06, 0)
+        decor(model, "Cable", { Size = Vector3.new(0.12, 0.08, (b - a).Magnitude), CFrame = CFrame.lookAt((a + b) / 2, b), Color = MOON.dark, Material = Enum.Material.SmoothPlastic })
+    end
+    return model
+end
 -- Boot prints along a path, alternating feet, skipping anything over a bowl.
 local function prints(parent, from, to, bowls)
     local step = (to - from) * Vector3.new(1, 0, 1)
@@ -331,13 +417,14 @@ builders[1] = function(folder, c)
     local random = Random.new(2)
     folder:SetAttribute("Dust", Color3.fromRGB(196, 196, 202))
     folder:SetAttribute("Meteors", true)
-    -- Thick enough for bowls three studs deep.
-    local ground = disc(folder, "Regolith", c - Vector3.new(0, 3, 0), 75, 6, MOON.regolith, Enum.Material.Slate)
-    local bowls = {}
-    for _ = 1, 200 do
-        if #bowls >= 8 then break end
+    -- Thick enough for the big crater, BIG_CRATER_DEPTH deep (its top stays at the centre's height).
+    local BIG_CRATER_DEPTH = 7
+    local ground = disc(folder, "Regolith", c - Vector3.new(0, 6, 0), MOON_RADIUS, 12, MOON.regolith, Enum.Material.Slate)
+    local bowls = { { at = c + BIG_CRATER, radius = BIG_CRATER_RADIUS, depth = BIG_CRATER_DEPTH, rim = 2.2 } }
+    for _ = 1, 600 do
+        if #bowls >= 21 then break end
         local radius = random:NextNumber(4.5, 10)
-        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0, 70)
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(0, MOON_RADIUS - 8)
         local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
         local free = moonClear(offset, radius * 1.5)
         for _, bowl in bowls do
@@ -347,9 +434,25 @@ builders[1] = function(folder, c)
     end
     ground = Planets.carve(ground, bowls, true)
     Planets.overlay(ground, Enum.NormalId.Right, "MoonRegolith", 36)
+    -- The big crater's central peak and a few rocks on its floor. At this size the
+    -- carving ball is drawn with few facets, and its floor read as a flat polygon.
+    local floor = c + BIG_CRATER - Vector3.new(0, BIG_CRATER_DEPTH, 0)
+    Planets.mound(folder, "CentralPeak", floor, 6, 3.5, MOON.rock, Enum.Material.Slate, true)
+    for index = 1, 5 do
+        local angle = index / 5 * math.pi * 2 + random:NextNumber(-0.4, 0.4)
+        local out = random:NextNumber(7, 10)
+        local at = floor + Vector3.new(math.cos(angle) * out, BIG_CRATER_DEPTH * (out / BIG_CRATER_RADIUS) ^ 2, math.sin(angle) * out)
+        Planets.boulder(folder, at, random:NextNumber(1.5, 3), MOON.rock, Enum.Material.Slate, random, true)
+    end
+    -- Rocks thrown out of the big crater, scattered round its rim.
+    for index = 1, 9 do
+        local angle = index / 9 * math.pi * 2 + random:NextNumber(-0.3, 0.3)
+        local at = c + BIG_CRATER + Vector3.new(math.cos(angle), 0, math.sin(angle)) * BIG_CRATER_RADIUS * random:NextNumber(1.6, 2.1)
+        if (at - c).Magnitude < MOON_RADIUS - 6 then Planets.boulder(folder, at, random:NextNumber(2.5, 5.5), MOON.rock, Enum.Material.Slate, random, true) end
+    end
     -- Rounded rocks in what room is left.
-    for _ = 1, 60 do
-        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, 70)
+    for _ = 1, 180 do
+        local angle, distance = random:NextNumber(0, math.pi * 2), random:NextNumber(10, MOON_RADIUS - 5)
         local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
         local size = random:NextNumber(1.5, 4.5)
         local free = moonClear(offset, size)
@@ -363,12 +466,21 @@ builders[1] = function(folder, c)
     experiment(folder, c + EXPERIMENT_OFFSET)
     prints(folder, c + Destinations.LanderOffset + Vector3.new(5.5, 0, 0), c + FLAG_OFFSET - Vector3.new(1, 0, 0), bowls)
     prints(folder, c + FLAG_OFFSET + Vector3.new(1, 0, 1), c + EXPERIMENT_OFFSET - Vector3.new(1, 0, 1), bowls)
+    -- The rover parked off past the treadmill, its tracks back to the lander; the array
+    -- under the earthrise behind the landing site; boot prints out to both and to the
+    -- big crater's rim.
+    rover(folder, c + ROVER_OFFSET, math.rad(-35))
+    tracks(folder, c + ROVER_OFFSET + Vector3.new(-3, 0, -4), c + Destinations.LanderOffset + Vector3.new(8, 0, 4), bowls)
+    scienceArray(folder, c + ARRAY_OFFSET, c + Vector3.new(300, 290, -760))
+    prints(folder, c + EXPERIMENT_OFFSET + Vector3.new(1, 0, 1), c + ROVER_OFFSET - Vector3.new(4, 0, 4), bowls)
+    prints(folder, c + EXPERIMENT_OFFSET + Vector3.new(1, 0, -2), c + ARRAY_OFFSET + Vector3.new(-6, 0, 8), bowls)
+    prints(folder, c + Destinations.LanderOffset - Vector3.new(4, 0, 4), c + BIG_CRATER + Vector3.new(26, 0, 22), bowls)
     -- Dust kicked up long ago, still settling: faint specks drifting in the sunlight.
-    local haze = decor(folder, "DustHaze", { Size = Vector3.new(140, 6, 140), CFrame = CFrame.new(c + Vector3.new(0, 4, 0)), Transparency = 1 })
+    local haze = decor(folder, "DustHaze", { Size = Vector3.new(MOON_RADIUS * 2 - 10, 6, MOON_RADIUS * 2 - 10), CFrame = CFrame.new(c + Vector3.new(0, 4, 0)), Transparency = 1 })
     local motes = Instance.new("ParticleEmitter")
     motes.Shape = Enum.ParticleEmitterShape.Box
     motes.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
-    motes.Rate, motes.Lifetime = 14, NumberRange.new(6, 10)
+    motes.Rate, motes.Lifetime = 40, NumberRange.new(6, 10)
     motes.Speed, motes.SpreadAngle = NumberRange.new(0.2, 0.8), Vector2.new(180, 180)
     motes.Acceleration = Vector3.new(0, -0.08, 0)
     motes.Size = NumberSequence.new(0.12, 0.22)
@@ -381,12 +493,12 @@ builders[1] = function(folder, c)
     -- tallest hills: an earthrise).
     Planets.globe(folder, "Earth", { center = c + Vector3.new(300, 290, -760), diameter = 260, texture = "Earth",
         atmosphere = Color3.fromRGB(110, 175, 255), glow = 0.1, tilt = 23, spin = 0.025, color = Color3.fromRGB(50, 120, 220) })
-    surroundings(folder, c, 75, { seed = 11, reach = 1000, ridge = true, round = true, craters = 12, plainDepth = 20,
+    surroundings(folder, c, MOON_RADIUS, { seed = 11, reach = 1000, ridge = true, round = true, craters = 12, plainDepth = 20,
         overlays = { { "MoonMaria", 520 }, { "MoonRegolith", 120, 0.35 } },
         ring = { radius = 690, spread = 140, count = 30, size = { 140, 320 }, dome = true, rock = Color3.fromRGB(150, 150, 156), rockAlt = Color3.fromRGB(118, 118, 126), material = Enum.Material.Slate, seed = 21 },
         farRing = { radius = 900, spread = 60, count = 26, size = { 260, 410 }, dome = true, rock = Color3.fromRGB(136, 136, 144), rockAlt = Color3.fromRGB(112, 112, 120), material = Enum.Material.Slate, seed = 31 },
         ground = Color3.fromRGB(150, 150, 156), material = Enum.Material.Slate, crag = MOON.rock, cragMaterial = Enum.Material.Slate })
-    fence(folder, c, 75)
+    fence(folder, c, MOON_RADIUS)
     return ground, Vector3.new(0, 0, 20)
 end
 -- 2 (Uncommon): a base on the rim of a great canyon on Mars. Beyond the landing site the
