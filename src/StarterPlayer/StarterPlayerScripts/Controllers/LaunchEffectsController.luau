@@ -176,6 +176,10 @@ end
 -- narrows its view as the rocket climbs away, so it soon looks up into the sky and the
 -- rocket stays a good size. The spot is clear of buildings with a clear view of the pad.
 local SHOT_FOV, SHOT_FOV_END = 70, 32
+-- The player's own field of view (read at start, before any cutscene), which both
+-- cutscenes hand back. The landing starts the instant the ascent ends, so taking "the
+-- current one" there could take the ascent's narrowed 32 and leave it for good.
+local restingFov = 70
 local SHOT_OFFSET = Vector3.new(280, 25, 265) -- from the pad's centre: x = 280, z = 0
 
 local playing, launches = {}, 0
@@ -263,7 +267,7 @@ local function play(vehicle)
         if player:GetAttribute("RocketPassenger") and t < duration then
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            normalFov = normalFov or camera.FieldOfView
+            normalFov = restingFov
             local climbed = math.clamp(rise / climb, 0, 1)
             camera.FieldOfView = SHOT_FOV + (SHOT_FOV_END - SHOT_FOV) * math.sqrt(climbed)
             local view = origin.Position + SHOT_OFFSET + Vector3.new(0, rise * 0.1, 0)
@@ -411,9 +415,20 @@ local function land(rocket)
     local normalFov
     launches += 1
     local name = "RocketLanding" .. launches
+    -- Hands the camera back to the player (and CameraController).
+    local function release()
+        cinematic = false
+        if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
+        camera:SetAttribute("Cinematic", nil)
+        camera.CameraType = Enum.CameraType.Custom
+    end
     local function cleanup()
         RunService:UnbindFromRenderStep(name)
         arrivals:Disconnect()
+        -- A hitch past the hand-back moment (a phone loading the destination) used to end
+        -- the landing with the camera still Scriptable and Cinematic: frozen at the last
+        -- shot until a rejoin.
+        if cinematic then release() end
         -- Always back on the landing spot: a frame hitch (a phone loading the destination)
         -- can run from before the descent to past its end, which left the rocket parked
         -- 20,000 studs up and the destination without it.
@@ -450,7 +465,7 @@ local function land(rocket)
             cinematic = true
             camera:SetAttribute("Cinematic", true)
             camera.CameraType = Enum.CameraType.Scriptable
-            normalFov = normalFov or camera.FieldOfView
+            normalFov = restingFov
             camera.FieldOfView = fov
             -- Low, riding down with it, aimed a little below its middle so the nose and
             -- the flames under it both stay in frame all the way down (checked per tier).
@@ -459,15 +474,13 @@ local function land(rocket)
             camera.Focus = CFrame.new(ground)
         elseif cinematic and now >= finish then
             -- Under the black: hand the camera back as the server moves us out.
-            cinematic = false
-            if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
-            camera:SetAttribute("Cinematic", nil)
-            camera.CameraType = Enum.CameraType.Custom
+            release()
         end
     end)
 end
 
 function LaunchEffectsController.start()
+    restingFov = workspace.CurrentCamera.FieldOfView
     local world = workspace:WaitForChild("RocketWorld")
     watch(world:WaitForChild("RocketSite"))
     local destinations = world:WaitForChild("Destinations")

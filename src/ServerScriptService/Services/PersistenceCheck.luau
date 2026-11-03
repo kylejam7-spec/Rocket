@@ -1,7 +1,7 @@
 -- Profile saving against an in-memory DataStore: loads take the session, saves write the
 -- profile tagged with the user ID, a leaving player's session is released so another
 -- server loads them at once, a kept lease (locked passenger) holds them off, a lock is
--- waited on rather than failed, and Studio without API access falls back to unsaved.
+-- waited on rather than failed (for as long as a whole trip), and Studio without API access falls back to unsaved.
 -- Also: nothing is ready or saved while a load still waits (placeholder defaults), the
 -- committed snapshot only follows successful saves, a locked passenger's trip is on the
 -- profile from the lock and recovered once after a lost server, and departed records
@@ -10,6 +10,14 @@ return function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local config = require(ReplicatedStorage.Shared.Config)
     local Profiles = require(script.Parent.ProfileService)
+    -- A load outwaits a passenger who left at the very start of the longest possible trip
+    -- (the slowest ascent and landing, a stay with every Extra Stay) plus a lease.
+    do
+        local trip = 0
+        for _, tier in require(ReplicatedStorage.Shared.Missions).Tiers do trip = math.max(trip, tier.LaunchSeconds + tier.LandingSeconds) end
+        assert(Profiles.lockWait(config) > trip + config.RewardSeconds + config.Shop.ExtraStayMax + config.LeaseSeconds,
+            "a rejoin can give up while the last server still holds a passenger's trip")
+    end
 
     local function deep(value)
         if type(value) ~= "table" then return value end

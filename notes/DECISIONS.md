@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-11-02: Camera back to normal after landing; rejoining mid-trip keeps progress
+
+- User: after landing on a planet the camera stayed oddly zoomed until a rejoin. The
+  landing starts the instant the ascent ends and took "the current" field of view as the
+  one to restore, which could be the ascent's narrowed 32 (of 70). Both cutscenes now
+  hand back the FOV read at join. A hitch past the hand-back moment also left the camera
+  Scriptable and Cinematic; the landing's cleanup now always releases it.
+- User: leaving at a destination lost progress for a while. Leaving mid-trip keeps the
+  lease on the old server until the stay pays out; a rejoin elsewhere waited only 130 s
+  (lease + 10), so an early leaver's load failed ("progress disabled" for that session),
+  and while it waited the HUD showed the blank placeholder as zeros. The wait now covers
+  the longest trip (Profiles.lockWait: 576 s; PersistenceCheck asserts it) and the HUD
+  shows "…" and "Loading your progress…" until the real profile arrives.
+
 ## 2026-11-02: No more map expansion
 
 - User: the Earth site stays its base size. CarryoverService now keeps a server's launch

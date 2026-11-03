@@ -267,10 +267,23 @@ local function sameKeys(a, b)
     return true
 end
 
+-- How long a load waits out another server's lock. A passenger who left mid-trip stays
+-- locked there (its saves renew the lease) until the stay ends and pays out: the longest
+-- ascent and landing, a full stay with every Extra Stay, then a lease to run out. Waiting
+-- only a lease (130 s) failed the load of anyone who rejoined early in a trip, leaving
+-- progress off for that whole session.
+function Profiles.lockWait(config)
+    local trip = 0
+    for _, mission in require(game:GetService("ReplicatedStorage").Shared.Missions).Tiers do
+        trip = math.max(trip, mission.LaunchSeconds + mission.LandingSeconds)
+    end
+    return trip + config.RewardSeconds + config.Shop.ExtraStayMax + config.LeaseSeconds + 10
+end
+
 function Profiles.new(config, changed)
     return setmetatable({ config = config, changed = changed, records = {}, owner = HttpService:GenerateGUID(false), store = config.PersistenceEnabled and DataStoreService:GetDataStore(config.DataStoreName) or nil,
         -- A load finding another server's lock retries every `retrySeconds` for up to
-        -- `waitSeconds` (default: the lease plus 10 s). PersistenceCheck shortens both.
+        -- `waitSeconds` (default: Profiles.lockWait). PersistenceCheck shortens both.
         retrySeconds = 5, waitSeconds = nil,
         -- Save-soon spacing (default Config.RewardSaveSeconds) and the write budget left
         -- (default: DataStoreService's for UpdateAsync). PersistenceCheck replaces both.
@@ -337,8 +350,9 @@ function Profiles:load(userId)
     local ok, profile = attempt()
     if not ok and self:studioFallback(profile) then ok, profile = attempt() end
     -- Locked by the server they just left (it saves and lets go, or the lease runs out):
-    -- wait and try again rather than fail.
-    local deadline = os.clock() + (self.waitSeconds or self.config.LeaseSeconds + 10)
+    -- wait and try again rather than fail. The client shows this status, not the blank
+    -- placeholder profile, meanwhile (HudController).
+    local deadline = os.clock() + (self.waitSeconds or Profiles.lockWait(self.config))
     while ok and profile == nil and os.clock() < deadline do
         record.status = "Loading — finishing your last server's save"
         self.changed(userId)
