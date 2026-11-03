@@ -6,6 +6,8 @@
 -- row:set(value, sub?) counts the number up, bounces the icon and pops "+N" to the
 -- right of the row when it grows; row:setBadge(text?) shows or hides the "LV 10"
 -- chip under the disc; row:setProgress(fraction, text) fills the bar and labels it.
+-- row:waiting() shows "…" until the next set, which then just shows its value (no
+-- count-up or "+N": the profile is loading, not growing).
 local Create = require(script.Parent.Create)
 local Theme = require(script.Parent.Theme)
 local StrokedText = require(script.Parent.StrokedText)
@@ -81,8 +83,17 @@ function StatRow.new(props)
     return self
 end
 
+function StatRow:waiting()
+    self.pending = true
+    self.value.Text = "…"
+end
+
 function StatRow:set(amount, sub)
-    if amount ~= self.current then
+    if self.pending then
+        self.pending = nil
+        self.current = amount
+        self.value.Text = Theme.number(amount)
+    elseif amount ~= self.current then
         local gain = amount - self.current
         if gain > 0 then
             Tween.bounce(self.disc, 1.2, 0.35)

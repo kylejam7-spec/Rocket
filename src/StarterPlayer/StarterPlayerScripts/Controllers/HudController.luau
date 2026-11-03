@@ -227,13 +227,23 @@ function HudController.start()
     State.subscribe(function(state, previous)
         noticeLearning(state, previous)
         local p = state.profile
+        -- The server sends a blank placeholder until the saved profile is in (State.loaded):
+        -- show it as loading, not as progress gone (a passenger who left mid-trip waits out
+        -- their last server's save for up to the rest of that stay).
+        if not State.loaded(state) then
+            for _, row in { coins, strength, speed, launches } do row:waiting() end
+            goal.Text = (state.saveStatus or ""):find("last server", 1, true)
+                and "Loading your progress… your last server is still saving your trip"
+                or "Loading your progress…"
+            return
+        end
         if p then
             local before = previous and previous.profile
             coinTarget = p.coins or 0
             local gain = before and coinTarget - (before.coins or 0) or 0
             if gain > 0 and not Settings.get("reducedEffects") then
                 burst(gain)
-            elseif coinTarget ~= coins.current then
+            elseif coinTarget ~= coins.current or coins.pending then
                 coins:set(coinTarget)
                 if gain > 0 then clink() end
             end
