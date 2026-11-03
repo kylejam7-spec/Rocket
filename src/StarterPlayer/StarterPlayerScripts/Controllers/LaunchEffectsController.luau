@@ -367,13 +367,30 @@ local function land(rocket)
     -- Joining long after: it's simply standing there.
     if workspace:GetServerTimeNow() > finish + 1 then return end
     landing[rocket] = true
-    local rest = rocket:GetPivot()
-    local ground = rocket:GetAttribute("Ground") or rest.Position
+    local ground = rocket:GetAttribute("Ground") or rocket:GetPivot().Position
     local height = rocket:GetAttribute("Height") or 60
     local exhaust = rocket:GetAttribute("ExhaustScale") or 1
     local drop = 80 + height * 0.9
-    -- Braking burns hard: bigger flames than the ascent.
+    -- Every part is moved from its own resting CFrame (where the server stood it), not
+    -- the model as a whole: a big copy reaches a slow client (a phone) over several
+    -- frames, and a part that arrived after the model was lifted kept that lift as an
+    -- offset, so it landed 20,000 studs under the rest of the rocket.
+    local homes, parts, frames = {}, {}, {}
+    local function home(item)
+        if item:IsA("BasePart") and not homes[item] then
+            homes[item] = item.CFrame
+            table.insert(parts, item)
+        end
+    end
+    for _, item in rocket:GetDescendants() do home(item) end
+    local function lift(offset)
+        for index, part in parts do frames[index] = homes[part] + offset end
+        workspace:BulkMoveTo(parts, frames, Enum.BulkMoveMode.FireCFrameChanged)
+    end
+    -- Braking burns hard: bigger flames than the ascent. (Its flame parts are placed by
+    -- burn, so they are left out of the lift: arrivals are only counted from here on.)
     local emitters, nozzle, burn = engineFire(rocket, exhaust * 1.4, height)
+    local arrivals = rocket.DescendantAdded:Connect(home)
     local dust, plumes = smokeRing("LandingDust", CFrame.new(ground), 1 + exhaust)
     local engine = Sfx.attach("engine", nozzle or dust)
     local roar = engine and engine.Volume
@@ -396,10 +413,11 @@ local function land(rocket)
     local name = "RocketLanding" .. launches
     local function cleanup()
         RunService:UnbindFromRenderStep(name)
+        arrivals:Disconnect()
         -- Always back on the landing spot: a frame hitch (a phone loading the destination)
         -- can run from before the descent to past its end, which left the rocket parked
         -- 20,000 studs up and the destination without it.
-        if rocket.Parent then rocket:PivotTo(rest) end
+        if rocket.Parent then lift(Vector3.zero) end
         if normalFov then camera.FieldOfView, normalFov = normalFov, nil end
         if fadeGui then fadeGui:Destroy() end
         if engine then engine:Destroy() end
@@ -414,7 +432,7 @@ local function land(rocket)
         local t = now - descentAt
         local progress = math.clamp(t / seconds, 0, 1)
         local h = drop * (1 - progress) ^ 2.2
-        rocket:PivotTo(t < 0 and rest + Vector3.new(0, 20000, 0) or rest + Vector3.new(0, h, 0))
+        lift(Vector3.new(0, t < 0 and 20000 or h, 0))
         local burning = t >= 0 and progress < 1
         -- Full burn high up, easing off as it settles.
         burn(burning and math.clamp(0.45 + h / drop, 0.45, 1) or 0, h + 1)

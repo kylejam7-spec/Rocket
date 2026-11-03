@@ -3,11 +3,27 @@
 -- monitor. WorldScale.apply(gui) shrinks a BillboardGui and its contents by
 -- viewport height / ReferenceHeight (never above 1, so desktops are unchanged) and
 -- follows window resizes. Call it once per billboard after setting its Size.
+-- Touch devices (phones, tablets) have a small budget for redrawing world GUIs: past it,
+-- signs and tags flicker, worst with many of them animating every frame. There
+-- WorldScale.still is true (world badges stop pulsing and swaying) and
+-- WorldScale.surface(gui) draws a pixels-per-stud SurfaceGui at a lower resolution (a
+-- UIScale keeps its layout) and only within SurfaceDistance studs.
+local UserInputService = game:GetService("UserInputService")
 local Create = require(script.Parent.Create)
 local WorldScale = {}
 
 local ReferenceHeight, Floor = 720, 0.5
+local SurfaceResolution, SurfaceDistance = 0.6, 300
 local tracked = setmetatable({}, { __mode = "k" })
+
+WorldScale.still = UserInputService.TouchEnabled
+
+function WorldScale.surface(gui)
+    if not WorldScale.still then return end
+    gui.PixelsPerStud *= SurfaceResolution
+    gui.MaxDistance = SurfaceDistance
+    Create.new("UIScale", { Name = "WorldScale", Scale = SurfaceResolution, Parent = gui })
+end
 
 function WorldScale.factor()
     local camera = workspace.CurrentCamera

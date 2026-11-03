@@ -1,5 +1,18 @@
 # Decisions
 
+## 2026-11-02: Steadier world signs on touch screens; landed rocket lands whole
+
+- User: text and icons flickered on phones (worst on a treadmill or bench) and the landed
+  rocket still showed only partly. 59 per-player SurfaceGuis (~9M texture pixels at 40
+  per stud, none with MaxDistance) and ~60 sign/station badges tweening Scale and Rotation
+  every frame forced constant world-GUI redraws. On touch devices (UI.WorldScale.still)
+  badges stand still, and WorldSign/GymSign surfaces draw at 0.6x resolution (a UIScale keeps
+  the layout) within 300 studs. Desktop unchanged. User confirmed on a phone: the gym signs no longer flicker.
+- The LandedRocket clone can reach a slow client over several frames. Moving it with
+  PivotTo kept the +20,000 hide offset on parts that arrived after the lift, so those parts
+  ended 20,000 studs under the spot. LaunchEffectsController now moves every part from its
+  own resting CFrame (BulkMoveTo), counting late arrivals as they come.
+
 ## 2026-10-25: Gentler level curve
 
 - User: levels cost 10 points, then ×1.008 a level (was ×1.2), so the 450-point cap kicks
