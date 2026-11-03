@@ -279,9 +279,10 @@ local function lander(parent, at)
     local model = Instance.new("Model")
     model.Name = "Lander"
     model.Parent = parent
-    -- Descent stage: an octagon of gold foil (two boxes, one turned 45 degrees).
+    -- Descent stage: an octagon of gold foil (two boxes, one turned 45 degrees; the turned
+    -- one a hair shorter, as level tops shimmered against each other).
     for _, turn in { 0, 45 } do
-        make(model, "DescentStage", { Size = Vector3.new(7, 3.4, 7), CFrame = CFrame.new(at + Vector3.new(0, 3.4, 0)) * CFrame.Angles(0, math.rad(turn), 0), Color = MOON.foil, Material = Enum.Material.Foil })
+        make(model, "DescentStage", { Size = Vector3.new(7, turn == 0 and 3.4 or 3.3, 7), CFrame = CFrame.new(at + Vector3.new(0, 3.4, 0)) * CFrame.Angles(0, math.rad(turn), 0), Color = MOON.foil, Material = Enum.Material.Foil })
     end
     decor(model, "EngineBell", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 2.2, 2.2), CFrame = CFrame.new(at + Vector3.new(0, 1.2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MOON.dark, Material = Enum.Material.Metal })
     for _, corner in { Vector3.new(1, 0, 1), Vector3.new(-1, 0, 1), Vector3.new(1, 0, -1), Vector3.new(-1, 0, -1) } do
@@ -371,7 +372,8 @@ local function tracks(parent, from, to, bowls)
                 if ((at - bowl.at) * Vector3.new(1, 0, 1)).Magnitude < bowl.radius * 1.5 + 1 then inBowl = true end
             end
             if not inBowl then
-                decor(parent, "WheelTrack", { Size = Vector3.new(0.8, 0.03, 0.85), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.015, 0), at + step + Vector3.new(0, 0.015, 0)), Color = Color3.fromRGB(128, 128, 134), Material = Enum.Material.Slate })
+                -- Lower than boot prints (top 0.05), so the two never tie where they cross.
+                decor(parent, "WheelTrack", { Size = Vector3.new(0.8, 0.03, 0.85), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.01, 0), at + step + Vector3.new(0, 0.01, 0)), Color = Color3.fromRGB(128, 128, 134), Material = Enum.Material.Slate })
             end
         end
     end
@@ -418,7 +420,7 @@ local function prints(parent, from, to, bowls)
             if ((at - bowl.at) * Vector3.new(1, 0, 1)).Magnitude < bowl.radius * 1.5 + 1 then inBowl = true end
         end
         if not inBowl then
-            decor(parent, "BootPrint", { Size = Vector3.new(0.5, 0.04, 1), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.02, 0), at + step + Vector3.new(0, 0.02, 0)), Color = Color3.fromRGB(122, 122, 128), Material = Enum.Material.Slate })
+            decor(parent, "BootPrint", { Size = Vector3.new(0.5, 0.04, 1), CFrame = CFrame.lookAt(at + Vector3.new(0, 0.03, 0), at + step + Vector3.new(0, 0.03, 0)), Color = Color3.fromRGB(122, 122, 128), Material = Enum.Material.Slate })
         end
     end
 end
@@ -666,8 +668,8 @@ end
 -- with a broken leg and a torn parachute, and debris strewn back along its path.
 local function wreck(parent, c, random)
     local at = c + WRECK
-    Planets.mound(parent, "ScorchRim", at, 12, 1.4, MARS.dark:Lerp(MARS.dust, 0.3), Enum.Material.Sand, true)
-    decor(parent, "Scorch", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.1, 16, 16), CFrame = CFrame.new(at + Vector3.new(0, 1.42, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MARS.dark, Material = Enum.Material.Sand })
+    -- The mound itself is the scorch (a flat scorch disc laid over it fought its top).
+    Planets.mound(parent, "ScorchRim", at, 12, 1.4, MARS.dark:Lerp(MARS.dust, 0.15), Enum.Material.Sand, true)
     local tipped = CFrame.new(at + Vector3.new(0, 4, 0)) * CFrame.Angles(math.rad(70), math.rad(30), math.rad(10))
     make(parent, "WreckBody", { Size = Vector3.new(6, 2.4, 6), CFrame = tipped, Color = Color3.fromRGB(160, 150, 140), Material = Enum.Material.CorrodedMetal })
     decor(parent, "WreckShell", { ClassName = "WedgePart", Size = Vector3.new(6, 2.4, 3), CFrame = tipped * CFrame.new(0, 2.4, 0), Color = Color3.fromRGB(196, 176, 140), Material = Enum.Material.Foil })
@@ -696,7 +698,7 @@ local function cache(parent, c)
     local stacks = { { Vector3.new(-3.5, 0, -2), 2 }, { Vector3.new(0, 0, -2), 1 }, { Vector3.new(3.5, 0, -2), 2 }, { Vector3.new(-2, 0, 2.2), 1 }, { Vector3.new(2, 0, 2.2), 3 } }
     for index, stack in stacks do
         for level = 1, stack[2] do
-            make(parent, "Crate", { Size = Vector3.new(3, 2.6, 3), CFrame = CFrame.new(at + stack[1] + Vector3.new(0, 0.6 + level * 2.6 - 1.3, 0)) * CFrame.Angles(0, (index + level) * 0.12, 0),
+            make(parent, "Crate", { Size = Vector3.new(3, 2.6, 3), CFrame = CFrame.new(at + stack[1] + Vector3.new(0, 0.6 + level * 2.6 - 1.3, 0)) * CFrame.Angles(0, (index + level) % 3 * 0.05, 0),
                 Color = (index + level) % 2 == 0 and Color3.fromRGB(226, 140, 60) or MARS.hull, Material = Enum.Material.SmoothPlastic })
         end
     end
@@ -756,11 +758,13 @@ local function habitat(parent, c)
     domeGuard(parent, g, 6.5)
     make(parent, "GreenhouseRing", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 13.6, 13.6), CFrame = CFrame.new(g + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MARS.trim, Material = Enum.Material.Metal })
     for row = -1, 1 do
-        decor(parent, "PlantBed", { Size = Vector3.new(8, 0.8, 1.6), CFrame = CFrame.new(g + Vector3.new(0, 0.4, row * 2.8)), Color = Color3.fromRGB(70, 46, 34), Material = Enum.Material.Ground })
+        -- Tops 0.3 over the trim ring's (the ring fills the floor at 0.8: level with it, the
+        -- dirt flickered).
+        decor(parent, "PlantBed", { Size = Vector3.new(8, 1.1, 1.6), CFrame = CFrame.new(g + Vector3.new(0, 0.55, row * 2.8)), Color = Color3.fromRGB(70, 46, 34), Material = Enum.Material.Ground })
         -- 1.5 apart and at most 1.3 across, sitting on the bed: no two plants touch.
         for x = -3, 3, 1.5 do
             local size = 1 + (x + row) % 0.3
-            decor(parent, "Plant", { Shape = Enum.PartType.Ball, Size = Vector3.one * size, CFrame = CFrame.new(g + Vector3.new(x, 0.8 + size * 0.4, row * 2.8)), Color = Color3.fromRGB(70, 170, 70), Material = Enum.Material.Grass })
+            decor(parent, "Plant", { Shape = Enum.PartType.Ball, Size = Vector3.one * size, CFrame = CFrame.new(g + Vector3.new(x, 1.1 + size * 0.4, row * 2.8)), Color = Color3.fromRGB(70, 170, 70), Material = Enum.Material.Grass })
         end
     end
     local grow = decor(parent, "GrowLight", { Size = Vector3.new(8, 0.2, 0.6), CFrame = CFrame.new(g + Vector3.new(0, 4.6, 0)), Color = Color3.fromRGB(255, 110, 220), Material = Enum.Material.Neon })
@@ -964,7 +968,7 @@ local function coreDrill(parent, c)
     for index = 0, 3 do
         local core = rack + Vector3.new(0, 1.9, -0.9 + index * 0.6)
         decor(parent, "IceCore", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(4.4, 0.5, 0.5), CFrame = CFrame.new(core), Color = EUROPA.pale, Material = Enum.Material.Ice })
-        decor(parent, "CoreBand", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 0.52, 0.52), CFrame = CFrame.new(core + Vector3.new(index - 1.5, 0, 0)), Color = Color3.fromRGB(176, 128, 104), Material = Enum.Material.Ice })
+        decor(parent, "CoreBand", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 0.58, 0.58), CFrame = CFrame.new(core + Vector3.new(index - 1.5, 0, 0)), Color = Color3.fromRGB(176, 128, 104), Material = Enum.Material.Ice })
     end
     local light = decor(parent, "DrillLight", { Shape = Enum.PartType.Ball, Size = Vector3.one * 0.5, CFrame = CFrame.new(apex + Vector3.new(0, 1.5, 0)), Color = EUROPA.glow, Material = Enum.Material.Neon })
     light:SetAttribute("Period", 2.4)
@@ -1410,8 +1414,9 @@ local function harvester(parent, c)
     decor(parent, "DrillBit", { Shape = Enum.PartType.Ball, Size = Vector3.one * 1.4, CFrame = frame * CFrame.new(5.6, 0, 0), Color = SATURN.dark, Material = Enum.Material.Metal })
     decor(parent, "Conveyor", { ClassName = "WedgePart", Size = Vector3.new(1.6, 2.6, 4), CFrame = frame * CFrame.new(0, 1.3, -4.2) * CFrame.Angles(0, math.pi, 0), Color = SATURN.dark, Material = Enum.Material.DiamondPlate })
     make(parent, "Sled", { Size = Vector3.new(5, 0.5, 4), CFrame = frame * CFrame.new(0, 0.25, -8.4), Color = SATURN.metal, Material = Enum.Material.Metal })
-    for index, offset in { Vector3.new(-1.2, 1.1, -7.6), Vector3.new(1.2, 1.1, -7.6), Vector3.new(-1.2, 1.1, -9.2), Vector3.new(1.2, 1.1, -9.2), Vector3.new(0, 2.7, -8.4) } do
-        local block = decor(parent, "IceBlock", { Size = Vector3.one * 1.6, CFrame = frame * CFrame.new(offset) * CFrame.Angles(0, index * 0.2, 0), Color = SATURN.glow, Material = Enum.Material.Glass, Transparency = 0.25 })
+    -- Apart enough, and turned little enough, that no two blocks overlap.
+    for index, offset in { Vector3.new(-1.2, 1.1, -7.4), Vector3.new(1.2, 1.1, -7.4), Vector3.new(-1.2, 1.1, -9.4), Vector3.new(1.2, 1.1, -9.4), Vector3.new(0, 2.7, -8.4) } do
+        local block = decor(parent, "IceBlock", { Size = Vector3.one * 1.6, CFrame = frame * CFrame.new(offset) * CFrame.Angles(0, index * 0.04, 0), Color = SATURN.glow, Material = Enum.Material.Glass, Transparency = 0.25 })
         if index == 5 then
             local light = Instance.new("PointLight")
             light.Color, light.Range, light.Brightness = SATURN.glow, 12, 1.5
@@ -1502,8 +1507,9 @@ end
 -- stacked beside it, and a small crane over it.
 local function quarry(parent, c)
     local at = c + QUARRY
-    for index, spot in { Vector3.new(9, 0, -2), Vector3.new(9, 0, 1), Vector3.new(9, 0, 4), Vector3.new(11.6, 0, -0.5), Vector3.new(11.6, 0, 2.5), Vector3.new(9, 2.4, 1) } do
-        local block = make(parent, "QuarriedIce", { Size = Vector3.new(2.4, 2.4, 2.8), CFrame = CFrame.new(at + spot + Vector3.new(0, 1.2, 0)) * CFrame.Angles(0, index * 0.08, 0),
+    -- Apart enough, and turned little enough, that no two blocks overlap.
+    for index, spot in { Vector3.new(9, 0, -2.2), Vector3.new(9, 0, 1), Vector3.new(9, 0, 4.2), Vector3.new(11.9, 0, -0.6), Vector3.new(11.9, 0, 2.6), Vector3.new(9, 2.4, 1) } do
+        local block = make(parent, "QuarriedIce", { Size = Vector3.new(2.4, 2.4, 2.8), CFrame = CFrame.new(at + spot + Vector3.new(0, 1.2, 0)) * CFrame.Angles(0, index % 3 * 0.03, 0),
             Color = index % 2 == 0 and SATURN.glow or SATURN.ice, Material = Enum.Material.Glass, Transparency = 0.2 })
         if index == 6 then
             local light = Instance.new("PointLight")
