@@ -1,5 +1,14 @@
 # Decisions
 
+## 2026-11-02: No more map expansion
+
+- User: the Earth site stays its base size. CarryoverService now keeps a server's launch
+  count across restarts, so live players saw the strips that were added every three
+  launches (80 studs of dirt and an empty "EXPANSION n" concrete bay per side, up to 4).
+  They were never needed: the base ground (|x| <= 290) already holds Tier 5's whole
+  complex (pad |x| <= 245, ramps 197, floodlights 240, apron 270). Trees, mountains and
+  the spaceport's slabs keep their old clearance; PerimeterCheck checks the one site size.
+
 ## 2026-10-25: Gentler level curve
 
 - User: levels cost 10 points, then ×1.008 a level (was ×1.2), so the 450-point cap kicks

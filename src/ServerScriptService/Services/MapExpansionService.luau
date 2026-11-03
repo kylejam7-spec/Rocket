@@ -1,5 +1,6 @@
--- The Earth site's ground, apron and pad, and the space that grows every three cycles;
--- rocket construction remains separate.
+-- The Earth site's ground, apron and pad; rocket construction remains separate. The site
+-- no longer grows with launches (user, 2026-11-02): the base ground already holds Tier 5's
+-- whole complex, and the strips it used to add every three launches stood empty.
 local Map = {}
 
 -- Splits an x/z rectangle into the pieces left after cutting out each hole.
@@ -27,7 +28,7 @@ local function carve(rect, holes)
     return pieces
 end
 
--- `reserved` lists x/z footprints (the material stations) that expansion must not cover.
+-- `reserved` lists x/z footprints (the material stations) the ground must not cover.
 -- Sizes and positions come from SiteLayout.
 -- Surfaces: a tiling overlay for the close-up detail and a big tinted blotch layer
 -- (the Moon's maria texture) so the tiling never reads as a grid from afar.
@@ -42,7 +43,7 @@ local function concrete(piece, studs)
 end
 Map.dirt, Map.concrete = dirt, concrete
 
-function Map.build(part, label, reserved)
+function Map.build(part, reserved)
     local Layout = require(script.Parent.SiteLayout)
     local dirt = Color3.fromRGB(150, 122, 92)
     local concrete = Color3.fromRGB(118, 120, 124)
@@ -73,25 +74,8 @@ function Map.build(part, label, reserved)
     local pad = part("LaunchPad", Layout.Pad.center, Layout.Pad.size, Color3.fromRGB(96, 104, 118))
     pad.Material = Enum.Material.Concrete
     Map.concrete(pad, 20)
-    -- Each expansion adds a strip of ground outside the base on both sides, and a
-    -- concrete construction bay alongside the apron. Returns the ground's half-width.
-    local stage = 0
-    return function(cycle)
-        local target = math.floor((cycle - 1) / 3)
-        for index = stage + 1, target do
-            for _, side in {-1, 1} do
-                slab("ExpansionGround" .. index .. "_" .. side,
-                    Vector3.new(side * (ground.x + 40 + (index - 1) * 80), -1, (ground.z0 + ground.z1) / 2), Vector3.new(80, 2, length), dirt, Enum.Material.Ground)
-                local x = side * (apron.x + 40 + (index - 1) * 80)
-                local bay = slab("ConstructionBay" .. index .. "_" .. side,
-                    Vector3.new(x, -0.17, (apron.z0 + apron.z1) / 2), Vector3.new(80, 0.5, apron.z1 - apron.z0), concrete, Enum.Material.Concrete)
-                if bay then label(bay, "EXPANSION " .. index) end
-            end
-            if index % 10 == 0 then task.wait() end
-        end
-        stage = math.max(stage, target)
-        return ground.x + stage * 80
-    end
+    -- The ground's half-width (SiteSurroundsService and SpaceportService fit to it).
+    return ground.x
 end
 Map.carve = carve
 return Map

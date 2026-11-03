@@ -27,7 +27,7 @@ Layout.Pad = { center = Vector3.new(0, 0.33, -265), size = Vector3.new(490, 0.5,
 -- Concrete apron under the tilted rockets (at the 40-degree build lean Tier 5's farthest
 -- part reaches z = -1046, its floodlights x = +/-234).
 Layout.Apron = { x = 270, z0 = -1060, z1 = -88 }
--- The base ground; map expansion adds strips outside |x| = Ground.x. The back fence (and
+-- The site's ground (it no longer grows with launches). The back fence (and
 -- its tall barrier) runs along z0, clear of Tier 5's ramp tops.
 Layout.Ground = { x = 290, z0 = -1080, z1 = 112 }
 
@@ -59,7 +59,7 @@ Layout.SuitStands = {
 -- SpaceX hall across the back (x by z, and its gap behind the last row).
 Layout.Gym = { z0 = 132, step = 29, x = 27, entrance = 114, spaceX = { x = 70, z = 34, gap = 5 } }
 
--- Footprints map expansion must not pave over (the material stations).
+-- Footprints the ground must not pave over (the material stations).
 Layout.Reserved = {}
 for _, center in { Layout.Metal, Layout.Fuel } do
     table.insert(Layout.Reserved, {

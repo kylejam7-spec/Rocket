@@ -10,7 +10,7 @@
     station.zone is the invisible pickup volume (players within InteractionDistance
     of it may pick up) and station.points are attachments spread over it, one
     pickup prompt each, so a crowd can work the station from every side.
-    Stations.Reserved lists the footprints map expansion must leave alone.
+    Stations.Reserved lists the footprints the site's ground must leave alone.
 ]]
 local Layout = require(script.Parent.SiteLayout)
 local Planets = require(script.Parent.Planets)

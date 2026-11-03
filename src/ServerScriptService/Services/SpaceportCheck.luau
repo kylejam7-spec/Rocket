@@ -42,7 +42,7 @@ return function()
     end)
     holder:Destroy()
     assert(ok, failure)
-    -- Slabs lie outside the widest site (4 expansions of 80) and off the Gym District.
+    -- Slabs lie well outside the site (320 past its sides) and off the Gym District.
     local widest = Layout.Ground.x + 4 * 80
     for name, r in Spaceport.Slabs do
         assert(r[1] > widest or r[2] < -widest or r[4] < Layout.Ground.z0 - 40, name .. " slab overlaps where the site grows")
