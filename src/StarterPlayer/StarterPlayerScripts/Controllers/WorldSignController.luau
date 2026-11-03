@@ -1,6 +1,7 @@
 -- Every world sign tagged WorldSign (SignService), drawn per player in the gym signs'
 -- style: a dark rounded panel with a thick accent border and a soft sheen, an optional
--- round accent badge with an icon (or a product picture) that gently pulses and sways,
+-- round accent badge with an icon (or a product picture) that gently pulses and sways
+-- (still on touch screens: UI.WorldScale),
 -- a big outlined title and a subtitle in the accent colour. Sized from the sign's face, so one style fits a
 -- door plate and a 30-stud arch.
 local CollectionService = game:GetService("CollectionService")
@@ -11,6 +12,7 @@ local Create = require(UI.Create)
 local Theme = require(UI.Theme)
 local StrokedText = require(UI.StrokedText)
 local Icon = require(UI.Icon)
+local WorldScale = require(UI.WorldScale)
 local WorldSignController = {}
 
 local PIXELS_PER_STUD = 40
@@ -32,6 +34,7 @@ local function build(part, playerGui)
         Name = "WorldSign_" .. part.Name, Adornee = part, Face = face, SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud,
         PixelsPerStud = PIXELS_PER_STUD, LightInfluence = 0, ResetOnSpawn = false, Parent = playerGui,
     })
+    WorldScale.surface(surface)
     local inset = math.max(4, height * 0.05)
     local panel = Create.new("Frame", {
         Name = "Panel", Position = UDim2.fromOffset(inset, inset), Size = UDim2.new(1, -2 * inset, 1, -2 * inset),
@@ -55,9 +58,11 @@ local function build(part, playerGui)
             AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.72, 0.72),
             BackgroundTransparency = 1, Text = icon, TextScaled = true, Font = Theme.font.Display, Rotation = -8, Parent = circle,
         })
-        local scale = Create.new("UIScale", { Parent = circle })
-        TweenService:Create(scale, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.08 }):Play()
-        TweenService:Create(glyph, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Rotation = 8 }):Play()
+        if not WorldScale.still then
+            local scale = Create.new("UIScale", { Parent = circle })
+            TweenService:Create(scale, TweenInfo.new(0.8, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Scale = 1.08 }):Play()
+            TweenService:Create(glyph, TweenInfo.new(1.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), { Rotation = 8 }):Play()
+        end
         -- A product picture (the Image attribute) fills the badge over the glyph; if it
         -- fails to load, UI.Icon removes it and the glyph shows.
         local imageKey = part:GetAttribute("Image")
