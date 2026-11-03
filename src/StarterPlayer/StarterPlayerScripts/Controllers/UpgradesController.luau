@@ -54,8 +54,10 @@ end
 local function effect(track, level)
     local spec = Config.Upgrades[track]
     local function at(n)
-        if track == "BulkPickup" then return "Grab " .. Upgrades.bulkUnits(Config, track, n) .. " per tick" end
-        if track == "BulkPlace" then return "Place " .. Upgrades.bulkUnits(Config, track, n) .. " per tick" end
+        -- Per second reads better than per tick (Config.MaterialHoldSeconds apart).
+        local perSecond = Theme.number(math.round(Upgrades.bulkUnits(Config, track, n) / Config.MaterialHoldSeconds))
+        if track == "BulkPickup" then return "Grab " .. perSecond .. "/s" end
+        if track == "BulkPlace" then return "Place " .. perSecond .. "/s" end
         return "Reach " .. Upgrades.reachAt(Config, n) .. " studs"
     end
     if level >= spec.max then return at(level) .. "  (MAX)" end

@@ -14,9 +14,14 @@ return table.freeze({
     -- stay 10 to level ~28, 20 at 100, 110 at 300, 360 at 450.
     StatLevels = table.freeze({ base = 10, growth = 1.008, max = 450 }),
     MaxPlanetBonus = 1000000,
-    -- Carry = BaseCarryCapacity + CarryPerLevel * strength level, uncapped: enough
-    -- strength carries a whole rocket's Metal or Fuel in one trip.
+    -- Carry = BaseCarryCapacity + CarryEarly * level / (level + CarryHalfLevel)
+    -- + CarryPerLevel * level (rounded down), uncapped: enough strength carries a whole
+    -- rocket's Metal or Fuel in one trip. User, 2026-11-02: new players hold more sooner,
+    -- the early levels add ~5 each and taper to 1 (25 at level 3, 50 at 9, 100 at 30,
+    -- 200 at 111; was 15, 40, 90, 190 levels), level costs unchanged.
     BaseCarryCapacity = 10,
+    CarryEarly = 90,
+    CarryHalfLevel = 15,
     CarryPerLevel = 1,
     -- Walk = BaseSpeed + SpeedEarly * level / (level + SpeedHalfLevel) + SpeedPerLevel * level,
     -- capped at MaxSpeed: the early levels give big steps (29 at level 1, ~49 at level 8),
@@ -57,8 +62,8 @@ return table.freeze({
     -- is also a Robux Game Pass (RobuxUpgrades). Prices show as 3 significant figures
     -- (under 1,000: rounded to 5).
     Upgrades = table.freeze({
-        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- units per pickup tick: see BulkFactor
-        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- units per place tick: see BulkFactor
+        BulkPickup = table.freeze({ name = "Bulk Pickup", icon = "✋", max = 10, step = 1 }), -- units per pickup tick: see BulkUnits
+        BulkPlace = table.freeze({ name = "Bulk Place", icon = "⚡", max = 10, step = 1 }), -- units per place tick: see BulkUnits
         PlacementRange = table.freeze({ name = "Placement Range", icon = "📏", max = 10, first = 11 }), -- studs level 1 adds
     }),
     UpgradePrices = table.freeze({
@@ -67,9 +72,10 @@ return table.freeze({
             table.freeze({ upTo = 10, factor = 3 }),
         }),
     }),
-    -- Bulk Pickup / Bulk Place: 1 unit per tick unbought, then BulkFactor x (1 + level):
-    -- 6, 9, 12 ... 33 a tick at level 10 (660 a second). User, 2026-10-23: x3 per level.
-    BulkFactor = 3,
+    -- Bulk Pickup / Bulk Place: units per tick (20 ticks a second) at levels 0..10. User,
+    -- 2026-11-02: moving 30k took 25 min unbought; now about x1.26 a level from 100 a
+    -- second (30k in 5 min) to 1,000 a second (30k in 30 s) at level 10.
+    BulkUnits = table.freeze({ [0] = 5, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50 }),
     UpgradeOrder = table.freeze({ "BulkPickup", "BulkPlace", "PlacementRange" }),
     -- Robux upgrades (RobuxUpgradeService): one Game Pass per track per level; owning the
     -- level-N pass keeps that track at level N or higher, re-checked on every join.

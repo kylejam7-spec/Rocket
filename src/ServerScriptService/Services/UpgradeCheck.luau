@@ -55,15 +55,18 @@ return function()
     assert(select(2, Service.buy(config, profile, "BulkPickup", "late")) == "maxed")
     assert(#profile.purchaseIds <= Service.LedgerSize)
 
-    -- Effects: 1 unit per tick unbought, then 3 x (1 + level) for pickup and place; reach
-    -- grows 11, 12 ... 20 studs a level.
+    -- Effects: pickup and place follow Config.BulkUnits (30k in 5 min unbought, 30 s at
+    -- level 10, faster every level); reach grows 11, 12 ... 20 studs a level.
     local some = { upgrades = { BulkPickup = 3, BulkPlace = 2, PlacementRange = 5 } }
-    assert(Upgrades.pickupUnits(config, some) == 12 and Upgrades.placeUnits(config, some) == 9)
+    assert(Upgrades.pickupUnits(config, some) == 10 and Upgrades.placeUnits(config, some) == 8)
+    local function seconds(level) return 30000 / Upgrades.bulkUnits(config, "BulkPickup", level) * config.MaterialHoldSeconds end
+    assert(seconds(0) == 300 and seconds(10) == 30, "30k should take 5 min unbought and 30 s at level 10")
+    for level = 1, 10 do assert(seconds(level) < seconds(level - 1), "every Bulk level moves faster") end
     assert(Upgrades.reach(config, some) == config.FrontierReach + 11 + 12 + 13 + 14 + 15)
     assert(Upgrades.reachAt(config, 1) == config.FrontierReach + 11 and Upgrades.reachAt(config, 2) == config.FrontierReach + 23)
-    assert(Upgrades.pickupUnits(config, {}) == 1 and Upgrades.placeUnits(config, {}) == 1 and Upgrades.reach(config, {}) == config.FrontierReach)
+    assert(Upgrades.pickupUnits(config, {}) == 5 and Upgrades.placeUnits(config, {}) == 5 and Upgrades.reach(config, {}) == config.FrontierReach)
     local top = { upgrades = { BulkPickup = 10, BulkPlace = 10, PlacementRange = 10 } }
-    assert(Upgrades.pickupUnits(config, top) == 33 and Upgrades.placeUnits(config, top) == 33)
+    assert(Upgrades.pickupUnits(config, top) == 50 and Upgrades.placeUnits(config, top) == 50)
     assert(Upgrades.reach(config, top) == config.FrontierReach + 155)
     for level = 1, 10 do
         assert(Upgrades.reachAt(config, level) - Upgrades.reachAt(config, level - 1) == 10 + level, "level n adds 10 + n studs")

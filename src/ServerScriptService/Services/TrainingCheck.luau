@@ -141,6 +141,11 @@ return function()
     local function near(level, want) return math.abs(StatLevels.walk(config, level) - want) < 1.5 end
     assert(near(1, 29) and near(8, 48.8) and near(100, 121) and near(300, 243), "Walk curve changed")
     assert(config.MaxSpeed == 400 and StatLevels.walk(config, 555) < 400 and StatLevels.walk(config, 565) == 400 and StatLevels.walk(config, 5000) == 400)
+    -- The carry curve's shape (user, 2026-11-02): big early steps so new players hold more
+    -- sooner (25 by level 3, 50 by 9, 100 by 30), then +1 a level.
+    local function carryAt(level) return StatLevels.capacity(config, level) end
+    assert(carryAt(0) == config.BaseCarryCapacity and carryAt(3) >= 25 and carryAt(9) >= 50 and carryAt(30) >= 100, "Carry curve changed")
+    assert(carryAt(1001) - carryAt(1000) <= 2, "Late levels add about one unit of carry")
     -- The free gym (+1/s) gives level 1 within 10 s, and the profile path matches.
     local function stats(points)
         local p = { strengthLevel = points, speedLevel = points, planetBonuses = { strength = 0, speed = 0 } }

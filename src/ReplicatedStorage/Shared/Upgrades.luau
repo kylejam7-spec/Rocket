@@ -63,11 +63,11 @@ function Upgrades.cheapest(config, profile)
     return best
 end
 
--- Units moved per tick at a Bulk Pickup / Bulk Place level: 1 unbought, then
--- Config.BulkFactor x (1 + level).
+-- Units moved per tick at a Bulk Pickup / Bulk Place level (Config.BulkUnits; both
+-- tracks share it).
 function Upgrades.bulkUnits(config, track, level)
-    if level <= 0 then return 1 end
-    return config.BulkFactor * (1 + level * config.Upgrades[track].step)
+    local units = config.BulkUnits
+    return units[math.clamp(level, 0, #units)]
 end
 -- Units moved per pickup tick.
 function Upgrades.pickupUnits(config, profile)

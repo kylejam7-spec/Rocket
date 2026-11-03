@@ -14,7 +14,35 @@ cheapest-first upgrades; at each destination the passive bonus plus two thirds o
 on its 2× gym. Fixed overhead per mission (boarding + launch + stay + reset) is ~1.1 min
 (Moon) to ~1.6 min (Black Hole).
 
-## 2026-10-25 gentler level curve (current)
+## 2026-11-02 faster material moves, bigger early carry (current)
+
+User: moving large amounts of material took far too long (30k: 25 min unbought), and new
+players should hold more sooner.
+
+- Bulk Pickup / Bulk Place: `Config.BulkUnits` per tick (20 a second), 5 → 50 over levels
+  0-10 (about ×1.26 a level). The upgrade menu shows units per second.
+
+| Bulk level | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Units/s (was) | 100 (20) | 120 (120) | 160 (180) | 200 (240) | 260 (300) | 320 (360) | 400 (420) | 500 (480) | 640 (540) | 800 (600) | 1,000 (660) |
+| 30k one way (was) | 5 min (25 min) | 4m10 | 3m08 (2m47) | 2m30 (2m05) | 1m55 (1m40) | 1m34 (1m23) | 1m15 (1m11) | 60 s (62 s) | 47 s (56 s) | 38 s (50 s) | 30 s (45 s) |
+
+- Carry = 10 + 90 · L / (L + 15) + L, rounded down (was 10 + L); level costs unchanged.
+
+| Carry | 25 | 50 | 100 | 200 | 500 |
+|---|---|---|---|---|---|
+| Strength level (was) | 3 (15) | 9 (40) | 30 (90) | 111 (190) | 404 (490) |
+| Free gym time at 2/s (was) | 15 s (1m15) | 45 s (3m48) | 2m33 (10m50) | 15 min (37 min) | 4.2 h (8.4 h) |
+
+Report, 20 launches, 15% training (master → this change):
+
+| Players | First Moon | 20 launches | Carry @ 20 |
+|---|---|---|---|
+| 1 | 222 → 143 min | 694 → 544 min | 695 → 776 |
+| 4 | 106 → 65 min | 274 → 217 min | 665 → 750 |
+| 8 | 73 → 45 min | 187 → 153 min | 659 → 745 |
+
+## 2026-10-25 gentler level curve
 
 User: levelling was too unfriendly for new players; the 450 cap should kick in around
 level 450-500. `Config.StatLevels.growth` 1.2 → **1.008** (base 10, max 450 unchanged):
