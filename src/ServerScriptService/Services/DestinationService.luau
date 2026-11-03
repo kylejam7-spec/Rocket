@@ -31,6 +31,12 @@ local function decor(parent, name, props)
     item.CanCollide, item.CanQuery, item.CanTouch, item.CastShadow = false, false, false, false
     return item
 end
+-- An invisible upright wall round a dome (`radius`, standing on `center`): characters
+-- climb nearly any slope, so a solid dome alone got walked up and stood on (user, 2026-11-02).
+local function domeGuard(parent, center, radius)
+    return make(parent, "DomeGuard", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(60, radius * 2, radius * 2), Transparency = 1, CanQuery = false, CanTouch = false,
+        CFrame = CFrame.new(center + Vector3.new(0, 29, 0)) * CFrame.Angles(0, 0, math.rad(90)) })
+end
 -- A flat round ground: cylinders lie along X, so turn it upright.
 local function disc(parent, name, center, radius, thickness, color, material)
     return make(parent, name, {
@@ -722,7 +728,9 @@ local function arch(parent, c)
 end
 local function habitat(parent, c)
     local at = c + HAB
-    decor(parent, "HabDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 20, CFrame = CFrame.new(at), Color = MARS.hull, Material = Enum.Material.SmoothPlastic }).CastShadow = true
+    -- Solid, like the greenhouse: nobody walks through the domes.
+    make(parent, "HabDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 20, CFrame = CFrame.new(at), Color = MARS.hull, Material = Enum.Material.SmoothPlastic })
+    domeGuard(parent, at, 10)
     make(parent, "HabRing", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.4, 21, 21), CFrame = CFrame.new(at + Vector3.new(0, 0.7, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MARS.trim, Material = Enum.Material.Metal })
     for index = 1, 5 do
         local angle = index / 5 * math.pi * 2 + 0.3
@@ -736,17 +744,23 @@ local function habitat(parent, c)
     make(parent, "Airlock", { Size = Vector3.new(6, 6, 4), CFrame = door, Color = MARS.hull, Material = Enum.Material.SmoothPlastic })
     decor(parent, "AirlockDoor", { Size = Vector3.new(3, 4.4, 0.2), CFrame = door * CFrame.new(0, -0.6, -2.05), Color = MARS.trim, Material = Enum.Material.Metal })
     decor(parent, "AirlockLight", { Size = Vector3.new(3, 0.3, 0.2), CFrame = door * CFrame.new(0, 2.1, -2.05), Color = Color3.fromRGB(120, 255, 160), Material = Enum.Material.Neon })
-    -- Tunnel to the greenhouse.
+    -- Tunnel to the greenhouse, ending at its shell (it used to reach 1.5 studs inside,
+    -- through a plant).
     local g = c + GREENHOUSE
-    local a, b = at + (g - at).Unit * 8 + Vector3.new(0, 2, 0), g - (g - at).Unit * 5 + Vector3.new(0, 2, 0)
+    local a, b = at + (g - at).Unit * 8 + Vector3.new(0, 2, 0), g - (g - at).Unit * 6 + Vector3.new(0, 2, 0)
     make(parent, "Tunnel", { Shape = Enum.PartType.Cylinder, Size = Vector3.new((b - a).Magnitude, 4, 4), CFrame = CFrame.lookAt((a + b) / 2, b) * CFrame.Angles(0, math.rad(90), 0), Color = MARS.hull, Material = Enum.Material.SmoothPlastic })
-    -- Greenhouse: a glass dome over rows of plants under pink grow lights.
-    decor(parent, "Greenhouse", { Shape = Enum.PartType.Ball, Size = Vector3.one * 13, CFrame = CFrame.new(g), Color = Color3.fromRGB(200, 235, 245), Material = Enum.Material.Glass, Transparency = 0.45 })
+    -- Greenhouse: a clear dome over rows of plants under pink grow lights. Solid, and
+    -- smooth tinted plastic rather than Glass: things inside a see-through Glass part
+    -- flickered as it was drawn.
+    make(parent, "Greenhouse", { Shape = Enum.PartType.Ball, Size = Vector3.one * 13, CFrame = CFrame.new(g), Color = Color3.fromRGB(200, 235, 245), Material = Enum.Material.SmoothPlastic, Transparency = 0.55, Reflectance = 0.1 })
+    domeGuard(parent, g, 6.5)
     make(parent, "GreenhouseRing", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.8, 13.6, 13.6), CFrame = CFrame.new(g + Vector3.new(0, 0.4, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = MARS.trim, Material = Enum.Material.Metal })
     for row = -1, 1 do
         decor(parent, "PlantBed", { Size = Vector3.new(8, 0.8, 1.6), CFrame = CFrame.new(g + Vector3.new(0, 0.4, row * 2.8)), Color = Color3.fromRGB(70, 46, 34), Material = Enum.Material.Ground })
+        -- 1.5 apart and at most 1.3 across, sitting on the bed: no two plants touch.
         for x = -3, 3, 1.5 do
-            decor(parent, "Plant", { Shape = Enum.PartType.Ball, Size = Vector3.one * (1.1 + (x + row) % 0.5), CFrame = CFrame.new(g + Vector3.new(x, 1.3, row * 2.8)), Color = Color3.fromRGB(70, 170, 70), Material = Enum.Material.Grass })
+            local size = 1 + (x + row) % 0.3
+            decor(parent, "Plant", { Shape = Enum.PartType.Ball, Size = Vector3.one * size, CFrame = CFrame.new(g + Vector3.new(x, 0.8 + size * 0.4, row * 2.8)), Color = Color3.fromRGB(70, 170, 70), Material = Enum.Material.Grass })
         end
     end
     local grow = decor(parent, "GrowLight", { Size = Vector3.new(8, 0.2, 0.6), CFrame = CFrame.new(g + Vector3.new(0, 4.6, 0)), Color = Color3.fromRGB(255, 110, 220), Material = Enum.Material.Neon })
@@ -1409,6 +1423,7 @@ end
 local function tetheredPod(parent, c)
     local at = c + TETHERED
     decor(parent, "PodDome", { Shape = Enum.PartType.Ball, Size = Vector3.one * 9, CFrame = CFrame.new(at), Color = SATURN.hull, Material = Enum.Material.SmoothPlastic }).CastShadow = true
+    domeGuard(parent, at, 4.5)
     make(parent, "PodRing", { Shape = Enum.PartType.Cylinder, Size = Vector3.new(1, 9.6, 9.6), CFrame = CFrame.new(at + Vector3.new(0, 0.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = SATURN.paint, Material = Enum.Material.Metal })
     for index = 1, 4 do
         local angle = index / 4 * math.pi * 2 + 0.4
@@ -1444,8 +1459,8 @@ local function crystalGarden(parent, c, random)
         crystals(parent, at + Vector3.new(math.cos(angle), 0, math.sin(angle)) * random:NextNumber(5, 9), random)
     end
     local spire = CFrame.new(at) * CFrame.Angles(0.08, 0.5, 0.05)
-    make(parent, "CrystalSpire", { Size = Vector3.new(2.2, 14, 2.2), CFrame = spire * CFrame.new(0, 7, 0) * CFrame.Angles(0, math.rad(45), 0), Color = SATURN.ice, Material = Enum.Material.Glass, Transparency = 0.2 })
-    decor(parent, "SpireTip", { ClassName = "WedgePart", Size = Vector3.new(2.2, 3, 1.1), CFrame = spire * CFrame.new(0, 15.5, 0.55), Color = SATURN.ice, Material = Enum.Material.Glass, Transparency = 0.2 })
+    make(parent, "CrystalSpire", { Size = Vector3.new(2.2, 14, 2.2), CFrame = spire * CFrame.new(0, 7, 0) * CFrame.Angles(0, math.rad(45), 0), Color = SATURN.ice, Material = Enum.Material.Ice, Transparency = 0.35 })
+    decor(parent, "SpireTip", { ClassName = "WedgePart", Size = Vector3.new(2.2, 3, 1.1), CFrame = spire * CFrame.new(0, 15.5, 0.55), Color = SATURN.ice, Material = Enum.Material.Ice, Transparency = 0.35 })
     local core = decor(parent, "SpireCore", { Size = Vector3.new(0.8, 12, 0.8), CFrame = spire * CFrame.new(0, 7, 0), Color = SATURN.glow, Material = Enum.Material.Neon })
     core:SetAttribute("Period", 3.4)
     CollectionService:AddTag(core, "Pulse")
@@ -1799,8 +1814,8 @@ local function spires(parent, c, random)
         local height = index == 7 and 22 or random:NextNumber(8, 16)
         local lean = CFrame.new(spot) * CFrame.Angles(random:NextNumber(-0.15, 0.15), random:NextNumber(0, 6.28), random:NextNumber(-0.15, 0.15))
         local width = height * 0.12
-        make(parent, "VoidSpire", { Size = Vector3.new(width, height, width), CFrame = lean * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, math.rad(45), 0), Color = VOID.glass, Material = Enum.Material.Glass, Transparency = 0.25 })
-        decor(parent, "SpireTip", { ClassName = "WedgePart", Size = Vector3.new(width, width * 1.6, width / 2), CFrame = lean * CFrame.new(0, height + width * 0.8, width / 4), Color = VOID.glass, Material = Enum.Material.Glass, Transparency = 0.25 })
+        make(parent, "VoidSpire", { Size = Vector3.new(width, height, width), CFrame = lean * CFrame.new(0, height / 2, 0) * CFrame.Angles(0, math.rad(45), 0), Color = VOID.glass, Material = Enum.Material.SmoothPlastic, Transparency = 0.35, Reflectance = 0.15 })
+        decor(parent, "SpireTip", { ClassName = "WedgePart", Size = Vector3.new(width, width * 1.6, width / 2), CFrame = lean * CFrame.new(0, height + width * 0.8, width / 4), Color = VOID.glass, Material = Enum.Material.SmoothPlastic, Transparency = 0.35, Reflectance = 0.15 })
         local core = decor(parent, "SpireCore", { Size = Vector3.new(width * 0.4, height * 0.85, width * 0.4), CFrame = lean * CFrame.new(0, height / 2, 0), Color = VOID.glow, Material = Enum.Material.Neon })
         core:SetAttribute("Period", random:NextNumber(2.5, 4))
         CollectionService:AddTag(core, "Pulse")
