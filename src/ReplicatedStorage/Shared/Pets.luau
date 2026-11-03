@@ -5,8 +5,8 @@
     A UFO is bought at any UFO Shop (the spaceport and every destination). It follows
     its owner for `Minutes` of play time, then lands and turns into one pet, rolled at
     purchase from the UFO's `Odds` (rarity -> percent), uniformly within that rarity.
-    One UFO at a time. Epic and Legendary UFOs will sell for Robux; until then they
-    show in the shop but can't be bought (`Price` nil).
+    One UFO at a time. Every UFO sells for coins (`Price`); Rare, Epic and Legendary
+    also sell for Robux (Config.Shop).
 
     Catalog[n]
         Id      unique key; also the model's name in ReplicatedStorage.PetModels
@@ -83,14 +83,15 @@ local List = {
     { "Flying", "Dragon_Evolved", "Drakkothar", "Legendary" },
 }
 
--- UFO tiers (index = tier). Price in coins (nil = Robux only, not on sale yet);
+-- UFO tiers (index = tier). Price in coins (nil = Robux only);
 -- Minutes it follows you before landing; Odds of the pet's rarity, in percent.
 local Ufos = {
     { Name = "Common UFO", Rarity = "Common", Price = 500, Minutes = 5, Odds = { Common = 80, Uncommon = 20 } },
     { Name = "Uncommon UFO", Rarity = "Uncommon", Price = 5000, Minutes = 10, Odds = { Uncommon = 90, Rare = 10 } },
     { Name = "Rare UFO", Rarity = "Rare", Price = 50000, Minutes = 15, Odds = { Rare = 95, Epic = 5 } },
-    { Name = "Epic UFO", Rarity = "Epic", Price = nil, Minutes = 20, Odds = { Epic = 95, Legendary = 5 } },
-    { Name = "Legendary UFO", Rarity = "Legendary", Price = nil, Minutes = 25, Odds = { Legendary = 100 } },
+    -- Epic and Legendary sell for coins too (user, 2026-11-02), as well as for Robux.
+    { Name = "Epic UFO", Rarity = "Epic", Price = 500000, Minutes = 20, Odds = { Epic = 95, Legendary = 5 } },
+    { Name = "Legendary UFO", Rarity = "Legendary", Price = 1000000, Minutes = 25, Odds = { Legendary = 100 } },
 }
 
 local Pets = {
