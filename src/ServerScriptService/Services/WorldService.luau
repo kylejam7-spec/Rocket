@@ -634,13 +634,17 @@ function World.new(ctx)
         end
     end
 
-    -- Each destination's own bench and treadmill: double that destination's per-second
+    -- Each destination's own benches and treadmills (a pair by the arrival, a second pair
+    -- behind it: DestinationService.GymOffsets): double that destination's per-second
     -- reward, usable only there during the reward stay (Main's phaseAllowed).
     for tier, place in service.destinations do
-        for _, kind in { "bench", "treadmill" } do
-            local treadmill = kind == "treadmill"
+        local kinds = {}
+        for kind in place.gym do table.insert(kinds, kind) end
+        table.sort(kinds)
+        for _, kind in kinds do
+            local treadmill = kind:match("^treadmill") ~= nil
             -- Dark plate on the gold-trimmed mat (TierColor stays gold for the signs).
-            local base = part((treadmill and "Treadmill" or "Bench") .. place.id, place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(74, 78, 92))
+            local base = part((treadmill and "Treadmill" or "Bench") .. place.id .. kind:match("%d*$"), place.gym[kind], Vector3.new(7, 2, 7), Color3.fromRGB(74, 78, 92))
             equipment(base, treadmill)
             base.Material = Enum.Material.DiamondPlate
             base:SetAttribute("Destination", place.id)

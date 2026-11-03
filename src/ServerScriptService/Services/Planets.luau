@@ -22,7 +22,7 @@
     - Planets.carve(ground, bowls, walkable) cuts real bowl craters, each with an optional
       raised rim, into a ground part (CSG), so players walk down into them (walkable:
       precise collision; otherwise a box, for scenery). Returns the carved part (or the
-      ground, unchanged, if CSG fails).
+      ground, unchanged, if CSG fails) and, when walkable, the rims as separate rings.
     - Planets.subtract(ground, cutters, walkable) cuts any parts out of a ground part (a
       canyon from boxes, say), with the same fallback.
     - Planets.mound(...) is a ball sunk until only a low cap shows: a smooth hill.
@@ -162,18 +162,55 @@ local function ball(center, diameter)
     item.Anchored = true
     return item
 end
+-- A walkable ground's rims are separate solid rings, one per bowl: merged into the
+-- ground, its precise collision bridged between them and lifted the flat ground up to
+-- 0.7 studs over wide stretches (players walked on air). Each ring is its lip clipped
+-- to just above the ground's top, with the bowl cut through it. Returns the ring or nil.
+local function rimRing(ground, bowl, lip, cutter)
+    local height = bowl.rim + 0.6
+    local slab = Instance.new("Part")
+    slab.Anchored, slab.Shape = true, Enum.PartType.Cylinder
+    slab.Size = Vector3.new(height, bowl.radius * 3 + 0.5, bowl.radius * 3 + 0.5)
+    slab.CFrame = CFrame.new(bowl.at + Vector3.new(0, height / 2 - 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+    local cut = cutter:Clone()
+    local ok, ring = pcall(function()
+        local rough = { CollisionFidelity = Enum.CollisionFidelity.Box, SplitApart = false }
+        local clipped = GeometryService:IntersectAsync(lip, { slab }, rough)[1]
+        local result = GeometryService:SubtractAsync(clipped, { cut }, {
+            CollisionFidelity = Enum.CollisionFidelity.PreciseConvexDecomposition, RenderFidelity = Enum.RenderFidelity.Precise, SplitApart = false })[1]
+        clipped:Destroy()
+        return result
+    end)
+    for _, item in { slab, cut, lip } do item:Destroy() end
+    if not ok or not ring then return nil end
+    ring.Name = ground.Name .. "Rim"
+    ring.Anchored, ring.UsePartColor = true, true
+    ring.Color, ring.Material = ground.Color, ground.Material
+    ring.CanCollide, ring.CanQuery, ring.CanTouch = ground.CanCollide, ground.CanQuery, ground.CanTouch
+    ring.Parent = ground.Parent
+    return ring
+end
+-- Returns the carved ground and, when walkable, the list of rim rings (Planets.overlay
+-- them with the ground's texture on their Top face).
 function Planets.carve(ground, bowls, walkable)
-    local lips, cutters, tallest = {}, {}, 0
+    local lips, cutters, tallest, rims = {}, {}, 0, {}
     for _, bowl in bowls do
+        local r = (bowl.radius * bowl.radius + bowl.depth * bowl.depth) / (2 * bowl.depth)
+        local cutter = ball(bowl.at + Vector3.new(0, r - bowl.depth, 0), r * 2)
         if bowl.rim then
             local reach = bowl.radius * 1.5
             local diameter = reach * reach / bowl.rim + bowl.rim
-            table.insert(lips, ball(bowl.at + Vector3.new(0, bowl.rim - diameter / 2, 0), diameter))
-            tallest = math.max(tallest, bowl.rim)
+            local lip = ball(bowl.at + Vector3.new(0, bowl.rim - diameter / 2, 0), diameter)
+            if walkable then
+                table.insert(rims, rimRing(ground, bowl, lip, cutter))
+            else
+                table.insert(lips, lip)
+                tallest = math.max(tallest, bowl.rim)
+            end
         end
-        local r = (bowl.radius * bowl.radius + bowl.depth * bowl.depth) / (2 * bowl.depth)
-        table.insert(cutters, ball(bowl.at + Vector3.new(0, r - bowl.depth, 0), r * 2))
+        table.insert(cutters, cutter)
     end
+    if walkable then return Planets.subtract(ground, cutters, true), rims end
     -- The lips are big sunk balls; clip them to the disc (taller by the highest rim) so
     -- nothing of them shows under or beside it. The ground is a disc as disc() lays it:
     -- a cylinder on its side, its X axis up.
