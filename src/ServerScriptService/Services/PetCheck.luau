@@ -30,11 +30,12 @@ return function()
         for _, form in Pets.Forms do assert((perRarity[rarity][form] or 0) > 0, rarity .. " has no " .. form .. " pet") end
     end
 
-    -- UFOs: 5 to 25 minutes in 5-minute steps; the agreed odds; Epic and Legendary
-    -- aren't sold for coins.
+    -- UFOs: 5 to 25 minutes in 5-minute steps; the agreed odds; coin prices
+    -- 500 / 5K / 50K / 500K / 1M (user, 2026-11-02: Epic and Legendary sell for coins too).
+    local prices = { 500, 5000, 50000, 500000, 1000000 }
     for tier, ufo in Pets.Ufos do
         assert(ufo.Minutes == tier * 5 and ufo.Seconds == ufo.Minutes * 60)
-        assert((ufo.Price ~= nil) == (tier <= 3), ufo.Name .. " price")
+        assert(ufo.Price == prices[tier], ufo.Name .. " price")
     end
     local function same(odds, want)
         for rarity, percent in want do if odds[rarity] ~= percent then return false end end
@@ -71,7 +72,13 @@ return function()
     profile.coins = 600
     assert(Service.buy(profile, 0, "a", random) == nil and Service.buy(profile, "1", "a", random) == nil)
     assert(Service.buy(profile, 1, "", random) == nil and Service.buy(profile, 1, string.rep("x", 65), random) == nil)
-    assert(select(2, Service.buy(profile, 4, "a", random)) == "robux only" and select(2, Service.buy(profile, 5, "a", random)) == "robux only")
+    -- Epic and Legendary are coin UFOs too, at their price.
+    assert(select(2, Service.buy(profile, 4, "a", random)) == "not enough coins" and select(2, Service.buy(profile, 5, "a", random)) == "not enough coins")
+    do
+        local rich = Profiles.validate(nil, config)
+        rich.coins = 1000000
+        assert(Service.buy(rich, 5, "legendary", random) == 1000000 and rich.coins == 0 and #rich.ufos == 1, "a Legendary UFO costs 1M coins")
+    end
     -- Request IDs: bounded ASCII only, checked before any coins move. Bytes that aren't
     -- UTF-8 (or a multi-byte character) would make every later DataStore save fail.
     for _, badId in { string.char(255), "é", "a:b", "a;b", "a b", ("é"):rep(4):sub(1, 7) } do

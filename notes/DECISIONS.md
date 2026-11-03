@@ -1,5 +1,11 @@
 # Decisions
 
+## 2026-11-02: Epic and Legendary UFOs sell for coins
+
+- User: Epic UFO 500K coins, Legendary UFO 1M coins (they were Robux only). Their Robux
+  products stay; like Rare, they sell both ways, and the paid-random-items policy still
+  hides only the Robux button. PetCheck asserts every tier's coin price.
+
 ## 2026-11-02: Destinations 3x the area, more to see, a second gym pair
 
 - User: destinations were too small to hold interest. Radius x1.73 (3x area): Moon, Mars
