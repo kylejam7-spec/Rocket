@@ -53,7 +53,8 @@ local function badge(parent, props)
             circle.BackgroundColor3 = locked and LOCKED or tierColor
             gradient.Color = locked and GREY or GOLD
             ring.Color = Theme.color.Stroke
-            if locked then
+            -- Touch screens keep it still (UI.WorldScale).
+            if locked or WorldScale.still then
                 pulse:Cancel(); sway:Cancel()
                 scale.Scale, text.Rotation = 1, -10
             else
@@ -94,6 +95,7 @@ local function buildSign(sign, playerGui)
         SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud, PixelsPerStud = 40, LightInfluence = 0,
         ResetOnSpawn = false, Parent = playerGui,
     })
+    WorldScale.surface(surface)
     local tierColor = sign:GetAttribute("TierColor") or Theme.color.Gold
     local panel = Create.new("Frame", {
         Name = "Panel", Size = UDim2.new(1, -24, 1, -24), Position = UDim2.fromOffset(12, 12),
